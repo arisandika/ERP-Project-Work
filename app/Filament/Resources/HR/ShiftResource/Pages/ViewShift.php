@@ -21,4 +21,9 @@ class ViewShift extends ViewRecord
                 ->color('gray'),
         ];
     }
+
+    public function getTitle(): string
+    {
+        return 'Lihat Jam Kerja';
+    }
 }

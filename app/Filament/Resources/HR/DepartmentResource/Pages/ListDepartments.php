@@ -14,7 +14,7 @@ class ListDepartments extends ListRecords
     {
         return [
             Actions\CreateAction::make()
-                ->label('New Department'),
+                ->label('Tambah Departemen'),
         ];
     }
 }

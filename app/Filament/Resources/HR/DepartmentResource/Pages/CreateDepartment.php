@@ -10,6 +10,11 @@ class CreateDepartment extends CreateRecord
 {
     protected static string $resource = DepartmentResource::class;
 
+    public function getTitle(): string
+    {
+        return 'Tambah Departemen';
+    }
+
     // protected static bool $canCreateAnother = false;
 
     // protected function getRedirectUrl(): string

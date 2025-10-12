@@ -19,4 +19,9 @@ class EditShift extends EditRecord
             Actions\RestoreAction::make(),
         ];
     }
+
+    public function getTitle(): string
+    {
+        return 'Edit Jam Kerja';
+    }
 }

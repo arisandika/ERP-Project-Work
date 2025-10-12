@@ -3,6 +3,7 @@
 namespace App\Models\HR;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Attendance extends Model
@@ -31,12 +32,12 @@ class Attendance extends Model
     ];
 
     // Relationships
-    public function employee()
+    public function employee(): BelongsTo
     {
         return $this->belongsTo(Employee::class, 'employee_id');
     }
 
-    public function shift()
+    public function shift(): BelongsTo
     {
         return $this->belongsTo(Shift::class, 'shift_id');
     }

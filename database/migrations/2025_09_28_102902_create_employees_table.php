@@ -10,32 +10,50 @@ return new class extends Migration {
      */
     public function up(): void
     {
-        // Employees (connected to users and departments)
         Schema::create('nx_employees', function (Blueprint $table) {
             $table->id();
+
+            // Foreign Keys
             $table->unsignedBigInteger('user_id');                   // FK to users
             $table->unsignedBigInteger('department_id')->nullable(); // FK to nx_departments
+            $table->unsignedBigInteger('office_id')->nullable();     // FK to nx_offices
 
+            // Identification
+            $table->string('national_id')->nullable();     // NIK
+            $table->string('identity_number')->nullable(); // No. KTP
+
+            // Personal Information
             $table->string('full_name');
+            $table->string('birth_place')->nullable();
+            $table->date('birth_date')->nullable();
+            $table->string('gender')->nullable();
+            $table->string('marital_status')->nullable();
+            $table->string('education_level')->nullable();
+            $table->date('join_date')->nullable();
+
+            // Contact
             $table->string('email')->unique();
             $table->string('phone_number')->unique();
-            $table->string('photo')->nullable(); // Profile photo path
             $table->string('address')->nullable();
+            $table->string('photo')->nullable();
 
-            $table->string('position'); // Employee job title
-            $table->enum('contract_type', ['permanent', 'contract', 'intern'])->default('contract');
-            $table->enum('status', ['active', 'resigned', 'terminated'])->default('active');
+            // Employment
+            $table->string('position');
+            $table->string('contract_type')->nullable();
+            $table->string('status')->nullable();
 
-            // Face recognition attributes (future-proof for OpenCV)
-            $table->json('face_embeddings')->nullable();       // store serialized embedding vector directly
-            $table->string('face_embedding_path')->nullable(); // store path to external file (.npy)
-            $table->json('face_landmarks')->nullable();        // facial landmarks for alignment (optional)
+            // Permissions / Toggles
+            $table->boolean('can_wfa')->default(false);          // Work From Anywhere permission
+            $table->boolean('can_unlock_shift')->default(false); // Unlock shift permission
 
+            // Common Columns
             $table->softDeletes();
             $table->timestamps();
 
+            // Foreign Key Constraints
             $table->foreign('user_id')->references('id')->on('users')->onDelete('cascade');
             $table->foreign('department_id')->references('id')->on('nx_departments')->onDelete('set null');
+            $table->foreign('office_id')->references('id')->on('nx_offices')->onDelete('set null');
         });
     }
 

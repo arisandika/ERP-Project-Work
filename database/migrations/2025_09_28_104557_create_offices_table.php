@@ -16,6 +16,8 @@ return new class extends Migration
             $table->string('name');
             $table->double('latitude')->nullable();
             $table->double('longitude')->nullable();
+            $table->string('address')->nullable();
+            $table->string('phone_number', 20)->nullable();
             $table->integer('radius_meters')->default(100); // default 100 meter
             $table->softDeletes();
             $table->timestamps();

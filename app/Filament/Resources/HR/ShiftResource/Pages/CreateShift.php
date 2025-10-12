@@ -9,4 +9,10 @@ use Filament\Resources\Pages\CreateRecord;
 class CreateShift extends CreateRecord
 {
     protected static string $resource = ShiftResource::class;
+
+    public function getTitle(): string
+    {
+        return 'Tambah Jam Kerja';
+    }
+
 }

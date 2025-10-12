@@ -1,14 +1,14 @@
 <?php
 
-namespace App\Filament\Resources\HR\OfficeResource\Pages;
+namespace App\Filament\Resources\HR\LeaveResource\Pages;
 
-use App\Filament\Resources\HR\OfficeResource;
+use App\Filament\Resources\HR\LeaveResource;
 use Filament\Actions;
 use Filament\Resources\Pages\EditRecord;
 
-class EditOffice extends EditRecord
+class EditLeave extends EditRecord
 {
-    protected static string $resource = OfficeResource::class;
+    protected static string $resource = LeaveResource::class;
 
     protected function getHeaderActions(): array
     {
@@ -22,6 +22,6 @@ class EditOffice extends EditRecord
 
     public function getTitle(): string
     {
-        return 'Edit Kantor';
+        return 'Edit Jenis Cuti';
     }
 }

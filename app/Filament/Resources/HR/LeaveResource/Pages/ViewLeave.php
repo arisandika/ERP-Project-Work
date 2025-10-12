@@ -1,15 +1,15 @@
 <?php
 
-namespace App\Filament\Resources\HR\EmployeeResource\Pages;
+namespace App\Filament\Resources\HR\LeaveResource\Pages;
 
-use App\Filament\Resources\HR\EmployeeResource;
+use App\Filament\Resources\HR\LeaveResource;
 use Filament\Actions;
 use Filament\Actions\Action;
 use Filament\Resources\Pages\ViewRecord;
 
-class ViewEmployee extends ViewRecord
+class ViewLeave extends ViewRecord
 {
-    protected static string $resource = EmployeeResource::class;
+    protected static string $resource = LeaveResource::class;
 
     protected function getHeaderActions(): array
     {
@@ -24,6 +24,6 @@ class ViewEmployee extends ViewRecord
 
     public function getTitle(): string
     {
-        return 'Lihat Karyawan';
+        return 'Lihat Jenis Cuti';
     }
 }

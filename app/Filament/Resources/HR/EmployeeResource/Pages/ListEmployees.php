@@ -14,7 +14,7 @@ class ListEmployees extends ListRecords
     {
         return [
             Actions\CreateAction::make()
-                ->label('New Employee'),
+                ->label('Tambah Karyawan'),
         ];
     }
 }

@@ -14,7 +14,7 @@ class ListShifts extends ListRecords
     {
         return [
             Actions\CreateAction::make()
-                ->label('New Shift'),
+                ->label('Tambah Jam Kerja'),
         ];
     }
 }
