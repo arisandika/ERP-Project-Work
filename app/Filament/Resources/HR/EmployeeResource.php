@@ -1,12 +1,11 @@
 <?php
-
 namespace App\Filament\Resources\HR;
 
 use App\Filament\Resources\HR\EmployeeResource\Pages;
-use App\Filament\Resources\HR\EmployeeResource\RelationManagers;
 use App\Models\HR\Employee;
 use Filament\Forms;
 use Filament\Forms\Form;
+use Filament\Infolists\Components\IconEntry;
 use Filament\Infolists\Components\ImageEntry;
 use Filament\Infolists\Components\Section;
 use Filament\Infolists\Components\TextEntry;
@@ -17,6 +16,8 @@ use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\Blade;
+use Illuminate\Support\HtmlString;
 
 class EmployeeResource extends Resource
 {
@@ -24,11 +25,13 @@ class EmployeeResource extends Resource
 
     protected static ?string $navigationIcon = 'heroicon-o-user-group';
 
-    protected static ?string $navigationGroup = 'HR Management';
+    protected static ?string $navigationGroup = 'Manajemen HR';
 
     protected static ?int $navigationSort = 2;
 
-    protected static ?string $slug = 'hr-management/employees';
+    protected static ?string $slug = 'hr/employees';
+
+    protected static ?string $pluralModelLabel = 'Karyawan';
 
     public static function getNavigationBadge(): ?string
     {
@@ -39,12 +42,28 @@ class EmployeeResource extends Resource
     {
         return $form
             ->schema([
-                Forms\Components\Section::make('Personal Information')
+                Forms\Components\Section::make('Informasi Pribadi')
                     ->schema([
-                        Forms\Components\TextInput::make('full_name')
-                            ->label('Full Name')
+
+                        Forms\Components\TextInput::make('national_id')
+                            ->label('NIK')
                             ->required()
-                            ->maxLength(255),
+                            ->numeric()
+                            ->maxLength(20)
+                            ->prefixIcon('heroicon-o-identification'),
+
+                        Forms\Components\TextInput::make('identity_number')
+                            ->label('Nomor KTP')
+                            ->required()
+                            ->numeric()
+                            ->maxLength(20)
+                            ->prefixIcon('heroicon-o-identification'),
+
+                        Forms\Components\TextInput::make('full_name')
+                            ->label('Nama Lengkap')
+                            ->required()
+                            ->maxLength(255)
+                            ->prefixIcon('heroicon-o-user'),
 
                         Forms\Components\Select::make('roles')
                             ->label('Role')
@@ -52,13 +71,17 @@ class EmployeeResource extends Resource
                             ->relationship('roles', 'name')
                             ->searchable()
                             ->preload()
-                            ->native(false),
+                            ->native(false)
+                            ->prefixIcon('heroicon-o-shield-check'),
 
                         Forms\Components\TextInput::make('email')
-                            ->label('Email')
+                            ->label('Alamat Email')
                             ->required()
                             ->email()
-                            ->dehydrated(fn($state, $record, string $operation) => $operation === 'create' || ($operation === 'edit' && $state !== optional($record->user)->email))
+                            ->prefixIcon('heroicon-o-envelope')
+                            ->dehydrated(fn($state, $record, string $operation) =>
+                                $operation === 'create' ||
+                                ($operation === 'edit' && $state !== optional($record->user)->email))
                             ->afterStateHydrated(function ($component, $record, string $operation) {
                                 if ($operation === 'edit' && $record) {
                                     $component->state(optional($record->user)->email);
@@ -66,102 +89,162 @@ class EmployeeResource extends Resource
                             }),
 
                         Forms\Components\TextInput::make('password')
-                            ->label('Password')
-                            ->required(fn(string $operation): bool => $operation === 'create')
+                            ->label('Kata Sandi')
                             ->password()
-                            ->revealable(),
+                            ->revealable()
+                            ->prefixIcon('heroicon-o-lock-closed')
+                            ->required(fn(string $operation): bool => $operation === 'create'),
 
                         Forms\Components\TextInput::make('phone_number')
-                            ->label('Phone Number')
+                            ->label('Nomor HP')
                             ->required()
-                            ->unique(ignoreRecord: true),
+                            ->numeric()
+                            ->unique(ignoreRecord: true)
+                            ->prefixIcon('heroicon-o-phone'),
+
+                        Forms\Components\TextInput::make('birth_place')
+                            ->label('Tempat Lahir')
+                            ->maxLength(100)
+                            ->prefixIcon('heroicon-o-map-pin'),
+
+                        Forms\Components\DatePicker::make('birth_date')
+                            ->label('Tanggal Lahir')
+                            ->prefixIcon('heroicon-o-calendar-days'),
+
+                        Forms\Components\Select::make('gender')
+                            ->label('Jenis Kelamin')
+                            ->options([
+                                'Laki-laki' => 'Laki-laki',
+                                'Perempuan' => 'Perempuan',
+                            ])
+                            ->native(false)
+                            ->prefixIcon('heroicon-o-user-group'),
+
+                        Forms\Components\Select::make('marital_status')
+                            ->label('Status Perkawinan')
+                            ->options([
+                                'Menikah'       => 'Menikah',
+                                'Belum Menikah' => 'Belum Menikah',
+                                'Duda'          => 'Duda',
+                                'Janda'         => 'Janda',
+                            ])
+                            ->native(false)
+                            ->prefixIcon('heroicon-o-heart'),
+
+                        Forms\Components\Select::make('education_level')
+                            ->label('Pendidikan Terakhir')
+                            ->options([
+                                'SD'       => 'SD',
+                                'SMP'      => 'SMP',
+                                'SMA'      => 'SMA',
+                                'Diploma'  => 'Diploma (D1/D2/D3)',
+                                'Sarjana'  => 'Sarjana (S1)',
+                                'Magister' => 'Magister (S2)',
+                                'Doktor'   => 'Doktor (S3)',
+                                'Lainnya'  => 'Lainnya',
+                            ])
+                            ->native(false)
+                            ->prefixIcon('heroicon-o-academic-cap'),
 
                         Forms\Components\FileUpload::make('photo')
-                            ->label('Profile Photo')
+                            ->label('Foto Profil')
                             ->image()
                             ->directory('employees/photos')
-                            ->required()
                             ->imageEditor(),
 
                         Forms\Components\Textarea::make('address')
-                            ->label('Address')
+                            ->label('Alamat')
                             ->maxLength(500),
+
                     ])->columns(2),
 
-                Forms\Components\Section::make('Job Information')
+                Forms\Components\Section::make('Informasi Pekerjaan')
                     ->schema([
-                        Forms\Components\Select::make('position')
-                            ->label('Position')
+
+                        Forms\Components\Select::make('office_id')
+                            ->label('Kantor Cabang')
                             ->required()
-                            ->options([
-                                'staff' => 'Staff',
-                                'junior' => 'Junior',
-                                'senior' => 'Senior',
-                                'internship' => 'Internship',
-                                'lead' => 'Lead',
-                                'ex-employee' => 'Ex-Employee',
-                            ])
-                            ->native(false),
-
-                        Forms\Components\Select::make('contract_type')
-                            ->label('Contract Type')
-                            ->options([
-                                'permanent' => 'Permanent',
-                                'contract' => 'Contract',
-                                'intern' => 'Intern',
-                            ])
-                            ->default('contract')
-                            ->required(),
-
-                        Forms\Components\Select::make('status')
-                            ->label('Employment Status')
-                            ->options([
-                                'active' => 'Active',
-                                'resigned' => 'Resigned',
-                                'terminated' => 'Terminated',
-                            ])
-                            ->default('active')
-                            ->required(),
+                            ->relationship('office', 'name')
+                            ->searchable()
+                            ->preload()
+                            ->native(false)
+                            ->prefixIcon('heroicon-o-building-office'),
 
                         Forms\Components\Select::make('department_id')
-                            ->label('Department')
+                            ->label('Departemen')
                             ->required()
                             ->relationship('department', 'name')
                             ->searchable()
                             ->preload()
                             ->native(false)
+                            ->prefixIcon('heroicon-o-briefcase')
                             ->createOptionForm([
                                 Forms\Components\TextInput::make('name')
-                                    ->label('Name')
+                                    ->label('Nama Departemen')
                                     ->required()
                                     ->maxLength(25),
 
                                 Forms\Components\TextInput::make('code')
-                                    ->label('Code')
+                                    ->label('Kode')
                                     ->required()
                                     ->maxLength(3)
-                                    ->afterStateUpdated(fn($state, callable $set) => $set('code', strtoupper($state))),
+                                    ->afterStateUpdated(fn($state, callable $set) =>
+                                        $set('code', strtoupper($state))),
                             ]),
+
+                        Forms\Components\Select::make('position')
+                            ->label('Jabatan')
+                            ->required()
+                            ->options([
+                                'Staf'            => 'Staf',
+                                'Junior'          => 'Junior',
+                                'Senior'          => 'Senior',
+                                'Magang'          => 'Magang',
+                                'Pimpinan'        => 'Pimpinan',
+                                'Mantan Karyawan' => 'Mantan Karyawan',
+                            ])
+                            ->native(false)
+                            ->prefixIcon('heroicon-o-user'),
+
+                        Forms\Components\Select::make('contract_type')
+                            ->label('Jenis Kontrak')
+                            ->options([
+                                'Karyawan Tetap' => 'Karyawan Tetap',
+                                'Kontrak'        => 'Kontrak',
+                                'Magang'         => 'Magang',
+                            ])
+                            ->native(false)
+                            ->default('Kontrak')
+                            ->prefixIcon('heroicon-o-document-text'),
+
+                        Forms\Components\DatePicker::make('join_date')
+                            ->label('Tanggal Masuk')
+                            ->prefixIcon('heroicon-o-calendar'),
+
+                        Forms\Components\Select::make('status')
+                            ->label('Status Karyawan')
+                            ->options([
+                                'Aktif'             => 'Aktif',
+                                'Mengundurkan Diri' => 'Mengundurkan Diri',
+                                'Diberhentikan'     => 'Diberhentikan',
+                            ])
+                            ->native(false)
+                            ->default('Aktif')
+                            ->prefixIcon('heroicon-o-check-circle'),
+
+                        Forms\Components\Toggle::make('can_wfa')
+                            ->label('Boleh Work From Anywhere (WFA)')
+                            ->default(false)
+                            ->inline(false),
+
+                        Forms\Components\Toggle::make('can_unlock_shift')
+                            ->label('Boleh Unlock Shift')
+                            ->default(false)
+                            ->inline(false),
+
                     ])->columns(2),
-
-                Forms\Components\Section::make('Face Recognition (Future)')
-                    ->schema([
-                        Forms\Components\Textarea::make('face_embeddings')
-                            ->label('Face Embeddings')
-                            ->disabled()
-                            ->hidden(),
-
-                        Forms\Components\TextInput::make('face_embedding_path')
-                            ->label('Embedding File Path')
-                            ->disabled()
-                            ->hidden(),
-
-                        Forms\Components\Textarea::make('face_landmarks')
-                            ->label('Face Landmarks')
-                            ->disabled()
-                            ->hidden(),
-                    ]),
             ]);
+
     }
 
     public static function table(Table $table): Table
@@ -169,70 +252,90 @@ class EmployeeResource extends Resource
         return $table
             ->columns([
                 Tables\Columns\ImageColumn::make('photo')
-                    ->label('Photo')
-                    ->circular(),
+                    ->label('Foto')
+                    ->circular()
+                    ->defaultImageUrl(url('/assets/placeholder.jpg')),
 
                 Tables\Columns\TextColumn::make('full_name')
-                    ->label('Name')
+                    ->label('Nama Lengkap')
                     ->searchable()
                     ->sortable(),
 
-                Tables\Columns\TextColumn::make('email')
+                Tables\Columns\TextColumn::make('user.email')
                     ->label('Email')
                     ->searchable(),
+
+                Tables\Columns\TextColumn::make('phone_number')
+                    ->label('No. HP'),
+
+                Tables\Columns\TextColumn::make('department.name')
+                    ->label('Departemen')
+                    ->sortable(),
+
+                Tables\Columns\TextColumn::make('position')
+                    ->label('Jabatan')
+                    ->formatStateUsing(fn(string $state): string => ucwords(str_replace('_', ' ', $state))),
+
+                Tables\Columns\TextColumn::make('office.name')
+                    ->label('Kantor Cabang')
+                    ->sortable(),
+
+                Tables\Columns\BadgeColumn::make('status')
+                    ->colors([
+                        'success' => 'Aktif',
+                        'gray'    => 'Mengundurkan Diri',
+                        'danger'  => 'Diberhentikan',
+                    ])
+                    ->formatStateUsing(fn(string $state): string => ucwords(str_replace('_', ' ', $state))),
 
                 Tables\Columns\BadgeColumn::make('roles.name')
                     ->label('Role')
                     ->colors(['indigo'])
                     ->formatStateUsing(fn(string $state): string => ucwords(str_replace('_', ' ', $state))),
 
-                Tables\Columns\TextColumn::make('department.name')
-                    ->label('Department')
-                    ->sortable(),
+                Tables\Columns\ToggleColumn::make('can_wfa')
+                    ->label(new HtmlString(Blade::render('<x-heroicon-o-map-pin class="w-6 h-6" />'))),
 
-                Tables\Columns\TextColumn::make('phone_number')
-                    ->label('Phone'),
-
-                Tables\Columns\TextColumn::make('position')
-                    ->label('Position')
-                    ->formatStateUsing(fn(string $state): string => ucwords(str_replace('_', ' ', $state))),
-
-                Tables\Columns\BadgeColumn::make('contract_type')
-                    ->colors([
-                        'success' => 'permanent',
-                        'warning' => 'contract',
-                        'info' => 'intern',
-                    ])
-                    ->formatStateUsing(fn(string $state): string => ucwords(str_replace('_', ' ', $state))),
-
-                Tables\Columns\BadgeColumn::make('status')
-                    ->colors([
-                        'success' => 'active',
-                        'danger' => 'terminated',
-                        'secondary' => 'resigned',
-                    ])
-                    ->formatStateUsing(fn(string $state): string => ucwords(str_replace('_', ' ', $state))),
+                Tables\Columns\ToggleColumn::make('can_unlock_shift')
+                    ->label(new HtmlString(Blade::render('<x-heroicon-o-clock class="w-6 h-6" />'))),
 
                 Tables\Columns\TextColumn::make('created_at')
-                    ->label('Created')
-                    ->dateTime('d M Y'),
+                    ->label('Created At')
+                    ->dateTime('d F Y')
+                    ->sortable()
+                    ->toggleable(isToggledHiddenByDefault: true),
+
+                Tables\Columns\TextColumn::make('updated_at')
+                    ->label('Updated At')
+                    ->dateTime('d F Y')
+                    ->sortable()
+                    ->toggleable(isToggledHiddenByDefault: true),
+
+                Tables\Columns\TextColumn::make('deleted_at')
+                    ->label('Deleted At')
+                    ->dateTime('d F Y')
+                    ->sortable()
+                    ->toggleable(isToggledHiddenByDefault: true),
             ])
             ->filters([
                 Tables\Filters\SelectFilter::make('department_id')
-                    ->label('Department')
-                    ->relationship('department', 'name'),
+                    ->label('Departemen')
+                    ->relationship('department', 'name')
+                    ->native(false),
 
                 Tables\Filters\SelectFilter::make('status')
-                    ->label('Employment Status')
+                    ->label('Status Karyawan')
                     ->options([
-                        'active' => 'Active',
-                        'resigned' => 'Resigned',
-                        'terminated' => 'Terminated',
-                    ]),
+                        'Aktif'             => 'Aktif',
+                        'Mengundurkan Diri' => 'Mengundurkan Diri',
+                        'Diberhentikan'     => 'Diberhentikan',
+                    ])
+                    ->native(false),
 
                 Tables\Filters\SelectFilter::make('roles')
                     ->label('Roles')
-                    ->relationship('roles', 'name'),
+                    ->relationship('roles', 'name')
+                    ->native(false),
 
                 Tables\Filters\Filter::make('created_at')
                     ->form([
@@ -293,68 +396,119 @@ class EmployeeResource extends Resource
     {
         return $infolist
             ->schema([
-                Section::make('Personal Information')
+
+                Section::make('Informasi Pribadi')
                     ->columns(2)
                     ->schema([
                         ImageEntry::make('photo')
-                            ->label('Photo')
-                            ->circular(),
+                            ->label('Foto Profil')
+                            ->circular()
+                            ->defaultImageUrl(url('/assets/placeholder.jpg')),
+
                         TextEntry::make('full_name')
-                            ->label('Full Name'),
+                            ->label('Nama Lengkap'),
+
                         TextEntry::make('email')
-                            ->label('Email')
+                            ->label('Alamat Email')
                             ->state(fn(Employee $employee) => optional($employee->user)->email),
+
                         TextEntry::make('phone_number')
-                            ->label('Phone Number'),
+                            ->label('Nomor HP'),
+
                         TextEntry::make('address')
-                            ->label('Address'),
+                            ->label('Alamat'),
+
                         TextEntry::make('roles')
-                            ->label('Roles')
+                            ->label('Peran (Role)')
                             ->state(fn(Employee $employee) => $employee->roles->pluck('name')->join(', '))
                             ->formatStateUsing(fn(string $state): string => ucwords(str_replace('_', ' ', $state))),
                     ]),
 
-                Section::make('Job Information')
+                Section::make('Informasi Pekerjaan')
                     ->columns(2)
                     ->schema([
                         TextEntry::make('position')
-                            ->label('Position')
-                            ->formatStateUsing(fn(string $state): string => ucwords(str_replace('_', ' ', $state))),
+                            ->label('Jabatan')
+                            ->formatStateUsing(fn(?string $state): string => ucwords(str_replace('_', ' ', $state ?? '-'))),
+
                         TextEntry::make('contract_type')
-                            ->label('Contract Type')
-                            ->formatStateUsing(fn(string $state): string => ucwords(str_replace('_', ' ', $state))),
+                            ->label('Jenis Kontrak')
+                            ->formatStateUsing(fn(?string $state): string => match ($state) {
+                                'Karyawan Tetap', 'permanent' => 'Karyawan Tetap',
+                                'Kontrak', 'contract'         => 'Kontrak',
+                                'Magang', 'intern'            => 'Magang',
+                                default => ucwords($state ?? '-'),
+                            }),
+
                         TextEntry::make('status')
-                            ->label('Employment Status')
-                            ->formatStateUsing(fn(string $state): string => ucwords(str_replace('_', ' ', $state))),
+                            ->label('Status Karyawan')
+                            ->formatStateUsing(fn(?string $state): string => match ($state) {
+                                'Aktif', 'active'               => 'Aktif',
+                                'Mengundurkan Diri', 'resigned' => 'Mengundurkan Diri',
+                                'Diberhentikan', 'terminated'   => 'Diberhentikan',
+                                default => ucwords($state ?? '-'),
+                            }),
+
                         TextEntry::make('department.name')
-                            ->label('Department')
+                            ->label('Departemen'),
+
+                        TextEntry::make('office.name')
+                            ->label('Kantor Cabang'),
+
+                        TextEntry::make('join_date')
+                            ->label('Tanggal Masuk')
+                            ->date('d F Y'),
+
+                        IconEntry::make('can_wfa')
+                            ->label('Boleh Work From Anywhere (WFA)')
+                            ->trueIcon('heroicon-o-check-circle')
+                            ->falseIcon('heroicon-o-x-circle'),
+
+                        IconEntry::make('can_unlock_shift')
+                            ->label('Boleh Unlock Shift')
+                            ->trueIcon('heroicon-o-check-circle')
+                            ->falseIcon('heroicon-o-x-circle'),
                     ]),
 
-                Section::make('Face Recognition (Future)')
-                    ->columns(1)
+                Section::make('Informasi Tambahan Pribadi')
+                    ->columns(2)
                     ->schema([
-                        TextEntry::make('face_embeddings')
-                            ->label('Face Embeddings')
-                            ->visible(false),
-                        TextEntry::make('face_embedding_path')
-                            ->label('Embedding Path')
-                            ->visible(false),
-                        TextEntry::make('face_landmarks')
-                            ->label('Face Landmarks')
-                            ->visible(false),
+                        TextEntry::make('national_id')
+                            ->label('NIK'),
+
+                        TextEntry::make('identity_number')
+                            ->label('Nomor KTP'),
+
+                        TextEntry::make('birth_place')
+                            ->label('Tempat Lahir'),
+
+                        TextEntry::make('birth_date')
+                            ->label('Tanggal Lahir')
+                            ->date('d F Y'),
+
+                        TextEntry::make('gender')
+                            ->label('Jenis Kelamin'),
+
+                        TextEntry::make('marital_status')
+                            ->label('Status Perkawinan'),
+
+                        TextEntry::make('education_level')
+                            ->label('Pendidikan Terakhir'),
                     ]),
 
-                Section::make('Additional Information')
+                Section::make('Pengelolaan Data')
                     ->columns(2)
                     ->schema([
                         TextEntry::make('created_at')
-                            ->label('Created At')
+                            ->label('Dibuat Pada')
                             ->dateTime('d F Y H:i'),
+
                         TextEntry::make('updated_at')
-                            ->label('Updated At')
+                            ->label('Diperbarui Pada')
                             ->dateTime('d F Y H:i'),
+
                         TextEntry::make('deleted_at')
-                            ->label('Deleted At')
+                            ->label('Dihapus Pada')
                             ->dateTime('d F Y H:i')
                             ->visible(fn(Employee $employee) => $employee->trashed()),
                     ]),
@@ -371,10 +525,10 @@ class EmployeeResource extends Resource
     public static function getPages(): array
     {
         return [
-            'index' => Pages\ListEmployees::route('/'),
+            'index'  => Pages\ListEmployees::route('/'),
             'create' => Pages\CreateEmployee::route('/create'),
-            'view' => Pages\ViewEmployee::route('/{record}'),
-            'edit' => Pages\EditEmployee::route('/{record}/edit'),
+            'view'   => Pages\ViewEmployee::route('/{record}'),
+            'edit'   => Pages\EditEmployee::route('/{record}/edit'),
         ];
     }
 

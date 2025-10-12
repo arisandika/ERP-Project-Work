@@ -13,15 +13,10 @@ return new class extends Migration
     {
         Schema::create('nx_leaves', function (Blueprint $table) {
             $table->id();
-            $table->unsignedBigInteger('employee_id')->nullable();
-            $table->enum('leave_type', ['sick', 'annual', 'permission']);
-            $table->date('start_date');
-            $table->date('end_date');
-            $table->enum('status', ['pending', 'approved', 'rejected'])->default('pending');
+            $table->string('leave_type');
+            $table->integer('days_count');
             $table->softDeletes();
             $table->timestamps();
-
-            $table->foreign('employee_id')->references('id')->on('nx_employees')->onDelete('cascade');
         });
     }
 

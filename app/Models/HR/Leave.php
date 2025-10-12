@@ -3,6 +3,7 @@
 namespace App\Models\HR;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Leave extends Model
@@ -12,15 +13,12 @@ class Leave extends Model
     protected $table = 'nx_leaves';
 
     protected $fillable = [
-        'employee_id',
         'leave_type',
-        'start_date',
-        'end_date',
-        'status',
+        'days_count',
     ];
 
     // Relationships
-    public function employee()
+    public function employee(): BelongsTo
     {
         return $this->belongsTo(Employee::class, 'employee_id');
     }

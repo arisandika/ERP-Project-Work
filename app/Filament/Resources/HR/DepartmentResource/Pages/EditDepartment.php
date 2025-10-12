@@ -20,8 +20,8 @@ class EditDepartment extends EditRecord
         ];
     }
 
-    // public function getTitle(): string
-    // {
-    //     return 'Edit Department ' . $this->record->name;
-    // }
+    public function getTitle(): string
+    {
+        return 'Edit Departemen';
+    }
 }

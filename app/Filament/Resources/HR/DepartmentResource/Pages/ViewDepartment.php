@@ -22,8 +22,8 @@ class ViewDepartment extends ViewRecord
         ];
     }
 
-    // public function getTitle(): string
-    // {
-    //     return 'Detail Department ' . $this->record->name;
-    // }
+    public function getTitle(): string
+    {
+        return 'Lihat Departemen';
+    }
 }

@@ -1,105 +1,46 @@
 <?php
 namespace App\Filament\Resources\HR;
 
-use App\Filament\Resources\HR\OfficeResource\Pages;
-use App\Models\HR\Office;
-use Dotswan\MapPicker\Fields\Map;
+use App\Filament\Resources\HR\LeaveResource\Pages;
+use App\Models\HR\Leave;
 use Filament\Forms;
 use Filament\Forms\Form;
-use Filament\Forms\Set;
 use Filament\Resources\Resource;
 use Filament\Tables;
-use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
 use Illuminate\Support\Carbon;
 
-class OfficeResource extends Resource
+class LeaveResource extends Resource
 {
-    protected static ?string $model = Office::class;
+    protected static ?string $model = Leave::class;
 
-    protected static ?string $navigationIcon = 'heroicon-o-building-office-2';
+    protected static ?string $navigationIcon = 'heroicon-o-arrow-right-start-on-rectangle';
 
     protected static ?string $navigationGroup = 'Manajemen HR';
 
-    protected static ?int $navigationSort = 4;
+    protected static ?int $navigationSort = 5;
 
-    protected static ?string $slug = 'hr/offices';
+    protected static ?string $slug = 'hr/leaves';
 
-    protected static ?string $pluralModelLabel = 'Kantor';
+    protected static ?string $pluralModelLabel = 'Cuti';
 
     public static function form(Form $form): Form
     {
         return $form
             ->schema([
-                Forms\Components\Section::make('Informasi Kantor')
-                    ->columns(2)
-                    ->schema([
-                        Forms\Components\TextInput::make('name')
-                            ->label('Nama Kantor')
-                            ->required()
-                            ->maxLength(100)
-                            ->prefixIcon('heroicon-o-building-office'),
+                Forms\Components\TextInput::make('leave_type')
+                    ->label('Jenis Cuti')
+                    ->required()
+                    ->maxLength(255)
+                    ->prefixIcon('heroicon-o-document-text'),
 
-                        Forms\Components\TextInput::make('radius_meters')
-                            ->label('Radius Diizinkan (meter)')
-                            ->numeric()
-                            ->default(100)
-                            ->required()
-                            ->prefixIcon('heroicon-o-map-pin'),
-
-                        Forms\Components\TextInput::make('phone_number')
-                            ->label('Nomor HP')
-                            ->required()
-                            ->numeric()
-                            ->unique(ignoreRecord: true)
-                            ->prefixIcon('heroicon-o-phone'),
-
-                        Forms\Components\Textarea::make('address')
-                            ->label('Alamat Kantor')
-                            ->required()
-                            ->maxLength(500),
-                    ]),
-
-                Forms\Components\Section::make('Informasi Lokasi Kantor')
-                    ->columns(1)
-                    ->schema([
-                        Map::make('location')
-                            ->label('Lokasi Kantor')
-                            ->columnSpanFull()
-                            ->defaultLocation(latitude: 0, longitude: 0)
-                            ->draggable(true)
-                            ->clickable(true)
-                            ->zoom(15)
-                            ->minZoom(0)
-                            ->maxZoom(28)
-                            ->tilesUrl("https://tile.openstreetmap.de/{z}/{x}/{y}.png")
-                            ->detectRetina(true)
-                            ->showMarker(true)
-                            ->markerColor("#3b82f6")
-                            ->extraStyles([
-                                'min-height: 400px',
-                                'border-radius: 8px',
-                            ])
-                            ->afterStateUpdated(function (\Filament\Forms\Set $set, ?array $state): void {
-                                $set('latitude', $state['lat']);
-                                $set('longitude', $state['lng']);
-                            })
-                            ->afterStateHydrated(function ($state, $record, Set $set): void {
-                                $set('location', ['lat' => $record?->latitude, 'lng' => $record?->longitude]);
-                            }),
-
-                        Forms\Components\Section::make()
-                            ->columns(2)
-                            ->schema([
-                                Forms\Components\TextInput::make('latitude')
-                                    ->readOnly(),
-
-                                Forms\Components\TextInput::make('longitude')
-                                    ->readOnly(),
-                            ]),
-                    ]),
+                Forms\Components\TextInput::make('days_count')
+                    ->label('Jumlah Hari')
+                    ->required()
+                    ->numeric()
+                    ->prefixIcon('heroicon-o-calendar-days'),
             ]);
     }
 
@@ -107,13 +48,14 @@ class OfficeResource extends Resource
     {
         return $table
             ->columns([
-                TextColumn::make('name')
-                    ->label('Nama Kantor')
-                    ->searchable()
-                    ->sortable(),
+                Tables\Columns\TextColumn::make('leave_type')
+                    ->label('Jenis Cuti')
+                    ->searchable(),
 
-                TextColumn::make('radius_meters')
-                    ->label('Radius (m)'),
+                Tables\Columns\TextColumn::make('days_count')
+                    ->label('Jumlah Hari')
+                    ->numeric()
+                    ->sortable(),
 
                 Tables\Columns\TextColumn::make('created_at')
                     ->label('Created At')
@@ -199,10 +141,10 @@ class OfficeResource extends Resource
     public static function getPages(): array
     {
         return [
-            'index'  => Pages\ListOffices::route('/'),
-            'create' => Pages\CreateOffice::route('/create'),
-            'view'   => Pages\ViewOffice::route('/{record}'),
-            'edit'   => Pages\EditOffice::route('/{record}/edit'),
+            'index'  => Pages\ListLeaves::route('/'),
+            'create' => Pages\CreateLeave::route('/create'),
+            'view'   => Pages\ViewLeave::route('/{record}'),
+            'edit'   => Pages\EditLeave::route('/{record}/edit'),
         ];
     }
 

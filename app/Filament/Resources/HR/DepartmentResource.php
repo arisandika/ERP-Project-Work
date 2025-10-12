@@ -1,9 +1,7 @@
 <?php
-
 namespace App\Filament\Resources\HR;
 
 use App\Filament\Resources\HR\DepartmentResource\Pages;
-use App\Filament\Resources\HR\DepartmentResource\RelationManagers;
 use App\Models\HR\Department;
 use Filament\Forms;
 use Filament\Forms\Form;
@@ -23,31 +21,36 @@ class DepartmentResource extends Resource
 
     protected static ?string $navigationIcon = 'heroicon-o-briefcase';
 
-    protected static ?string $navigationGroup = 'HR Management';
+    protected static ?string $navigationGroup = 'Manajemen HR';
 
     protected static ?int $navigationSort = 1;
 
-    protected static ?string $slug = 'hr-management/departments';
+    protected static ?string $slug = 'hr/departments';
+
+    protected static ?string $pluralModelLabel = 'Departemen';
 
     public static function form(Form $form): Form
     {
         return $form
             ->schema([
-                Forms\Components\Section::make('Department Information')
+                Forms\Components\Section::make('Informasi Departemen')
                     ->schema([
                         Forms\Components\Grid::make(2)
                             ->schema([
                                 Forms\Components\TextInput::make('name')
-                                    ->label('Name')
+                                    ->label('Nama Departemen')
                                     ->required()
-                                    ->maxLength(25),
+                                    ->maxLength(25)
+                                    ->prefixIcon('heroicon-o-document-text'),
+
                                 Forms\Components\TextInput::make('code')
-                                    ->label('Code')
+                                    ->label('Kode Departemen')
                                     ->required()
                                     ->maxLength(3)
+                                    ->prefixIcon('heroicon-o-viewfinder-circle')
                                     ->afterStateUpdated(fn($state, callable $set) => $set('code', strtoupper($state))),
                             ]),
-                    ])
+                    ]),
             ]);
     }
 
@@ -56,28 +59,33 @@ class DepartmentResource extends Resource
         return $table
             ->columns([
                 Tables\Columns\TextColumn::make('name')
-                    ->label('Name')
+                    ->label('Nama Departemen')
                     ->sortable()
                     ->searchable(),
+
                 Tables\Columns\TextColumn::make('code')
-                    ->label('Code')
+                    ->label('Kode Departemen')
                     ->sortable()
                     ->searchable(),
+
                 Tables\Columns\BadgeColumn::make('employees_count')
-                    ->label('Employees')
+                    ->label('Jumlah Karyawan')
                     ->counts('employees')
                     ->sortable()
                     ->colors(['primary']),
+
                 Tables\Columns\TextColumn::make('created_at')
                     ->label('Created At')
                     ->dateTime('d F Y')
                     ->sortable()
-                    ->toggleable(isToggledHiddenByDefault: false),
+                    ->toggleable(isToggledHiddenByDefault: true),
+
                 Tables\Columns\TextColumn::make('updated_at')
                     ->label('Updated At')
                     ->dateTime('d F Y')
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
+
                 Tables\Columns\TextColumn::make('deleted_at')
                     ->label('Deleted At')
                     ->dateTime('d F Y')
@@ -144,30 +152,30 @@ class DepartmentResource extends Resource
     {
         return $infolist
             ->schema([
-                Section::make('Department Details')
+                Section::make('Informasi Departemen')
                     ->columns(2)
                     ->schema([
                         TextEntry::make('name')
-                            ->label('Name'),
+                            ->label('Nama Departemen'),
                         TextEntry::make('employees_count')
-                            ->label('Employee Count')
+                            ->label('Jumlah Karyawan')
                             ->badge()
                             ->color('primary')
                             ->state(function (Department $department) {
                                 return $department->employees()->count();
                             }),
                     ]),
-                Section::make('Additional Information')
+                Section::make('Pengelolaan Data')
                     ->columns(2)
                     ->schema([
                         TextEntry::make('created_at')
-                            ->label('Created At')
+                            ->label('Dibuat Pada')
                             ->dateTime('d F Y H:i'),
                         TextEntry::make('updated_at')
-                            ->label('Updated At')
+                            ->label('Diperbarui Pada')
                             ->dateTime('d F Y H:i'),
                         TextEntry::make('deleted_at')
-                            ->label('Deleted At')
+                            ->label('Dihapus Pada')
                             ->dateTime('d F Y H:i')
                             ->visible(fn(Department $department) => $department->trashed()),
                     ]),
@@ -184,10 +192,10 @@ class DepartmentResource extends Resource
     public static function getPages(): array
     {
         return [
-            'index' => Pages\ListDepartments::route('/'),
+            'index'  => Pages\ListDepartments::route('/'),
             'create' => Pages\CreateDepartment::route('/create'),
-            'view' => Pages\ViewDepartment::route('/{record}'),
-            'edit' => Pages\EditDepartment::route('/{record}/edit'),
+            'view'   => Pages\ViewDepartment::route('/{record}'),
+            'edit'   => Pages\EditDepartment::route('/{record}/edit'),
         ];
     }
 
