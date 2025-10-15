@@ -56,6 +56,11 @@ class Employee extends Model
         return $this->belongsTo(Office::class, 'office_id');
     }
 
+    public function shift(): BelongsTo
+    {
+        return $this->belongsTo(Shift::class, 'shift_id');
+    }
+
     public function attendances(): HasMany
     {
         return $this->hasMany(Attendance::class, 'employee_id');

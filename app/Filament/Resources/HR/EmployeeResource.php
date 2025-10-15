@@ -192,6 +192,18 @@ class EmployeeResource extends Resource
                                         $set('code', strtoupper($state))),
                             ]),
 
+                        Forms\Components\Select::make('shift_id')
+                            ->label('Jam Kerja')
+                            ->required()
+                            ->relationship('shift', 'name')
+                            ->searchable()
+                            ->preload()
+                            ->native(false)
+                            ->prefixIcon('heroicon-o-clock')
+                            ->getOptionLabelFromRecordUsing(function ($record) {
+                                return $record->name . ' (' . $record->start_time . ' - ' . $record->end_time . ')';
+                            }),
+
                         Forms\Components\Select::make('position')
                             ->label('Jabatan')
                             ->required()
