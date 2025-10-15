@@ -1,5 +1,4 @@
 <?php
-
 namespace App\Models\HR;
 
 use Illuminate\Database\Eloquent\Model;
@@ -16,6 +15,7 @@ class Attendance extends Model
         'employee_id',
         'shift_id',
         'date',
+        'note',
         'clock_in',
         'clock_out',
         'latitude_in',
@@ -29,6 +29,12 @@ class Attendance extends Model
         'face_similarity_in',
         'face_similarity_out',
         'status',
+    ];
+
+    protected $casts = [
+        'clock_in'  => 'datetime',
+        'clock_out' => 'datetime',
+        'date'      => 'date',
     ];
 
     // Relationships

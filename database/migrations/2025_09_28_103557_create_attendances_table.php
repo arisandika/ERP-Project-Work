@@ -10,11 +10,12 @@ return new class extends Migration {
      */
     public function up(): void
     {
-        Schema::create('attendances', function (Blueprint $table) {
+        Schema::create('nx_attendances', function (Blueprint $table) {
             $table->id();
             $table->unsignedBigInteger('employee_id')->nullable();
             $table->unsignedBigInteger('shift_id')->nullable();
             $table->date('date');
+            $table->string('note')->nullable();
             $table->time('clock_in')->nullable();
             $table->time('clock_out')->nullable();
 
@@ -33,7 +34,7 @@ return new class extends Migration {
             $table->float('face_similarity_out')->nullable(); // similarity score when verifying
 
             // Status and shift
-            $table->enum('status', ['present', 'late', 'absent', 'leave'])->default('present');
+            $table->enum('status', ['present', 'late', 'presensit', 'leave'])->default('present');
 
             $table->softDeletes();
             $table->timestamps();
@@ -48,6 +49,6 @@ return new class extends Migration {
      */
     public function down(): void
     {
-        Schema::dropIfExists('attendances');
+        Schema::dropIfExists('nx_attendances');
     }
 };

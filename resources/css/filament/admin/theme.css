@@ -1,3 +1,16 @@
-@import '../../../../vendor/filament/filament/resources/css/theme.css';
+@import 'tailwindcss/base';
+@import 'tailwindcss/components';
+@import 'tailwindcss/utilities';
 
-@config 'tailwind.config.js';
+.fi-main,
+.fi-layout {
+    @apply bg-slate-50 dark:bg-slate-900;
+}
+
+.fi-sidebar {
+    @apply bg-white border-r border-gray-200 dark:bg-gray-900 dark:border-white/10;
+}
+
+nav.fi-sidebar-nav.flex-grow.flex.flex-col.gap-y-7.overflow-y-auto.overflow-x-hidden.px-6.py-8::-webkit-scrollbar {
+    display: none;
+}

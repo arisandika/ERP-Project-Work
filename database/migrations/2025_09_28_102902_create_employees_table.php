@@ -17,6 +17,7 @@ return new class extends Migration {
             $table->unsignedBigInteger('user_id');                   // FK to users
             $table->unsignedBigInteger('department_id')->nullable(); // FK to nx_departments
             $table->unsignedBigInteger('office_id')->nullable();     // FK to nx_offices
+            $table->unsignedBigInteger('shift_id')->nullable();      // FK to nx_shifts
 
             // Identification
             $table->string('national_id')->nullable();     // NIK
@@ -54,6 +55,7 @@ return new class extends Migration {
             $table->foreign('user_id')->references('id')->on('users')->onDelete('cascade');
             $table->foreign('department_id')->references('id')->on('nx_departments')->onDelete('set null');
             $table->foreign('office_id')->references('id')->on('nx_offices')->onDelete('set null');
+            $table->foreign('shift_id')->references('id')->on('nx_shifts')->onDelete('set null');
         });
     }
 

@@ -2,9 +2,9 @@
 
 namespace App\Filament\Resources\HR;
 
-use App\Filament\Resources\HR\ScheduleResource\Pages;
-use App\Filament\Resources\HR\ScheduleResource\RelationManagers;
-use App\Models\HR\Schedule;
+use App\Filament\Resources\HR\AttendanceResource\Pages;
+use App\Filament\Resources\HR\AttendanceResource\RelationManagers;
+use App\Models\HR\Attendance;
 use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Resources\Resource;
@@ -13,11 +13,19 @@ use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
 
-class ScheduleResource extends Resource
+class AttendanceResource extends Resource
 {
-    protected static ?string $model = Schedule::class;
+    protected static ?string $model = Attendance::class;
 
-    protected static ?string $navigationIcon = 'heroicon-o-rectangle-stack';
+    protected static ?string $navigationIcon = 'heroicon-o-computer-desktop';
+
+    protected static ?string $navigationGroup = 'Manajemen HR';
+
+    protected static ?int $navigationSort = 6;
+
+    protected static ?string $slug = 'hr/attendances';
+
+    protected static ?string $pluralModelLabel = 'Monitoring Presensi';
 
     public static function form(Form $form): Form
     {
@@ -59,10 +67,10 @@ class ScheduleResource extends Resource
     public static function getPages(): array
     {
         return [
-            'index' => Pages\ListSchedules::route('/'),
-            'create' => Pages\CreateSchedule::route('/create'),
-            'view' => Pages\ViewSchedule::route('/{record}'),
-            'edit' => Pages\EditSchedule::route('/{record}/edit'),
+            'index' => Pages\ListAttendances::route('/'),
+            'create' => Pages\CreateAttendance::route('/create'),
+            'view' => Pages\ViewAttendance::route('/{record}'),
+            'edit' => Pages\EditAttendance::route('/{record}/edit'),
         ];
     }
 

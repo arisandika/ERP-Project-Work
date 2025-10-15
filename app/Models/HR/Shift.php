@@ -24,4 +24,9 @@ class Shift extends Model
     {
         return $this->hasMany(Attendance::class, 'shift_id');
     }
+
+    public function employees(): HasMany
+    {
+        return $this->hasMany(Employee::class, 'shift_id');
+    }
 }
