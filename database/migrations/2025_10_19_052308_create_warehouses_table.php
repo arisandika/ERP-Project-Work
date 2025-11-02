@@ -1,0 +1,25 @@
+<?php
+
+// database/migrations/xxxx_create_warehouses_table.php
+
+use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
+
+return new class extends Migration
+{
+    public function up(): void
+    {
+        Schema::create('nx_warehouses', function (Blueprint $table) {
+            $table->id('id_warehouse'); // PK, INT
+            $table->string('warehouse_name', 100);
+            $table->string('location', 100);
+            $table->timestamps();
+        });
+    }
+
+    public function down(): void
+    {
+        Schema::dropIfExists('nx_warehouses');
+    }
+};

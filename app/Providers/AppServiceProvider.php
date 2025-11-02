@@ -3,6 +3,8 @@
 namespace App\Providers;
 
 use Illuminate\Support\ServiceProvider;
+use App\Models\Inventory\ProductStock;
+use App\Observers\ProductStockObserver;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -19,6 +21,7 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
-        //
+        // Register ProductStock Observer untuk auto-check low stock
+        ProductStock::observe(ProductStockObserver::class);
     }
 }
