@@ -1,4 +1,4 @@
-name: Build and Deploy to Rumahweb via SFTP
+name: 🚀 Deploy Laravel (SSH)
 
 on:
   push:
@@ -6,49 +6,37 @@ on:
       - main
 
 jobs:
-  build-and-deploy:
+  deploy:
     runs-on: ubuntu-latest
 
     steps:
-      # Step 1: Checkout repo
-      - name: Checkout code
+      - name: Checkout Repository
         uses: actions/checkout@v4
 
-      # Step 2: Setup PHP & Composer
-      - name: Setup PHP
-        uses: shivammathur/setup-php@v2
+      - name: Deploy via SSH
+        uses: appleboy/ssh-action@v1.0.3
         with:
-          php-version: '8.3'
-          tools: composer
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          key: ${{ secrets.SSH_KEY }}
+          port: 2223
+          script: |
+            cd ~/public_html/domains/erp.arihub.my.id
 
-      # Step 3: Install Composer dependencies
-      - name: Install PHP dependencies
-        run: composer install --no-dev --optimize-autoloader
+            echo "📦 Pulling latest code..."
+            git pull origin main
 
-      # Step 4: Setup Node.js and build Filament assets
-      - name: Build Filament assets
-        uses: actions/setup-node@v4
-        with:
-          node-version: '20'
-      - run: |
-          npm install
-          npm run build:filament
+            echo "🧰 Installing composer dependencies..."
+            ~/bin/composer install --no-dev --optimize-autoloader
 
-      # Step 5: Deploy via SFTP
-      - name: Deploy via SFTP
-        uses: wlixcc/SFTP-Deploy-Action@v1.2.4
-        with:
-          server: ${{ secrets.SFTP_HOST }}
-          username: ${{ secrets.SFTP_USER }}
-          password: ${{ secrets.SFTP_PASS }}
-          port: ${{ secrets.SFTP_PORT }}
-          local_path: ./ 
-          remote_path: /home/arihu975/public_html/domains/erp.arihub.my.id/
-          sftp_only: true
-          exclude: |
-            **/.git*
-            **/.github*
-            node_modules/**
-            tests/**
-            storage/logs/**
-            storage/framework/**
+            echo "📦 Installing npm dependencies..."
+            ~/.nvm/versions/node/v24.3.0/bin/npm ci
+
+            echo "🧩 Building Filament assets..."
+            ~/.nvm/versions/node/v24.3.0/bin/npm run build:filament
+
+            echo "🚀 Running Laravel optimizations..."
+            php artisan migrate --force
+            php artisan config:cache
+            php artisan route:cache
+            php artisan view:cache
