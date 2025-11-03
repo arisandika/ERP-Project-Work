@@ -1,31 +1,38 @@
-name: Publish Website to CPanel
+name: Deploy via SFTP to Rumahweb
 on:
   push:
     branches:
       - main
+
 jobs:
-  FTP-Deploy-Action:
-    name: FTP-Deploy-Action
+  deploy:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v2.1.0
-      with:
-        fetch-depth: 2 
-    - name: Build assets
-      run: npm install && npm run build
+      # 1️⃣ Ambil source code dari branch main
+      - uses: actions/checkout@v4
 
-    - name: Install PHP and Composer
-      uses: shivammathur/setup-php@v2
-      with:
+      # 2️⃣ Build aset frontend
+      - name: Build assets
+        run: npm install && npm run build:filament
+
+      # 3️⃣ Install PHP dan Composer
+      - name: Install PHP and Composer
+        uses: shivammathur/setup-php@v2
+        with:
           php-version: '8.3'
-          tools: 'composer'
+          tools: composer
 
-    - name: Install PHP dependencies
-      run: composer install --no-dev --optimize-autoloader
-        
-    - name: FTP-Deploy-Action
-      uses: SamKirkland/FTP-Deploy-Action@4.3.3
-      with:
-        server: ${{ secrets.SERVER }}
-        username: ${{ secrets.USERNAME }}
-        password: ${{ secrets.PASSWORD }}
+      - name: Install PHP dependencies
+        run: composer install --no-dev --optimize-autoloader
+
+      # 4️⃣ Deploy via SFTP (port 22)
+      - name: Deploy via SFTP
+        uses: wlixcc/SFTP-Deploy-Action@v1.2.4
+        with:
+          server: ${{ secrets.SERVER }}
+          username: ${{ secrets.USERNAME }}
+          password: ${{ secrets.PASSWORD }}
+          port: 22
+          local_path: './public'
+          remote_path: '/home/arihu975/public_html/domains/erp.arihub.my.id'
+          sftp_only: true
