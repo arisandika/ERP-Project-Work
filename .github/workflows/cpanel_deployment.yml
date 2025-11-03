@@ -27,7 +27,7 @@ jobs:
           php-version: '8.3'
           tools: composer
 
-      # Step 4: Install Composer dependencies
+      # Step 4: Install PHP dependencies
       - name: Install PHP dependencies
         run: composer install --no-dev --optimize-autoloader
 
@@ -44,6 +44,7 @@ jobs:
           host: ${{ secrets.SSH_HOST }}
           username: ${{ secrets.SSH_USER }}
           key: ${{ secrets.SSH_KEY }}
+          port: 2223 
           script: |
             cd ~/public_html/domains/erp.arihub.my.id
             git pull origin main
