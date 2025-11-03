@@ -105,7 +105,7 @@ class AttendanceController extends Controller
         }
 
         // Tentukan status (late / present)
-        $status = $now->greaterThan($shiftStart->copy()->addMinutes($tolerance))
+        $status = $now->greaterThan($shiftStart->copy()->addMinutes((int)$tolerance))
             ? 'Terlambat'
             : 'Hadir';
 
