@@ -35,6 +35,7 @@ class Attendance extends Model
         'clock_in'  => 'datetime',
         'clock_out' => 'datetime',
         'date'      => 'date',
+        'tolerance' => 'integer',
     ];
 
     // Relationships
