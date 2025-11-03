@@ -23,20 +23,26 @@ jobs:
           script: |
             cd ~/public_html/domains/erp.arihub.my.id
 
-            echo "📦 Pulling latest code..."
-            git pull origin main
+            echo "📦 Pull latest code from GitHub..."
+            git fetch origin
+            git reset --hard origin/main
 
-            echo "🧰 Installing composer dependencies..."
+            echo "🧰 Install Composer dependencies..."
             ~/bin/composer install --no-dev --optimize-autoloader
 
-            echo "📦 Installing npm dependencies..."
+            echo "📦 Install npm dependencies..."
             ~/.nvm/versions/node/v24.3.0/bin/npm ci
 
-            echo "🧩 Building Filament assets..."
+            echo "🧩 Build Filament assets..."
             ~/.nvm/versions/node/v24.3.0/bin/npm run build:filament
 
-            echo "🚀 Running Laravel optimizations..."
+            echo "🚀 Run Laravel optimizations..."
             php artisan migrate --force
+            php artisan config:cache
+            php artisan route:cache
+            php artisan view:cache
+
+            echo "✅ Deploy finished!"
             php artisan config:cache
             php artisan route:cache
             php artisan view:cache
