@@ -1,4 +1,4 @@
-name: Deploy via SFTP to Rumahweb
+name: Deploy via SFTP
 on:
   push:
     branches:
@@ -8,24 +8,25 @@ jobs:
   deploy:
     runs-on: ubuntu-latest
     steps:
-      # 1️⃣ Ambil source code dari branch main
+      # 1️⃣ Checkout source code
       - uses: actions/checkout@v4
 
-      # 2️⃣ Build aset frontend
-      - name: Build assets
-        run: npm install && npm run build:filament
-
-      # 3️⃣ Install PHP dan Composer
-      - name: Install PHP and Composer
+      # 2️⃣ Setup PHP dan Composer
+      - name: Setup PHP
         uses: shivammathur/setup-php@v2
         with:
           php-version: '8.3'
           tools: composer
 
+      # 3️⃣ Install dependensi Laravel
       - name: Install PHP dependencies
         run: composer install --no-dev --optimize-autoloader
 
-      # 4️⃣ Deploy via SFTP (port 22)
+      # 4️⃣ Install dependensi npm & build filament
+      - name: Build Filament assets
+        run: npm install && npm run build:filament
+
+      # 5️⃣ Deploy via SFTP
       - name: Deploy via SFTP
         uses: wlixcc/SFTP-Deploy-Action@v1.2.4
         with:
