@@ -71,12 +71,6 @@ class ListStockReports extends ListRecords
                 ->title('Laporan Stok Rendah')
                 ->body("Total {$lowStockCount} items | Kritis {$criticalCount} items | Habis {$outOfStockCount} items")
                 ->persistent()
-                ->actions([
-                    \Filament\Notifications\Actions\Action::make('filter')
-                        ->label('Filter Stok Rendah')
-                        ->button()
-                        ->close(),
-                ])
                 ->send();
         }
     }

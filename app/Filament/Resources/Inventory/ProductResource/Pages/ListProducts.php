@@ -4,6 +4,7 @@ namespace App\Filament\Resources\Inventory\ProductResource\Pages;
 
 use App\Filament\Resources\Inventory\ProductResource;
 use Filament\Actions;
+use App\Filament\Resources\Inventory\ProductResource\Widgets\ProductStatsOverview;
 use Filament\Resources\Pages\ListRecords;
 
 class ListProducts extends ListRecords
@@ -14,6 +15,13 @@ class ListProducts extends ListRecords
     {
         return [
             Actions\CreateAction::make(),
+        ];
+    }
+
+    protected function getHeaderWidgets(): array
+    {
+        return [
+            ProductStatsOverview::class,
         ];
     }
 
@@ -34,14 +42,8 @@ class ListProducts extends ListRecords
             \Filament\Notifications\Notification::make()
                 ->warning()
                 ->title('Peringatan Stok Rendah')
-                ->body("Terdapat {$lowStockCount} item dengan stok rendah. Gunakan filter untuk melihat detail.")
+                ->body("Terdapat {$lowStockCount} item dengan stok rendah. Gunakan menu untuk melihat detail.")
                 ->persistent()
-                ->actions([
-                    \Filament\Notifications\Actions\Action::make('filter')
-                        ->label('Filter Stok Rendah')
-                        ->button()
-                        ->close(),
-                ])
                 ->send();
         }
     }
