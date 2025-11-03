@@ -55,6 +55,12 @@ class WarehouseResource extends Resource
                             ->tel()
                             ->maxLength(20)
                             ->placeholder('08xx-xxxx-xxxx'),
+
+                        Forms\Components\TextInput::make('maps_url')
+                            ->label('Link Google Maps')
+                            ->url()
+                            ->placeholder('https://maps.google.com/...')
+                            ->columnSpanFull(),
                         
                         Forms\Components\Toggle::make('is_active')
                             ->label('Status Aktif')
@@ -93,7 +99,15 @@ class WarehouseResource extends Resource
                 Tables\Columns\TextColumn::make('phone')
                     ->label('No. Telepon')
                     ->searchable()
-                    ->toggleable(isToggledHiddenByDefault: true),
+                    ->badge()
+                    ->color('info'),
+
+                Tables\Columns\TextColumn::make('maps_url')
+                    ->label('Maps')
+                    ->formatStateUsing(fn ($state) => $state ? 'Lihat Maps' : '-')
+                    ->url(fn ($state) => $state ?: null, shouldOpenInNewTab: true)
+                    ->badge()
+                    ->color(fn ($state) => $state ? 'primary' : 'gray'),
                 
                 Tables\Columns\TextColumn::make('total_products')
                     ->label('Jumlah Produk')

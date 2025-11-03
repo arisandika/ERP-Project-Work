@@ -18,6 +18,8 @@ class Warehouse extends Model
         'is_active' => 'boolean',
     ];
 
+    protected $appends = ['maps_link'];
+
     // Relasi: Warehouse memiliki banyak Stock records
     public function stocks(): HasMany
     {
@@ -52,6 +54,11 @@ class Warehouse extends Model
                 $threshold = 10;
                 return $stock->qty < $threshold;
             });
+    }
+
+    public function getMapsLinkAttribute(): ?string
+    {
+        return $this->maps_url ?: null;
     }
 
     // Scope: Only active warehouses

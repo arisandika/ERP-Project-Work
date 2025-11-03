@@ -36,6 +36,20 @@ class ProductResource extends Resource
                             ->required()
                             ->maxLength(100)
                             ->columnSpanFull(),
+
+                Forms\Components\FileUpload::make('image_path')
+                    ->label('Foto Produk')
+                    ->directory('products')
+                    ->disk('public')
+                    ->image()
+                    ->imageEditor()
+                    ->imageResizeMode('cover')
+                    ->imageCropAspectRatio('4:3')
+                    ->openable()
+                    ->downloadable()
+                    ->preserveFilenames()
+                    ->hint('Opsional. Jika tidak diisi akan memakai gambar default')
+                    ->columnSpan(2),
                         
                         Forms\Components\Select::make('category_id')
                             ->label('Kategori')
@@ -132,6 +146,11 @@ class ProductResource extends Resource
     {
         return $table
             ->columns([
+                Tables\Columns\ImageColumn::make('image_path')
+                    ->label('Foto')
+                    ->getStateUsing(fn ($record) => $record->image_url)
+                    ->circular(),
+
                 Tables\Columns\TextColumn::make('kode_barang')
                     ->label('Kode Barang')
                     ->getStateUsing(fn ($record) => 'BRG-' . str_pad($record->id_product, 6, '0', STR_PAD_LEFT))

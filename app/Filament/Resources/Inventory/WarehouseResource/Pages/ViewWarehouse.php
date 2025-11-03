@@ -47,6 +47,12 @@ class ViewWarehouse extends ViewRecord
                         Infolists\Components\TextEntry::make('phone')
                             ->label('No. Telepon')
                             ->default('-'),
+
+                        Infolists\Components\TextEntry::make('maps_url')
+                            ->label('Link Google Maps')
+                            ->url(fn ($state) => $state ?: null)
+                            ->formatStateUsing(fn ($state) => $state ? 'Buka di Google Maps' : '-')
+                            ->columnSpanFull(),
                         
                         Infolists\Components\IconEntry::make('is_active')
                             ->label('Status')

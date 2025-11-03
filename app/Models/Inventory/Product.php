@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\MorphMany; // Untuk Polymorphic
+use Illuminate\Support\Facades\Storage;
 
 class Product extends Model
 {
@@ -57,6 +58,8 @@ class Product extends Model
         return 'BRG-' . str_pad($this->id_product, 6, '0', STR_PAD_LEFT);
     }
 
+    protected $appends = ['image_url'];
+
     // --- Accessor untuk status low stock ---
     public function getIsLowStockAttribute(): bool
     {
@@ -78,6 +81,16 @@ class Product extends Model
                 $query->where('nx_product_stock.qty', '<=', 10);
             })
             ->get();
+    }
+
+    // --- Accessor untuk URL foto ---
+    public function getImageUrlAttribute(): string
+    {
+        if ($this->image_path && Storage::disk('public')->exists($this->image_path)) {
+            return Storage::disk('public')->url($this->image_path);
+        }
+
+        return 'https://thumbs2.imgbox.com/98/e9/y65t3ovR_t.png';
     }
 
     // --- Method untuk check apakah produk ini low stock di warehouse tertentu ---
