@@ -92,7 +92,7 @@ class AttendanceController extends Controller
         }
 
         // Kondisi 2: bukan unlock shift dan tidak dalam rentang jam kerja
-        $isOutsideShiftTime = $now->lt($shiftStart->subMinutes($tolerance)) || $now->gt($shiftEnd->addMinutes($tolerance));
+        $isOutsideShiftTime = $now->lt($shiftStart->subMinutes((int)$tolerance)) || $now->gt($shiftEnd->addMinutes((int)$tolerance));
 
         if ($isOutsideShiftTime && $employee->can_unlock_shift != 1) {
             Notification::make()
