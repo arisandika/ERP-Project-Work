@@ -19,23 +19,23 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '20'
-
-      # Step 3: Install npm dependencies & build Filament assets
-      - name: Build Filament assets
-        run: |
-          npm install
-          npm run build:filament
-
-      # Step 4: Setup PHP and Composer
+      
+      # Step 3: Setup PHP and Composer
       - name: Setup PHP & Composer
         uses: shivammathur/setup-php@v2
         with:
           php-version: '8.3'
           tools: composer
 
-      # Step 5: Install Composer dependencies
+      # Step 4: Install Composer dependencies
       - name: Install PHP dependencies
         run: composer install --no-dev --optimize-autoloader
+
+      # Step 5: Install npm dependencies & build Filament assets
+      - name: Build Filament assets
+        run: |
+          npm install
+          npm run build:filament
 
       # Step 6: Deploy built files via SSH
       - name: Deploy to Rumahweb via SSH
