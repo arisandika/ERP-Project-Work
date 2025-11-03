@@ -41,7 +41,7 @@ jobs:
           server: ${{ secrets.SFTP_HOST }}
           username: ${{ secrets.SFTP_USER }}
           password: ${{ secrets.SFTP_PASS }}
-          port: ${{ secrets.SFTP_PORT }}
+          port: 2223
           protocol: ftps
           local-dir: ./
           server-dir: /home/arihu975/public_html/domains/erp.arihub.my.id/
