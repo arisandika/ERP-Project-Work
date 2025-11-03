@@ -91,7 +91,7 @@ class AttendanceController extends Controller
             return redirect()->back();
         }
 
-        // Kondisi 2: bukan unlock shift dan tidak dalam rentang jam kerja
+        // Kondisi 2: bukan unlock shift dan tidak dalam range jam kerja
         $isOutsideShiftTime = $now->lt($shiftStart->subMinutes((int)$tolerance)) || $now->gt($shiftEnd->addMinutes((int)$tolerance));
 
         if ($isOutsideShiftTime && $employee->can_unlock_shift != 1) {
