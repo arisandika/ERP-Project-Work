@@ -1,4 +1,4 @@
-name: Build and Deploy to Rumahweb via SSH
+name: Build and Deploy to Rumahweb via SFTP
 
 on:
   push:
@@ -10,46 +10,45 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      # Step 1: Checkout repository
-      - name: Checkout repo
+      # Step 1: Checkout repo
+      - name: Checkout code
         uses: actions/checkout@v4
 
-      # Step 2: Setup Node.js environment
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '20'
-      
-      # Step 3: Setup PHP and Composer
-      - name: Setup PHP & Composer
+      # Step 2: Setup PHP & Composer
+      - name: Setup PHP
         uses: shivammathur/setup-php@v2
         with:
           php-version: '8.3'
           tools: composer
 
-      # Step 4: Install PHP dependencies
+      # Step 3: Install Composer dependencies
       - name: Install PHP dependencies
         run: composer install --no-dev --optimize-autoloader
 
-      # Step 5: Install npm dependencies & build Filament assets
+      # Step 4: Setup Node.js and build Filament assets
       - name: Build Filament assets
-        run: |
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - run: |
           npm install
           npm run build:filament
 
-      # Step 6: Deploy built files via SSH
-      - name: Deploy to Rumahweb via SSH
-        uses: appleboy/ssh-action@v1.0.3
+      # Step 5: Deploy via SFTP
+      - name: Upload to Rumahweb via SFTP
+        uses: SamKirkland/FTP-Deploy-Action@4.3.3
         with:
-          host: ${{ secrets.SSH_HOST }}
-          username: ${{ secrets.SSH_USER }}
-          key: ${{ secrets.SSH_KEY }}
-          port: 2223 
-          script: |
-            cd ~/public_html/domains/erp.arihub.my.id
-            git pull origin main
-            composer install --no-dev --optimize-autoloader
-            php artisan migrate --force
-            php artisan config:cache
-            php artisan route:cache
-            php artisan view:cache
+          server: ${{ secrets.SFTP_HOST }}
+          username: ${{ secrets.SFTP_USER }}
+          password: ${{ secrets.SFTP_PASS }}
+          port: ${{ secrets.SFTP_PORT }}
+          protocol: ftps
+          local-dir: ./
+          server-dir: /home/arihu975/public_html/domains/erp.arihub.my.id/
+          exclude: |
+            **/.git*
+            **/.github*
+            node_modules/**
+            tests/**
+            storage/logs/**
+            storage/framework/**
