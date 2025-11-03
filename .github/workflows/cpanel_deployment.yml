@@ -35,16 +35,16 @@ jobs:
           npm run build:filament
 
       # Step 5: Deploy via SFTP
-      - name: Upload to Rumahweb via SFTP
-        uses: SamKirkland/FTP-Deploy-Action@4.3.3
+      - name: Deploy via SFTP
+        uses: wlixcc/SFTP-Deploy-Action@v1.2.4
         with:
           server: ${{ secrets.SFTP_HOST }}
           username: ${{ secrets.SFTP_USER }}
           password: ${{ secrets.SFTP_PASS }}
           port: ${{ secrets.SFTP_PORT }}
-          protocol: ftps
-          local-dir: ./
-          server-dir: /home/arihu975/public_html/domains/erp.arihub.my.id/
+          local_path: ./ 
+          remote_path: /home/arihu975/public_html/domains/erp.arihub.my.id/
+          sftp_only: true
           exclude: |
             **/.git*
             **/.github*
