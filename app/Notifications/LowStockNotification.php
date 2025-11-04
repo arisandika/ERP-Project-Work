@@ -41,10 +41,10 @@ class LowStockNotification extends Notification
         $qty = $this->currentQty ?? ($this->productStock ? $this->productStock->qty : $this->product->total_stock);
 
         return [
-            'product_id' => $this->product->id_product,
+            'product_id' => $this->product->id,
             'product_name' => $this->product->product_name,
             'product_code' => $this->product->kode_barang,
-            'warehouse_id' => $this->productStock?->id_warehouse,
+            'warehouse_id' => $this->productStock?->id,
             'warehouse_name' => $warehouseName,
             'current_qty' => $qty,
             'min_stock' => 10,
@@ -76,7 +76,7 @@ class LowStockNotification extends Notification
             ->actions([
                 \Filament\Notifications\Actions\Action::make('view')
                     ->label('Lihat Detail')
-                    ->url('/inventory/products/' . $product->id_product)
+                    ->url('/inventory/products/' . $product->id)
                     ->button(),
                 \Filament\Notifications\Actions\Action::make('dismiss')
                     ->label('Tutup')

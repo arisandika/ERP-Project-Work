@@ -11,7 +11,7 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('nx_warehouses', function (Blueprint $table) {
-            $table->id('id_warehouse'); // PK, INT
+            $table->id('id'); // PK, INT
             $table->string('warehouse_name', 100);
             $table->string('location', 100);
             $table->timestamps();

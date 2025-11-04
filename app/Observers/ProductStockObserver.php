@@ -56,8 +56,8 @@ class ProductStockObserver
                     // Cek apakah sudah ada notifikasi serupa yang belum dibaca
                     $existingUnread = $user->unreadNotifications()
                         ->where('type', LowStockNotification::class)
-                        ->where('data->product_id', $product->id_product)
-                        ->where('data->warehouse_id', $productStock->id_warehouse)
+                        ->where('data->product_id', $product->id)
+                        ->where('data->warehouse_id', $productStock->id)
                         ->exists();
 
                     // Hanya kirim notifikasi database jika belum ada yang sama

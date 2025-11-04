@@ -12,7 +12,7 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('nx_services', function (Blueprint $table) {
-    $table->id('id'); // PK: id_service
+    $table->id('id'); // PK: id
     $table->string('service_name', 100);
     $table->decimal('price', 15, 2);
     // FK ke Categories:

@@ -61,7 +61,7 @@ class TestLowStockNotification extends Command
 
         // 5. Check for low stock items
         $lowStockCount = ProductStock::query()
-            ->join('nx_products', 'nx_product_stock.id_product', '=', 'nx_products.id_product')
+            ->join('nx_products', 'nx_product_stock.product_id', '=', 'nx_products.id')
             ->where('nx_product_stock.qty', '<=', 10)
             ->count();
 
@@ -71,7 +71,7 @@ class TestLowStockNotification extends Command
             // Get first low stock item
             $lowStock = ProductStock::query()
                 ->select('nx_product_stock.*')
-                ->join('nx_products', 'nx_product_stock.id_product', '=', 'nx_products.id_product')
+                ->join('nx_products', 'nx_product_stock.product_id', '=', 'nx_products.id')
                 ->where('nx_product_stock.qty', '<=', 10)
                 ->with(['product.unit', 'warehouse'])
                 ->first();
@@ -99,7 +99,7 @@ class TestLowStockNotification extends Command
             // Find or create a low stock item for testing
             $testStock = ProductStock::query()
                 ->select('nx_product_stock.*')
-                ->join('nx_products', 'nx_product_stock.id_product', '=', 'nx_products.id_product')
+                ->join('nx_products', 'nx_product_stock.product_id', '=', 'nx_products.id')
                 ->where('nx_product_stock.qty', '<=', 10)
                 ->with(['product', 'warehouse'])
                 ->first();

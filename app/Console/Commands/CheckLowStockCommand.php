@@ -37,7 +37,7 @@ class CheckLowStockCommand extends Command
         // Get all product stocks with low qty
         $lowStockItems = ProductStock::query()
             ->select('nx_product_stock.*')
-            ->join('nx_products', 'nx_product_stock.id_product', '=', 'nx_products.id_product')
+            ->join('nx_products', 'nx_product_stock.product_id', '=', 'nx_products.id')
             ->where('nx_product_stock.qty', '<=', 10)
             ->with(['product.unit', 'warehouse'])
             ->orderBy('nx_product_stock.qty', 'asc')
@@ -92,8 +92,8 @@ class CheckLowStockCommand extends Command
                     if (!$force) {
                         $existingUnread = $user->unreadNotifications()
                             ->where('type', LowStockNotification::class)
-                            ->where('data->product_id', $stock->product->id_product)
-                            ->where('data->warehouse_id', $stock->id_warehouse)
+                            ->where('data->product_id', $stock->product->id)
+                            ->where('data->warehouse_id', $stock->id)
                             ->exists();
 
                         if ($existingUnread) {

@@ -94,7 +94,7 @@ class TransactionReportController extends Controller
             // Prepare data
             $productsData = $products->map(function ($product) {
                 return [
-                    'kode_barang' => 'BRG-' . str_pad($product->id_product, 6, '0', STR_PAD_LEFT),
+                    'kode_barang' => 'BRG-' . str_pad($product->id, 6, '0', STR_PAD_LEFT),
                     'product_name' => $product->product_name ?? '-',
                     'category_name' => $product->category->name ?? '-',
                     'total_stock' => $product->productStocks->sum('qty'),

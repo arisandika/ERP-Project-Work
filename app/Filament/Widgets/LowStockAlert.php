@@ -80,7 +80,7 @@ class LowStockAlert extends BaseWidget
                     ->icon('heroicon-o-eye')
                     ->url(fn (ProductStock $record): string => 
                         route('filament.admin.resources.inventory.products.view', [
-                            'record' => $record->product->id_product
+                            'record' => $record->product->id
                         ])
                     )
                     ->openUrlInNewTab(),
@@ -91,8 +91,8 @@ class LowStockAlert extends BaseWidget
                     ->color('success')
                     ->url(fn (ProductStock $record): string => 
                         route('filament.admin.resources.inventory.transactions.create', [
-                            'product' => $record->id_product,
-                            'warehouse' => $record->id_warehouse
+                            'product' => $record->id,
+                            'warehouse' => $record->id
                         ])
                     ),
             ])

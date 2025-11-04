@@ -24,7 +24,7 @@ class CreateTransaction extends CreateRecord
                 ]);
             }
             
-            $data['warehouse_id'] = $defaultWarehouse->id_warehouse;
+            $data['warehouse_id'] = $defaultWarehouse->id;
         }
 
         return $data;

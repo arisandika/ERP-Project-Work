@@ -16,7 +16,7 @@ class ProductStatsOverview extends BaseWidget
             ->whereRaw('(
                 SELECT COALESCE(SUM(qty), 0)
                 FROM nx_product_stock
-                WHERE nx_product_stock.id_product = nx_products.id_product
+                WHERE nx_product_stock.product_id = nx_products.id
             ) BETWEEN 1 AND 10')
             ->count();
 
@@ -24,7 +24,7 @@ class ProductStatsOverview extends BaseWidget
             ->whereRaw('(
                 SELECT COALESCE(SUM(qty), 0)
                 FROM nx_product_stock
-                WHERE nx_product_stock.id_product = nx_products.id_product
+                WHERE nx_product_stock.product_id = nx_products.id
             ) <= 0')
             ->count();
 

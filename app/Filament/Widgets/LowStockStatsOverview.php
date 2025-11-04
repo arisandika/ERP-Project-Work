@@ -22,8 +22,8 @@ class LowStockStatsOverview extends BaseWidget
 
         // Total unique products dengan low stock
         $lowStockProducts = ProductStock::where('qty', '<=', 10)
-            ->distinct('id_product')
-            ->count('id_product');
+            ->distinct('product_id')
+            ->count('id');
 
         return [
             Stat::make('Produk Stok Kritis', $lowStockProducts)
