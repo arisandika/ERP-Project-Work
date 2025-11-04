@@ -9,16 +9,16 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('nx_product_stock', function (Blueprint $table) {
-            $table->id('id_stock'); // PK: id_stock
+            $table->id('id'); // PK: id
 
             // FK ke nx_products
-            $table->foreignId('id_product')
-                  ->constrained('nx_products', 'id_product') // Menunjuk ke kolom id_product di tabel nx_products
+            $table->foreignId('id')
+                  ->constrained('nx_products', 'id') // Menunjuk ke kolom id di tabel nx_products
                   ->cascadeOnDelete();
 
             // FK ke nx_warehouses
-            $table->foreignId('id_warehouse')
-                  ->constrained('nx_warehouses', 'id_warehouse') // Menunjuk ke kolom id_warehouse di tabel nx_warehouses
+            $table->foreignId('id')
+                  ->constrained('nx_warehouses', 'id') // Menunjuk ke kolom id di tabel nx_warehouses
                   ->cascadeOnDelete();
 
             $table->integer('qty')->default(0);
@@ -29,7 +29,7 @@ return new class extends Migration
             $table->timestamps();
 
             // Penting: Pastikan kombinasi Product dan Warehouse bersifat unik
-            $table->unique(['id_product', 'id_warehouse']);
+            $table->unique(['id', 'id']);
         });
     }
 

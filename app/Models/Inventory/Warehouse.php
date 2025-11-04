@@ -1,18 +1,24 @@
 <?php
-
 namespace App\Models\Inventory;
 
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
-use Illuminate\Database\Eloquent\Factories\HasFactory;
 
 class Warehouse extends Model
 {
     use HasFactory;
 
     protected $table = 'nx_warehouses';
-    protected $primaryKey = 'id_warehouse';
-    protected $guarded = ['id_warehouse'];
+
+    protected $fillable = [
+        'warehouse_name',
+        'location',
+        'manager_name',
+        'phone',
+        'maps_url',
+        'is_active',
+    ];
 
     protected $casts = [
         'is_active' => 'boolean',
@@ -23,19 +29,19 @@ class Warehouse extends Model
     // Relasi: Warehouse memiliki banyak Stock records
     public function stocks(): HasMany
     {
-        return $this->hasMany(ProductStock::class, 'id_warehouse');
+        return $this->hasMany(ProductStock::class, 'id');
     }
 
     // Accessor untuk kode gudang
     public function getWarehouseCodeAttribute(): string
     {
-        return 'WH-' . str_pad($this->id_warehouse, 4, '0', STR_PAD_LEFT);
+        return 'WH-' . str_pad($this->id, 4, '0', STR_PAD_LEFT);
     }
 
     // Get total products in warehouse
     public function getTotalProductsAttribute(): int
     {
-        return $this->stocks()->distinct('id_product')->count('id_product');
+        return $this->stocks()->distinct('product_id')->count('id');
     }
 
     // Get total stock quantity in warehouse

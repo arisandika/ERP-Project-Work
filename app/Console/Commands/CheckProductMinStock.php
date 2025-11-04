@@ -32,7 +32,7 @@ class CheckProductMinStock extends Command
             $threshold = 10;
             
             $data[] = [
-                'ID' => $product->id_product,
+                'ID' => $product->id,
                 'Name' => $product->product_name,
                 'Threshold' => $threshold,
                 'Current Stock' => $totalStock,

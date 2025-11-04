@@ -9,11 +9,11 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('nx_stock_transactions', function (Blueprint $table) {
-            $table->id('id_transaction');
+            $table->id('id');
             
             // Foreign Key ke nx_products
             $table->foreignId('product_id')
-                  ->constrained('nx_products', 'id_product')
+                  ->constrained('nx_products', 'id')
                   ->cascadeOnDelete();
             
             $table->date('transaction_date');

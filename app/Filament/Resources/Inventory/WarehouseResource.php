@@ -111,7 +111,7 @@ class WarehouseResource extends Resource
                 
                 Tables\Columns\TextColumn::make('total_products')
                     ->label('Jumlah Produk')
-                    ->getStateUsing(fn ($record) => $record->stocks()->distinct('id_product')->count('id_product'))
+                    ->getStateUsing(fn ($record) => $record->stocks()->distinct('product_id')->count('id'))
                     ->badge()
                     ->color('info')
                     ->suffix(' items'),

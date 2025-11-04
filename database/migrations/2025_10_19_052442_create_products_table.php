@@ -9,7 +9,7 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('nx_products', function (Blueprint $table) {
-            $table->id('id_product'); // PK, INT, akan otomatis menjadi auto-increment
+            $table->id('id'); // PK, INT, akan otomatis menjadi auto-increment
 
             $table->string('product_name', 100);
 

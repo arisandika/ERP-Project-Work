@@ -60,7 +60,7 @@ class ListStockReports extends ListRecords
 
         if ($lowStockCount > 0) {
             $criticalCount = \App\Models\Inventory\ProductStock::query()
-                ->join('nx_products', 'nx_product_stock.id_product', '=', 'nx_products.id_product')
+                ->join('nx_products', 'nx_product_stock.product_id', '=', 'nx_products.id')
                 ->where('nx_product_stock.qty', '<=', 5)
                 ->count();
 

@@ -101,7 +101,7 @@ class ProductResource extends Resource
                         Forms\Components\Repeater::make('productStocks')
                             ->relationship()
                             ->schema([
-                                Forms\Components\Select::make('id_warehouse')
+                                Forms\Components\Select::make('warehouse_id')
                                     ->label('Gudang')
                                     ->relationship('warehouse', 'warehouse_name', fn ($query) => $query->where('is_active', true))
                                     ->required()
@@ -133,8 +133,8 @@ class ProductResource extends Resource
                             ->reorderable(false)
                             ->collapsible()
                             ->itemLabel(fn (array $state): ?string => 
-                                $state['id_warehouse'] 
-                                    ? \App\Models\Inventory\Warehouse::find($state['id_warehouse'])?->warehouse_name 
+                                $state['id'] 
+                                    ? \App\Models\Inventory\Warehouse::find($state['id'])?->warehouse_name 
                                     : 'Gudang Baru'
                             ),
                     ])
@@ -153,7 +153,7 @@ class ProductResource extends Resource
 
                 Tables\Columns\TextColumn::make('kode_barang')
                     ->label('Kode Barang')
-                    ->getStateUsing(fn ($record) => 'BRG-' . str_pad($record->id_product, 6, '0', STR_PAD_LEFT))
+                    ->getStateUsing(fn ($record) => 'BRG-' . str_pad($record->id, 6, '0', STR_PAD_LEFT))
                     ->searchable()
                     ->sortable(),
                 
@@ -220,7 +220,7 @@ class ProductResource extends Resource
                             ->label('Gudang')
                             ->options(fn () => \App\Models\Inventory\Warehouse::query()
                                 ->orderBy('warehouse_name')
-                                ->pluck('warehouse_name', 'id_warehouse')
+                                ->pluck('warehouse_name', 'id')
                                 ->toArray())
                             ->searchable()
                             ->preload(),
@@ -247,7 +247,7 @@ class ProductResource extends Resource
                         if ($status === 'low') {
                             return $query->whereHas('productStocks', function ($subQuery) use ($warehouseId) {
                                 if ($warehouseId) {
-                                    $subQuery->where('id_warehouse', $warehouseId);
+                                    $subQuery->where('id', $warehouseId);
                                 }
                                 $subQuery->where('qty', '<=', 10);
                             });
@@ -257,12 +257,12 @@ class ProductResource extends Resource
                             return $query
                                 ->whereHas('productStocks', function ($subQuery) use ($warehouseId) {
                                     if ($warehouseId) {
-                                        $subQuery->where('id_warehouse', $warehouseId);
+                                        $subQuery->where('id', $warehouseId);
                                     }
                                 })
                                 ->whereDoesntHave('productStocks', function ($subQuery) use ($warehouseId) {
                                     if ($warehouseId) {
-                                        $subQuery->where('id_warehouse', $warehouseId);
+                                        $subQuery->where('id', $warehouseId);
                                     }
                                     $subQuery->where('qty', '<=', 10);
                                 });
@@ -309,8 +309,8 @@ class ProductResource extends Resource
     public static function getNavigationBadge(): ?string
     {
         $count = \App\Models\Inventory\ProductStock::where('qty', '<=', 10)
-            ->distinct('id_product')
-            ->count('id_product');
+            ->distinct('product_id')
+            ->count('id');
 
         return $count > 0 ? (string) $count : null;
     }

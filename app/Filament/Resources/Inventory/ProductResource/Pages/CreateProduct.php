@@ -21,7 +21,7 @@ class CreateProduct extends CreateRecord
         
         // Prepare data for insertion
         $insertData = [
-            'id_product' => $nextId,
+            'id' => $nextId,
             'product_name' => $data['product_name'],
             'category_id' => $data['category_id'],
             'label' => $data['label'] ?? 'product',
@@ -36,7 +36,7 @@ class CreateProduct extends CreateRecord
         DB::table('nx_products')->insert($insertData);
         
         // Update auto-increment if we used a gap ID
-        $maxId = Product::max('id_product');
+        $maxId = Product::max('id');
         if ($maxId) {
             DB::statement("ALTER TABLE nx_products AUTO_INCREMENT = " . ($maxId + 1));
         }
@@ -72,8 +72,8 @@ class CreateProduct extends CreateRecord
         // Create or update product stock directly (set, not increment)
         $productStock = \App\Models\Inventory\ProductStock::firstOrCreate(
             [
-                'id_product' => $product->id_product,
-                'id_warehouse' => $warehouse->id_warehouse,
+                'id' => $product->id,
+                'id' => $warehouse->id,
             ],
             [
                 'qty' => $quantity,
@@ -93,8 +93,8 @@ class CreateProduct extends CreateRecord
         // we need to prevent double update. We'll create transaction without triggering update
         // by creating it and then manually adjusting if needed.
         $transaction = new StockTransaction();
-        $transaction->product_id = $product->id_product;
-        $transaction->warehouse_id = $warehouse->id_warehouse;
+        $transaction->product_id = $product->id;
+        $transaction->warehouse_id = $warehouse->id;
         $transaction->transaction_date = now();
         $transaction->type = 'masuk';
         $transaction->quantity = $quantity;

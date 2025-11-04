@@ -12,7 +12,7 @@ return new class extends Migration
             $table->foreignId('warehouse_id')
                   ->nullable()
                   ->after('product_id')
-                  ->constrained('nx_warehouses', 'id_warehouse')
+                  ->constrained('nx_warehouses', 'id')
                   ->nullOnDelete();
         });
     }

@@ -14,8 +14,8 @@ class StockTransaction extends Model
     use HasFactory;
 
     protected $table = 'nx_stock_transactions';
-    protected $primaryKey = 'id_transaction';
-    protected $guarded = ['id_transaction'];
+    protected $primaryKey = 'id';
+    protected $guarded = ['id'];
 
     protected $casts = [
         'transaction_date' => 'date',
@@ -39,13 +39,13 @@ class StockTransaction extends Model
     // Relasi BelongsTo: Product
     public function product(): BelongsTo
     {
-        return $this->belongsTo(Product::class, 'product_id', 'id_product');
+        return $this->belongsTo(Product::class, 'product_id', 'id');
     }
 
     // Relasi BelongsTo: Warehouse
     public function warehouse(): BelongsTo
     {
-        return $this->belongsTo(Warehouse::class, 'warehouse_id', 'id_warehouse');
+        return $this->belongsTo(Warehouse::class, 'warehouse_id', 'id');
     }
 
     /**
@@ -76,7 +76,7 @@ class StockTransaction extends Model
         }
 
         // Get default warehouse (warehouse_id might be null, use default)
-        $warehouseId = $this->warehouse_id ?? $this->getDefaultWarehouse()->id_warehouse;
+        $warehouseId = $this->warehouse_id ?? $this->getDefaultWarehouse()->id;
 
         if ($event === 'created') {
             // Transaksi baru: masuk = tambah, keluar = kurang
@@ -88,8 +88,8 @@ class StockTransaction extends Model
             $original = $this->getOriginal();
             $oldQuantity = $original['quantity'] ?? 0;
             $oldType = $original['type'] ?? '';
-            $oldWarehouseId = $original['warehouse_id'] ?? $this->getDefaultWarehouse()->id_warehouse;
-            $newWarehouseId = $this->warehouse_id ?? $this->getDefaultWarehouse()->id_warehouse;
+            $oldWarehouseId = $original['warehouse_id'] ?? $this->getDefaultWarehouse()->id;
+            $newWarehouseId = $this->warehouse_id ?? $this->getDefaultWarehouse()->id;
             
             // Reverse perubahan lama di warehouse lama
             $oldChange = $oldType === 'masuk' ? -$oldQuantity : $oldQuantity;
@@ -114,8 +114,8 @@ class StockTransaction extends Model
         // Update atau create product stock
         $productStock = \App\Models\Inventory\ProductStock::firstOrCreate(
             [
-                'id_product' => $this->product_id,
-                'id_warehouse' => $warehouseId,
+                'id' => $this->product_id,
+                'id' => $warehouseId,
             ],
             [
                 'qty' => 0,

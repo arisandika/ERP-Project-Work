@@ -13,13 +13,13 @@ class ProductStocksRelationManager extends RelationManager
 {
     protected static string $relationship = 'productStocks';
     protected static ?string $title = 'Stok per Gudang';
-    protected static ?string $recordTitleAttribute = 'id_stock';
+    protected static ?string $recordTitleAttribute = 'id';
 
     public function form(Form $form): Form
     {
         return $form
             ->schema([
-                Forms\Components\Select::make('id_warehouse')
+                Forms\Components\Select::make('id')
                     ->label('Gudang')
                     ->relationship('warehouse', 'warehouse_name', fn ($query) => $query->where('is_active', true))
                     ->required()
@@ -51,7 +51,7 @@ class ProductStocksRelationManager extends RelationManager
     public function table(Table $table): Table
     {
         return $table
-            ->recordTitleAttribute('id_stock')
+            ->recordTitleAttribute('warehouse_id')
             ->columns([
                 Tables\Columns\TextColumn::make('warehouse.warehouse_name')
                     ->label('Gudang')

@@ -28,7 +28,7 @@ class StockReportResource extends Resource
             ->columns([
                 Tables\Columns\TextColumn::make('kode_barang')
                     ->label('Kode Barang')
-                    ->getStateUsing(fn ($record) => 'BRG-' . str_pad($record->id_product, 6, '0', STR_PAD_LEFT))
+                    ->getStateUsing(fn ($record) => 'BRG-' . str_pad($record->id, 6, '0', STR_PAD_LEFT))
                     ->searchable()
                     ->sortable(),
                 
@@ -89,7 +89,7 @@ class StockReportResource extends Resource
                             ->label('Gudang')
                             ->options(fn () => \App\Models\Inventory\Warehouse::query()
                                 ->orderBy('warehouse_name')
-                                ->pluck('warehouse_name', 'id_warehouse')
+                                ->pluck('warehouse_name', 'id')
                                 ->toArray())
                             ->searchable()
                             ->preload(),
@@ -116,7 +116,7 @@ class StockReportResource extends Resource
                         if ($status === 'low') {
                             return $query->whereHas('productStocks', function ($subQuery) use ($warehouseId) {
                                 if ($warehouseId) {
-                                    $subQuery->where('id_warehouse', $warehouseId);
+                                    $subQuery->where('id', $warehouseId);
                                 }
                                 $subQuery->where('qty', '<=', 10);
                             });
@@ -126,12 +126,12 @@ class StockReportResource extends Resource
                             return $query
                                 ->whereHas('productStocks', function ($subQuery) use ($warehouseId) {
                                     if ($warehouseId) {
-                                        $subQuery->where('id_warehouse', $warehouseId);
+                                        $subQuery->where('id', $warehouseId);
                                     }
                                 })
                                 ->whereDoesntHave('productStocks', function ($subQuery) use ($warehouseId) {
                                     if ($warehouseId) {
-                                        $subQuery->where('id_warehouse', $warehouseId);
+                                        $subQuery->where('id', $warehouseId);
                                     }
                                     $subQuery->where('qty', '<=', 10);
                                 });
@@ -183,8 +183,8 @@ class StockReportResource extends Resource
     public static function getNavigationBadge(): ?string
     {
         $count = \App\Models\Inventory\ProductStock::where('qty', '<=', 10)
-            ->distinct('id_product')
-            ->count('id_product');
+            ->distinct('product_id')
+            ->count('id');
 
         return $count > 0 ? (string) $count : null;
     }

@@ -1,11 +1,10 @@
 <?php
-
 namespace App\Models\Inventory;
 
-use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Relations\HasMany;
-use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\MorphMany; // Untuk Polymorphic
 use Illuminate\Support\Facades\Storage;
 
@@ -14,10 +13,18 @@ class Product extends Model
     use HasFactory;
 
     protected $table = 'nx_products';
-    protected $primaryKey = 'id_product';
-    protected $guarded = ['id_product'];
 
-    // --- Relasi BelongsTo ---
+    protected $fillable = [
+        'product_name',
+        'category_id',
+        'label',
+        'unit_id',
+        'min_stock',
+        'price',
+        'image_path',
+    ];
+
+    // Relasi BelongsTo
     public function category(): BelongsTo
     {
         return $this->belongsTo(Category::class, 'category_id');
@@ -28,52 +35,45 @@ class Product extends Model
         return $this->belongsTo(Unit::class, 'unit_id');
     }
 
-    // --- Relasi HasMany ---
+    // Relasi HasMany
     public function productStocks(): HasMany
     {
-        return $this->hasMany(ProductStock::class, 'id_product');
+        return $this->hasMany(ProductStock::class, 'product_id');
     }
 
     public function stockTransactions(): HasMany
     {
-        return $this->hasMany(\App\Models\Inventory\StockTransaction::class, 'product_id', 'id_product');
+        return $this->hasMany(\App\Models\Inventory\StockTransaction::class, 'product_id', 'id');
     }
 
-    // --- Relasi Polymorphic ---
-    // Product bisa ada di banyak package items
-    public function packageItems(): MorphMany
-    {
-        return $this->morphMany(Sales\PackageItem::class, 'item');
-    }
-
-    // --- Accessor untuk total stok ---
+    // Accessor untuk total stok
     public function getTotalStockAttribute(): int
     {
         return $this->productStocks()->sum('qty');
     }
 
-    // --- Accessor untuk kode barang ---
+    // Accessor untuk kode barang
     public function getKodeBarangAttribute(): string
     {
-        return 'BRG-' . str_pad($this->id_product, 6, '0', STR_PAD_LEFT);
+        return 'BRG-' . str_pad($this->id, 6, '0', STR_PAD_LEFT);
     }
 
     protected $appends = ['image_url'];
 
-    // --- Accessor untuk status low stock ---
+    // Accessor untuk status low stock
     public function getIsLowStockAttribute(): bool
     {
         $threshold = 10;
         return $this->total_stock < $threshold;
     }
 
-    // --- Accessor untuk threshold stok ---
+    // Accessor untuk threshold stok
     public function getStockThresholdAttribute(): int
     {
         return 10;
     }
 
-    // --- Method untuk get low stock items ---
+    // Method untuk get low stock items
     public static function getLowStockProducts()
     {
         return static::with(['unit', 'category', 'productStocks.warehouse'])
@@ -83,7 +83,7 @@ class Product extends Model
             ->get();
     }
 
-    // --- Accessor untuk URL foto ---
+    // Accessor untuk URL foto
     public function getImageUrlAttribute(): string
     {
         if ($this->image_path && Storage::disk('public')->exists($this->image_path)) {
@@ -93,45 +93,45 @@ class Product extends Model
         return 'https://thumbs2.imgbox.com/98/e9/y65t3ovR_t.png';
     }
 
-    // --- Method untuk check apakah produk ini low stock di warehouse tertentu ---
+    // Method untuk check apakah produk ini low stock di warehouse tertentu
     public function isLowStockInWarehouse(?int $warehouseId = null): bool
     {
         $query = $this->productStocks();
-        
+
         if ($warehouseId) {
-            $query->where('id_warehouse', $warehouseId);
+            $query->where('id', $warehouseId);
         }
 
         $threshold = $this->stock_threshold;
-        
+
         return $query->where('qty', '<', $threshold)->exists();
     }
 
-    // --- Method untuk get stock status label ---
+    // Method untuk get stock status label
     public function getStockStatusLabel(?int $qty = null): string
     {
         $checkQty = $qty ?? $this->total_stock;
-        
+
         return match (true) {
-            $checkQty <= 0 => 'OUT OF STOCK',
-            $checkQty <= 5 => 'CRITICAL',
-            $checkQty <= 10 => 'LOW',
+            $checkQty <= 0                     => 'OUT OF STOCK',
+            $checkQty <= 5                     => 'CRITICAL',
+            $checkQty <= 10                    => 'LOW',
             $checkQty < $this->stock_threshold => 'WARNING',
-            default => 'AVAILABLE',
+            default                            => 'AVAILABLE',
         };
     }
 
-    // --- Method untuk get stock status color ---
+    // Method untuk get stock status color
     public function getStockStatusColor(?int $qty = null): string
     {
         $checkQty = $qty ?? $this->total_stock;
-        
+
         return match (true) {
-            $checkQty <= 0 => 'danger',
-            $checkQty <= 5 => 'danger',
-            $checkQty <= 10 => 'warning',
+            $checkQty <= 0                     => 'danger',
+            $checkQty <= 5                     => 'danger',
+            $checkQty <= 10                    => 'warning',
             $checkQty < $this->stock_threshold => 'warning',
-            default => 'success',
+            default                            => 'success',
         };
     }
 
@@ -141,23 +141,23 @@ class Product extends Model
     public static function getNextAvailableId(): int
     {
         // Get all existing IDs
-        $existingIds = static::pluck('id_product')->toArray();
-        
+        $existingIds = static::pluck('id')->toArray();
+
         // If no records exist, start from 1
         if (empty($existingIds)) {
             return 1;
         }
-        
+
         // Sort IDs
         sort($existingIds);
-        
+
         // Find the first gap
         for ($i = 1; $i <= max($existingIds); $i++) {
-            if (!in_array($i, $existingIds)) {
+            if (! in_array($i, $existingIds)) {
                 return $i;
             }
         }
-        
+
         // If no gap found, return next ID after max
         return max($existingIds) + 1;
     }

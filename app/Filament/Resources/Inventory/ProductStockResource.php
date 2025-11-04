@@ -31,7 +31,7 @@ class ProductStockResource extends Resource
             ->schema([
                 Forms\Components\Section::make('Informasi Stok')
                     ->schema([
-                        Forms\Components\Select::make('id_product')
+                        Forms\Components\Select::make('id')
                             ->label('Produk')
                             ->relationship('product', 'product_name')
                             ->required()
@@ -39,7 +39,7 @@ class ProductStockResource extends Resource
                             ->preload()
                             ->disabled(fn ($operation) => $operation === 'edit'),
                         
-                        Forms\Components\Select::make('id_warehouse')
+                        Forms\Components\Select::make('id')
                             ->label('Gudang')
                             ->relationship('warehouse', 'warehouse_name', fn ($query) => $query->where('is_active', true))
                             ->required()
@@ -125,7 +125,7 @@ class ProductStockResource extends Resource
                     }),
             ])
             ->filters([
-                Tables\Filters\SelectFilter::make('id_warehouse')
+                Tables\Filters\SelectFilter::make('id')
                     ->label('Gudang')
                     ->relationship('warehouse', 'warehouse_name')
                     ->searchable()

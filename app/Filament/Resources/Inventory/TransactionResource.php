@@ -34,7 +34,7 @@ class TransactionResource extends Resource
                     ->required()
                     ->searchable()
                     ->preload()
-                    ->getOptionLabelFromRecordUsing(fn (Product $record): string => $record->product_name . ' (' . 'BRG-' . str_pad($record->id_product, 6, '0', STR_PAD_LEFT) . ')'),
+                    ->getOptionLabelFromRecordUsing(fn (Product $record): string => $record->product_name . ' (' . 'BRG-' . str_pad($record->id, 6, '0', STR_PAD_LEFT) . ')'),
                 
                 Forms\Components\DatePicker::make('transaction_date')
                     ->label('Tanggal')
