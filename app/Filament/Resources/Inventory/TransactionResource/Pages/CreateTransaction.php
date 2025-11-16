@@ -10,6 +10,11 @@ class CreateTransaction extends CreateRecord
 {
     protected static string $resource = TransactionResource::class;
 
+    public function getTitle(): string
+    {
+        return 'Tambah Stock Produk';
+    }
+
     protected function mutateFormDataBeforeCreate(array $data): array
     {
         // Set default warehouse jika belum ada

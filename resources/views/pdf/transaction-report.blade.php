@@ -87,7 +87,7 @@
         <thead>
             <tr>
                 <th>Tanggal</th>
-                <th>Barang</th>
+                <th>Produk</th>
                 <th>Jenis</th>
                 <th>Jumlah</th>
                 <th>Catatan</th>

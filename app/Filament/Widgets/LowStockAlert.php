@@ -97,7 +97,7 @@ class LowStockAlert extends BaseWidget
                     ),
             ])
             ->emptyStateHeading('Semua Stok Aman')
-            ->emptyStateDescription('Tidak ada produk dengan stok rendah saat ini.')
+            ->emptyStateDescription('Tidak ada produk dengan stock rendah saat ini.')
             ->emptyStateIcon('heroicon-o-check-circle')
             ->poll('30s'); // Auto refresh setiap 30 detik
     }

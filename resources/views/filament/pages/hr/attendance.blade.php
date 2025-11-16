@@ -258,7 +258,7 @@
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
         integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
     <script>
-        // --- LEAFLET MAP INITIALIZATION ---
+        // LEAFLET MAP INITIALIZATION
         const map = L.map('map').setView([{{ $employee->office->latitude }}, {{ $employee->office->longitude }}], 15);
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
 
@@ -297,7 +297,7 @@
             }
         }
 
-        // --- UX OPTIMIZATION JAVASCRIPT LOGIC ---
+        // UX OPTIMIZATION JAVASCRIPT LOGIC
         let isLocationReadyForSubmission = false; // Flag to indicate if location is successfully obtained for clock-in
 
         // Clock-in elements

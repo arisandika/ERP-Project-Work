@@ -1,10 +1,10 @@
 <?php
-
 namespace App\Filament\Resources\Inventory\StockReportResource\Pages;
 
 use App\Filament\Resources\Inventory\StockReportResource;
 use Filament\Actions;
 use Filament\Resources\Pages\ListRecords;
+use Illuminate\Database\Eloquent\Model;
 
 class ListStockReports extends ListRecords
 {
@@ -17,31 +17,9 @@ class ListStockReports extends ListRecords
                 ->label('Unduh PDF')
                 ->icon('heroicon-o-arrow-down-tray')
                 ->color('primary')
-                ->url(function () {
-                    // Get filter values from current request or table state
-                    $categoryId = request()->input('tableFilters.category_id');
-                    
-                    // Build URL with query parameters
-                    $url = route('inventory.stock-report.download-pdf');
-                    $params = [];
-                    
-                    if ($categoryId) {
-                        $params['category_id'] = $categoryId;
-                    }
-                    
-                    // Add current table filters to URL if available
-                    $tableFilters = request()->get('tableFilters', []);
-                    if (isset($tableFilters['category_id'])) {
-                        $params['category_id'] = $tableFilters['category_id'];
-                    }
-                    
-                    if (!empty($params)) {
-                        $url .= '?' . http_build_query($params);
-                    }
-                    
-                    return $url;
-                })
-                ->openUrlInNewTab(),
+                ->url(route('inventory.stock-report.download-pdf'))
+                ->openUrlInNewTab()
+                ->tooltip('Unduh laporan stok produk dalam format PDF'),
         ];
     }
 
@@ -75,4 +53,3 @@ class ListStockReports extends ListRecords
         }
     }
 }
-

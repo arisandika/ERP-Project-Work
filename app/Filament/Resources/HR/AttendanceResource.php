@@ -55,7 +55,7 @@ class AttendanceResource extends Resource
 
                 Tables\Columns\TextColumn::make('date')
                     ->label('Tanggal')
-                    ->date('d F Y')
+                    ->date('d F Y H:i')
                     ->sortable(),
 
                 Tables\Columns\TextColumn::make('clock_in')

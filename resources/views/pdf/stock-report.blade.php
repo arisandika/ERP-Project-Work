@@ -1,127 +1,163 @@
 <!DOCTYPE html>
 <html lang="id">
 <head>
-    <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
-    <title>Laporan Stok Barang</title>
+    <meta charset="UTF-8">
+    <title>Laporan Stok Produk - Nexicon ERP Dashboard</title>
     <style>
+        /* === Layout === */
+        @page {
+            size: A4 landscape;
+            margin: 40px 25px 60px 25px;
+        }
+
         body {
-            font-family: DejaVu Sans, Arial, sans-serif;
+            font-family: DejaVu Sans, sans-serif;
+            color: #1f2937;
             font-size: 12px;
-            margin: 20px;
         }
-        .header {
-            text-align: center;
-            margin-bottom: 30px;
+
+        header {
+            position: fixed;
+            top: -30px;
+            left: 0;
+            right: 0;
+            height: 60px;
+            border-bottom: 1px solid #e5e7eb;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 25px;
         }
-        .header h1 {
-            margin: 0;
-            font-size: 18px;
-            font-weight: bold;
+
+        footer {
+            position: fixed;
+            bottom: -30px;
+            left: 0;
+            right: 0;
+            height: 40px;
+            border-top: 1px solid #e5e7eb;
+            font-size: 10px;
+            color: #6b7280;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 25px;
         }
-        .filter-info {
-            margin-bottom: 20px;
-            padding: 10px;
-            background-color: #f5f5f5;
-            border-radius: 5px;
-        }
+
+        /* === Table === */
         table {
             width: 100%;
             border-collapse: collapse;
-            margin-top: 20px;
+            margin-top: 80px;
         }
+
         th, td {
-            border: 1px solid #ddd;
-            padding: 8px;
+            border: 1px solid #e5e7eb;
+            padding: 6px 8px;
+        }
+
+        th {
+            background-color: #f3f4f6;
+            font-weight: 600;
             text-align: left;
         }
-        th {
-            background-color: #f8f9fa;
-            font-weight: bold;
-        }
+
         tr:nth-child(even) {
-            background-color: #f9f9f9;
+            background-color: #f9fafb;
         }
-        .badge-low {
-            background-color: #ef4444;
-            color: white;
+
+        /* === Badge colors === */
+        .badge {
             padding: 3px 8px;
-            border-radius: 3px;
-            font-size: 10px;
+            border-radius: 6px;
+            font-weight: 600;
+            font-size: 11px;
+            color: white;
             display: inline-block;
         }
-        .badge-ok {
-            background-color: #10b981;
-            color: white;
-            padding: 3px 8px;
-            border-radius: 3px;
-            font-size: 10px;
-            display: inline-block;
+
+        .badge-success { background-color: #16a34a; }
+        .badge-warning { background-color: #facc15; color: #1f2937; }
+        .badge-danger { background-color: #dc2626; }
+
+        /* === Header Logo === */
+        .brand {
+            display: flex;
+            align-items: center;
+            gap: 10px;
         }
-        .footer {
-            margin-top: 30px;
-            text-align: right;
-            font-size: 10px;
-            color: #666;
+
+        .brand img {
+            height: 35px;
         }
-        .text-right {
-            text-align: right;
-        }
-        .text-center {
-            text-align: center;
+
+        /* === Page counter === */
+        .page-number:after {
+            content: counter(page);
         }
     </style>
 </head>
 <body>
-    <div class="header">
-        <h1>Laporan Stok Barang</h1>
-    </div>
 
-    @if($categoryFilter && $categoryFilter !== 'Semua Kategori')
-    <div class="filter-info">
-        <strong>Filter:</strong> Kategori - {{ $categoryFilter }}
+<header>
+    <div class="brand">
+        <img src="{{ public_path('images/logo-nexicon.png') }}" alt="Nexicon Logo">
+        <h1 style="font-size:14px; font-weight:700; color:#111827;">Nexicon ERP Dashboard</h1>
     </div>
-    @endif
+    <div style="text-align:right;">
+        <p style="font-size:12px; color:#6b7280;">Laporan Stok Produk</p>
+        <p style="font-size:11px; color:#9ca3af;">{{ now()->format('d M Y H:i') }}</p>
+    </div>
+</header>
 
+<footer>
+    <div>
+        © {{ now()->year }} Nexicon ERP • Semua hak dilindungi
+    </div>
+    <div class="page-number">
+        Halaman 
+    </div>
+</footer>
+
+<main>
     <table>
         <thead>
             <tr>
-                <th>Kode Barang</th>
-                <th>Nama Barang</th>
-                <th>Kategori Barang</th>
-                <th class="text-center">Stok</th>
-                <th class="text-center">Satuan</th>
-                <th class="text-right">Harga</th>
+                <th style="width:80px;">Kode Produk</th>
+                <th>Nama Produk</th>
+                <th style="width:140px;">Kategori</th>
+                <th style="width:90px;">Stok</th>
+                <th style="width:100px;">Satuan</th>
+                <th style="width:120px; text-align:right;">Harga</th>
             </tr>
         </thead>
         <tbody>
-            @forelse($products as $product)
-            <tr>
-                <td>{{ $product['kode_barang'] }}</td>
-                <td>{{ $product['product_name'] }}</td>
-                <td>{{ $product['category_name'] }}</td>
-                <td class="text-center">
-                    @if($product['total_stock'] > 0)
-                        <span class="badge-ok">{{ number_format($product['total_stock'], 0, ',', '.') }}</span>
-                    @else
-                        <span class="badge-low">{{ number_format($product['total_stock'], 0, ',', '.') }}</span>
-                    @endif
-                </td>
-                <td class="text-center">{{ $product['unit_symbol'] }}</td>
-                <td class="text-right">Rp {{ number_format($product['price'], 0, ',', '.') }}</td>
-            </tr>
-            @empty
-            <tr>
-                <td colspan="6" style="text-align: center;">Tidak ada data stok barang</td>
-            </tr>
-            @endforelse
+            @foreach ($products as $product)
+                @php
+                    $totalStock = $product->productStocks->sum('qty');
+                    $statusClass = $totalStock <= 0 ? 'badge-danger' :
+                                   ($totalStock <= 10 ? 'badge-warning' : 'badge-success');
+                @endphp
+                <tr>
+                    <td style="font-family: monospace;">
+                        BRG-{{ str_pad($product->id, 6, '0', STR_PAD_LEFT) }}
+                    </td>
+                    <td>{{ $product->product_name }}</td>
+                    <td>{{ $product->category->name ?? '-' }}</td>
+                    <td style="text-align:center;">
+                        <span class="badge {{ $statusClass }}">{{ $totalStock }}</span>
+                    </td>
+                    <td style="text-align:center;">
+                        {{ $product->unit->symbol ?? $product->unit->name ?? '-' }}
+                    </td>
+                    <td style="text-align:right;">
+                        Rp {{ number_format($product->price, 0, ',', '.') }}
+                    </td>
+                </tr>
+            @endforeach
         </tbody>
     </table>
+</main>
 
-    <div class="footer">
-        <p>Dicetak pada: {{ now()->format('d M Y H:i:s') }}</p>
-        <p>Total Record: {{ $products->count() }}</p>
-    </div>
 </body>
 </html>
-
-

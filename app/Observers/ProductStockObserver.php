@@ -40,7 +40,7 @@ class ProductStockObserver
             // Threshold low stock: <= 10
             $threshold = 10;
             
-            // Cek apakah stok di bawah threshold
+            // Cek apakah stock di bawah threshold
             if ($currentQty <= $threshold) {
                 // Get users with admin roles (or all users if no roles assigned)
                 $users = User::whereHas('roles', function ($query) {

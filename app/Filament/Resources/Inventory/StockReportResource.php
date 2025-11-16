@@ -4,6 +4,7 @@ namespace App\Filament\Resources\Inventory;
 
 use App\Filament\Resources\Inventory\StockReportResource\Pages;
 use App\Models\Inventory\Product;
+use App\Models\Inventory\Warehouse;
 use Filament\Forms;
 use Filament\Resources\Resource;
 use Filament\Tables;
@@ -14,34 +15,36 @@ class StockReportResource extends Resource
 {
     protected static ?string $model = Product::class;
 
-    protected static ?string $navigationGroup = 'Manajemen Inventory';
     protected static ?string $navigationIcon = 'heroicon-o-document-chart-bar';
-    protected static ?int $navigationSort = 7;
 
-    protected static ?string $navigationLabel = 'Laporan Stok Barang';
+    protected static ?string $navigationGroup = 'Manajemen Inventory';
+
+    protected static ?int $navigationSort = 9;
 
     protected static ?string $slug = 'inventory/stock-report';
+
+    protected static ?string $pluralModelLabel = 'Laporan Stok Produk';
 
     public static function table(Table $table): Table
     {
         return $table
             ->columns([
                 Tables\Columns\TextColumn::make('kode_barang')
-                    ->label('Kode Barang')
+                    ->label('Kode Produk')
                     ->getStateUsing(fn ($record) => 'BRG-' . str_pad($record->id, 6, '0', STR_PAD_LEFT))
                     ->searchable()
                     ->sortable(),
-                
+
                 Tables\Columns\TextColumn::make('product_name')
-                    ->label('Nama Barang')
+                    ->label('Nama Produk')
                     ->searchable()
                     ->sortable(),
-                
+
                 Tables\Columns\TextColumn::make('category.name')
-                    ->label('Kategori Barang')
+                    ->label('Kategori Produk')
                     ->searchable()
                     ->sortable(),
-                
+
                 Tables\Columns\TextColumn::make('total_stock')
                     ->label('Stok')
                     ->getStateUsing(fn ($record) => $record->productStocks()->sum('qty'))
@@ -59,17 +62,13 @@ class StockReportResource extends Resource
                         $state <= 10 => 'heroicon-m-exclamation-triangle',
                         default => 'heroicon-m-check-circle',
                     }),
-                    
-                
+
                 Tables\Columns\TextColumn::make('unit.name')
                     ->label('Satuan')
-                    ->formatStateUsing(function ($state, $record) {
-                        return $record->unit->symbol ?? $record->unit->name ?? '-';
-                    })
+                    ->formatStateUsing(fn ($state, $record) => $record->unit->symbol ?? $record->unit->name ?? '-')
                     ->badge()
                     ->color('info'),
-                
-                
+
                 Tables\Columns\TextColumn::make('price')
                     ->label('Harga')
                     ->money('idr')
@@ -87,7 +86,7 @@ class StockReportResource extends Resource
                             ]),
                         Forms\Components\Select::make('warehouse_id')
                             ->label('Gudang')
-                            ->options(fn () => \App\Models\Inventory\Warehouse::query()
+                            ->options(fn () => Warehouse::query()
                                 ->orderBy('warehouse_name')
                                 ->pluck('warehouse_name', 'id')
                                 ->toArray())
@@ -96,17 +95,20 @@ class StockReportResource extends Resource
                     ])
                     ->indicateUsing(function (array $data): array {
                         $indicators = [];
+
                         if (($data['status'] ?? null) === 'low') {
                             $indicators[] = 'Status Stok: Hanya Stok Rendah';
                         } elseif (($data['status'] ?? null) === 'normal') {
                             $indicators[] = 'Status Stok: Stok Normal';
                         }
+
                         if (!empty($data['warehouse_id'])) {
-                            $name = \App\Models\Inventory\Warehouse::find($data['warehouse_id'])?->warehouse_name;
+                            $name = Warehouse::find($data['warehouse_id'])?->warehouse_name;
                             if ($name) {
                                 $indicators[] = 'Gudang: ' . $name;
                             }
                         }
+
                         return $indicators;
                     })
                     ->query(function (Builder $query, array $data) {
@@ -168,9 +170,7 @@ class StockReportResource extends Resource
 
     public static function getRelations(): array
     {
-        return [
-            //
-        ];
+        return [];
     }
 
     public static function getPages(): array

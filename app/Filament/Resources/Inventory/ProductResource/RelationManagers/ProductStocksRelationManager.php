@@ -33,7 +33,7 @@ class ProductStocksRelationManager extends RelationManager
                     ->numeric()
                     ->minValue(0)
                     ->suffix(fn ($get, $record) => $record ? ($record->product->unit->symbol ?? $record->product->unit->unit_name ?? '') : '')
-                    ->helperText('Masukkan jumlah stok untuk gudang ini'),
+                    ->helperText('Masukkan jumlah stock untuk gudang ini'),
                 
                 Forms\Components\Select::make('status')
                     ->label('Status')
@@ -128,15 +128,15 @@ class ProductStocksRelationManager extends RelationManager
                     ->modalHeading('Edit Stok Gudang'),
                 Tables\Actions\DeleteAction::make()
                     ->modalHeading('Hapus Stok Gudang')
-                    ->modalDescription('Apakah Anda yakin ingin menghapus stok di gudang ini?'),
+                    ->modalDescription('Apakah Anda yakin ingin menghapus stock di gudang ini?'),
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([
                     Tables\Actions\DeleteBulkAction::make(),
                 ]),
             ])
-            ->emptyStateHeading('Belum ada stok di gudang')
-            ->emptyStateDescription('Tambahkan stok produk ini ke gudang dengan klik tombol di atas.')
+            ->emptyStateHeading('Belum ada stock di gudang')
+            ->emptyStateDescription('Tambahkan stock produk ini ke gudang dengan klik tombol di atas.')
             ->emptyStateIcon('heroicon-o-building-storefront')
             ->defaultSort('qty', 'asc');
     }

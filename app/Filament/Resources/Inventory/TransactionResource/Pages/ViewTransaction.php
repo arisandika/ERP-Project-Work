@@ -4,6 +4,7 @@ namespace App\Filament\Resources\Inventory\TransactionResource\Pages;
 
 use App\Filament\Resources\Inventory\TransactionResource;
 use Filament\Actions;
+use Filament\Actions\Action;
 use Filament\Resources\Pages\ViewRecord;
 
 class ViewTransaction extends ViewRecord
@@ -14,7 +15,16 @@ class ViewTransaction extends ViewRecord
     {
         return [
             Actions\EditAction::make(),
+            Action::make('back')
+                ->url(static::getResource()::getUrl()) 
+                ->button()
+                ->color('gray'),
         ];
+    }
+
+    public function getTitle(): string
+    {
+        return 'Lihat Transaksi Stock Produk';
     }
 }
 

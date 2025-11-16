@@ -20,122 +20,106 @@ class LeaveRequestResource extends Resource
 
     protected static ?string $navigationGroup = 'Manajemen Presensi';
 
-    protected static ?int $navigationSort = 7;
+    protected static ?int $navigationSort = 2;
 
     protected static ?string $slug = '/leave-requests';
 
     protected static ?string $pluralModelLabel = 'Pengajuan Cuti';
 
     public static function form(Form $form): Form
-{
-    return $form->schema([
-        Forms\Components\Section::make('Data Pengajuan Cuti')
-            ->description('Isi data berikut untuk mengajukan cuti.')
-            ->schema([
-                Forms\Components\Select::make('leave_id')
-                    ->label('Jenis Cuti')
-                    ->relationship('leave', 'leave_type')
-                    ->required()
-                    ->searchable()
-                    ->preload()
-                    ->prefixIcon('heroicon-o-briefcase'),
+    {
+        return $form->schema([
+            Forms\Components\Section::make('Data Pengajuan Cuti')
+                ->description('Isi data berikut untuk mengajukan cuti.')
+                ->schema([
+                    Forms\Components\Select::make('leave_id')
+                        ->label('Jenis Cuti')
+                        ->relationship('leave', 'leave_type')
+                        ->required()
+                        ->searchable()
+                        ->preload()
+                        ->prefixIcon('heroicon-o-briefcase'),
 
-                Forms\Components\DatePicker::make('start_date')
-                    ->label('Tanggal Mulai')
-                    ->required()
-                    ->native(false)
-                    ->prefixIcon('heroicon-o-calendar')
-                    ->closeOnDateSelection()
-                    ->reactive()
-                    ->afterStateUpdated(function (callable $set, $get) {
-                        $start_date = $get('start_date');
-                        $end_date = $get('end_date');
+                    Forms\Components\DatePicker::make('start_date')
+                        ->label('Tanggal Mulai')
+                        ->required()
+                        ->native(false)
+                        ->prefixIcon('heroicon-o-calendar')
+                        ->closeOnDateSelection()
+                        ->reactive()
+                        ->afterStateUpdated(function (callable $set, $get) {
+                            $start = $get('start_date');
+                            $end = $get('end_date');
 
-                        if ($start_date && $end_date) {
-                            $startDate = Carbon::parse($start_date);
-                            $endDate = Carbon::parse($end_date);
+                            if ($start && $end) {
+                                $startDate = Carbon::parse($start);
+                                $endDate = Carbon::parse($end);
 
-                            $workingDays = $startDate->diffInDaysFiltered(fn(Carbon $date) => !$date->isWeekend(), $endDate);
-                            $set('total_days', $workingDays + 1);
-                        } else {
-                            $set('total_days', null);
-                        }
-                    }),
+                                // Swap jika admin salah input (biar ga error)
+                                if ($startDate->gt($endDate)) {
+                                    $set('total_days', null);
+                                    return;
+                                }
 
-                Forms\Components\DatePicker::make('end_date')
-                    ->label('Tanggal Selesai')
-                    ->required()
-                    ->native(false)
-                    ->prefixIcon('heroicon-o-calendar')
-                    ->closeOnDateSelection()
-                    ->reactive()
-                    ->afterStateUpdated(function (callable $set, $state, $get) {
-                        $start_date = $get('start_date');
-                        $end_date = $state;
+                                $workingDays = $startDate->diffInDaysFiltered(
+                                    fn(Carbon $date) => !$date->isWeekend(),
+                                    $endDate
+                                );
 
-                        if ($start_date && $end_date) {
-                            $startDate = Carbon::parse($start_date);
-                            $endDate = Carbon::parse($end_date);
+                                // INKLUSI hari mulai + hari selesai
+                                $set('total_days', $workingDays + 1);
+                            } else {
+                                $set('total_days', null);
+                            }
+                        }),
 
-                            $workingDays = $startDate->diffInDaysFiltered(fn(Carbon $date) => !$date->isWeekend(), $endDate);
-                            $set('total_days', $workingDays + 1);
-                        } else {
-                            $set('total_days', null);
-                        }
-                    }),
+                    Forms\Components\DatePicker::make('end_date')
+                        ->label('Tanggal Selesai')
+                        ->required()
+                        ->native(false)
+                        ->prefixIcon('heroicon-o-calendar')
+                        ->closeOnDateSelection()
+                        ->reactive()
+                        ->afterStateUpdated(function (callable $set, $state, $get) {
+                            $start = $get('start_date');
+                            $end = $state;
 
-                Forms\Components\TextInput::make('total_days')
-                    ->label('Total Cuti (Hari Kerja)')
-                    ->prefixIcon('heroicon-o-clock')
-                    ->disabled()
-                    ->dehydrated(false)
-                    ->reactive(),
+                            if ($start && $end) {
+                                $startDate = Carbon::parse($start);
+                                $endDate = Carbon::parse($end);
 
-                Forms\Components\Textarea::make('reason')
-                    ->label('Alasan Cuti')
-                    ->placeholder('Tuliskan alasan pengajuan cuti...')
-                    ->rows(3)
-                    ->maxLength(500),
-            ])
-            ->columns(2),
+                                if ($startDate->gt($endDate)) {
+                                    $set('total_days', null);
+                                    return;
+                                }
 
-        // Bagian ini hanya muncul untuk admin/super_admin
-        Forms\Components\Section::make('Status Pengajuan')
-            ->visible(fn() => auth()->user()->hasRole('super_admin'))
-            ->schema([
-                Forms\Components\Select::make('status')
-                    ->label('Status Pengajuan')
-                    ->required()
-                    ->options([
-                        'pending' => 'Menunggu Persetujuan',
-                        'approved' => 'Disetujui',
-                        'rejected' => 'Ditolak',
-                    ])
-                    ->default('pending')
-                    ->prefixIcon('heroicon-o-clipboard-document-check'),
-            ]),
+                                $workingDays = $startDate->diffInDaysFiltered(
+                                    fn(Carbon $date) => !$date->isWeekend(),
+                                    $endDate
+                                );
 
-        Forms\Components\Section::make('Persetujuan Atasan / HRD')
-            ->visible(fn() => auth()->user()->hasRole('super_admin'))
-            ->description('Bagian ini hanya diisi oleh HR atau Atasan setelah meninjau pengajuan.')
-            ->schema([
-                Forms\Components\Select::make('approved_by')
-                    ->label('Disetujui Oleh')
-                    ->required()
-                    ->relationship('approver', 'full_name')
-                    ->searchable()
-                    ->preload()
-                    ->prefixIcon('heroicon-o-user'),
+                                $set('total_days', $workingDays + 1);
+                            } else {
+                                $set('total_days', null);
+                            }
+                        }),
 
-                Forms\Components\Textarea::make('approval_note')
-                    ->label('Catatan Persetujuan')
-                    ->rows(2)
-                    ->maxLength(300)
-                    ->placeholder('Tambahkan catatan jika perlu...'),
-            ]),
-    ]);
-}
+                    Forms\Components\TextInput::make('total_days')
+                        ->label('Durasi Cuti (Hari Kerja)')
+                        ->prefixIcon('heroicon-o-clock')
+                        ->disabled()
+                        ->dehydrated(false)
+                        ->reactive(),
 
+                    Forms\Components\Textarea::make('reason')
+                        ->label('Alasan Cuti')
+                        ->placeholder('Tuliskan alasan pengajuan cuti...')
+                        ->rows(3)
+                        ->maxLength(500),
+                ])
+                ->columns(2),
+        ]);
+    }
 
     public static function table(Table $table): Table
     {
@@ -171,13 +155,13 @@ class LeaveRequestResource extends Resource
                     ->colors([
                         'warning' => 'pending',
                         'success' => 'approved',
-                        'danger'  => 'rejected',
+                        'danger' => 'rejected',
                     ])
                     ->formatStateUsing(fn(string $state) => match ($state) {
-                        'pending'  => 'Menunggu',
+                        'pending' => 'Menunggu',
                         'approved' => 'Disetujui',
                         'rejected' => 'Ditolak',
-                        default    => ucwords($state),
+                        default => ucwords($state),
                     }),
 
                 Tables\Columns\TextColumn::make('approver.full_name')
@@ -186,14 +170,14 @@ class LeaveRequestResource extends Resource
 
                 Tables\Columns\TextColumn::make('created_at')
                     ->label('Diajukan')
-                    ->dateTime('d M Y')
+                    ->dateTime('d F Y H:i')
                     ->sortable(),
             ])
 
             ->filters([
                 Tables\Filters\SelectFilter::make('status')
                     ->options([
-                        'pending'  => 'Menunggu Persetujuan',
+                        'pending' => 'Menunggu Persetujuan',
                         'approved' => 'Disetujui',
                         'rejected' => 'Ditolak',
                     ])
@@ -252,17 +236,8 @@ class LeaveRequestResource extends Resource
             ])
             ->actions([
                 Tables\Actions\ViewAction::make(),
-                Tables\Actions\EditAction::make(),
-                Tables\Actions\DeleteAction::make(),
-                Tables\Actions\ForceDeleteAction::make(),
-                Tables\Actions\RestoreAction::make(),
-            ])
-            ->bulkActions([
-                Tables\Actions\BulkActionGroup::make([
-                    Tables\Actions\DeleteBulkAction::make(),
-                    Tables\Actions\ForceDeleteBulkAction::make(),
-                    Tables\Actions\RestoreBulkAction::make(),
-                ]),
+                Tables\Actions\EditAction::make()
+                    ->visible(fn(LeaveRequest $record) => $record->status === 'pending'),
             ]);
     }
 
@@ -276,10 +251,10 @@ class LeaveRequestResource extends Resource
     public static function getPages(): array
     {
         return [
-            'index'  => Pages\ListLeaveRequests::route('/'),
+            'index' => Pages\ListLeaveRequests::route('/'),
             'create' => Pages\CreateLeaveRequest::route('/create'),
-            'view'   => Pages\ViewLeaveRequest::route('/{record}'),
-            'edit'   => Pages\EditLeaveRequest::route('/{record}/edit'),
+            'view' => Pages\ViewLeaveRequest::route('/{record}'),
+            'edit' => Pages\EditLeaveRequest::route('/{record}/edit'),
         ];
     }
 
@@ -292,7 +267,7 @@ class LeaveRequestResource extends Resource
         $user = auth()->user();
 
         // Jika bukan super_admin, hanya tampilkan data cutinya sendiri
-        if (! $user->hasRole('super_admin')) {
+        if (!$user->hasRole('super_admin')) {
             $employee = $user->employee;
             if ($employee) {
                 $query->where('employee_id', $employee->id);

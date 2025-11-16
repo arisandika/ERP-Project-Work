@@ -14,7 +14,7 @@ class LowStockStatsOverview extends BaseWidget
 
     protected function getStats(): array
     {
-        // Hitung produk dengan stok kritis (qty < threshold)
+        // Hitung produk dengan stock kritis (qty < threshold)
         $lowStockCount = ProductStock::where('qty', '<=', 10)->count();
 
         // Hitung produk yang benar-benar habis (qty = 0)
@@ -27,7 +27,7 @@ class LowStockStatsOverview extends BaseWidget
 
         return [
             Stat::make('Produk Stok Kritis', $lowStockProducts)
-                ->description('Produk unique dengan stok rendah')
+                ->description('Produk unique dengan stock rendah')
                 ->descriptionIcon('heroicon-m-exclamation-triangle')
                 ->color('danger')
                 ->chart([7, 8, 6, 9, 10, 12, $lowStockProducts]),

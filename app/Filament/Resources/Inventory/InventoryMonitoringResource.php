@@ -15,15 +15,15 @@ class InventoryMonitoringResource extends Resource
 {
     protected static ?string $model = ProductStock::class;
 
-    protected static ?string $navigationGroup = 'Manajemen Inventory';
-
     protected static ?string $navigationIcon = 'heroicon-o-chart-bar';
 
-    protected static ?string $navigationLabel = 'Monitoring Inventory';
+    protected static ?string $navigationGroup = 'Manajemen Inventory';
+
+    protected static ?int $navigationSort = 8;
+
+    protected static ?string $slug = 'inventory/monitoring-transactions';
 
     protected static ?string $pluralModelLabel = 'Monitoring Inventory';
-
-    protected static ?int $navigationSort = 7;
 
     public static function form(Form $form): Form
     {
@@ -34,7 +34,7 @@ class InventoryMonitoringResource extends Resource
     {
         return $table
             ->columns([
-                Tables\Columns\TextColumn::make('product.name')
+                Tables\Columns\TextColumn::make('product.product_name')
                     ->label('Produk')
                     ->sortable()
                     ->searchable(),
@@ -60,15 +60,11 @@ class InventoryMonitoringResource extends Resource
             ])
             ->filters([
                 Filter::make('low_stock')
-                    ->label('Stok <= 10')
+                    ->label('Stok ≤ 10')
                     ->query(fn (Builder $query) => $query->where('qty', '<=', 10)),
             ])
-            ->actions([
-                // Read-only monitor table – no row actions for now
-            ])
-            ->bulkActions([
-                // No bulk actions on monitoring table
-            ]);
+            ->actions([])
+            ->bulkActions([]);
     }
 
     public static function getPages(): array

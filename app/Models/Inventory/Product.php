@@ -46,13 +46,13 @@ class Product extends Model
         return $this->hasMany(\App\Models\Inventory\StockTransaction::class, 'product_id', 'id');
     }
 
-    // Accessor untuk total stok
+    // Accessor untuk total stock
     public function getTotalStockAttribute(): int
     {
         return $this->productStocks()->sum('qty');
     }
 
-    // Accessor untuk kode barang
+    // Accessor untuk kode produk
     public function getKodeBarangAttribute(): string
     {
         return 'BRG-' . str_pad($this->id, 6, '0', STR_PAD_LEFT);
@@ -67,7 +67,7 @@ class Product extends Model
         return $this->total_stock < $threshold;
     }
 
-    // Accessor untuk threshold stok
+    // Accessor untuk threshold stock
     public function getStockThresholdAttribute(): int
     {
         return 10;

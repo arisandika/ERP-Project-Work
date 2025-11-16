@@ -119,7 +119,7 @@ class TransactionReportController extends Controller
             $pdf->setPaper('a4', 'landscape');
             
             // Download PDF
-            $filename = 'Laporan-Stok-Barang-' . now()->format('Y-m-d') . '.pdf';
+            $filename = 'Laporan-Stok-Produk-' . now()->format('Y-m-d') . '.pdf';
             return $pdf->download($filename);
             
         } catch (\Throwable $e) {

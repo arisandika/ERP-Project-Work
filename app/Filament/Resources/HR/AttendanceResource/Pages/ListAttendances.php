@@ -4,7 +4,8 @@ namespace App\Filament\Resources\HR\AttendanceResource\Pages;
 use App\Filament\Exports\AttendanceExporter;
 use App\Filament\Resources\HR\AttendanceResource;
 use App\Filament\Widgets\HR\AttendanceLeaveListWidget;
-use App\Filament\Widgets\HR\AttendanceStatsOverview;
+use App\Filament\Widgets\HR\AttendanceMapOverview;
+use App\Filament\Widgets\HR\AttendanceStatusChart;
 use App\Filament\Widgets\HR\AttendanceSummaryOverview;
 use Carbon\Carbon;
 use Filament\Actions\ExportAction;
@@ -92,7 +93,8 @@ class ListAttendances extends ListRecords
         return [
             AttendanceSummaryOverview::class,
             AttendanceLeaveListWidget::class,
-            AttendanceStatsOverview::class,
+            // AttendanceStatusChart::class,
+            AttendanceMapOverview::class,
         ];
     }
 }
