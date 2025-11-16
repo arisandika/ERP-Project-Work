@@ -6,14 +6,7 @@
 @endpush
 
 <x-filament-widgets::widget>
-    <x-filament::section>
-        <div class="flex items-center justify-between mb-2">
-            <h2 class="text-base font-semibold text-gray-800 dark:text-gray-100">
-                Tracking Presensi
-            </h2>
-            <span class="text-xs text-gray-500">{{ now()->format('d M Y') }}</span>
-        </div>
-
+    <x-filament::section heading="Tracking Presensi Karyawan">
         <div class="grid grid-cols-2 gap-3 mb-6">
             <div class="grid gap-y-2">
                 <label for="filter-date" class="text-sm font-medium leading-6 text-gray-950 dark:text-white">

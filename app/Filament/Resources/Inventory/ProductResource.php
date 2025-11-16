@@ -7,6 +7,7 @@ use App\Filament\Resources\Inventory\ProductResource\RelationManagers;
 use App\Models\Inventory\Product;
 use App\Models\Inventory\Category;
 use App\Models\Inventory\Unit;
+use App\Models\Inventory\Warehouse;
 use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Resources\Resource;
@@ -19,11 +20,15 @@ class ProductResource extends Resource
 {
     protected static ?string $model = Product::class;
 
-    protected static ?string $navigationGroup = 'Manajemen Inventory';
     protected static ?string $navigationIcon = 'heroicon-o-cube';
+
+    protected static ?string $navigationGroup = 'Manajemen Inventory';
+
     protected static ?int $navigationSort = 4;
 
-    protected static ?string $navigationLabel = 'Barang';
+    protected static ?string $slug = 'inventory/products';
+
+    protected static ?string $pluralModelLabel = 'Produk';
 
     public static function form(Form $form): Form
     {
@@ -32,91 +37,98 @@ class ProductResource extends Resource
                 Forms\Components\Section::make('Informasi Produk')
                     ->schema([
                         Forms\Components\TextInput::make('product_name')
-                            ->label('Nama Barang')
+                            ->label('Nama Produk')
                             ->required()
                             ->maxLength(100)
-                            ->columnSpanFull(),
+                            ->placeholder('Contoh: Laptop Lenovo ThinkPad')
+                            ->prefixIcon('heroicon-o-cube'),
 
-                Forms\Components\FileUpload::make('image_path')
-                    ->label('Foto Produk')
-                    ->directory('products')
-                    ->disk('public')
-                    ->image()
-                    ->imageEditor()
-                    ->imageResizeMode('cover')
-                    ->imageCropAspectRatio('4:3')
-                    ->openable()
-                    ->downloadable()
-                    ->preserveFilenames()
-                    ->hint('Opsional. Jika tidak diisi akan memakai gambar default')
-                    ->columnSpan(2),
-                        
                         Forms\Components\Select::make('category_id')
                             ->label('Kategori')
                             ->relationship('category', 'name')
                             ->required()
                             ->searchable()
                             ->preload()
+                            ->prefixIcon('heroicon-o-tag')
                             ->createOptionForm([
                                 Forms\Components\TextInput::make('name')
                                     ->label('Nama Kategori')
                                     ->required()
-                                    ->maxLength(50),
+                                    ->maxLength(50)
+                                    ->prefixIcon('heroicon-o-tag'),
                                 Forms\Components\Textarea::make('description')
                                     ->label('Deskripsi')
                                     ->rows(3),
                             ]),
-                        
+
                         Forms\Components\Select::make('unit_id')
                             ->label('Satuan')
                             ->relationship('unit', 'name')
                             ->required()
                             ->searchable()
                             ->preload()
+                            ->prefixIcon('heroicon-o-scale')
                             ->createOptionForm([
                                 Forms\Components\TextInput::make('name')
                                     ->label('Nama Satuan')
                                     ->required()
-                                    ->maxLength(20),
+                                    ->maxLength(20)
+                                    ->prefixIcon('heroicon-o-scale'),
                                 Forms\Components\TextInput::make('symbol')
                                     ->label('Simbol')
-                                    ->maxLength(10),
+                                    ->maxLength(10)
+                                    ->prefixIcon('heroicon-o-pencil'),
                                 Forms\Components\Textarea::make('description')
                                     ->label('Deskripsi')
                                     ->rows(2),
                             ]),
-                        
+
                         Forms\Components\TextInput::make('price')
                             ->label('Harga')
                             ->required()
                             ->numeric()
                             ->prefix('Rp')
                             ->step(0.01),
+
+                        Forms\Components\FileUpload::make('image_path')
+                            ->label('Foto Produk')
+                            ->directory('products')
+                            ->disk('public')
+                            ->image()
+                            ->imageEditor()
+                            ->imageResizeMode('cover')
+                            ->imageCropAspectRatio('4:3')
+                            ->openable()
+                            ->downloadable()
+                            ->preserveFilenames(),
+                            
                     ])
                     ->columns(2),
-                    
-                
+
                 Forms\Components\Section::make('Stok per Gudang')
+                    ->icon('heroicon-o-building-storefront')
                     ->schema([
                         Forms\Components\Repeater::make('productStocks')
                             ->relationship()
                             ->schema([
                                 Forms\Components\Select::make('warehouse_id')
                                     ->label('Gudang')
-                                    ->relationship('warehouse', 'warehouse_name', fn ($query) => $query->where('is_active', true))
+                                    ->relationship('warehouse', 'warehouse_name', fn($query) => $query->where('is_active', true))
                                     ->required()
                                     ->searchable()
                                     ->preload()
+                                    ->prefixIcon('heroicon-o-building-office')
                                     ->distinct()
                                     ->disableOptionsWhenSelectedInSiblingRepeaterItems(),
-                                
+
                                 Forms\Components\TextInput::make('qty')
                                     ->label('Jumlah Stok')
                                     ->required()
                                     ->numeric()
                                     ->default(0)
-                                    ->minValue(0),
-                                
+                                    ->minValue(0)
+                                    ->prefixIcon('heroicon-o-archive-box'),
+
                                 Forms\Components\Select::make('status')
                                     ->label('Status')
                                     ->options([
@@ -125,18 +137,14 @@ class ProductResource extends Resource
                                         'out_of_stock' => 'Habis',
                                     ])
                                     ->default('available')
-                                    ->required(),
+                                    ->required()
+                                    ->prefixIcon('heroicon-o-adjustments-horizontal'),
                             ])
                             ->columns(3)
                             ->defaultItems(1)
-                            ->addActionLabel('Tambah Gudang')
+                            ->addActionLabel('Tambah Stock di Gudang')
                             ->reorderable(false)
-                            ->collapsible()
-                            ->itemLabel(fn (array $state): ?string => 
-                                $state['id'] 
-                                    ? \App\Models\Inventory\Warehouse::find($state['id'])?->warehouse_name 
-                                    : 'Gudang Baru'
-                            ),
+                            ->collapsible(),
                     ])
                     ->collapsible(),
             ]);
@@ -148,25 +156,26 @@ class ProductResource extends Resource
             ->columns([
                 Tables\Columns\ImageColumn::make('image_path')
                     ->label('Foto')
-                    ->getStateUsing(fn ($record) => $record->image_url)
+                    ->getStateUsing(fn($record) => $record->image_url)
                     ->circular(),
 
                 Tables\Columns\TextColumn::make('kode_barang')
-                    ->label('Kode Barang')
-                    ->getStateUsing(fn ($record) => 'BRG-' . str_pad($record->id, 6, '0', STR_PAD_LEFT))
+                    ->label('Kode Produk')
+                    ->getStateUsing(fn($record) => 'BRG-' . str_pad($record->id, 6, '0', STR_PAD_LEFT))
                     ->searchable()
                     ->sortable(),
-                
+
                 Tables\Columns\TextColumn::make('product_name')
-                    ->label('Nama Barang')
+                    ->label('Nama Produk')
                     ->searchable()
                     ->sortable(),
-                
+
                 Tables\Columns\TextColumn::make('category.name')
                     ->label('Kategori')
                     ->searchable()
-                    ->sortable(),
-                
+                    ->sortable()
+                    ->icon('heroicon-o-tag'),
+
                 Tables\Columns\TextColumn::make('warehouses')
                     ->label('Gudang')
                     ->getStateUsing(function ($record) {
@@ -178,29 +187,28 @@ class ProductResource extends Resource
                             ->implode(', ');
                     })
                     ->badge()
-                    ->separator(',')
-                    ->searchable()
-                    ->wrap(),
-                
+                    ->wrap()
+                    ->icon('heroicon-o-building-office'),
+
                 Tables\Columns\TextColumn::make('total_stock')
                     ->label('Total Stok')
-                    ->getStateUsing(fn ($record) => $record->productStocks()->sum('qty'))
+                    ->getStateUsing(fn($record) => $record->productStocks()->sum('qty'))
                     ->numeric()
                     ->sortable()
                     ->badge()
-                    ->color(fn ($state) => match (true) {
+                    ->color(fn($state) => match (true) {
                         $state <= 0 => 'danger',
                         $state <= 5 => 'danger',
                         $state <= 10 => 'warning',
                         default => 'success',
                     })
-                    ->icon(fn ($state) => match (true) {
+                    ->icon(fn($state) => match (true) {
                         $state <= 0 => 'heroicon-m-x-circle',
                         $state <= 10 => 'heroicon-m-exclamation-triangle',
                         default => 'heroicon-m-check-circle',
                     })
-                    ->suffix(fn ($record) => ' ' . ($record->unit->symbol ?? $record->unit->name ?? '')),
-                
+                    ->suffix(fn($record) => ' ' . ($record->unit->symbol ?? $record->unit->name ?? '')),
+
                 Tables\Columns\TextColumn::make('price')
                     ->label('Harga')
                     ->money('idr')
@@ -211,19 +219,20 @@ class ProductResource extends Resource
                     ->label('Filter Stok')
                     ->form([
                         Forms\Components\Select::make('status')
-                            ->label('Status')
+                            ->label('Status Stock')
                             ->options([
                                 'low' => 'Stok Rendah',
                                 'normal' => 'Stok Normal',
-                            ]),
+                            ])
+                            ->prefixIcon('heroicon-o-chart-bar'),
                         Forms\Components\Select::make('warehouse_id')
                             ->label('Gudang')
-                            ->options(fn () => \App\Models\Inventory\Warehouse::query()
-                                ->orderBy('warehouse_name')
+                            ->options(fn() => Warehouse::orderBy('warehouse_name')
                                 ->pluck('warehouse_name', 'id')
                                 ->toArray())
                             ->searchable()
-                            ->preload(),
+                            ->preload()
+                            ->prefixIcon('heroicon-o-building-office'),
                     ])
                     ->indicateUsing(function (array $data): array {
                         $indicators = [];
@@ -233,7 +242,7 @@ class ProductResource extends Resource
                             $indicators[] = 'Status Stok: Stok Normal';
                         }
                         if (!empty($data['warehouse_id'])) {
-                            $name = \App\Models\Inventory\Warehouse::find($data['warehouse_id'])?->warehouse_name;
+                            $name = Warehouse::find($data['warehouse_id'])?->warehouse_name;
                             if ($name) {
                                 $indicators[] = 'Gudang: ' . $name;
                             }
@@ -278,13 +287,13 @@ class ProductResource extends Resource
                     ->preload(),
             ])
             ->actions([
-                Tables\Actions\ViewAction::make(),
-                Tables\Actions\EditAction::make(),
-                Tables\Actions\DeleteAction::make(),
+                Tables\Actions\ViewAction::make()->icon('heroicon-o-eye'),
+                Tables\Actions\EditAction::make()->icon('heroicon-o-pencil-square'),
+                Tables\Actions\DeleteAction::make()->icon('heroicon-o-trash'),
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([
-                    Tables\Actions\DeleteBulkAction::make(),
+                    Tables\Actions\DeleteBulkAction::make()->icon('heroicon-o-trash'),
                 ]),
             ]);
     }
@@ -322,6 +331,6 @@ class ProductResource extends Resource
 
     public static function getNavigationBadgeTooltip(): ?string
     {
-        return 'Produk dengan stok rendah (≤ 10)';
+        return 'Produk dengan stock rendah (≤ 10)';
     }
 }

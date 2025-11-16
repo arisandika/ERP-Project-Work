@@ -4,21 +4,20 @@ use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
-return new class extends Migration
-{
+return new class extends Migration {
     /**
      * Run the migrations.
      */
     public function up(): void
     {
         Schema::create('nx_services', function (Blueprint $table) {
-    $table->id('id'); // PK: id
-    $table->string('service_name', 100);
-    $table->decimal('price', 15, 2);
-    // FK ke Categories:
-    $table->foreignId('category_id')->constrained('nx_categories');
-    $table->timestamps();
-});
+            $table->id('id'); // PK: id
+            $table->string('service_name', 100);
+            $table->decimal('price', 15, 2);
+            // FK ke Categories:
+            $table->foreignId('category_id')->constrained('nx_categories');
+            $table->timestamps();
+        });
     }
 
     /**

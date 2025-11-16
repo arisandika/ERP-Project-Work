@@ -14,7 +14,7 @@ class AttendanceLeaveListWidget extends Widget
 
     public ?string $maxHeight = '300px';
 
-    protected int|string|array $columnSpan = '1';
+    protected int|string|array $columnSpan = 'full';
 
     public ?array $selectedEmployee = null;
     

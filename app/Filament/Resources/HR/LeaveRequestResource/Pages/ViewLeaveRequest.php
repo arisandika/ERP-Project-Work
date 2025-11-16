@@ -1,9 +1,10 @@
 <?php
-
 namespace App\Filament\Resources\HR\LeaveRequestResource\Pages;
 
 use App\Filament\Resources\HR\LeaveRequestResource;
+use App\Models\HR\LeaveRequest;
 use Filament\Actions;
+use Filament\Actions\Action;
 use Filament\Resources\Pages\ViewRecord;
 
 class ViewLeaveRequest extends ViewRecord
@@ -13,7 +14,17 @@ class ViewLeaveRequest extends ViewRecord
     protected function getHeaderActions(): array
     {
         return [
-            Actions\EditAction::make(),
+            Actions\EditAction::make()
+                ->visible(fn(LeaveRequest $record) => $record->status === 'pending'),
+            Action::make('back')
+                ->url(static::getResource()::getUrl())
+                ->button()
+                ->color('gray'),
         ];
+    }
+
+    public function getTitle(): string
+    {
+        return 'Lihat Pengajuan Cuti';
     }
 }

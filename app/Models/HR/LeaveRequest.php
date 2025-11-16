@@ -47,18 +47,15 @@ class LeaveRequest extends Model
         return $this->belongsTo(Employee::class, 'approved_by');
     }
 
-    protected function mutateFormDataBeforeCreate(array $data): array
+    public function remainingLeave(): int
     {
-        $user = auth()->user();
+        $used = LeaveRequest::where('employee_id', $this->employee_id)
+            ->where('leave_id', $this->leave_id)
+            ->where('status', 'approved')
+            ->sum('total_days');
 
-        // pastikan user punya relasi employee
-        if (! $user || ! $user->employee) {
-            abort(403, 'Akun ini tidak terhubung dengan data karyawan.');
-        }
+        $quota = $this->leave->days_count;
 
-        $data['employee_id'] = $user->employee->id;
-        $data['status'] = 'pending';
-
-        return $data;
+        return max($quota - $used, 0);
     }
 }

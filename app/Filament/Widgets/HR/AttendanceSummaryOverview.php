@@ -11,7 +11,12 @@ class AttendanceSummaryOverview extends BaseWidget
 {
     protected static ?string $pollingInterval  = '30s';
     protected static ?string $maxHeight        = '150px';
-    protected int|string|array $columnSpan = '3';
+    protected int|string|array $columnSpan = '2';
+    
+    public function getColumns(): int
+    {
+        return 4;
+    }
 
     protected function getStats(): array
     {

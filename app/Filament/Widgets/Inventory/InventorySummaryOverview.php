@@ -19,7 +19,7 @@ class InventorySummaryOverview extends BaseWidget
         $totalStockQty = (int) ProductStock::sum('qty');
 
         return [
-            Stat::make('Total Barang', (string) $totalProducts)
+            Stat::make('Total Produk', (string) $totalProducts)
                 ->description('Seluruh produk terdaftar')
                 ->icon('heroicon-o-cube')
                 ->color('primary'),

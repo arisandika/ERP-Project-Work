@@ -14,7 +14,8 @@ class ListProducts extends ListRecords
     protected function getHeaderActions(): array
     {
         return [
-            Actions\CreateAction::make(),
+            Actions\CreateAction::make()
+                ->label('Tambah Produk'),
         ];
     }
 
@@ -42,7 +43,7 @@ class ListProducts extends ListRecords
             \Filament\Notifications\Notification::make()
                 ->warning()
                 ->title('Peringatan Stok Rendah')
-                ->body("Terdapat {$lowStockCount} item dengan stok rendah. Gunakan menu untuk melihat detail.")
+                ->body("Terdapat {$lowStockCount} item dengan stock rendah. Gunakan menu untuk melihat detail.")
                 ->persistent()
                 ->send();
         }

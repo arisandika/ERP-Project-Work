@@ -18,49 +18,62 @@ class TransactionResource extends Resource
 {
     protected static ?string $model = StockTransaction::class;
 
-    protected static ?string $navigationGroup = 'Manajemen Inventory';
     protected static ?string $navigationIcon = 'heroicon-o-arrow-right-circle';
-    protected static ?int $navigationSort = 5;
 
-    protected static ?string $navigationLabel = 'Transaksi';
+    protected static ?string $navigationGroup = 'Manajemen Inventory';
+
+    protected static ?int $navigationSort = 7;
+
+    protected static ?string $slug = 'inventory/transactions';
+
+    protected static ?string $pluralModelLabel = 'Transaksi Stok Produk';
 
     public static function form(Form $form): Form
     {
         return $form
             ->schema([
-                Forms\Components\Select::make('product_id')
-                    ->label('Nama Barang')
-                    ->relationship('product', 'product_name')
-                    ->required()
-                    ->searchable()
-                    ->preload()
-                    ->getOptionLabelFromRecordUsing(fn (Product $record): string => $record->product_name . ' (' . 'BRG-' . str_pad($record->id, 6, '0', STR_PAD_LEFT) . ')'),
-                
-                Forms\Components\DatePicker::make('transaction_date')
-                    ->label('Tanggal')
-                    ->required()
-                    ->default(now())
-                    ->displayFormat('d/m/Y'),
-                
-                Forms\Components\Select::make('type')
-                    ->label('Jenis')
-                    ->required()
-                    ->options([
-                        'masuk' => 'Masuk',
-                        'keluar' => 'Keluar',
+                Forms\Components\Section::make('Informasi Transaksi')
+                    ->schema([
+                        Forms\Components\Select::make('product_id')
+                            ->label('Nama Produk')
+                            ->relationship('product', 'product_name')
+                            ->required()
+                            ->searchable()
+                            ->preload()
+                            ->getOptionLabelFromRecordUsing(fn (Product $record): string => 
+                                $record->product_name . ' (' . 'BRG-' . str_pad($record->id, 6, '0', STR_PAD_LEFT) . ')'
+                            ),
+
+                        Forms\Components\DateTimePicker::make('transaction_date')
+                            ->label('Tanggal Transaksi')
+                            ->required()
+                            ->default(now())
+                            ->displayFormat('d F Y H:i')
+                            ->icon('heroicon-o-calendar-days'),
+
+                        Forms\Components\Select::make('type')
+                            ->label('Jenis Transaksi')
+                            ->required()
+                            ->options([
+                                'masuk' => 'Masuk (Barang Masuk)',
+                                'keluar' => 'Keluar (Barang Keluar)',
+                            ])
+                            ->native(false),
+
+                        Forms\Components\TextInput::make('quantity')
+                            ->label('Jumlah Stock Barang')
+                            ->required()
+                            ->numeric()
+                            ->minValue(1)
+                            ->suffixIcon('heroicon-o-cube'),
+
+                        Forms\Components\Textarea::make('notes')
+                            ->label('Catatan Transaksi')
+                            ->rows(3)
+                            ->placeholder('Contoh: Barang retur, stock opname, atau penyesuaian stock')
+                            ->columnSpanFull(),
                     ])
-                    ->native(false),
-                
-                Forms\Components\TextInput::make('quantity')
-                    ->label('Jumlah')
-                    ->required()
-                    ->numeric()
-                    ->minValue(1),
-                
-                Forms\Components\Textarea::make('notes')
-                    ->label('Catatan')
-                    ->rows(3)
-                    ->columnSpanFull(),
+                    ->columns(2),
             ]);
     }
 
@@ -70,31 +83,31 @@ class TransactionResource extends Resource
             ->columns([
                 Tables\Columns\TextColumn::make('transaction_date')
                     ->label('Tanggal')
-                    ->date('d/m/Y')
+                    ->date('d F Y H:i')
                     ->sortable(),
-                
+
                 Tables\Columns\TextColumn::make('product.product_name')
-                    ->label('Nama Barang')
+                    ->label('Nama Produk')
                     ->searchable()
                     ->sortable(),
-                
+
                 Tables\Columns\TextColumn::make('type')
-                    ->label('Jenis')
+                    ->label('Jenis Transaksi')
                     ->badge()
                     ->color(fn (string $state): string => match ($state) {
                         'masuk' => 'success',
                         'keluar' => 'danger',
                     })
-                    ->formatStateUsing(fn (string $state): string => match ($state) {
-                        'masuk' => 'Masuk',
-                        'keluar' => 'Keluar',
-                    }),
-                
+                    ->formatStateUsing(fn (string $state): string => ucfirst($state)),
+
                 Tables\Columns\TextColumn::make('quantity')
-                    ->label('Jumlah')
+                    ->label('Jumlah Stock')
                     ->numeric()
-                    ->sortable(),
-                
+                    ->sortable()
+                    ->badge()
+                    ->color('info')
+                    ->suffix(' unit'),
+
                 Tables\Columns\TextColumn::make('notes')
                     ->label('Catatan')
                     ->limit(50)
@@ -107,24 +120,20 @@ class TransactionResource extends Resource
                         'masuk' => 'Masuk',
                         'keluar' => 'Keluar',
                     ]),
-                
+
                 Tables\Filters\Filter::make('transaction_date')
                     ->form([
                         Forms\Components\DatePicker::make('from')
-                            ->label('Dari Tanggal'),
+                            ->label('Dari Tanggal')
+                            ->icon('heroicon-o-calendar-days'),
                         Forms\Components\DatePicker::make('until')
-                            ->label('Sampai Tanggal'),
+                            ->label('Sampai Tanggal')
+                            ->icon('heroicon-o-calendar-days'),
                     ])
                     ->query(function (Builder $query, array $data): Builder {
                         return $query
-                            ->when(
-                                $data['from'],
-                                fn (Builder $query, $date): Builder => $query->whereDate('transaction_date', '>=', $date),
-                            )
-                            ->when(
-                                $data['until'],
-                                fn (Builder $query, $date): Builder => $query->whereDate('transaction_date', '<=', $date),
-                            );
+                            ->when($data['from'], fn ($q, $date) => $q->whereDate('transaction_date', '>=', $date))
+                            ->when($data['until'], fn ($q, $date) => $q->whereDate('transaction_date', '<=', $date));
                     }),
             ])
             ->actions([
@@ -143,9 +152,7 @@ class TransactionResource extends Resource
 
     public static function getRelations(): array
     {
-        return [
-            //
-        ];
+        return [];
     }
 
     public static function getPages(): array
