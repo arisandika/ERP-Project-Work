@@ -14,7 +14,7 @@ class ViewLeaveRequest extends ViewRecord
     protected function getHeaderActions(): array
     {
         return [
-            Actions\EditAction::make()
+            Actions\EditAction::make('Edit Pengajuan Cuti')
                 ->visible(fn(LeaveRequest $record) => $record->status === 'pending'),
             Action::make('back')
                 ->url(static::getResource()::getUrl())

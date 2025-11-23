@@ -1,9 +1,7 @@
 <?php
-
 namespace App\Filament\Resources\Inventory;
 
 use App\Filament\Resources\Inventory\ServiceResource\Pages;
-use App\Filament\Resources\Inventory\ServiceResource\RelationManagers;
 use App\Models\Inventory\Category;
 use App\Models\Inventory\Service;
 use Filament\Forms;
@@ -15,7 +13,6 @@ use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
-use Illuminate\Database\Eloquent\SoftDeletingScope;
 
 class ServiceResource extends Resource
 {
@@ -139,7 +136,8 @@ class ServiceResource extends Resource
                 Tables\Actions\BulkActionGroup::make([
                     Tables\Actions\DeleteBulkAction::make(),
                 ]),
-            ]);
+            ])
+            ->defaultSort('created_at', 'desc');
     }
 
     public static function infolist(Infolist $infolist): Infolist
@@ -172,10 +170,10 @@ class ServiceResource extends Resource
     public static function getPages(): array
     {
         return [
-            'index' => Pages\ListServices::route('/'),
+            'index'  => Pages\ListServices::route('/'),
             'create' => Pages\CreateService::route('/create'),
-            'view' => Pages\ViewService::route('/{record}'),
-            'edit' => Pages\EditService::route('/{record}/edit'),
+            'view'   => Pages\ViewService::route('/{record}'),
+            'edit'   => Pages\EditService::route('/{record}/edit'),
         ];
     }
 }

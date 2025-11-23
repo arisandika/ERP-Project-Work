@@ -1,12 +1,13 @@
 <?php
-
 namespace App\Filament\Resources\HR;
 
 use App\Filament\Resources\HR\LeaveApprovalResource\Pages;
-use App\Filament\Resources\HR\LeaveApprovalResource\RelationManagers;
 use App\Models\HR\LeaveRequest;
 use Filament\Forms;
 use Filament\Forms\Form;
+use Filament\Infolists\Components\Section;
+use Filament\Infolists\Components\TextEntry;
+use Filament\Infolists\Infolist;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
@@ -79,7 +80,7 @@ class LeaveApprovalResource extends Resource
                     Forms\Components\Select::make('status')
                         ->label('Status Persetujuan')
                         ->options([
-                            'pending' => 'Menunggu Persetujuan',
+                            'pending'  => 'Menunggu Persetujuan',
                             'approved' => 'Disetujui',
                             'rejected' => 'Ditolak',
                         ])
@@ -134,13 +135,13 @@ class LeaveApprovalResource extends Resource
                     ->colors([
                         'warning' => 'pending',
                         'success' => 'approved',
-                        'danger' => 'rejected',
+                        'danger'  => 'rejected',
                     ])
                     ->formatStateUsing(fn(string $state) => match ($state) {
-                        'pending' => 'Menunggu',
+                        'pending'  => 'Menunggu',
                         'approved' => 'Disetujui',
                         'rejected' => 'Ditolak',
-                        default => ucwords($state),
+                        default    => ucwords($state),
                     }),
 
                 Tables\Columns\TextColumn::make('approver.full_name')
@@ -155,7 +156,7 @@ class LeaveApprovalResource extends Resource
             ->filters([
                 Tables\Filters\SelectFilter::make('status')
                     ->options([
-                        'pending' => 'Menunggu Persetujuan',
+                        'pending'  => 'Menunggu Persetujuan',
                         'approved' => 'Disetujui',
                         'rejected' => 'Ditolak',
                     ])
@@ -221,6 +222,84 @@ class LeaveApprovalResource extends Resource
             ->defaultSort('created_at', 'desc');
     }
 
+    public static function infolist(Infolist $infolist): Infolist
+    {
+        return $infolist
+            ->schema([
+                Section::make('Informasi Pengajuan Cuti')
+                    ->columns(2)
+                    ->schema([
+                        TextEntry::make('employee.full_name')
+                            ->label('Nama Karyawan'),
+
+                        TextEntry::make('leave.leave_type')
+                            ->label('Jenis Cuti'),
+
+                        TextEntry::make('start_date')
+                            ->label('Tanggal Mulai')
+                            ->date('d F Y'),
+
+                        TextEntry::make('end_date')
+                            ->label('Tanggal Selesai')
+                            ->date('d F Y'),
+
+                        TextEntry::make('total_days')
+                            ->label('Durasi (Hari Kerja)')
+                            ->numeric(),
+
+                        TextEntry::make('reason')
+                            ->label('Alasan Cuti')
+                            ->columnSpanFull()
+                            ->placeholder('-'),
+                    ]),
+
+                Section::make('Status Persetujuan')
+                    ->columns(2)
+                    ->schema([
+                        TextEntry::make('status')
+                            ->label('Status')
+                            ->badge()
+                            ->color(fn(string $state) => match ($state) {
+                                'pending'  => 'warning',
+                                'approved' => 'success',
+                                'rejected' => 'danger',
+                                default    => 'secondary',
+                            }),
+
+                        TextEntry::make('approver.full_name')
+                            ->label('Disetujui Oleh')
+                            ->placeholder('-'),
+
+                        TextEntry::make('approved_at')
+                            ->label('Waktu Persetujuan')
+                            ->dateTime('d F Y H:i')
+                            ->visible(fn($record) => $record->approved_at !== null),
+
+                        TextEntry::make('approval_note')
+                            ->label('Catatan Admin')
+                            ->placeholder('-')
+                            ->columnSpanFull(),
+                    ]),
+
+                Section::make('Pengelolaan Data')
+                    ->columns(2)
+                    ->schema([
+                        TextEntry::make('created_at')
+                            ->label('Diajukan Pada')
+                            ->dateTime('d F Y H:i'),
+
+                        TextEntry::make('updated_at')
+                            ->label('Diperbarui Pada')
+                            ->dateTime('d F Y H:i'),
+
+                        TextEntry::make('deleted_at')
+                            ->label('Dihapus Pada')
+                            ->dateTime('d F Y H:i')
+                            ->visible(fn($record) => $record->trashed()),
+                    ]),
+            ]);
+    }
+
     public static function getRelations(): array
     {
         return [
@@ -232,8 +311,8 @@ class LeaveApprovalResource extends Resource
     {
         return [
             'index' => Pages\ListLeaveApprovals::route('/'),
-            'view' => Pages\ViewLeaveApproval::route('/{record}'),
-            'edit' => Pages\EditLeaveApproval::route('/{record}/edit'),
+            'view'  => Pages\ViewLeaveApproval::route('/{record}'),
+            'edit'  => Pages\EditLeaveApproval::route('/{record}/edit'),
         ];
     }
 

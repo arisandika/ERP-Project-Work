@@ -1,9 +1,7 @@
 <?php
-
 namespace App\Filament\Resources\Inventory;
 
 use App\Filament\Resources\Inventory\WarehouseResource\Pages;
-use App\Filament\Resources\Inventory\WarehouseResource\RelationManagers;
 use App\Models\Inventory\Warehouse;
 use Filament\Forms;
 use Filament\Forms\Form;
@@ -14,7 +12,6 @@ use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
-use Illuminate\Database\Eloquent\SoftDeletingScope;
 
 class WarehouseResource extends Resource
 {
@@ -255,10 +252,10 @@ class WarehouseResource extends Resource
     public static function getPages(): array
     {
         return [
-            'index' => Pages\ListWarehouses::route('/'),
+            'index'  => Pages\ListWarehouses::route('/'),
             'create' => Pages\CreateWarehouse::route('/create'),
-            'view' => Pages\ViewWarehouse::route('/{record}'),
-            'edit' => Pages\EditWarehouse::route('/{record}/edit'),
+            'view'   => Pages\ViewWarehouse::route('/{record}'),
+            'edit'   => Pages\EditWarehouse::route('/{record}/edit'),
         ];
     }
 }

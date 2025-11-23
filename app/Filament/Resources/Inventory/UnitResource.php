@@ -1,9 +1,7 @@
 <?php
-
 namespace App\Filament\Resources\Inventory;
 
 use App\Filament\Resources\Inventory\UnitResource\Pages;
-use App\Filament\Resources\Inventory\UnitResource\RelationManagers;
 use App\Models\Inventory\Unit;
 use Filament\Forms;
 use Filament\Forms\Form;
@@ -14,7 +12,6 @@ use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
-use Illuminate\Database\Eloquent\SoftDeletingScope;
 
 class UnitResource extends Resource
 {
@@ -126,7 +123,8 @@ class UnitResource extends Resource
                 Tables\Actions\BulkActionGroup::make([
                     Tables\Actions\DeleteBulkAction::make(),
                 ]),
-            ]);
+            ])
+            ->defaultSort('created_at', 'desc');
     }
 
     public static function infolist(Infolist $infolist): Infolist

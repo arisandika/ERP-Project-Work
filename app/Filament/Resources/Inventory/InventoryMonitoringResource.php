@@ -1,5 +1,4 @@
 <?php
-
 namespace App\Filament\Resources\Inventory;
 
 use App\Filament\Resources\Inventory\InventoryMonitoringResource\Pages;
@@ -55,16 +54,17 @@ class InventoryMonitoringResource extends Resource
                     ->colors([
                         'success' => 'available',
                         'warning' => 'reserved',
-                        'danger' => 'out_of_stock',
+                        'danger'  => 'out_of_stock',
                     ]),
             ])
             ->filters([
                 Filter::make('low_stock')
                     ->label('Stok ≤ 10')
-                    ->query(fn (Builder $query) => $query->where('qty', '<=', 10)),
+                    ->query(fn(Builder $query) => $query->where('qty', '<=', 10)),
             ])
             ->actions([])
-            ->bulkActions([]);
+            ->bulkActions([])
+            ->defaultSort('created_at', 'desc');
     }
 
     public static function getPages(): array
@@ -74,5 +74,3 @@ class InventoryMonitoringResource extends Resource
         ];
     }
 }
-
-

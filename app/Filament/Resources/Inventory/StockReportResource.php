@@ -1,5 +1,4 @@
 <?php
-
 namespace App\Filament\Resources\Inventory;
 
 use App\Filament\Resources\Inventory\StockReportResource\Pages;
@@ -31,7 +30,7 @@ class StockReportResource extends Resource
             ->columns([
                 Tables\Columns\TextColumn::make('kode_barang')
                     ->label('Kode Produk')
-                    ->getStateUsing(fn ($record) => 'BRG-' . str_pad($record->id, 6, '0', STR_PAD_LEFT))
+                    ->getStateUsing(fn($record) => 'BRG-' . str_pad($record->id, 6, '0', STR_PAD_LEFT))
                     ->searchable()
                     ->sortable(),
 
@@ -47,25 +46,25 @@ class StockReportResource extends Resource
 
                 Tables\Columns\TextColumn::make('total_stock')
                     ->label('Stok')
-                    ->getStateUsing(fn ($record) => $record->productStocks()->sum('qty'))
+                    ->getStateUsing(fn($record) => $record->productStocks()->sum('qty'))
                     ->numeric()
                     ->sortable()
                     ->badge()
-                    ->color(fn ($state) => match (true) {
-                        $state <= 0 => 'danger',
-                        $state <= 5 => 'danger',
+                    ->color(fn($state) => match (true) {
+                        $state <= 0  => 'danger',
+                        $state <= 5  => 'danger',
                         $state <= 10 => 'warning',
-                        default => 'success',
+                        default      => 'success',
                     })
-                    ->icon(fn ($state) => match (true) {
-                        $state <= 0 => 'heroicon-m-x-circle',
+                    ->icon(fn($state) => match (true) {
+                        $state <= 0  => 'heroicon-m-x-circle',
                         $state <= 10 => 'heroicon-m-exclamation-triangle',
-                        default => 'heroicon-m-check-circle',
+                        default      => 'heroicon-m-check-circle',
                     }),
 
                 Tables\Columns\TextColumn::make('unit.name')
                     ->label('Satuan')
-                    ->formatStateUsing(fn ($state, $record) => $record->unit->symbol ?? $record->unit->name ?? '-')
+                    ->formatStateUsing(fn($state, $record) => $record->unit->symbol ?? $record->unit->name ?? '-')
                     ->badge()
                     ->color('info'),
 
@@ -81,15 +80,15 @@ class StockReportResource extends Resource
                         Forms\Components\Select::make('status')
                             ->label('Status')
                             ->options([
-                                'low' => 'Stok Rendah',
+                                'low'    => 'Stok Rendah',
                                 'normal' => 'Stok Normal',
                             ]),
                         Forms\Components\Select::make('warehouse_id')
                             ->label('Gudang')
-                            ->options(fn () => Warehouse::query()
-                                ->orderBy('warehouse_name')
-                                ->pluck('warehouse_name', 'id')
-                                ->toArray())
+                            ->options(fn() => Warehouse::query()
+                                    ->orderBy('warehouse_name')
+                                    ->pluck('warehouse_name', 'id')
+                                    ->toArray())
                             ->searchable()
                             ->preload(),
                     ])
@@ -102,7 +101,7 @@ class StockReportResource extends Resource
                             $indicators[] = 'Status Stok: Stok Normal';
                         }
 
-                        if (!empty($data['warehouse_id'])) {
+                        if (! empty($data['warehouse_id'])) {
                             $name = Warehouse::find($data['warehouse_id'])?->warehouse_name;
                             if ($name) {
                                 $indicators[] = 'Gudang: ' . $name;
@@ -112,7 +111,7 @@ class StockReportResource extends Resource
                         return $indicators;
                     })
                     ->query(function (Builder $query, array $data) {
-                        $status = $data['status'] ?? null;
+                        $status      = $data['status'] ?? null;
                         $warehouseId = $data['warehouse_id'] ?? null;
 
                         if ($status === 'low') {
@@ -148,7 +147,7 @@ class StockReportResource extends Resource
                     ->searchable()
                     ->preload(),
             ])
-            ->defaultSort('product_name')
+            ->defaultSort('created_at', 'desc')
             ->deferLoading()
             ->paginated([10, 25, 50, 100]);
     }
@@ -199,4 +198,3 @@ class StockReportResource extends Resource
         return 'Produk dengan stok rendah (≤ 10)';
     }
 }
-
