@@ -5,6 +5,9 @@ use App\Filament\Resources\HR\LeaveRequestResource\Pages;
 use App\Models\HR\LeaveRequest;
 use Filament\Forms;
 use Filament\Forms\Form;
+use Filament\Infolists\Components\Section;
+use Filament\Infolists\Components\TextEntry;
+use Filament\Infolists\Infolist;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
@@ -49,11 +52,11 @@ class LeaveRequestResource extends Resource
                         ->reactive()
                         ->afterStateUpdated(function (callable $set, $get) {
                             $start = $get('start_date');
-                            $end = $get('end_date');
+                            $end   = $get('end_date');
 
                             if ($start && $end) {
                                 $startDate = Carbon::parse($start);
-                                $endDate = Carbon::parse($end);
+                                $endDate   = Carbon::parse($end);
 
                                 // Swap jika admin salah input (biar ga error)
                                 if ($startDate->gt($endDate)) {
@@ -62,7 +65,7 @@ class LeaveRequestResource extends Resource
                                 }
 
                                 $workingDays = $startDate->diffInDaysFiltered(
-                                    fn(Carbon $date) => !$date->isWeekend(),
+                                    fn(Carbon $date) => ! $date->isWeekend(),
                                     $endDate
                                 );
 
@@ -82,11 +85,11 @@ class LeaveRequestResource extends Resource
                         ->reactive()
                         ->afterStateUpdated(function (callable $set, $state, $get) {
                             $start = $get('start_date');
-                            $end = $state;
+                            $end   = $state;
 
                             if ($start && $end) {
                                 $startDate = Carbon::parse($start);
-                                $endDate = Carbon::parse($end);
+                                $endDate   = Carbon::parse($end);
 
                                 if ($startDate->gt($endDate)) {
                                     $set('total_days', null);
@@ -94,7 +97,7 @@ class LeaveRequestResource extends Resource
                                 }
 
                                 $workingDays = $startDate->diffInDaysFiltered(
-                                    fn(Carbon $date) => !$date->isWeekend(),
+                                    fn(Carbon $date) => ! $date->isWeekend(),
                                     $endDate
                                 );
 
@@ -155,13 +158,13 @@ class LeaveRequestResource extends Resource
                     ->colors([
                         'warning' => 'pending',
                         'success' => 'approved',
-                        'danger' => 'rejected',
+                        'danger'  => 'rejected',
                     ])
                     ->formatStateUsing(fn(string $state) => match ($state) {
-                        'pending' => 'Menunggu',
+                        'pending'  => 'Menunggu',
                         'approved' => 'Disetujui',
                         'rejected' => 'Ditolak',
-                        default => ucwords($state),
+                        default    => ucwords($state),
                     }),
 
                 Tables\Columns\TextColumn::make('approver.full_name')
@@ -173,11 +176,10 @@ class LeaveRequestResource extends Resource
                     ->dateTime('d F Y H:i')
                     ->sortable(),
             ])
-
             ->filters([
                 Tables\Filters\SelectFilter::make('status')
                     ->options([
-                        'pending' => 'Menunggu Persetujuan',
+                        'pending'  => 'Menunggu Persetujuan',
                         'approved' => 'Disetujui',
                         'rejected' => 'Ditolak',
                     ])
@@ -238,6 +240,86 @@ class LeaveRequestResource extends Resource
                 Tables\Actions\ViewAction::make(),
                 Tables\Actions\EditAction::make()
                     ->visible(fn(LeaveRequest $record) => $record->status === 'pending'),
+            ])
+            ->defaultSort('created_at', 'desc');
+    }
+
+    public static function infolist(Infolist $infolist): Infolist
+    {
+        return $infolist
+            ->schema([
+                Section::make('Informasi Pengajuan Cuti')
+                    ->description('Kamu bisa edit pengajuan cuti ini jika masih berstatus pending atau menunggu persetujuan.')
+                    ->columns(2)
+                    ->schema([
+                        TextEntry::make('employee.full_name')
+                            ->label('Nama Karyawan'),
+
+                        TextEntry::make('leave.leave_type')
+                            ->label('Jenis Cuti'),
+
+                        TextEntry::make('start_date')
+                            ->label('Tanggal Mulai')
+                            ->date('d F Y'),
+
+                        TextEntry::make('end_date')
+                            ->label('Tanggal Selesai')
+                            ->date('d F Y'),
+
+                        TextEntry::make('total_days')
+                            ->label('Durasi (Hari Kerja)')
+                            ->numeric(),
+
+                        TextEntry::make('reason')
+                            ->label('Alasan Cuti')
+                            ->columnSpanFull()
+                            ->placeholder('-'),
+                    ]),
+
+                Section::make('Status Persetujuan')
+                    ->columns(2)
+                    ->schema([
+                        TextEntry::make('status')
+                            ->label('Status')
+                            ->badge()
+                            ->color(fn(string $state) => match ($state) {
+                                'pending'  => 'warning',
+                                'approved' => 'success',
+                                'rejected' => 'danger',
+                                default    => 'secondary',
+                            }),
+
+                        TextEntry::make('approver.full_name')
+                            ->label('Disetujui Oleh')
+                            ->placeholder('-'),
+
+                        TextEntry::make('approved_at')
+                            ->label('Waktu Persetujuan')
+                            ->dateTime('d F Y H:i')
+                            ->visible(fn($record) => $record->approved_at !== null),
+
+                        TextEntry::make('approval_note')
+                            ->label('Catatan Admin')
+                            ->placeholder('-')
+                            ->columnSpanFull(),
+                    ]),
+
+                Section::make('Pengelolaan Data')
+                    ->columns(2)
+                    ->schema([
+                        TextEntry::make('created_at')
+                            ->label('Diajukan Pada')
+                            ->dateTime('d F Y H:i'),
+
+                        TextEntry::make('updated_at')
+                            ->label('Diperbarui Pada')
+                            ->dateTime('d F Y H:i'),
+
+                        TextEntry::make('deleted_at')
+                            ->label('Dihapus Pada')
+                            ->dateTime('d F Y H:i')
+                            ->visible(fn($record) => $record->trashed()),
+                    ]),
             ]);
     }
 
@@ -251,10 +333,10 @@ class LeaveRequestResource extends Resource
     public static function getPages(): array
     {
         return [
-            'index' => Pages\ListLeaveRequests::route('/'),
+            'index'  => Pages\ListLeaveRequests::route('/'),
             'create' => Pages\CreateLeaveRequest::route('/create'),
-            'view' => Pages\ViewLeaveRequest::route('/{record}'),
-            'edit' => Pages\EditLeaveRequest::route('/{record}/edit'),
+            'view'   => Pages\ViewLeaveRequest::route('/{record}'),
+            'edit'   => Pages\EditLeaveRequest::route('/{record}/edit'),
         ];
     }
 
@@ -267,7 +349,7 @@ class LeaveRequestResource extends Resource
         $user = auth()->user();
 
         // Jika bukan super_admin, hanya tampilkan data cutinya sendiri
-        if (!$user->hasRole('super_admin')) {
+        if (! $user->hasRole('super_admin')) {
             $employee = $user->employee;
             if ($employee) {
                 $query->where('employee_id', $employee->id);

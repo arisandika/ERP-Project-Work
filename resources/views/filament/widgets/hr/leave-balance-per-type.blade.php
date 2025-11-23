@@ -48,7 +48,7 @@
 @endphp
 
 <x-filament::widget>
-    <x-filament::section heading="Sisa Cuti per Jenis">
+    <x-filament::section heading="Sisa Cuti per Jenis" description="Berikut adalah rincian sisa cuti Anda berdasarkan jenis cuti.">
         <div class="grid w-full grid-cols-1 gap-6 md:grid-cols-3 lg:grid-cols-3">
 
             @foreach($rows as $row)

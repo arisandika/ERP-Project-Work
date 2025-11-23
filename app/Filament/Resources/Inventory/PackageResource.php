@@ -7,9 +7,6 @@ use App\Models\Inventory\Product;
 use App\Models\Inventory\Service;
 use Filament\Forms;
 use Filament\Forms\Form;
-use Filament\Infolists\Components\Section;
-use Filament\Infolists\Components\TextEntry;
-use Filament\Infolists\Infolist;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
@@ -73,13 +70,13 @@ class PackageResource extends Resource
                                         return match ($get('item_type')) {
                                             'product' => Product::pluck('product_name', 'id'),
                                             'service' => Service::pluck('service_name', 'id'),
-                                            default => [],
+                                            default   => [],
                                         };
                                     })
                                     ->reactive()
                                     ->afterStateUpdated(function ($state, callable $set, callable $get) {
                                         $type = $get('item_type');
-                                        if (!$state || !$type) {
+                                        if (! $state || ! $type) {
                                             $set('price', 0);
                                             $set('subtotal', 0);
                                             return;
@@ -88,7 +85,7 @@ class PackageResource extends Resource
                                         $price = match ($type) {
                                             'product' => Product::find($state)?->price,
                                             'service' => Service::find($state)?->price,
-                                            default => 0,
+                                            default   => 0,
                                         } ?? 0;
 
                                         $set('price', $price);
@@ -99,7 +96,7 @@ class PackageResource extends Resource
                                     })
                                     ->afterStateHydrated(function ($state, callable $set, callable $get) {
                                         $type = $get('item_type');
-                                        if (!$state || !$type) {
+                                        if (! $state || ! $type) {
                                             $set('price', 0);
                                             $set('subtotal', 0);
                                             return;
@@ -108,7 +105,7 @@ class PackageResource extends Resource
                                         $price = match ($type) {
                                             'product' => Product::find($state)?->price,
                                             'service' => Service::find($state)?->price,
-                                            default => 0,
+                                            default   => 0,
                                         } ?? 0;
 
                                         $set('price', $price);
@@ -128,8 +125,8 @@ class PackageResource extends Resource
                                     ->reactive()
                                     ->afterStateUpdated(function (callable $set, callable $get) {
                                         $price = (float) $get('price');
-                                        $qty = (int) $get('quantity');
-                                        $qty = $qty > 0 ? $qty : 1;
+                                        $qty   = (int) $get('quantity');
+                                        $qty   = $qty > 0 ? $qty : 1;
                                         $set('subtotal', $price * $qty);
                                     }),
 
@@ -156,7 +153,6 @@ class PackageResource extends Resource
                                 $set('total_price', $total);
                             }),
                     ]),
-
 
                 Forms\Components\Section::make('Total Paket')
                     ->schema([
@@ -267,7 +263,8 @@ class PackageResource extends Resource
                     Tables\Actions\ForceDeleteBulkAction::make(),
                     Tables\Actions\RestoreBulkAction::make(),
                 ]),
-            ]);
+            ])
+            ->defaultSort('created_at', 'desc');
     }
 
     public static function getRelations(): array
@@ -279,9 +276,9 @@ class PackageResource extends Resource
     public static function getPages(): array
     {
         return [
-            'index' => Pages\ListPackages::route('/'),
+            'index'  => Pages\ListPackages::route('/'),
             'create' => Pages\CreatePackage::route('/create'),
-            'edit' => Pages\EditPackage::route('/{record}/edit'),
+            'edit'   => Pages\EditPackage::route('/{record}/edit'),
         ];
     }
 

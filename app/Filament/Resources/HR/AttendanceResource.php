@@ -1,9 +1,7 @@
 <?php
-
 namespace App\Filament\Resources\HR;
 
 use App\Filament\Resources\HR\AttendanceResource\Pages;
-use App\Filament\Resources\HR\AttendanceResource\RelationManagers;
 use App\Models\HR\Attendance;
 use Filament\Forms;
 use Filament\Forms\Form;
@@ -149,7 +147,8 @@ class AttendanceResource extends Resource
                     Tables\Actions\ForceDeleteBulkAction::make(),
                     Tables\Actions\RestoreBulkAction::make(),
                 ]),
-            ]);
+            ])
+            ->defaultSort('created_at', 'desc');
     }
 
     public static function infolist(Infolist $infolist): Infolist
@@ -194,10 +193,10 @@ class AttendanceResource extends Resource
     public static function getPages(): array
     {
         return [
-            'index' => Pages\ListAttendances::route('/'),
+            'index'  => Pages\ListAttendances::route('/'),
             'create' => Pages\CreateAttendance::route('/create'),
-            'view' => Pages\ViewAttendance::route('/{record}'),
-            'edit' => Pages\EditAttendance::route('/{record}/edit'),
+            'view'   => Pages\ViewAttendance::route('/{record}'),
+            'edit'   => Pages\EditAttendance::route('/{record}/edit'),
         ];
     }
 

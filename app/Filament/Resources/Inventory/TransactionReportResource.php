@@ -1,5 +1,4 @@
 <?php
-
 namespace App\Filament\Resources\Inventory;
 
 use App\Filament\Resources\Inventory\TransactionReportResource\Pages;
@@ -41,32 +40,32 @@ class TransactionReportResource extends Resource
                 Tables\Columns\TextColumn::make('type')
                     ->label('Jenis')
                     ->badge()
-                    ->color(fn (string $state): string => match ($state) {
-                        'masuk' => 'success',
+                    ->color(fn(string $state): string => match ($state) {
+                        'masuk'  => 'success',
                         'keluar' => 'danger',
-                        default => 'gray',
+                        default  => 'gray',
                     })
-                    ->icon(fn (string $state): string => match ($state) {
-                        'masuk' => 'heroicon-m-arrow-down-tray',
+                    ->icon(fn(string $state): string => match ($state) {
+                        'masuk'  => 'heroicon-m-arrow-down-tray',
                         'keluar' => 'heroicon-m-arrow-up-tray',
-                        default => 'heroicon-m-question-mark-circle',
+                        default  => 'heroicon-m-question-mark-circle',
                     })
-                    ->formatStateUsing(fn (string $state): string => match ($state) {
-                        'masuk' => 'Masuk',
+                    ->formatStateUsing(fn(string $state): string => match ($state) {
+                        'masuk'  => 'Masuk',
                         'keluar' => 'Keluar',
-                        default => ucfirst($state),
+                        default  => ucfirst($state),
                     }),
 
                 Tables\Columns\TextColumn::make('quantity')
                     ->label('Jumlah')
-                    ->formatStateUsing(fn ($state, $record) => number_format($state) . ' ' . ($record->product->unit->symbol ?? 'pcs'))
+                    ->formatStateUsing(fn($state, $record) => number_format($state) . ' ' . ($record->product->unit->symbol ?? 'pcs'))
                     ->alignRight()
                     ->sortable(),
 
                 Tables\Columns\TextColumn::make('notes')
                     ->label('Catatan')
                     ->limit(50)
-                    ->tooltip(fn ($record) => $record->notes ?? '-'),
+                    ->tooltip(fn($record) => $record->notes ?? '-'),
             ])
             ->filters([
                 Tables\Filters\Filter::make('transaction_date')
@@ -86,24 +85,27 @@ class TransactionReportResource extends Resource
                         return $query
                             ->when(
                                 $data['from'],
-                                fn (Builder $query, $date): Builder => $query->whereDate('transaction_date', '>=', $date),
+                                fn(Builder $query, $date): Builder => $query->whereDate('transaction_date', '>=', $date),
                             )
                             ->when(
                                 $data['until'],
-                                fn (Builder $query, $date): Builder => $query->whereDate('transaction_date', '<=', $date),
+                                fn(Builder $query, $date): Builder => $query->whereDate('transaction_date', '<=', $date),
                             );
                     }),
             ])
             ->defaultSort('transaction_date', 'desc')
-            ->modifyQueryUsing(fn (Builder $query) => $query->with(['product.unit']))
+            ->modifyQueryUsing(fn(Builder $query) => $query->with(['product.unit']))
             ->deferLoading()
             ->paginated([10, 25, 50, 100]);
     }
 
     // Disable CRUD actions
-    public static function canCreate(): bool { return false; }
-    public static function canEdit($record): bool { return false; }
-    public static function canDelete($record): bool { return false; }
+    public static function canCreate(): bool
+    {return false;}
+    public static function canEdit($record): bool
+    {return false;}
+    public static function canDelete($record): bool
+    {return false;}
 
     public static function getRelations(): array
     {
@@ -117,4 +119,3 @@ class TransactionReportResource extends Resource
         ];
     }
 }
-

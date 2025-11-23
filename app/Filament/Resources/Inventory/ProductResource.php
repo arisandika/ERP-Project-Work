@@ -1,11 +1,9 @@
 <?php
-
 namespace App\Filament\Resources\Inventory;
 
 use App\Filament\Resources\Inventory\ProductResource\Pages;
 use App\Filament\Resources\Inventory\ProductResource\RelationManagers;
 use App\Models\Inventory\Product;
-use App\Models\Inventory\Category;
 use App\Models\Inventory\Unit;
 use App\Models\Inventory\Warehouse;
 use Filament\Forms;
@@ -14,7 +12,6 @@ use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
-use Illuminate\Database\Eloquent\SoftDeletingScope;
 
 class ProductResource extends Resource
 {
@@ -101,7 +98,7 @@ class ProductResource extends Resource
                             ->openable()
                             ->downloadable()
                             ->preserveFilenames(),
-                            
+
                     ])
                     ->columns(2),
 
@@ -132,8 +129,8 @@ class ProductResource extends Resource
                                 Forms\Components\Select::make('status')
                                     ->label('Status')
                                     ->options([
-                                        'available' => 'Tersedia',
-                                        'reserved' => 'Dipesan',
+                                        'available'    => 'Tersedia',
+                                        'reserved'     => 'Dipesan',
                                         'out_of_stock' => 'Habis',
                                     ])
                                     ->default('available')
@@ -197,15 +194,15 @@ class ProductResource extends Resource
                     ->sortable()
                     ->badge()
                     ->color(fn($state) => match (true) {
-                        $state <= 0 => 'danger',
-                        $state <= 5 => 'danger',
+                        $state <= 0  => 'danger',
+                        $state <= 5  => 'danger',
                         $state <= 10 => 'warning',
-                        default => 'success',
+                        default      => 'success',
                     })
                     ->icon(fn($state) => match (true) {
-                        $state <= 0 => 'heroicon-m-x-circle',
+                        $state <= 0  => 'heroicon-m-x-circle',
                         $state <= 10 => 'heroicon-m-exclamation-triangle',
-                        default => 'heroicon-m-check-circle',
+                        default      => 'heroicon-m-check-circle',
                     })
                     ->suffix(fn($record) => ' ' . ($record->unit->symbol ?? $record->unit->name ?? '')),
 
@@ -221,15 +218,15 @@ class ProductResource extends Resource
                         Forms\Components\Select::make('status')
                             ->label('Status Stock')
                             ->options([
-                                'low' => 'Stok Rendah',
+                                'low'    => 'Stok Rendah',
                                 'normal' => 'Stok Normal',
                             ])
                             ->prefixIcon('heroicon-o-chart-bar'),
                         Forms\Components\Select::make('warehouse_id')
                             ->label('Gudang')
                             ->options(fn() => Warehouse::orderBy('warehouse_name')
-                                ->pluck('warehouse_name', 'id')
-                                ->toArray())
+                                    ->pluck('warehouse_name', 'id')
+                                    ->toArray())
                             ->searchable()
                             ->preload()
                             ->prefixIcon('heroicon-o-building-office'),
@@ -241,7 +238,7 @@ class ProductResource extends Resource
                         } elseif (($data['status'] ?? null) === 'normal') {
                             $indicators[] = 'Status Stok: Stok Normal';
                         }
-                        if (!empty($data['warehouse_id'])) {
+                        if (! empty($data['warehouse_id'])) {
                             $name = Warehouse::find($data['warehouse_id'])?->warehouse_name;
                             if ($name) {
                                 $indicators[] = 'Gudang: ' . $name;
@@ -250,7 +247,7 @@ class ProductResource extends Resource
                         return $indicators;
                     })
                     ->query(function (Builder $query, array $data) {
-                        $status = $data['status'] ?? null;
+                        $status      = $data['status'] ?? null;
                         $warehouseId = $data['warehouse_id'] ?? null;
 
                         if ($status === 'low') {
@@ -295,7 +292,8 @@ class ProductResource extends Resource
                 Tables\Actions\BulkActionGroup::make([
                     Tables\Actions\DeleteBulkAction::make()->icon('heroicon-o-trash'),
                 ]),
-            ]);
+            ])
+            ->defaultSort('created_at', 'desc');
     }
 
     public static function getRelations(): array
@@ -308,10 +306,10 @@ class ProductResource extends Resource
     public static function getPages(): array
     {
         return [
-            'index' => Pages\ListProducts::route('/'),
+            'index'  => Pages\ListProducts::route('/'),
             'create' => Pages\CreateProduct::route('/create'),
-            'view' => Pages\ViewProduct::route('/{record}'),
-            'edit' => Pages\EditProduct::route('/{record}/edit'),
+            'view'   => Pages\ViewProduct::route('/{record}'),
+            'edit'   => Pages\EditProduct::route('/{record}/edit'),
         ];
     }
 

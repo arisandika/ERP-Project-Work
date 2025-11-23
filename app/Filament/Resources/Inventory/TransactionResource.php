@@ -1,18 +1,15 @@
 <?php
-
 namespace App\Filament\Resources\Inventory;
 
 use App\Filament\Resources\Inventory\TransactionResource\Pages;
-use App\Filament\Resources\Inventory\TransactionResource\RelationManagers;
-use App\Models\Inventory\StockTransaction;
 use App\Models\Inventory\Product;
+use App\Models\Inventory\StockTransaction;
 use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
-use Illuminate\Database\Eloquent\SoftDeletingScope;
 
 class TransactionResource extends Resource
 {
@@ -40,7 +37,7 @@ class TransactionResource extends Resource
                             ->required()
                             ->searchable()
                             ->preload()
-                            ->getOptionLabelFromRecordUsing(fn (Product $record): string => 
+                            ->getOptionLabelFromRecordUsing(fn(Product $record): string =>
                                 $record->product_name . ' (' . 'BRG-' . str_pad($record->id, 6, '0', STR_PAD_LEFT) . ')'
                             ),
 
@@ -55,7 +52,7 @@ class TransactionResource extends Resource
                             ->label('Jenis Transaksi')
                             ->required()
                             ->options([
-                                'masuk' => 'Masuk (Barang Masuk)',
+                                'masuk'  => 'Masuk (Barang Masuk)',
                                 'keluar' => 'Keluar (Barang Keluar)',
                             ])
                             ->native(false),
@@ -94,11 +91,11 @@ class TransactionResource extends Resource
                 Tables\Columns\TextColumn::make('type')
                     ->label('Jenis Transaksi')
                     ->badge()
-                    ->color(fn (string $state): string => match ($state) {
-                        'masuk' => 'success',
+                    ->color(fn(string $state): string => match ($state) {
+                        'masuk'  => 'success',
                         'keluar' => 'danger',
                     })
-                    ->formatStateUsing(fn (string $state): string => ucfirst($state)),
+                    ->formatStateUsing(fn(string $state): string => ucfirst($state)),
 
                 Tables\Columns\TextColumn::make('quantity')
                     ->label('Jumlah Stock')
@@ -111,13 +108,13 @@ class TransactionResource extends Resource
                 Tables\Columns\TextColumn::make('notes')
                     ->label('Catatan')
                     ->limit(50)
-                    ->tooltip(fn ($record) => $record->notes),
+                    ->tooltip(fn($record) => $record->notes),
             ])
             ->filters([
                 Tables\Filters\SelectFilter::make('type')
                     ->label('Jenis')
                     ->options([
-                        'masuk' => 'Masuk',
+                        'masuk'  => 'Masuk',
                         'keluar' => 'Keluar',
                     ]),
 
@@ -132,8 +129,8 @@ class TransactionResource extends Resource
                     ])
                     ->query(function (Builder $query, array $data): Builder {
                         return $query
-                            ->when($data['from'], fn ($q, $date) => $q->whereDate('transaction_date', '>=', $date))
-                            ->when($data['until'], fn ($q, $date) => $q->whereDate('transaction_date', '<=', $date));
+                            ->when($data['from'], fn($q, $date) => $q->whereDate('transaction_date', '>=', $date))
+                            ->when($data['until'], fn($q, $date) => $q->whereDate('transaction_date', '<=', $date));
                     }),
             ])
             ->actions([
@@ -147,7 +144,7 @@ class TransactionResource extends Resource
                 ]),
             ])
             ->defaultSort('transaction_date', 'desc')
-            ->modifyQueryUsing(fn (Builder $query) => $query->with('product'));
+            ->modifyQueryUsing(fn(Builder $query) => $query->with('product'));
     }
 
     public static function getRelations(): array
@@ -158,11 +155,10 @@ class TransactionResource extends Resource
     public static function getPages(): array
     {
         return [
-            'index' => Pages\ListTransactions::route('/'),
+            'index'  => Pages\ListTransactions::route('/'),
             'create' => Pages\CreateTransaction::route('/create'),
-            'view' => Pages\ViewTransaction::route('/{record}'),
-            'edit' => Pages\EditTransaction::route('/{record}/edit'),
+            'view'   => Pages\ViewTransaction::route('/{record}'),
+            'edit'   => Pages\EditTransaction::route('/{record}/edit'),
         ];
     }
 }
-

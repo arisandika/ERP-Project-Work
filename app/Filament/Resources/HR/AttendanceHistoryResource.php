@@ -1,9 +1,7 @@
 <?php
-
 namespace App\Filament\Resources\HR;
 
 use App\Filament\Resources\HR\AttendanceHistoryResource\Pages;
-use App\Filament\Resources\HR\AttendanceHistoryResource\RelationManagers;
 use App\Models\HR\Attendance;
 use Filament\Forms;
 use Filament\Forms\Form;
@@ -93,13 +91,13 @@ class AttendanceHistoryResource extends Resource
                         return $query
                             ->when(
                                 $data['from'],
-                                fn (Builder $query, $date): Builder =>
-                                    $query->whereDate('date', '>=', $date)
+                                fn(Builder $query, $date): Builder =>
+                                $query->whereDate('date', '>=', $date)
                             )
                             ->when(
                                 $data['until'],
-                                fn (Builder $query, $date): Builder =>
-                                    $query->whereDate('date', '<=', $date)
+                                fn(Builder $query, $date): Builder =>
+                                $query->whereDate('date', '<=', $date)
                             );
                     })
                     ->indicateUsing(function (array $data): array {
@@ -127,7 +125,8 @@ class AttendanceHistoryResource extends Resource
                 Tables\Actions\ViewAction::make(),
             ])
             ->bulkActions([
-            ]);
+            ])
+            ->defaultSort('created_at', 'desc');
     }
 
     public static function infolist(Infolist $infolist): Infolist
@@ -141,9 +140,10 @@ class AttendanceHistoryResource extends Resource
                         TextEntry::make('shift.name')->label('Shift'),
                         TextEntry::make('date')->label('Tanggal')->date('d F Y'),
                         TextEntry::make('clock_in')->label('Jam Masuk')->time('H:i'),
-                        TextEntry::make('clock_out')->label('Jam Keluar')->time('H:i'),
+                        TextEntry::make('clock_out')->label('Jam Keluar')->time('H:i')->placeholder('-'),
                         TextEntry::make('status')->label('Status')->badge(),
-                        TextEntry::make('note')->label('Catatan')->columnSpanFull(),
+                        TextEntry::make('note')->label('Catatan')->columnSpanFull()
+                        ->placeholder('-'),
                     ]),
 
                 Section::make('Pengelolaan Data')
@@ -170,7 +170,7 @@ class AttendanceHistoryResource extends Resource
     {
         return [
             'index' => Pages\ListAttendanceHistories::route('/'),
-            'view' => Pages\ViewAttendanceHistory::route('/{record}'),
+            'view'  => Pages\ViewAttendanceHistory::route('/{record}'),
         ];
     }
 
@@ -183,7 +183,7 @@ class AttendanceHistoryResource extends Resource
         $user = auth()->user();
 
         // Jika bukan super_admin, hanya tampilkan data cutinya sendiri
-        if (!$user->hasRole('super_admin')) {
+        if (! $user->hasRole('super_admin')) {
             $employee = $user->employee;
             if ($employee) {
                 $query->where('employee_id', $employee->id);

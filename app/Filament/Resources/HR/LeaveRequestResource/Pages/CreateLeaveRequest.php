@@ -55,18 +55,13 @@ class CreateLeaveRequest extends CreateRecord
         }
 
         // CEGAH PENGAJUAN CUTI DI WEEKEND (Sabtu & Minggu)
-        $range = Carbon::parse($data['start_date'])
-            ->range($data['end_date']); // iterable every day
-
-        foreach ($range as $day) {
-            if ($day->isWeekend()) {
-                Notification::make()
-                    ->title('Tanggal tidak valid')
-                    ->body("Pengajuan cuti pada hari Sabtu atau Minggu tidak diperbolehkan.")
-                    ->danger()
-                    ->send();
-                $this->halt();
-            }
+        if ($start->isWeekend() || $end->isWeekend()) {
+            Notification::make()
+                ->title('Tanggal tidak valid')
+                ->body("Tanggal mulai dan tanggal selesai tidak boleh jatuh pada hari Sabtu atau Minggu.")
+                ->danger()
+                ->send();
+            $this->halt();
         }
 
         // CEGAH CUTI BENTROK (OVERLAP)

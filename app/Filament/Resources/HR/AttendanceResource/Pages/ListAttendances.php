@@ -5,7 +5,6 @@ use App\Filament\Exports\AttendanceExporter;
 use App\Filament\Resources\HR\AttendanceResource;
 use App\Filament\Widgets\HR\AttendanceLeaveListWidget;
 use App\Filament\Widgets\HR\AttendanceMapOverview;
-use App\Filament\Widgets\HR\AttendanceStatusChart;
 use App\Filament\Widgets\HR\AttendanceSummaryOverview;
 use Carbon\Carbon;
 use Filament\Actions\ExportAction;
@@ -20,45 +19,45 @@ class ListAttendances extends ListRecords
     public function getTabs(): array
     {
         return [
-            'all'          => Tab::make('Semua')
-                ->icon('heroicon-o-rectangle-stack'),
+            'all'              => Tab::make('Semua'),
 
-            'last_month'   => Tab::make('1 Bulan Terakhir')
-                ->icon('heroicon-o-calendar')
+            'last_3_month' => Tab::make('3 Bulan Terakhir')
+                ->modifyQueryUsing(fn(Builder $query) =>
+                    $query->where('date', '>=', Carbon::now()->subMonths(3)->startOfDay())
+                )
+                ->badge(
+                    $this->getRecordCount(Carbon::now()->subMonths(3)->startOfDay())
+                ),
+
+            'last_month'       => Tab::make('Bulan Lalu')
                 ->modifyQueryUsing(fn(Builder $query) =>
                     $query->where('date', '>=', Carbon::now()->subMonth()->startOfDay())
                 )
-                ->badgeColor('primary')
                 ->badge(
                     $this->getRecordCount(Carbon::now()->subMonth()->startOfDay())
                 ),
 
-            'last_2_weeks' => Tab::make('2 Minggu Terakhir')
-                ->icon('heroicon-o-calendar-days')
+            'this_month'       => Tab::make('Bulan Ini')
                 ->modifyQueryUsing(fn(Builder $query) =>
-                    $query->where('date', '>=', Carbon::now()->subWeeks(2)->startOfDay())
+                    $query->where('date', '>=', Carbon::now()->startOfMonth())
                 )
-                ->badgeColor('success')
                 ->badge(
-                    $this->getRecordCount(Carbon::now()->subWeeks(2)->startOfDay())
+                    $this->getRecordCount(Carbon::now()->startOfMonth())
                 ),
 
-            'last_week'    => Tab::make('1 Minggu Terakhir')
-                ->icon('heroicon-o-calendar')
+            'last_week'        => Tab::make('Minggu Ini')
                 ->modifyQueryUsing(fn(Builder $query) =>
                     $query->where('date', '>=', Carbon::now()->subWeek()->startOfDay())
                 )
-                ->badgeColor('warning')
                 ->badge(
                     $this->getRecordCount(Carbon::now()->subWeek()->startOfDay())
                 ),
 
-            'today'        => Tab::make('Hari Ini')
+            'today'            => Tab::make('Hari Ini')
                 ->icon('heroicon-o-clock')
                 ->modifyQueryUsing(fn(Builder $query) =>
                     $query->whereDate('date', Carbon::today())
                 )
-                ->badgeColor('danger')
                 ->badge(
                     $this->getRecordCount(Carbon::today())
                 ),
