@@ -2,6 +2,8 @@
 namespace App\Filament\Resources\HR;
 
 use App\Filament\Resources\HR\EmployeeResource\Pages;
+use App\Filament\Resources\HR\EmployeeResource\RelationManagers\AttendancesRelationManager;
+use App\Filament\Resources\HR\EmployeeResource\RelationManagers\LeaveRequestsRelationManager;
 use App\Models\HR\Employee;
 use Filament\Forms;
 use Filament\Forms\Form;
@@ -531,7 +533,8 @@ class EmployeeResource extends Resource
     public static function getRelations(): array
     {
         return [
-            //
+            AttendancesRelationManager::class,
+            LeaveRequestsRelationManager::class,
         ];
     }
 
