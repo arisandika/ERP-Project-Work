@@ -36,7 +36,7 @@ class InvoiceSent extends Mailable
     public function content(): Content
     {
         return new Content(
-            view: 'emails.invoice_sent',
+            view: 'emails.invoice',
         );
     }
 
