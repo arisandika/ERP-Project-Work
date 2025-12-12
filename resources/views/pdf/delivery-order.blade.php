@@ -66,7 +66,7 @@
     <!-- 2. JUDUL DOKUMEN -->
     <div class="document-title">
         <h1>SURAT JALAN</h1>
-        <p>No: {{ $record->do_number }}</p>
+        <p>No: {{ $do->do_number }}</p>
     </div>
 
     <!-- 3. INFO PENGIRIMAN -->
