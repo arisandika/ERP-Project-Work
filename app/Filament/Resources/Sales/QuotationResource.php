@@ -231,7 +231,7 @@ class QuotationResource extends Resource
                     return match ($get('item_type')) {
                         'product' => \App\Models\Inventory\Product::pluck('product_name', 'id')->toArray(),
                         'service' => \App\Models\Inventory\Service::pluck('service_name', 'id')->toArray(),
-                        'package' => \App\Models\Sales\Package::pluck('package_name', 'id')->toArray(),
+                        'package' => \App\Models\Inventory\Package::pluck('package_name', 'id')->toArray(),
                         default => [],
                     };
                 })
@@ -246,7 +246,7 @@ class QuotationResource extends Resource
                     $model = match ($get('item_type')) {
                         'product' => \App\Models\Inventory\Product::find($state),
                         'service' => \App\Models\Inventory\Service::find($state),
-                        'package' => \App\Models\Sales\Package::find($state),
+                        'package' => \App\Models\Inventory\Package::find($state),
                     };
 
                     if ($model) {
