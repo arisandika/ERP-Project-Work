@@ -3,6 +3,8 @@
 use App\Http\Controllers\API\HR\AttendanceController;
 use App\Http\Controllers\Inventory\StockReportPdfController;
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\Sales\PrintController;
+
 
 // Route::get('/', function () {
 //     return view('welcome');
@@ -18,4 +20,9 @@ Route::middleware(['auth'])->group(function () {
 
     Route::get('/inventory/stock-report/download-pdf', [StockReportPdfController::class, 'download'])->name('inventory.stock-report.download-pdf');
 
+    Route::get('/print/delivery-order/{record}', [PrintController::class, 'deliveryOrder'])
+        ->name('print.delivery-order');
+
+    Route::get('/invoice/verify/{number}', [PrintController::class, 'verifyInvoice'])
+        ->name('invoice.verify');
 });
