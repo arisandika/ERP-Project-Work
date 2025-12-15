@@ -37,7 +37,7 @@ class QuotationItem extends Model
     ];
 
     protected $casts = [
-        'qty'              => 'decimal:4',
+        'qty'              => 'integer',
         'unit_price'       => 'decimal:2',
         'discount'         => 'decimal:2',
         'tax'              => 'decimal:2',
