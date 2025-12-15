@@ -212,7 +212,7 @@ class InvoiceResource extends Resource
     {
         return $table
             ->columns([
-                Tables\Columns\TextColumn::make('invoice_number')->label('Nomor Invoice')->sortable()->searchable()->weight('bold'),
+                Tables\Columns\TextColumn::make('invoice_number')->label('Nomor Invoice')->sortable()->searchable(),
                 Tables\Columns\TextColumn::make('customer.name')->label('Pelanggan')->sortable()->searchable(),
                 Tables\Columns\TextColumn::make('invoice_date')->label('Tanggal')->date('d M Y')->sortable(),
                 Tables\Columns\TextColumn::make('grand_total')->label('Total')->money('IDR', true)->sortable(),
@@ -294,7 +294,6 @@ class InvoiceResource extends Resource
                         }
                     }),
 
-                Tables\Actions\ViewAction::make(),
                 Tables\Actions\EditAction::make(),
                 Tables\Actions\DeleteAction::make(),
             ])
