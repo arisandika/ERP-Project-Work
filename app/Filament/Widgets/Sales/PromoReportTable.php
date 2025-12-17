@@ -14,7 +14,6 @@ class PromoReportTable extends BaseWidget
     use InteractsWithPageFilters;
 
     protected static ?string $heading = 'Top Promo Performance';
-
     protected int | string | array $columnSpan = 'full';
 
     public function table(Table $table): Table
@@ -22,11 +21,12 @@ class PromoReportTable extends BaseWidget
         return $table
             ->query(
                 SalesOrder::query()
-                    // Aggregate: Hitung berapa kali dipakai & total omzet
                     ->selectRaw('promo_code_id, count(*) as usage_count, sum(grand_total) as revenue_generated')
-                    ->whereNotNull('promo_code_id') // Hanya ambil yg ada promonya
+                    // Trik: Alias-kan ID agar Filament mengira ini Primary Key
+                    ->selectRaw('promo_code_id as id')
+                    ->whereNotNull('promo_code_id')
 
-                    // Filter Tanggal dari Dashboard Page
+                    // Filter Tanggal
                     ->when(
                         $this->filters['start_date'] ?? null,
                         fn (Builder $q, $date) => $q->whereDate('created_at', '>=', $date)
@@ -40,27 +40,29 @@ class PromoReportTable extends BaseWidget
                     ->orderByDesc('usage_count')
                     ->limit(5)
             )
+            // HAPUS BARIS INI: ->recordKey(...)
+
             ->columns([
-                // Nama Promo (Relasi ke Master Promo)
                 Tables\Columns\TextColumn::make('promoCode.code')
                     ->label('Kode')
                     ->badge()
                     ->color('info')
                     ->description(fn ($record) => $record->promoCode->type ?? '-'),
 
-                // Jumlah Pemakaian
                 Tables\Columns\TextColumn::make('usage_count')
                     ->label('Used')
                     ->alignCenter()
                     ->badge()
                     ->color('gray'),
 
-                // Omzet yang Dihasilkan
                 Tables\Columns\TextColumn::make('revenue_generated')
                     ->label('Sales')
                     ->money('IDR')
-                    ->size(Tables\Columns\TextColumn\TextColumnSize::ExtraSmall), // Ukuran kecil biar muat
+                    ->size(Tables\Columns\TextColumn\TextColumnSize::ExtraSmall),
             ])
-            ->paginated(false);
+            ->paginated(false)
+            // Nonaktifkan klik baris karena ini data agregat
+            ->recordUrl(null)
+            ->recordAction(null);
     }
 }

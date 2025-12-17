@@ -22,7 +22,10 @@ class OperationalAlertTable extends BaseWidget
         return $table
             ->query(
                 Invoice::query()
-                    // Logika: Tanggal Jatuh Tempo
+                    // [PENTING] Select semua kolom agar 'id' terbawa.
+                    // Ini kunci agar Filament tidak error "null returned".
+                    ->select('*')
+
                     ->whereDate('due_date', '<', now())
                     ->where(function (Builder $query) {
                         $query->where('status', 'unpaid')
@@ -31,6 +34,8 @@ class OperationalAlertTable extends BaseWidget
                     ->orderBy('due_date', 'asc')
                     ->limit(5)
             )
+            // [HAPUS BARIS INI] ->recordKey('id') // Method ini tidak valid di sini.
+
             ->columns([
                 Tables\Columns\TextColumn::make('invoice_number')
                     ->label('No. Invoice')
@@ -57,9 +62,8 @@ class OperationalAlertTable extends BaseWidget
                         'paid' => 'success',
                         default => 'gray',
                     }),
-
-
-            ])->actions([
+            ])
+            ->actions([
                 Action::make('sendReminder')
                     ->icon('heroicon-o-envelope')
                     ->label('Email')
@@ -81,14 +85,21 @@ class OperationalAlertTable extends BaseWidget
                         }
 
                         // Kirim Email
-                        Mail::to($email)->send(new InvoiceReminderMail($record));
+                        try {
+                            Mail::to($email)->send(new InvoiceReminderMail($record));
 
-                        // Notifikasi Sukses ke Admin
-                        Notification::make()
-                            ->title('Terkirim')
-                            ->body("Reminder untuk Invoice #{$record->invoice_number} berhasil dikirim.")
-                            ->success()
-                            ->send();
+                            Notification::make()
+                                ->title('Terkirim')
+                                ->body("Reminder untuk Invoice #{$record->invoice_number} berhasil dikirim.")
+                                ->success()
+                                ->send();
+                        } catch (\Exception $e) {
+                            Notification::make()
+                                ->title('Gagal Kirim Email')
+                                ->body($e->getMessage())
+                                ->danger()
+                                ->send();
+                        }
                     }),
             ])
             ->paginated(false);

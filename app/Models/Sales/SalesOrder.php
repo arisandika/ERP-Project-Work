@@ -24,9 +24,10 @@ class SalesOrder extends Model
         'status',
         'notes',
         'subtotal',
-        'discount',
+        'discount_amount',
         'tax',
         'grand_total',
+        'promo_code_id',
     ];
 
     // Mengubah tipe data kolom tertentu secara otomatis
@@ -58,5 +59,5 @@ class SalesOrder extends Model
         return $this->belongsTo(Quotation::class, 'nx_quotation_id')->withDefault();
     }
 
-    
+
 }

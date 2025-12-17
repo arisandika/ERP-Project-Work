@@ -119,6 +119,7 @@ class QuotationResource extends Resource
                     TextInput::make('promo_code_input')
                         ->label('Kode Promo')
                         ->placeholder('Masukkan kode')
+                        ->dehydrated(false)
                         ->formatStateUsing(fn ($record) => $record?->promoCode?->code)
                         ->suffixAction(
                             FormAction::make('apply_promo')
@@ -144,10 +145,10 @@ class QuotationResource extends Resource
                                         $set('temp_discount_type', null);
                                         $set('temp_discount_value', 0);
                                     } else {
-                                        Notification::make()->title("Promo '{$promo->code}' diterapkan!")->success()->send();
+                                        Notification::make()->title("Promo '{$promo->code}' berhasil diterapkan!")->success()->send();
                                         // Set Hidden Fields
                                         $set('promo_code_id', $promo->id);
-                                        $set('temp_discount_type', $promo->type); // 'fixed' or 'percentage'
+                                        $set('temp_discount_type', $promo->type);
                                         $set('temp_discount_value', $promo->value);
                                     }
 
@@ -157,9 +158,10 @@ class QuotationResource extends Resource
                         ),
 
                     // Hidden Fields Promo
-                    TextInput::make('promo_code_id')->hidden()->dehydrated(),
-                    TextInput::make('temp_discount_type')->hidden()->dehydrated(false),
-                    TextInput::make('temp_discount_value')->hidden()->dehydrated(false),
+                    Forms\Components\Hidden::make('promo_code_id'),
+
+                    Forms\Components\Hidden::make('temp_discount_type')->dehydrated(false),
+                    Forms\Components\Hidden::make('temp_discount_value')->dehydrated(false),
 
                     TextInput::make('discount_amount')
                         ->label('Potongan')
@@ -180,7 +182,7 @@ class QuotationResource extends Resource
 
                             self::updateTotals($get, $set);
                         }),
-                        
+
                     TextInput::make('grand_total')
                         ->label('Grand Total')
                         ->disabled()
@@ -242,6 +244,18 @@ class QuotationResource extends Resource
                     }
                 }),
 
+            // [REVISI] Item Code ditampilkan, readOnly, dan dehydrated
+            TextInput::make('item_code')
+                ->label('Kode Item')
+                ->readOnly()
+                ->dehydrated(),
+
+            TextInput::make('item_name')
+                ->label('Nama Item')
+                ->readOnly()
+                ->dehydrated()
+                ->columnSpan(1),
+
             TextInput::make('qty')
                 ->numeric()
                 ->integer()
@@ -256,7 +270,6 @@ class QuotationResource extends Resource
                     self::updateItemTotal($get, $set);
                 }),
 
-
             TextInput::make('unit_price')
                 ->numeric()
                 ->reactive()
@@ -268,14 +281,6 @@ class QuotationResource extends Resource
                 ->disabled()
                 ->dehydrated()
                 ->prefix('Rp'),
-
-            TextInput::make('item_name')
-                ->label('Nama Item')
-                ->readOnly()
-                ->dehydrated()
-                ->columnSpanFull(),
-
-            TextInput::make('item_code')->hidden()->dehydrated(),
         ];
     }
 
