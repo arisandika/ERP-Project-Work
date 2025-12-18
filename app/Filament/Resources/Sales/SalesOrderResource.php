@@ -5,6 +5,7 @@ namespace App\Filament\Resources\Sales;
 use App\Filament\Resources\Sales\SalesOrderResource\Pages;
 use App\Models\Sales\SalesOrder;
 use App\Models\Sales\Quotation;
+use App\Models\Sales\PromoCode;
 use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Forms\Components\Section;
@@ -14,6 +15,9 @@ use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\DatePicker;
+use Filament\Forms\Components\Actions\Action as FormAction;
+use Filament\Forms\Components\Hidden; // Tambahan Import
+use Filament\Notifications\Notification;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
@@ -60,7 +64,7 @@ class SalesOrderResource extends Resource
                         ->maxLength(50),
                 ]),
 
-                // --- LOGIC PENTING: COPY QUOTATION ---
+                // --- LOGIC COPY QUOTATION ---
                 Grid::make(1)->schema([
                     Select::make('nx_quotation_id')
                         ->label('No. Penawaran (Opsional)')
@@ -72,41 +76,41 @@ class SalesOrderResource extends Resource
                         ->afterStateUpdated(function ($state, callable $set, callable $get) {
                             if (! $state) return;
 
-                            $quotation = Quotation::with('items')->find($state);
+                            $quotation = Quotation::with('items', 'promoCode')->find($state);
                             if (! $quotation) return;
 
                             // 1. Copy Header
                             $set('nx_customer_id', $quotation->nx_customer_id);
 
-                            // 2. Hitung Diskon (Prioritas: Promo Code > Diskon Manual Lama)
-                            $subtotalQ = (float) $quotation->subtotal;
-                            $discountRupiah = 0;
+                            // 2. Copy Promo Code (Jika ada)
+                            if ($quotation->promo_code_id) {
+                                $set('promo_code_id', $quotation->promo_code_id);
+                                $set('promo_code_input', $quotation->promoCode?->code);
 
-                            if ($quotation->discount_amount > 0) {
-                                // Ambil dari hasil promo code
-                                $discountRupiah = (float) $quotation->discount_amount;
-                            } elseif ($quotation->discount > 0) {
-                                // Fallback: Konversi diskon % lama ke Rupiah
-                                $discountRupiah = $subtotalQ * ($quotation->discount / 100);
+                                // Set parameter temp untuk perhitungan
+                                if ($quotation->promoCode) {
+                                    $set('temp_discount_type', $quotation->promoCode->type);
+                                    $set('temp_discount_value', $quotation->promoCode->value);
+                                }
+                            } else {
+                                // Jika di SQ tidak ada promo, reset
+                                $set('promo_code_id', null);
+                                $set('promo_code_input', null);
+                                $set('temp_discount_type', null);
+                                $set('temp_discount_value', 0);
                             }
 
-                            // Set nilai ke field agar bisa diedit user
-                            $set('discount', $discountRupiah);
-
-                            // 3. Hitung Pajak (Konversi % ke Rupiah karena SO pakai Rupiah)
+                            // 3. Copy Pajak (Persen)
                             $taxPercent = (float) ($quotation->tax ?? 0);
-                            // Pajak dihitung dari (Subtotal - Diskon)
-                            $taxable = max($subtotalQ - $discountRupiah, 0);
-                            $taxRupiah = $taxable * ($taxPercent / 100);
-
-                            $set('tax', $taxRupiah);
+                            $set('tax', $taxPercent);
 
                             // 4. Copy Items
                             $items = $quotation->items->map(function ($item) {
                                 $qty   = (float) $item->qty;
                                 $price = (float) $item->unit_price;
                                 return [
-                                    'item_type'  => $item->item_type,
+                                    // PENTING: Fallback ke 'product' jika item_type null
+                                    'item_type'  => $item->item_type ?? 'product',
                                     'item_id'    => $item->item_id,
                                     'item_code'  => $item->item_code,
                                     'item_name'  => $item->item_name,
@@ -165,13 +169,18 @@ class SalesOrderResource extends Resource
                 Repeater::make('items')
                     ->relationship()
                     ->schema([
-                        TextInput::make('item_type')->hidden()->dehydrated(),
-                        TextInput::make('item_id')->hidden()->dehydrated(),
-                        TextInput::make('item_code')->hidden()->dehydrated(),
+                        // --- FIX UTAMA: Gunakan Hidden component & dehydrated(true) ---
+                        Hidden::make('item_type')
+                            ->default('product')
+                            ->dehydrated(true),
+
+                        Hidden::make('item_id')->dehydrated(true),
+                        Hidden::make('item_code')->dehydrated(true),
+                        // -------------------------------------------------------------
 
                         TextInput::make('item_name')
                             ->label('Nama Item')
-                            ->readOnly()
+                            ->readOnly() // Jika Anda ingin user bisa edit nama manual, hapus readOnly()
                             ->dehydrated()
                             ->columnSpanFull(),
 
@@ -222,22 +231,61 @@ class SalesOrderResource extends Resource
                         ->dehydrated()
                         ->prefix('Rp'),
 
-                    // Field Diskon Rupiah (Editable)
-                    TextInput::make('discount')
-                        ->label('Diskon (Rp)')
-                        ->numeric()
-                        ->default(0)
-                        ->minValue(0)
-                        ->reactive() // Reactive biar kalau user edit manual, total berubah
-                        ->afterStateUpdated(function ($state, callable $set, callable $get) {
-                            if ($state < 0) $set('discount', 0);
-                            self::updateTotals($get, $set);
-                        })
-                        ->prefixIcon('heroicon-o-tag'),
+                    // === LOGIC PROMO CODE ===
+                    TextInput::make('promo_code_input')
+                        ->label('Kode Promo')
+                        ->placeholder('Masukkan kode')
+                        ->dehydrated(false)
+                        ->formatStateUsing(fn ($record) => $record?->promoCode?->code)
+                        ->suffixAction(
+                            FormAction::make('apply_promo')
+                                ->icon('heroicon-m-ticket')
+                                ->color('success')
+                                ->label('Apply')
+                                ->action(function ($state, callable $set, callable $get) {
+                                    // Reset jika input kosong
+                                    if (empty($state)) {
+                                        $set('promo_code_id', null);
+                                        $set('temp_discount_type', null);
+                                        $set('temp_discount_value', 0);
+                                        self::updateTotals($get, $set);
+                                        return;
+                                    }
 
-                    // Field Pajak Rupiah (Editable)
+                                    // Cek Database
+                                    $promo = PromoCode::where('code', $state)->where('status', 'active')->first();
+
+                                    if (!$promo) {
+                                        Notification::make()->title('Kode tidak valid / expired!')->danger()->send();
+                                        $set('promo_code_id', null);
+                                        $set('temp_discount_type', null);
+                                        $set('temp_discount_value', 0);
+                                    } else {
+                                        Notification::make()->title("Promo '{$promo->code}' berhasil diterapkan!")->success()->send();
+                                        $set('promo_code_id', $promo->id);
+                                        $set('temp_discount_type', $promo->type);
+                                        $set('temp_discount_value', $promo->value);
+                                    }
+
+                                    self::updateTotals($get, $set);
+                                })
+                        ),
+
+                    // Hidden Fields Promo
+                    Hidden::make('promo_code_id'),
+                    Hidden::make('temp_discount_type')->dehydrated(false),
+                    Hidden::make('temp_discount_value')->dehydrated(false),
+
+                    // Field Hasil Diskon
+                    TextInput::make('discount_amount')
+                        ->label('Potongan (Rp)')
+                        ->readOnly()
+                        ->dehydrated()
+                        ->prefix('Rp'),
+
+                    // Field Pajak (Persen)
                     TextInput::make('tax')
-                        ->label('Pajak (Rp)')
+                        ->label('Pajak (%)')
                         ->numeric()
                         ->default(0)
                         ->minValue(0)
@@ -269,30 +317,47 @@ class SalesOrderResource extends Resource
 
     public static function updateTotals(callable $get, callable $set): void
     {
-        // 1. Hitung Subtotal
+        // 1. Hitung Subtotal Item
         $items = $get('items') ?? [];
         $subtotal = collect($items)->sum(
             fn ($item) => (float) ($item['qty'] ?? 0) * (float) ($item['unit_price'] ?? 0)
         );
         $set('subtotal', $subtotal);
 
-        // 2. Ambil Inputan User (Diskon & Pajak)
-        // Karena field ini editable, kita ambil apapun yg ada di form sekarang
-        $discountAmount = (float) ($get('discount') ?? 0);
-        $taxAmount      = (float) ($get('tax') ?? 0);
+        // 2. Logic Kalkulasi Promo
+        $discountType = $get('temp_discount_type');
+        $discountValue = (float) $get('temp_discount_value');
 
-        // 3. Validasi Logic (Diskon tidak boleh lebih besar dari subtotal)
-        if ($discountAmount > $subtotal) {
-            $discountAmount = $subtotal;
-            $set('discount', $subtotal); // Auto koreksi di UI
+        if (!$discountType && $get('promo_code_id')) {
+            $promo = PromoCode::find($get('promo_code_id'));
+            if ($promo) {
+                $discountType = $promo->type;
+                $discountValue = $promo->value;
+                $set('temp_discount_type', $discountType);
+                $set('temp_discount_value', $discountValue);
+                $set('promo_code_input', $promo->code);
+            }
         }
 
-        // 4. Hitung Grand Total
-        // Rumus: (Subtotal - Diskon) + Pajak
-        $afterDiscount = max($subtotal - $discountAmount, 0);
-        $grandTotal    = $afterDiscount + $taxAmount;
+        $totalDiscount = 0;
+        if ($discountType === 'percentage') {
+            $totalDiscount = $subtotal * ($discountValue / 100);
+        } elseif ($discountType === 'fixed') {
+            $totalDiscount = $discountValue;
+        }
 
-        $set('grand_total', $grandTotal);
+        if ($totalDiscount > $subtotal) {
+            $totalDiscount = $subtotal;
+        }
+
+        $set('discount_amount', $totalDiscount);
+
+        // 3. Hitung Pajak & Grand Total
+        $taxPercent = (float) ($get('tax') ?? 0);
+        $afterDiscount = $subtotal - $totalDiscount;
+        $taxAmount = $afterDiscount * ($taxPercent / 100);
+
+        $set('grand_total', $afterDiscount + $taxAmount);
     }
 
     // --- TABLE & PAGES ---
@@ -300,11 +365,18 @@ class SalesOrderResource extends Resource
     {
         return $table
             ->columns([
-                Tables\Columns\TextColumn::make('order_number')->label('Nomor SO')->sortable()->searchable()->weight('bold'),
+                Tables\Columns\TextColumn::make('order_number')->label('Nomor SO')->sortable()->searchable(),
                 Tables\Columns\TextColumn::make('customer_po_number')->label('PO Customer')->searchable()->toggleable(isToggledHiddenByDefault: true),
                 Tables\Columns\TextColumn::make('quotation.quotation_number')->label('Ref. SQ')->sortable()->searchable(),
                 Tables\Columns\TextColumn::make('customer.name')->label('Pelanggan')->sortable()->searchable(),
                 Tables\Columns\TextColumn::make('order_date')->label('Tgl Pesan')->date('d M Y'),
+
+                Tables\Columns\TextColumn::make('promoCode.code')
+                    ->label('Promo')
+                    ->badge()
+                    ->color('info')
+                    ->placeholder('-'),
+
                 Tables\Columns\TextColumn::make('grand_total')->label('Total')->money('IDR', true),
                 Tables\Columns\TextColumn::make('status')
                     ->badge()
@@ -315,7 +387,6 @@ class SalesOrderResource extends Resource
             ->defaultSort('created_at', 'desc')
             ->filters([Tables\Filters\TrashedFilter::make()])
             ->actions([
-                Tables\Actions\ViewAction::make(),
                 Tables\Actions\EditAction::make(),
                 Tables\Actions\DeleteAction::make(),
             ])

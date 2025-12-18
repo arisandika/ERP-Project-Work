@@ -31,9 +31,10 @@ class Quotation extends Model
         'status',
         'notes',
         'subtotal',
-        'discount',
         'tax',
         'grand_total',
+        'promo_code_id',
+        'discount_amount',
     ];
 
     protected $casts = [
@@ -81,6 +82,12 @@ class Quotation extends Model
     {
         return $this->hasOne(SalesOrder::class, 'nx_quotation_id', 'id');
     }
+
+    public function promoCode(): BelongsTo
+    {
+        return $this->belongsTo(PromoCode::class, 'promo_code_id');
+    }
+
 
 
 }
