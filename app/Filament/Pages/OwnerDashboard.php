@@ -20,13 +20,17 @@ use Filament\Pages\Page;
 
 class OwnerDashboard extends Page
 {
-    protected static string $view = 'filament.pages.owner-dashboard';
+    protected static string $view = 'filament.pages.dashboard';
 
     protected static ?string $navigationIcon = 'heroicon-o-home';
 
     protected static ?string $navigationLabel = 'Dashboard';
 
     protected static ?int $navigationSort = -2;
+
+    protected static ?string $title = 'Dashboard';
+
+    protected static ?string $slug = 'dashboard';
 
     protected function getHeaderWidgets(): array
     {
