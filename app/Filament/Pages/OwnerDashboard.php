@@ -16,10 +16,13 @@ use App\Filament\Widgets\Owner\SalesRevenueMonthlyChart;
 use App\Filament\Widgets\Owner\TopSalesPersonChart;
 use App\Filament\Widgets\Sales\SalesPipelineChart;
 use App\Filament\Widgets\Sales\SalesSummaryStats;
+use BezhanSalleh\FilamentShield\Traits\HasPageShield;
 use Filament\Pages\Page;
 
 class OwnerDashboard extends Page
 {
+    use HasPageShield;
+    
     protected static string $view = 'filament.pages.dashboard';
 
     protected static ?string $navigationIcon = 'heroicon-o-home';

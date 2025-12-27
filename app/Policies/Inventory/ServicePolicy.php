@@ -1,12 +1,12 @@
 <?php
 
-namespace App\Policies\HR;
+namespace App\Policies\Inventory;
 
 use App\Models\User;
-use App\Models\HR\Attendance;
+use App\Models\Inventory\Service;
 use Illuminate\Auth\Access\HandlesAuthorization;
 
-class AttendancePolicy
+class ServicePolicy
 {
     use HandlesAuthorization;
 
@@ -15,15 +15,15 @@ class AttendancePolicy
      */
     public function viewAny(User $user): bool
     {
-        return $user->can('view_any_h::r::attendance::history');
+        return $user->can('view_any_inventory::service');
     }
 
     /**
      * Determine whether the user can view the model.
      */
-    public function view(User $user, Attendance $attendance): bool
+    public function view(User $user, Service $service): bool
     {
-        return $user->can('view_h::r::attendance::history');
+        return $user->can('view_inventory::service');
     }
 
     /**
@@ -31,23 +31,23 @@ class AttendancePolicy
      */
     public function create(User $user): bool
     {
-        return $user->can('create_h::r::attendance::history');
+        return $user->can('create_inventory::service');
     }
 
     /**
      * Determine whether the user can update the model.
      */
-    public function update(User $user, Attendance $attendance): bool
+    public function update(User $user, Service $service): bool
     {
-        return $user->can('update_h::r::attendance::history');
+        return $user->can('update_inventory::service');
     }
 
     /**
      * Determine whether the user can delete the model.
      */
-    public function delete(User $user, Attendance $attendance): bool
+    public function delete(User $user, Service $service): bool
     {
-        return $user->can('delete_h::r::attendance::history');
+        return $user->can('delete_inventory::service');
     }
 
     /**
@@ -55,15 +55,15 @@ class AttendancePolicy
      */
     public function deleteAny(User $user): bool
     {
-        return $user->can('delete_any_h::r::attendance::history');
+        return $user->can('delete_any_inventory::service');
     }
 
     /**
      * Determine whether the user can permanently delete.
      */
-    public function forceDelete(User $user, Attendance $attendance): bool
+    public function forceDelete(User $user, Service $service): bool
     {
-        return $user->can('force_delete_h::r::attendance::history');
+        return $user->can('force_delete_inventory::service');
     }
 
     /**
@@ -71,15 +71,15 @@ class AttendancePolicy
      */
     public function forceDeleteAny(User $user): bool
     {
-        return $user->can('force_delete_any_h::r::attendance::history');
+        return $user->can('force_delete_any_inventory::service');
     }
 
     /**
      * Determine whether the user can restore.
      */
-    public function restore(User $user, Attendance $attendance): bool
+    public function restore(User $user, Service $service): bool
     {
-        return $user->can('restore_h::r::attendance::history');
+        return $user->can('restore_inventory::service');
     }
 
     /**
@@ -87,15 +87,15 @@ class AttendancePolicy
      */
     public function restoreAny(User $user): bool
     {
-        return $user->can('restore_any_h::r::attendance::history');
+        return $user->can('restore_any_inventory::service');
     }
 
     /**
      * Determine whether the user can replicate.
      */
-    public function replicate(User $user, Attendance $attendance): bool
+    public function replicate(User $user, Service $service): bool
     {
-        return $user->can('replicate_h::r::attendance::history');
+        return $user->can('replicate_inventory::service');
     }
 
     /**
@@ -103,6 +103,6 @@ class AttendancePolicy
      */
     public function reorder(User $user): bool
     {
-        return $user->can('reorder_h::r::attendance::history');
+        return $user->can('reorder_inventory::service');
     }
 }

@@ -3,10 +3,13 @@
 namespace App\Filament\Widgets\Owner;
 
 use App\Models\HR\Attendance;
+use BezhanSalleh\FilamentShield\Traits\HasPageShield;
 use Leandrocfe\FilamentApexCharts\Widgets\ApexChartWidget;
 
 class AttendanceStatusDonutChart extends ApexChartWidget
 {
+    use HasPageShield;
+
     protected static ?string $heading = 'Komposisi Presensi Hari Ini';
 
     protected function getOptions(): array

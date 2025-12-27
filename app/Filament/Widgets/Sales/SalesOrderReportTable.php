@@ -4,6 +4,7 @@ namespace App\Filament\Widgets\Sales;
 
 use App\Filament\Exports\SalesOrderExporter;
 use App\Models\Sales\SalesOrder; // Sesuaikan Model Lo
+use BezhanSalleh\FilamentShield\Traits\HasPageShield;
 use Filament\Tables;
 use Filament\Tables\Table;
 use Filament\Widgets\TableWidget as BaseWidget;
@@ -12,6 +13,7 @@ use Filament\Tables\Actions\ExportAction;
 
 class SalesOrderReportTable extends BaseWidget
 {
+    use HasPageShield;
     public $filters = [];
 
     protected function getTableQuery(): Builder

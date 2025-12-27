@@ -3,11 +3,13 @@
 namespace App\Filament\Widgets\Owner;
 
 use App\Models\Sales\Invoice;
+use BezhanSalleh\FilamentShield\Traits\HasPageShield;
 use Carbon\Carbon;
 use Leandrocfe\FilamentApexCharts\Widgets\ApexChartWidget;
 
 class SalesRevenueMonthlyChart extends ApexChartWidget
 {
+    use HasPageShield;
     protected static ?string $heading = 'Revenue Bulanan (12 Bulan)';
 
     protected function getOptions(): array

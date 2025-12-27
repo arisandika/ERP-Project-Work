@@ -7,11 +7,13 @@ use App\Models\HR\Employee;
 use App\Models\Sales\Invoice;
 use App\Models\Sales\SalesOrder;
 use App\Models\Sales\SalesPerson;
+use BezhanSalleh\FilamentShield\Traits\HasPageShield;
 use Filament\Widgets\StatsOverviewWidget;
 use Filament\Widgets\StatsOverviewWidget\Stat;
 
 class SalesKpiStats extends StatsOverviewWidget
 {
+    use HasPageShield;
     protected static ?string $pollingInterval = '60s';
 
     protected int|string|array $columnSpan = '2';

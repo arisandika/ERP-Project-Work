@@ -4,11 +4,13 @@ namespace App\Filament\Widgets;
 
 use App\Models\Inventory\Product;
 use App\Models\Inventory\ProductStock;
+use BezhanSalleh\FilamentShield\Traits\HasPageShield;
 use Filament\Widgets\StatsOverviewWidget as BaseWidget;
 use Filament\Widgets\StatsOverviewWidget\Stat;
 
 class LowStockStatsOverview extends BaseWidget
 {
+    use HasPageShield;
     protected static ?int $sort = 0;
     protected int | string | array $columnSpan = 'full';
 

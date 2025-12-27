@@ -3,10 +3,12 @@
 namespace App\Filament\Widgets\Owner;
 
 use App\Models\Sales\Invoice;
+use BezhanSalleh\FilamentShield\Traits\HasPageShield;
 use Leandrocfe\FilamentApexCharts\Widgets\ApexChartWidget;
 
 class InvoiceStatusDonutChart extends ApexChartWidget
 {
+    use HasPageShield;
     protected static ?string $heading = 'Status Invoice';
 
     protected function getOptions(): array

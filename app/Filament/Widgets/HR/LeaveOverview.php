@@ -3,11 +3,14 @@ namespace App\Filament\Widgets\HR;
 
 use App\Models\HR\Leave;
 use App\Models\HR\LeaveRequest;
+use BezhanSalleh\FilamentShield\Traits\HasPageShield;
 use Filament\Widgets\StatsOverviewWidget;
 use Filament\Widgets\StatsOverviewWidget\Stat;
 
 class LeaveOverview extends StatsOverviewWidget
 {
+    use HasPageShield;
+    
     protected function getStats(): array
     {
         $user     = auth()->user();

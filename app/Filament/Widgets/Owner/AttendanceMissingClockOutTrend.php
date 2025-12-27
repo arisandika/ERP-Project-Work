@@ -3,11 +3,14 @@
 namespace App\Filament\Widgets\Owner;
 
 use App\Models\HR\Attendance;
+use BezhanSalleh\FilamentShield\Traits\HasPageShield;
 use Carbon\Carbon;
 use Leandrocfe\FilamentApexCharts\Widgets\ApexChartWidget;
 
 class AttendanceMissingClockOutTrend extends ApexChartWidget
 {
+    use HasPageShield;
+    
     protected static ?string $heading = 'Trend Tidak Clock-Out (14 Hari)';
 
     protected function getOptions(): array

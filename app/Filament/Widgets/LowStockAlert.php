@@ -4,6 +4,7 @@ namespace App\Filament\Widgets;
 
 use App\Models\Inventory\Product;
 use App\Models\Inventory\ProductStock;
+use BezhanSalleh\FilamentShield\Traits\HasPageShield;
 use Filament\Tables;
 use Filament\Tables\Table;
 use Filament\Widgets\TableWidget as BaseWidget;
@@ -11,6 +12,7 @@ use Filament\Support\Colors\Color;
 
 class LowStockAlert extends BaseWidget
 {
+    use HasPageShield;
     protected static ?int $sort = 1;
     protected int | string | array $columnSpan = 'full';
     protected static ?string $heading = 'Produk dengan Stok Rendah';

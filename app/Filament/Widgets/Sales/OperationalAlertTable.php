@@ -3,6 +3,7 @@
 namespace App\Filament\Widgets\Sales;
 
 use App\Models\Sales\Invoice;
+use BezhanSalleh\FilamentShield\Traits\HasPageShield;
 use Filament\Tables;
 use Filament\Tables\Table;
 use Filament\Widgets\TableWidget as BaseWidget;
@@ -14,6 +15,7 @@ use Filament\Notifications\Notification;
 
 class OperationalAlertTable extends BaseWidget
 {
+    use HasPageShield;
     protected static ?string $heading = 'Jatuh Tempo (Perlu Penagihan)';
     protected int | string | array $columnSpan = 'full';
 

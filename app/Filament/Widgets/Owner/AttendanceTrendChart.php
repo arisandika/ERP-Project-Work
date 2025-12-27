@@ -3,11 +3,14 @@
 namespace App\Filament\Widgets\Owner;
 
 use App\Models\HR\Attendance;
+use BezhanSalleh\FilamentShield\Traits\HasPageShield;
 use Carbon\Carbon;
 use Leandrocfe\FilamentApexCharts\Widgets\ApexChartWidget;
 
 class AttendanceTrendChart extends ApexChartWidget
 {
+    use HasPageShield;
+    
     protected static ?string $heading = 'Trend Kehadiran (7 Hari)';
     protected static ?string $pollingInterval = '120s';
 
