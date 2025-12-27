@@ -3,12 +3,14 @@ namespace App\Filament\Widgets\HR;
 
 use App\Models\HR\Attendance;
 use App\Models\HR\Employee;
+use BezhanSalleh\FilamentShield\Traits\HasPageShield;
 use Filament\Widgets\StatsOverviewWidget as BaseWidget;
 use Filament\Widgets\StatsOverviewWidget\Stat;
 use Illuminate\Support\Carbon;
 
 class AttendanceSummaryOverview extends BaseWidget
 {
+    use HasPageShield;
     protected static ?string $pollingInterval  = '30s';
     protected static ?string $maxHeight        = '150px';
     protected int|string|array $columnSpan = '2';

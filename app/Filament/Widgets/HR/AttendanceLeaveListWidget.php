@@ -3,11 +3,14 @@ namespace App\Filament\Widgets\HR;
 
 use App\Models\HR\Employee;
 use App\Models\HR\LeaveRequest;
+use BezhanSalleh\FilamentShield\Traits\HasPageShield;
 use Filament\Widgets\Widget;
 use Illuminate\Support\Carbon;
 
 class AttendanceLeaveListWidget extends Widget
 {
+    use HasPageShield;
+
     protected static string $view = 'filament.widgets.hr.attendance-leave-list-widget';
 
     protected static ?string $pollingInterval = '30s';

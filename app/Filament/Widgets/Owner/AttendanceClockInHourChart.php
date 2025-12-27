@@ -3,10 +3,13 @@
 namespace App\Filament\Widgets\Owner;
 
 use App\Models\HR\Attendance;
+use BezhanSalleh\FilamentShield\Traits\HasPageShield;
 use Leandrocfe\FilamentApexCharts\Widgets\ApexChartWidget;
 
 class AttendanceClockInHourChart extends ApexChartWidget
 {
+    use HasPageShield;
+    
     protected static ?string $heading = 'Distribusi Jam Clock-In (30 Hari)';
 
     protected function getOptions(): array

@@ -4,11 +4,13 @@ namespace App\Filament\Widgets\Owner;
 
 use App\Models\Sales\SalesOrder;
 use App\Models\Sales\Invoice;
+use BezhanSalleh\FilamentShield\Traits\HasPageShield;
 use Carbon\Carbon;
 use Leandrocfe\FilamentApexCharts\Widgets\ApexChartWidget;
 
 class SalesOrderVsInvoiceChart extends ApexChartWidget
 {
+    use HasPageShield;
     protected static ?string $heading = 'Order vs Invoice (6 Bulan)';
 
     protected function getOptions(): array

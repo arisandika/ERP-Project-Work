@@ -3,11 +3,13 @@
 namespace App\Filament\Widgets\Owner;
 
 use App\Models\HR\Attendance;
+use BezhanSalleh\FilamentShield\Traits\HasPageShield;
 use Carbon\Carbon;
 use Leandrocfe\FilamentApexCharts\Widgets\ApexChartWidget;
 
 class RevenueTrendChart extends ApexChartWidget
 {
+    use HasPageShield;
     protected static ?string $heading = 'Revenue 30 Hari Terakhir';
 
     protected function getOptions(): array

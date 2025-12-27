@@ -5,12 +5,14 @@ namespace App\Filament\Widgets\HR;
 use App\Models\HR\Attendance;
 use App\Models\HR\Employee;
 use App\Models\HR\LeaveRequest;
+use BezhanSalleh\FilamentShield\Traits\HasPageShield;
 use Filament\Widgets\ChartWidget;
 use Illuminate\Support\Carbon;
 use Leandrocfe\FilamentApexCharts\Widgets\ApexChartWidget;
 
 class AttendanceStatusChart extends ApexChartWidget
 {
+    use HasPageShield;
     protected static ?string $chartId = 'attendanceStatusChart';
     protected static ?string $heading = 'Status Presensi Karyawan Hari Ini';
     protected static ?string $subheading = 'Data kehadiran harian berdasarkan status absensi';

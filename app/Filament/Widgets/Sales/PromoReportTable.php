@@ -3,6 +3,7 @@
 namespace App\Filament\Widgets\Sales;
 
 use App\Models\Sales\SalesOrder;
+use BezhanSalleh\FilamentShield\Traits\HasPageShield;
 use Filament\Tables;
 use Filament\Tables\Table;
 use Filament\Widgets\TableWidget as BaseWidget;
@@ -11,6 +12,7 @@ use Illuminate\Database\Eloquent\Builder;
 
 class PromoReportTable extends BaseWidget
 {
+    use HasPageShield;
     use InteractsWithPageFilters;
 
     protected static ?string $heading = 'Top Promo Performance';

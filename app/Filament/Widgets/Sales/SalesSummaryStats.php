@@ -5,6 +5,7 @@ namespace App\Filament\Widgets\Sales;
 use App\Models\Sales\Quotation;
 use App\Models\Sales\SalesOrder;
 use App\Models\Sales\Invoice;
+use BezhanSalleh\FilamentShield\Traits\HasPageShield;
 use Filament\Widgets\StatsOverviewWidget as BaseWidget;
 use Filament\Widgets\StatsOverviewWidget\Stat;
 use Filament\Widgets\Concerns\InteractsWithPageFilters;
@@ -12,6 +13,7 @@ use Illuminate\Support\Carbon;
 
 class SalesSummaryStats extends BaseWidget
 {
+    use HasPageShield;
     use InteractsWithPageFilters;
 
     protected function getStats(): array

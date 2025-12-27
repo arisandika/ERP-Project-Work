@@ -5,11 +5,14 @@ namespace App\Filament\Widgets\Inventory;
 use App\Models\Inventory\Product;
 use App\Models\Inventory\ProductStock;
 use App\Models\Inventory\Warehouse;
+use BezhanSalleh\FilamentShield\Traits\HasPageShield;
 use Filament\Widgets\StatsOverviewWidget as BaseWidget;
 use Filament\Widgets\StatsOverviewWidget\Stat;
 
 class InventorySummaryOverview extends BaseWidget
 {
+    use HasPageShield;
+    
     protected int|string|array $columnSpan = 'full';
 
     protected function getStats(): array

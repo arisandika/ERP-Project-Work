@@ -3,11 +3,14 @@
 namespace App\Filament\Widgets\Inventory;
 
 use App\Models\Inventory\StockTransaction;
+use BezhanSalleh\FilamentShield\Traits\HasPageShield;
 use Illuminate\Support\Carbon;
 use Leandrocfe\FilamentApexCharts\Widgets\ApexChartWidget;
 
 class StockMovementChart extends ApexChartWidget
 {
+    use HasPageShield;
+
     protected static ?string $chartId = 'stock_movement_chart';
 
     protected int|string|array $columnSpan = 'full';
