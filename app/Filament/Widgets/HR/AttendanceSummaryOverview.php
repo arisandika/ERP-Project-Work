@@ -10,7 +10,7 @@ use Illuminate\Support\Carbon;
 
 class AttendanceSummaryOverview extends BaseWidget
 {
-    use HasPageShield;
+    // use HasPageShield;
     protected static ?string $pollingInterval  = '30s';
     protected static ?string $maxHeight        = '150px';
     protected int|string|array $columnSpan = '2';

@@ -9,7 +9,7 @@ use Leandrocfe\FilamentApexCharts\Widgets\ApexChartWidget;
 
 class AttendanceMissingClockOutTrend extends ApexChartWidget
 {
-    use HasPageShield;
+    // use HasPageShield;
     
     protected static ?string $heading = 'Trend Tidak Clock-Out (14 Hari)';
 

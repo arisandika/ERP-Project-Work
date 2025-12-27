@@ -11,7 +11,7 @@ use Filament\Widgets\StatsOverviewWidget\Stat;
 
 class InventorySummaryOverview extends BaseWidget
 {
-    use HasPageShield;
+    // use HasPageShield;
     
     protected int|string|array $columnSpan = 'full';
 

@@ -10,7 +10,7 @@ use Leandrocfe\FilamentApexCharts\Widgets\ApexChartWidget;
 
 class SalesOrderVsInvoiceChart extends ApexChartWidget
 {
-    use HasPageShield;
+    // use HasPageShield;
     protected static ?string $heading = 'Order vs Invoice (6 Bulan)';
 
     protected function getOptions(): array

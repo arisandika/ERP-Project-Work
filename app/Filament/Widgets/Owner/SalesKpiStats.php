@@ -13,7 +13,7 @@ use Filament\Widgets\StatsOverviewWidget\Stat;
 
 class SalesKpiStats extends StatsOverviewWidget
 {
-    use HasPageShield;
+    // use HasPageShield;
     protected static ?string $pollingInterval = '60s';
 
     protected int|string|array $columnSpan = '2';
