@@ -14,7 +14,7 @@ use Filament\Notifications\Notification;
 
 class OperationalAlertTable extends BaseWidget
 {
-    protected static ?string $heading = '⚠️ Jatuh Tempo (Perlu Penagihan)';
+    protected static ?string $heading = 'Jatuh Tempo (Perlu Penagihan)';
     protected int | string | array $columnSpan = 'full';
 
     public function table(Table $table): Table

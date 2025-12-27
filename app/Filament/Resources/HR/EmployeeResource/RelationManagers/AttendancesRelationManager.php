@@ -1,5 +1,4 @@
 <?php
-
 namespace App\Filament\Resources\HR\EmployeeResource\RelationManagers;
 
 use Filament\Forms;
@@ -8,13 +7,13 @@ use Filament\Resources\RelationManagers\RelationManager;
 use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
-use Illuminate\Database\Eloquent\SoftDeletingScope;
+use Illuminate\Support\Carbon;
 
 class AttendancesRelationManager extends RelationManager
 {
-    protected static string $relationship = 'attendances';
+    protected static string $relationship          = 'attendances';
     protected static ?string $recordTitleAttribute = 'date';
-    protected static ?string $title = 'Riwayat Presensi Karyawan';
+    protected static ?string $title                = 'Riwayat Presensi Karyawan';
 
     public function form(Form $form): Form
     {
@@ -63,7 +62,41 @@ class AttendancesRelationManager extends RelationManager
                     ->sortable(),
             ])
             ->filters([
-                //
+                Tables\Filters\Filter::make('created_at')
+                    ->form([
+                        Forms\Components\DatePicker::make('created_from')
+                            ->label('Created From')
+                            ->displayFormat('d/m/Y')
+                            ->native(false),
+                        Forms\Components\DatePicker::make('created_until')
+                            ->label('Created Until')
+                            ->displayFormat('d/m/Y')
+                            ->native(false),
+                    ])
+                    ->query(function (Builder $query, array $data): Builder {
+                        return $query
+                            ->when(
+                                $data['created_from'],
+                                fn(Builder $query, $date): Builder => $query->whereDate('created_at', '>=', $date),
+                            )
+                            ->when(
+                                $data['created_until'],
+                                fn(Builder $query, $date): Builder => $query->whereDate('created_at', '<=', $date),
+                            );
+                    })
+                    ->indicateUsing(function (array $data): array {
+                        $indicators = [];
+
+                        if ($data['created_from'] ?? null) {
+                            $indicators[] = 'Created from ' . Carbon::parse($data['created_from'])->toFormattedDateString();
+                        }
+
+                        if ($data['created_until'] ?? null) {
+                            $indicators[] = 'Created until ' . Carbon::parse($data['created_until'])->toFormattedDateString();
+                        }
+
+                        return $indicators;
+                    }),
             ])
             ->headerActions([
                 //
@@ -73,6 +106,7 @@ class AttendancesRelationManager extends RelationManager
             ])
             ->bulkActions([
                 //
-            ]);
+            ])
+            ->defaultSort('created_at', 'desc');
     }
 }

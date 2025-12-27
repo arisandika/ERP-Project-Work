@@ -26,7 +26,7 @@
 
     <main class="max-w-6xl">
         <section class="grid grid-cols-1 gap-6 md:grid-cols-3">
-            <div class="grid grid-cols-1 gap-6 md:grid-cols-2 md:col-span-3">
+            <div class="grid grid-cols-1 gap-6 md:col-span-3">
 
                 @if($employee)
                     <div
@@ -48,7 +48,7 @@
                             </div>
                         </div>
 
-                        <dl class="grid grid-cols-2 gap-4 mt-6 text-sm">
+                        <div class="grid grid-cols-2 gap-4 mt-6 text-sm">
                             <div
                                 class="p-3 border border-gray-200 rounded-lg bg-gray-50 dark:bg-gray-800/50 dark:border-white/10">
                                 <dt class="text-gray-500 dark:text-gray-400">Departemen</dt>
@@ -86,7 +86,7 @@
                                     @endif
                                 </dd>
                             </div>
-                        </dl>
+                        </div>
                     </div>
                 @else
                     <div
@@ -101,38 +101,111 @@
                         aria-labelledby="clock-in-title">
                         @csrf
                         <h2 id="clock-in-title" class="text-base font-medium">Siap presensi masuk?</h2>
-                        <div class="grid gap-4 mt-4">
-                            <div class="grid gap-1">
-                                <label for="note" class="mb-2 text-sm text-gray-500 dark:text-gray-400">Catatan
-                                    (opsional)</label>
-                                <textarea id="note" name="note" rows="3"
-                                    class="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg bg-gray-50 dark:bg-gray-800/50 dark:border-white/10 focus:border-blue-600 focus:ring-1 focus:ring-blue-600"
-                                    placeholder="Tambahkan catatan singkat tentang shift Anda..."></textarea>
-                            </div>
-                            <div
-                                class="flex items-center justify-between px-3 py-2 border border-gray-200 rounded-lg bg-gray-50 dark:bg-gray-800/50 dark:border-white/10">
-                                <div>
-                                    <p class="text-xs text-gray-500 dark:text-gray-400">Waktu saat ini</p>
-                                    <p class="text-sm font-medium" id="current-time-clockin"></p>
-                                    <script> function updateTimeClockIn() { const now = new Date(); const hours = now.getHours().toString().padStart(2, '0'); const minutes = now.getMinutes().toString().padStart(2, '0'); const seconds = now.getSeconds().toString().padStart(2, '0'); const ampm = hours >= 12 ? 'PM' : 'AM'; document.getElementById('current-time-clockin').textContent = `${hours}:${minutes}:${seconds} ${ampm}`; } setInterval(updateTimeClockIn, 1000); updateTimeClockIn(); </script>
-                                </div>
-                                <div class="text-right">
-                                    <p class="text-xs text-gray-500 dark:text-gray-400">Jam Kerja</p>
-                                    <p class="text-sm font-medium">
-                                        {{ isset($employee->shift->start_time) ? \Carbon\Carbon::parse($employee->shift->start_time)->format('H:i') : '-' }}
-                                        -
-                                        {{ isset($employee->shift->end_time) ? \Carbon\Carbon::parse($employee->shift->end_time)->format('H:i') : '-' }}
+
+                        <div class="grid grid-cols-1 gap-6 pt-6 md:grid-cols-2 md:gap-4">
+                            {{-- CAMERA CLOCK IN --}}
+                            <div class="p-3 text-center border border-gray-200 rounded-lg bg-gray-50 dark:bg-gray-800/50 dark:border-white/10"
+                                id="camera-box">
+
+                                <!-- INITIAL / EMPTY STATE -->
+                                <div id="camera-placeholder"
+                                    class="flex flex-col items-center justify-center h-[230px] gap-2 py-4">
+
+                                    <button type="button" id="openCameraBtn">
+                                        <div
+                                            class="flex items-center justify-center bg-gray-600 rounded-full w-14 h-14 hover:bg-gray-700">
+                                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
+                                                stroke-width="1.5" stroke="currentColor" class="size-6">
+                                                <path stroke-linecap="round" stroke-linejoin="round"
+                                                    d="M6.827 6.175A2.31 2.31 0 0 1 5.186 7.23c-.38.054-.757.112-1.134.175C2.999 7.58 2.25 8.507 2.25 9.574V18a2.25 2.25 0 0 0 2.25 2.25h15A2.25 2.25 0 0 0 21.75 18V9.574c0-1.067-.75-1.994-1.802-2.169a47.865 47.865 0 0 0-1.134-.175 2.31 2.31 0 0 1-1.64-1.055l-.822-1.316a2.192 2.192 0 0 0-1.736-1.039 48.774 48.774 0 0 0-5.232 0 2.192 2.192 0 0 0-1.736 1.039l-.821 1.316Z" />
+                                                <path stroke-linecap="round" stroke-linejoin="round"
+                                                    d="M16.5 12.75a4.5 4.5 0 1 1-9 0 4.5 4.5 0 0 1 9 0ZM18.75 10.5h.008v.008h-.008V10.5Z" />
+                                            </svg>
+                                        </div>
+                                    </button>
+                                    <p class="px-4 py-2 text-sm text-white rounded-lg">
+                                        Klik untuk membuka kamera
+                                    </p>
+                                    <p class="text-xs text-gray-400">
+                                        Pastikan wajah Anda terlihat jelas dalam bingkai.
                                     </p>
                                 </div>
+
+                                <!-- CAMERA LIVE -->
+                                <div id="camera-live" class="hidden">
+                                    <video id="camera-video" class="w-full rounded-lg aspect-[4/3] bg-black" autoplay
+                                        playsinline>
+                                    </video>
+
+                                    <button type="button" id="captureBtn" aria-label="Ambil Foto" class="my-4">
+                                        <div
+                                            class="flex items-center justify-center bg-gray-600 rounded-full w-14 h-14 hover:bg-gray-700">
+                                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
+                                                stroke-width="1.5" stroke="currentColor" class="size-6">
+                                                <path stroke-linecap="round" stroke-linejoin="round"
+                                                    d="M6.827 6.175A2.31 2.31 0 0 1 5.186 7.23c-.38.054-.757.112-1.134.175C2.999 7.58 2.25 8.507 2.25 9.574V18a2.25 2.25 0 0 0 2.25 2.25h15A2.25 2.25 0 0 0 21.75 18V9.574c0-1.067-.75-1.994-1.802-2.169a47.865 47.865 0 0 0-1.134-.175 2.31 2.31 0 0 1-1.64-1.055l-.822-1.316a2.192 2.192 0 0 0-1.736-1.039 48.774 48.774 0 0 0-5.232 0 2.192 2.192 0 0 0-1.736 1.039l-.821 1.316Z" />
+                                                <path stroke-linecap="round" stroke-linejoin="round"
+                                                    d="M16.5 12.75a4.5 4.5 0 1 1-9 0 4.5 4.5 0 0 1 9 0ZM18.75 10.5h.008v.008h-.008V10.5Z" />
+                                            </svg>
+                                        </div>
+                                    </button>
+                                </div>
+
+                                <!-- PHOTO PREVIEW -->
+                                <div id="camera-preview" class="hidden">
+                                    <img id="photo-preview" class="object-cover w-full rounded-lg" alt="Preview photo">
+                                    <div class="flex justify-center gap-3 my-4">
+                                        <x-filament::button type="button" id="confirmBtn" aria-label="Presensi sekarang"
+                                            color="primary">
+                                            <span>Gunakan</span>
+                                        </x-filament::button>
+
+                                        <x-filament::button type="button" id="retakeBtn" color="gray"> Ambil Ulang
+                                        </x-filament::button>
+                                    </div>
+                                </div>
+
+                                <!-- HIDDEN CANVAS -->
+                                <canvas id="camera-canvas" class="hidden"></canvas>
+
+                                <!-- OUTPUT -->
+                                <input type="hidden" name="face_snapshot" id="faceSnapshot">
                             </div>
 
-                            <div class="flex items-center gap-3 mt-4">
+                            <div>
+                                <div class="grid gap-4">
+                                    <div class="flex flex-col gap-1">
+                                        <label for="note" class="mb-2 text-sm text-gray-500 dark:text-gray-400">Catatan
+                                            (opsional)</label>
+                                        <textarea id="note" name="note" rows="3"
+                                            class="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg bg-gray-50 dark:bg-gray-800/50 dark:border-white/10 focus:border-blue-600 focus:ring-1 focus:ring-blue-600"
+                                            placeholder="Tambahkan catatan singkat tentang shift Anda..."></textarea>
+                                    </div>
+                                    <div
+                                        class="flex items-center justify-between px-3 py-2 border border-gray-200 rounded-lg bg-gray-50 dark:bg-gray-800/50 dark:border-white/10">
+                                        <div>
+                                            <p class="text-xs text-gray-500 dark:text-gray-400">Waktu saat ini</p>
+                                            <p class="text-sm font-medium" id="current-time-clockin"></p>
+                                            <script> function updateTimeClockIn() { const now = new Date(); const hours = now.getHours().toString().padStart(2, '0'); const minutes = now.getMinutes().toString().padStart(2, '0'); const seconds = now.getSeconds().toString().padStart(2, '0'); const ampm = hours >= 12 ? 'PM' : 'AM'; document.getElementById('current-time-clockin').textContent = `${hours}:${minutes}:${seconds} ${ampm}`; } setInterval(updateTimeClockIn, 1000); updateTimeClockIn(); </script>
+                                        </div>
+                                        <div class="text-right">
+                                            <p class="text-xs text-gray-500 dark:text-gray-400">Jam Kerja</p>
+                                            <p class="text-sm font-medium">
+                                                {{ isset($employee->shift->start_time) ? \Carbon\Carbon::parse($employee->shift->start_time)->format('H:i') : '-' }}
+                                                -
+                                                {{ isset($employee->shift->end_time) ? \Carbon\Carbon::parse($employee->shift->end_time)->format('H:i') : '-' }}
+                                            </p>
+                                        </div>
+                                    </div>
 
-                                <x-filament::button type="button" id="presensiMasukButton" aria-label="Presensi sekarang"
-                                    color="primary">
-                                    <span>Tandai Lokasi</span>
-                                </x-filament::button>
-                                <x-filament::button tag="a" href="#" color="gray"> Lihat Riwayat </x-filament::button>
+                                    <div class="flex items-center gap-3">
+                                        <x-filament::button type="button" id="presensiMasukButton"
+                                            aria-label="Presensi sekarang" color="primary">
+                                            <span>Tandai Lokasi</span>
+                                        </x-filament::button>
+                                        <x-filament::button tag="a" href="/hr/attendance-history" color="gray">Lihat Riwayat</x-filament::button>
+                                    </div>
+                                </div>
                             </div>
                         </div>
 
@@ -146,48 +219,123 @@
                         @csrf
                         <h2 id="clock-out-title" class="text-base font-medium">Sudah selesai kerja?</h2>
 
-                        <div class="grid gap-4 mt-4">
-                            @if($attendanceToday)
-                                <div
-                                    class="flex items-center justify-between px-3 py-2 border border-gray-200 rounded-lg bg-gray-50 dark:bg-gray-800/50 dark:border-white/10">
-                                    <div>
-                                        <p class="text-xs text-gray-500 dark:text-gray-400">Jam masuk</p>
-                                        <p class="text-sm font-medium">
-                                            {{ \Carbon\Carbon::parse($attendanceToday->clock_in)->format('H:i') }}
-                                        </p>
-                                    </div>
-                                    <div class="text-right">
-                                        <p class="text-xs text-gray-500 dark:text-gray-400">Status</p>
-                                        <p class="text-sm font-medium">
-                                            {{ ucfirst($attendanceToday->status) }}
-                                        </p>
-                                    </div>
-                                </div>
-                            @endif
-                            <div
-                                class="flex items-center justify-between px-3 py-2 border border-gray-200 rounded-lg fflex bg-gray-50 dark:bg-gray-800/50 dark:border-white/10">
-                                <div>
-                                    <p class="text-xs text-gray-500 dark:text-gray-400">Waktu saat ini</p>
-                                    <p class="text-sm font-medium" id="current-time-clockout"></p>
-                                    <script> function updateTimeClockOut() { const now = new Date(); const hours = now.getHours().toString().padStart(2, '0'); const minutes = now.getMinutes().toString().padStart(2, '0'); const seconds = now.getSeconds().toString().padStart(2, '0'); const ampm = hours >= 12 ? 'PM' : 'AM'; document.getElementById('current-time-clockout').textContent = `${hours}:${minutes}:${seconds} ${ampm}`; } setInterval(updateTimeClockOut, 1000); updateTimeClockOut(); </script>
-                                </div>
-                                <div class="text-right">
-                                    <p class="text-xs text-gray-500 dark:text-gray-400">Jam Kerja</p>
-                                    <p class="text-sm font-medium">
-                                        {{ isset($employee->shift->start_time) ? \Carbon\Carbon::parse($employee->shift->start_time)->format('H:i') : '-' }}
-                                        -
-                                        {{ isset($employee->shift->end_time) ? \Carbon\Carbon::parse($employee->shift->end_time)->format('H:i') : '-' }}
+                        <div class="grid grid-cols-1 gap-6 pt-6 md:grid-cols-2 md:gap-4">
+                            {{-- CAMERA CLOCK OUT --}}
+                            <div class="p-3 text-center border border-gray-200 rounded-lg bg-gray-50 dark:bg-gray-800/50 dark:border-white/10"
+                                id="camera-box-out">
+
+                                <!-- INITIAL / EMPTY STATE -->
+                                <div id="camera-placeholder-out"
+                                    class="flex flex-col items-center justify-center h-[230px] gap-2 py-4">
+
+                                    <button type="button" id="openCameraBtnOut">
+                                        <div
+                                            class="flex items-center justify-center bg-gray-600 rounded-full w-14 h-14 hover:bg-gray-700">
+                                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
+                                                stroke-width="1.5" stroke="currentColor" class="size-6">
+                                                <path stroke-linecap="round" stroke-linejoin="round"
+                                                    d="M6.827 6.175A2.31 2.31 0 0 1 5.186 7.23c-.38.054-.757.112-1.134.175C2.999 7.58 2.25 8.507 2.25 9.574V18a2.25 2.25 0 0 0 2.25 2.25h15A2.25 2.25 0 0 0 21.75 18V9.574c0-1.067-.75-1.994-1.802-2.169a47.865 47.865 0 0 0-1.134-.175 2.31 2.31 0 0 1-1.64-1.055l-.822-1.316a2.192 2.192 0 0 0-1.736-1.039 48.774 48.774 0 0 0-5.232 0 2.192 2.192 0 0 0-1.736 1.039l-.821 1.316Z" />
+                                                <path stroke-linecap="round" stroke-linejoin="round"
+                                                    d="M16.5 12.75a4.5 4.5 0 1 1-9 0 4.5 4.5 0 0 1 9 0ZM18.75 10.5h.008v.008h-.008V10.5Z" />
+                                            </svg>
+                                        </div>
+                                    </button>
+                                    <p class="px-4 py-2 text-sm text-white rounded-lg">
+                                        Klik untuk membuka kamera
+                                    </p>
+                                    <p class="text-xs text-gray-400">
+                                        Pastikan wajah Anda terlihat jelas dalam bingkai.
                                     </p>
                                 </div>
-                            </div>
-                        </div>
 
-                        <div class="flex items-center gap-3 mt-4">
-                            <x-filament::button type="submit" color="danger" aria-label="Presensi keluar sekarang"
-                                id="presensiKeluarButton">
-                                <span>Presensi Keluar</span>
-                            </x-filament::button>
-                            <x-filament::button tag="a" href="#" color="gray"> Lihat Riwayat </x-filament::button>
+                                <!-- CAMERA LIVE -->
+                                <div id="camera-live-out" class="hidden">
+                                    <video id="camera-video-out" class="w-full rounded-lg aspect-[4/3] bg-black" autoplay
+                                        playsinline>
+                                    </video>
+
+                                    <button type="button" id="captureBtnOut" aria-label="Ambil Foto" class="my-4">
+                                        <div
+                                            class="flex items-center justify-center bg-gray-600 rounded-full w-14 h-14 hover:bg-gray-700">
+                                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
+                                                stroke-width="1.5" stroke="currentColor" class="size-6">
+                                                <path stroke-linecap="round" stroke-linejoin="round"
+                                                    d="M6.827 6.175A2.31 2.31 0 0 1 5.186 7.23c-.38.054-.757.112-1.134.175C2.999 7.58 2.25 8.507 2.25 9.574V18a2.25 2.25 0 0 0 2.25 2.25h15A2.25 2.25 0 0 0 21.75 18V9.574c0-1.067-.75-1.994-1.802-2.169a47.865 47.865 0 0 0-1.134-.175 2.31 2.31 0 0 1-1.64-1.055l-.822-1.316a2.192 2.192 0 0 0-1.736-1.039 48.774 48.774 0 0 0-5.232 0 2.192 2.192 0 0 0-1.736 1.039l-.821 1.316Z" />
+                                                <path stroke-linecap="round" stroke-linejoin="round"
+                                                    d="M16.5 12.75a4.5 4.5 0 1 1-9 0 4.5 4.5 0 0 1 9 0ZM18.75 10.5h.008v.008h-.008V10.5Z" />
+                                            </svg>
+                                        </div>
+                                    </button>
+                                </div>
+
+                                <!-- PHOTO PREVIEW -->
+                                <div id="camera-preview-out" class="hidden">
+                                    <img id="photo-preview-out" class="object-cover w-full rounded-lg" alt="Preview photo">
+
+                                    <div class="flex justify-center gap-3 my-4">
+                                        <x-filament::button type="button" id="confirmBtnOut" color="danger">
+                                            <span>Gunakan</span>
+                                        </x-filament::button>
+
+                                        <x-filament::button type="button" id="retakeBtnOut" color="gray">
+                                            Ambil Ulang
+                                        </x-filament::button>
+                                    </div>
+                                </div>
+
+                                <!-- HIDDEN CANVAS -->
+                                <canvas id="camera-canvas-out" class="hidden"></canvas>
+
+                                <!-- OUTPUT -->
+                                <input type="hidden" name="face_snapshot" id="faceSnapshotOut">
+                            </div>
+
+                            <div>
+                                <div class="grid gap-4">
+                                    @if($attendanceToday)
+                                        <div
+                                            class="flex items-center justify-between px-3 py-2 border border-gray-200 rounded-lg bg-gray-50 dark:bg-gray-800/50 dark:border-white/10 h-[76px]">
+                                            <div>
+                                                <p class="text-xs text-gray-500 dark:text-gray-400">Jam masuk</p>
+                                                <p class="text-sm font-medium">
+                                                    {{ \Carbon\Carbon::parse($attendanceToday->clock_in)->format('H:i') }}
+                                                </p>
+                                            </div>
+                                            <div class="text-right">
+                                                <p class="text-xs text-gray-500 dark:text-gray-400">Status</p>
+                                                <p class="text-sm font-medium">
+                                                    {{ ucfirst($attendanceToday->status) }}
+                                                </p>
+                                            </div>
+                                        </div>
+                                    @endif
+                                    <div
+                                        class="flex items-center justify-between px-3 py-2 border border-gray-200 rounded-lg fflex bg-gray-50 dark:bg-gray-800/50 dark:border-white/10 h-[76px]">
+                                        <div>
+                                            <p class="text-xs text-gray-500 dark:text-gray-400">Waktu saat ini</p>
+                                            <p class="text-sm font-medium" id="current-time-clockout"></p>
+                                            <script> function updateTimeClockOut() { const now = new Date(); const hours = now.getHours().toString().padStart(2, '0'); const minutes = now.getMinutes().toString().padStart(2, '0'); const seconds = now.getSeconds().toString().padStart(2, '0'); const ampm = hours >= 12 ? 'PM' : 'AM'; document.getElementById('current-time-clockout').textContent = `${hours}:${minutes}:${seconds} ${ampm}`; } setInterval(updateTimeClockOut, 1000); updateTimeClockOut(); </script>
+                                        </div>
+                                        <div class="text-right">
+                                            <p class="text-xs text-gray-500 dark:text-gray-400">Jam Kerja</p>
+                                            <p class="text-sm font-medium">
+                                                {{ isset($employee->shift->start_time) ? \Carbon\Carbon::parse($employee->shift->start_time)->format('H:i') : '-' }}
+                                                -
+                                                {{ isset($employee->shift->end_time) ? \Carbon\Carbon::parse($employee->shift->end_time)->format('H:i') : '-' }}
+                                            </p>
+                                        </div>
+                                    </div>
+
+                                    <div class="flex items-center gap-3">
+                                        <x-filament::button type="submit" color="danger"
+                                            aria-label="Presensi keluar sekarang" id="presensiKeluarButton">
+                                            <span>Presensi Keluar</span>
+                                        </x-filament::button>
+                                        <x-filament::button tag="a" href="/hr/attendance-history" color="gray"> Lihat Riwayat
+                                        </x-filament::button>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
 
                         <input type="hidden" name="lat" id="lat-out" />
@@ -204,7 +352,7 @@
                         <h3 class="mb-2 text-xl font-bold text-blue-600 dark:text-blue-400">Presensi Selesai 🎉</h3>
                         <p class="mb-4 text-center text-gray-600 dark:text-gray-400">Kamu sudah menyelesaikan presensi hari
                             ini. Terima kasih atas kerja kerasmu!</p>
-                        <x-filament::button tag="a" href="#" color="primary" icon="heroicon-o-clock">
+                        <x-filament::button tag="a" href="/hr/attendance-history" color="primary" icon="heroicon-o-clock">
                             Lihat Riwayat Presensi
                         </x-filament::button>
                     </div>
@@ -312,7 +460,6 @@
         const latInputClockOut = document.getElementById('lat-out');
         const lngInputClockOut = document.getElementById('lng-out');
 
-
         // Helper to update button content and state (for clock-in button)
         function updatePresensiMasukButtonState(text, isLoading = false, type = 'button') {
             if (!presensiMasukButton) return;
@@ -366,7 +513,6 @@
             }
         }
 
-
         // Function to handle "Tandai Lokasi" click for Clock-in
         async function handleTagLocationClick() {
             updatePresensiMasukButtonState('Mendapatkan Lokasi', true);
@@ -415,21 +561,29 @@
 
         // Function to handle Clock-in form submission (after location is tagged)
         function handlePresensiMasukSubmission(event) {
-            // This function is called when the form is submitted via the now 'submit' type button
-            if (!isLocationReadyForSubmission || latInputClockIn.value === '' || lngInputClockIn.value === '') {
-                event.preventDefault(); // Stop submission
-                alert('Lokasi belum ditandai atau gagal didapatkan. Silakan coba "Tandai Lokasi" lagi.');
-                updatePresensiMasukButtonState('Tandai Lokasi'); // Revert button state
-                isLocationReadyForSubmission = false;
-                presensiMasukButton.onclick = handleTagLocationClick; // Re-attach the tag location handler
+            // VALIDASI FOTO
+            if (!faceSnapshot.value) {
+                event.preventDefault();
+                alert('Silakan ambil foto presensi terlebih dahulu.');
                 return;
             }
 
+            // VALIDASI LOKASI (existing)
+            if (!isLocationReadyForSubmission || latInputClockIn.value === '' || lngInputClockIn.value === '') {
+                event.preventDefault();
+                alert('Lokasi belum ditandai. Silakan klik "Tandai Lokasi" terlebih dahulu.');
+                updatePresensiMasukButtonState('Tandai Lokasi');
+                isLocationReadyForSubmission = false;
+                presensiMasukButton.onclick = handleTagLocationClick;
+                return;
+            }
+
+            // LOADING STATE
             updatePresensiMasukButtonState('Mengirim Presensi', true);
         }
-        async function setLocationBeforeSubmit(event) {
-            event.preventDefault(); // Stop the form from submitting immediately
 
+        async function setLocationBeforeSubmit(event) {
+            event.preventDefault();
             const form = event.target;
             // Find the submit button that triggered this event
             const submitButton = event.submitter || form.querySelector('button[type="submit"]');
@@ -479,6 +633,167 @@
                 presensiMasukForm.addEventListener('submit', handlePresensiMasukSubmission); // Attach final submission handler
             }
         });
+
+        // CAMERA SETUP FOR CLOCK-IN
+        if (document.getElementById('camera-box')) {
+
+            const openCameraBtn = document.getElementById('openCameraBtn');
+            const captureBtn = document.getElementById('captureBtn');
+            const retakeBtn = document.getElementById('retakeBtn');
+            const confirmBtn = document.getElementById('confirmBtn');
+
+            const placeholder = document.getElementById('camera-placeholder');
+            const cameraLive = document.getElementById('camera-live');
+            const cameraPreview = document.getElementById('camera-preview');
+
+            const video = document.getElementById('camera-video');
+            const canvas = document.getElementById('camera-canvas');
+            const photoPreview = document.getElementById('photo-preview');
+            const faceSnapshot = document.getElementById('faceSnapshot');
+
+            let stream = null;
+
+            async function openCamera() {
+                stream = await navigator.mediaDevices.getUserMedia({
+                    video: { facingMode: 'user' }
+                });
+
+                video.srcObject = stream;
+
+                placeholder.classList.add('hidden');
+                cameraLive.classList.remove('hidden');
+            }
+
+            function capturePhoto() {
+                canvas.width = video.videoWidth;
+                canvas.height = video.videoHeight;
+
+                const ctx = canvas.getContext('2d');
+                ctx.drawImage(video, 0, 0);
+
+                const imageData = canvas.toDataURL('image/jpeg');
+
+                photoPreview.src = imageData;
+                faceSnapshot.value = imageData;
+
+                stopCamera();
+
+                cameraLive.classList.add('hidden');
+                cameraPreview.classList.remove('hidden');
+            }
+
+            function stopCamera() {
+                if (stream) {
+                    stream.getTracks().forEach(track => track.stop());
+                    stream = null;
+                }
+            }
+
+            function retakePhoto() {
+                cameraPreview.classList.add('hidden');
+                placeholder.classList.remove('hidden');
+                faceSnapshot.value = '';
+            }
+
+            openCameraBtn.addEventListener('click', openCamera);
+            captureBtn.addEventListener('click', capturePhoto);
+            retakeBtn.addEventListener('click', retakePhoto);
+
+            confirmBtn.addEventListener('click', () => {
+                alert('Foto siap digunakan');
+
+                // OPTIONAL UX IMPROVEMENT
+                confirmBtn.disabled = true;
+                confirmBtn.textContent = 'Foto Siap';
+            });
+
+            presensiMasukButton.addEventListener('click', () => {
+                if (!faceSnapshot.value) {
+                    alert('Silakan ambil foto terlebih dahulu.');
+                    return;
+                }
+            });
+        }
+
+        // CAMERA SETUP FOR CLOCK-OUT
+        if (document.getElementById('camera-box-out')) {
+
+            const openCameraBtnOut = document.getElementById('openCameraBtnOut');
+            const captureBtnOut = document.getElementById('captureBtnOut');
+            const retakeBtnOut = document.getElementById('retakeBtnOut');
+            const confirmBtnOut = document.getElementById('confirmBtnOut');
+
+            const placeholderOut = document.getElementById('camera-placeholder-out');
+            const cameraLiveOut = document.getElementById('camera-live-out');
+            const cameraPreviewOut = document.getElementById('camera-preview-out');
+
+            const videoOut = document.getElementById('camera-video-out');
+            const canvasOut = document.getElementById('camera-canvas-out');
+            const photoPreviewOut = document.getElementById('photo-preview-out');
+            const faceSnapshotOut = document.getElementById('faceSnapshotOut');
+
+            let streamOut = null;
+
+            async function openCameraOut() {
+                streamOut = await navigator.mediaDevices.getUserMedia({
+                    video: { facingMode: 'user' }
+                });
+
+                videoOut.srcObject = streamOut;
+
+                placeholderOut.classList.add('hidden');
+                cameraLiveOut.classList.remove('hidden');
+            }
+
+            function capturePhotoOut() {
+                canvasOut.width = videoOut.videoWidth;
+                canvasOut.height = videoOut.videoHeight;
+
+                const ctx = canvasOut.getContext('2d');
+                ctx.drawImage(videoOut, 0, 0);
+
+                const imageData = canvasOut.toDataURL('image/jpeg');
+
+                photoPreviewOut.src = imageData;
+                faceSnapshotOut.value = imageData;
+
+                stopCameraOut();
+
+                cameraLiveOut.classList.add('hidden');
+                cameraPreviewOut.classList.remove('hidden');
+            }
+
+            function stopCameraOut() {
+                if (streamOut) {
+                    streamOut.getTracks().forEach(track => track.stop());
+                    streamOut = null;
+                }
+            }
+
+            function retakePhotoOut() {
+                cameraPreviewOut.classList.add('hidden');
+                placeholderOut.classList.remove('hidden');
+                faceSnapshotOut.value = '';
+            }
+
+            openCameraBtnOut?.addEventListener('click', openCameraOut);
+            captureBtnOut?.addEventListener('click', capturePhotoOut);
+            retakeBtnOut?.addEventListener('click', retakePhotoOut);
+
+            confirmBtnOut?.addEventListener('click', () => {
+                alert('Foto presensi keluar siap digunakan');
+                confirmBtnOut.disabled = true;
+                confirmBtnOut.textContent = 'Foto Siap';
+            });
+
+            presensiKeluarButton?.addEventListener('click', (e) => {
+                if (!faceSnapshotOut.value) {
+                    e.preventDefault();
+                    alert('Silakan ambil foto terlebih dahulu.');
+                    return;
+                }
+            });
+        }
     </script>
 
     @push('scripts')
