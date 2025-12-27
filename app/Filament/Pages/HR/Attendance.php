@@ -32,6 +32,10 @@ class Attendance extends Page
 
     public function mount()
     {
+        if (auth()->user()->hasRole('super_admin')) {
+            abort(403, 'Super Admin tidak memiliki presensi harian');
+        }
+
         $user           = Auth::user();
         $this->employee = $user?->employee;
 
