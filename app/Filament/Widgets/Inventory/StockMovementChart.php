@@ -9,7 +9,7 @@ use Leandrocfe\FilamentApexCharts\Widgets\ApexChartWidget;
 
 class StockMovementChart extends ApexChartWidget
 {
-    use HasPageShield;
+    // use HasPageShield;
 
     protected static ?string $chartId = 'stock_movement_chart';
 

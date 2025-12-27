@@ -11,7 +11,7 @@ use Illuminate\Database\Eloquent\Builder;
 
 class DeliveryOrderReportTable extends BaseWidget
 {
-    use HasPageShield;
+    // use HasPageShield;
     public $filters = [];
 
     protected function getTableQuery(): Builder

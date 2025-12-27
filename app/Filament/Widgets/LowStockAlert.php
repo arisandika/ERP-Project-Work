@@ -12,7 +12,7 @@ use Filament\Support\Colors\Color;
 
 class LowStockAlert extends BaseWidget
 {
-    use HasPageShield;
+    // use HasPageShield;
     protected static ?int $sort = 1;
     protected int | string | array $columnSpan = 'full';
     protected static ?string $heading = 'Produk dengan Stok Rendah';

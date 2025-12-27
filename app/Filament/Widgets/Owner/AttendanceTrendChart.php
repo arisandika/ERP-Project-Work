@@ -9,7 +9,7 @@ use Leandrocfe\FilamentApexCharts\Widgets\ApexChartWidget;
 
 class AttendanceTrendChart extends ApexChartWidget
 {
-    use HasPageShield;
+    // use HasPageShield;
     
     protected static ?string $heading = 'Trend Kehadiran (7 Hari)';
     protected static ?string $pollingInterval = '120s';

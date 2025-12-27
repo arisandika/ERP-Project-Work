@@ -9,7 +9,7 @@ use Leandrocfe\FilamentApexCharts\Widgets\ApexChartWidget;
 
 class RevenueTrendChart extends ApexChartWidget
 {
-    use HasPageShield;
+    // use HasPageShield;
     protected static ?string $heading = 'Revenue 30 Hari Terakhir';
 
     protected function getOptions(): array

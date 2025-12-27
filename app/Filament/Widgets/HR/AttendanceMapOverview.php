@@ -9,7 +9,7 @@ use Illuminate\Support\Carbon;
 
 class AttendanceMapOverview extends Widget
 {
-    use HasPageShield;
+    // use HasPageShield;
     
     protected static string $view = 'filament.widgets.hr.attendance-map-overview';
 

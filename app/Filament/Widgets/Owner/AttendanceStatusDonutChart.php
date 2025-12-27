@@ -8,7 +8,7 @@ use Leandrocfe\FilamentApexCharts\Widgets\ApexChartWidget;
 
 class AttendanceStatusDonutChart extends ApexChartWidget
 {
-    use HasPageShield;
+    // use HasPageShield;
 
     protected static ?string $heading = 'Komposisi Presensi Hari Ini';
 

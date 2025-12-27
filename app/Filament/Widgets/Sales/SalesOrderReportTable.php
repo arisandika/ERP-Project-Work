@@ -13,7 +13,7 @@ use Filament\Tables\Actions\ExportAction;
 
 class SalesOrderReportTable extends BaseWidget
 {
-    use HasPageShield;
+    // use HasPageShield;
     public $filters = [];
 
     protected function getTableQuery(): Builder

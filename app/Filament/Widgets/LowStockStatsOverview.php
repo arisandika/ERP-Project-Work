@@ -10,7 +10,7 @@ use Filament\Widgets\StatsOverviewWidget\Stat;
 
 class LowStockStatsOverview extends BaseWidget
 {
-    use HasPageShield;
+    // use HasPageShield;
     protected static ?int $sort = 0;
     protected int | string | array $columnSpan = 'full';
 

@@ -8,7 +8,7 @@ use Leandrocfe\FilamentApexCharts\Widgets\ApexChartWidget;
 
 class TopSalesPersonChart extends ApexChartWidget
 {
-    use HasPageShield;
+    // use HasPageShield;
     protected static ?string $heading = 'Top 5 Sales (Revenue Bulan Ini)';
 
     protected function getOptions(): array
