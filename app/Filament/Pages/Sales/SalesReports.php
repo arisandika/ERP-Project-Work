@@ -2,6 +2,7 @@
 
 namespace App\Filament\Pages\Sales;
 
+use BezhanSalleh\FilamentShield\Traits\HasPageShield;
 use Filament\Pages\Page;
 use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\Section;
@@ -19,6 +20,8 @@ use App\Filament\Widgets\Sales\OperationalAlertTable;
 class SalesReports extends Page implements HasForms
 {
     use InteractsWithForms;
+
+    use HasPageShield;
 
     protected static ?string $navigationIcon = 'heroicon-o-document-chart-bar';
     protected static ?string $navigationGroup = 'Manajemen Sales';
