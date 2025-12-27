@@ -437,7 +437,9 @@ class EmployeeResource extends Resource
                             ->label('Peran (Role)')
                             ->state(fn(Employee $employee) => $employee->roles->pluck('name')->join(', '))
                             ->formatStateUsing(fn(string $state): string => ucwords(str_replace('_', ' ', $state))),
-                    ]),
+                    ])
+                    ->collapsible()
+                    ->persistCollapsed(),
 
                 Section::make('Informasi Pekerjaan')
                     ->columns(2)
@@ -483,7 +485,9 @@ class EmployeeResource extends Resource
                             ->label('Boleh Unlock Shift')
                             ->trueIcon('heroicon-o-check-circle')
                             ->falseIcon('heroicon-o-x-circle'),
-                    ]),
+                    ])
+                    ->collapsible()
+                    ->persistCollapsed(),
 
                 Section::make('Informasi Tambahan Pribadi')
                     ->columns(2)
@@ -509,7 +513,9 @@ class EmployeeResource extends Resource
 
                         TextEntry::make('education_level')
                             ->label('Pendidikan Terakhir'),
-                    ]),
+                    ])
+                    ->collapsible()
+                    ->persistCollapsed(),
 
                 Section::make('Pengelolaan Data')
                     ->columns(2)
@@ -526,7 +532,9 @@ class EmployeeResource extends Resource
                             ->label('Dihapus Pada')
                             ->dateTime('d F Y H:i')
                             ->visible(fn(Employee $employee) => $employee->trashed()),
-                    ]),
+                    ])
+                    ->collapsible()
+                    ->persistCollapsed(),
             ]);
     }
 

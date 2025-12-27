@@ -13,9 +13,6 @@ class Dashboard extends BaseDashboard
     public function getWidgets(): array
     {
         return [
-            // StatsOverview::class,
-            // UsersChart::class,
-            // SalesChart::class,
         ];
     }
 }
