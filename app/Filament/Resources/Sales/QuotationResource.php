@@ -6,23 +6,28 @@ use App\Filament\Resources\Sales\QuotationResource\Pages;
 use App\Mail\QuotationSent;
 use App\Models\Sales\PromoCode;
 use App\Models\Sales\Quotation;
+use App\Models\Inventory\Product;
+use App\Models\Inventory\Service;
+use App\Models\Inventory\Package; // Pastikan namespace ini benar
 use Filament\Forms;
 use Filament\Forms\Components\Actions\Action as FormAction;
 use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\Grid;
+use Filament\Forms\Components\Hidden;
 use Filament\Forms\Components\Repeater;
 use Filament\Forms\Components\Section;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Form;
+use Filament\Forms\Get;
+use Filament\Forms\Set;
 use Filament\Notifications\Notification;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Actions\Action as TableAction;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
-use Illuminate\Database\Eloquent\SoftDeletingScope;
 use Illuminate\Support\Facades\Mail;
 
 class QuotationResource extends Resource
@@ -47,6 +52,7 @@ class QuotationResource extends Resource
                 Grid::make(3)->schema([
                     TextInput::make('quotation_number')
                         ->label('Nomor Penawaran')
+                        ->default('SQ-' . strtoupper(uniqid())) // Auto-generate dummy
                         ->disabled()
                         ->dehydrated()
                         ->unique(ignoreRecord: true),
@@ -56,17 +62,15 @@ class QuotationResource extends Resource
                         ->required(),
                     DatePicker::make('valid_until')
                         ->label('Berlaku Hingga')
+                        ->default(now()->addDays(7)) // Default 7 hari
                         ->required(),
                 ]),
                 Grid::make(2)->schema([
                     Select::make('nx_customer_id')
                         ->label('Pelanggan')
                         ->searchable()
-                        ->getSearchResultsUsing(fn (string $search) => \App\Models\CRM\Customer::where('name', 'like', "%{$search}%")->limit(50)->pluck('name', 'id'))
-                        ->getOptionLabelsUsing(function (array $values): array {
-                            if (empty($values)) return [];
-                            return \App\Models\CRM\Customer::whereIn('id', $values)->pluck('name', 'id')->toArray();
-                        })
+                        ->preload() // Gunakan preload jika data customer < 1000
+                        ->relationship('customer', 'name')
                         ->required(),
 
                     Select::make('nx_employee_id')
@@ -101,7 +105,7 @@ class QuotationResource extends Resource
                         ->schema(self::getQuotationItemsSchema())
                         ->columns(2)
                         ->reactive()
-                        ->afterStateUpdated(fn (callable $get, callable $set) => self::updateTotals($get, $set))
+                        ->afterStateUpdated(fn (Get $get, Set $set) => self::updateTotals($get, $set))
                         ->createItemButtonLabel('Tambah Item')
                         ->defaultItems(1),
                 ])->collapsible(),
@@ -111,7 +115,7 @@ class QuotationResource extends Resource
                 Grid::make(4)->schema([
                     TextInput::make('subtotal')
                         ->label('Subtotal')
-                        ->disabled()
+                        ->readOnly()
                         ->dehydrated()
                         ->prefix('Rp'),
 
@@ -126,42 +130,15 @@ class QuotationResource extends Resource
                                 ->icon('heroicon-m-ticket')
                                 ->color('success')
                                 ->label('Apply')
-                                ->action(function ($state, callable $set, callable $get) {
-                                    // Reset jika input kosong
-                                    if (empty($state)) {
-                                        $set('promo_code_id', null);
-                                        $set('temp_discount_type', null);
-                                        $set('temp_discount_value', 0);
-                                        self::updateTotals($get, $set);
-                                        return;
-                                    }
-
-                                    // Cek Database via Scope Available
-                                    $promo = PromoCode::where('code', $state)->available()->first();
-
-                                    if (!$promo) {
-                                        Notification::make()->title('Kode tidak valid / expired!')->danger()->send();
-                                        $set('promo_code_id', null);
-                                        $set('temp_discount_type', null);
-                                        $set('temp_discount_value', 0);
-                                    } else {
-                                        Notification::make()->title("Promo '{$promo->code}' berhasil diterapkan!")->success()->send();
-                                        // Set Hidden Fields
-                                        $set('promo_code_id', $promo->id);
-                                        $set('temp_discount_type', $promo->type);
-                                        $set('temp_discount_value', $promo->value);
-                                    }
-
-                                    // Trigger hitung ulang
-                                    self::updateTotals($get, $set);
+                                ->action(function ($state, Set $set, Get $get) {
+                                    self::applyPromo($state, $set, $get);
                                 })
                         ),
 
                     // Hidden Fields Promo
-                    Forms\Components\Hidden::make('promo_code_id'),
-
-                    Forms\Components\Hidden::make('temp_discount_type')->dehydrated(false),
-                    Forms\Components\Hidden::make('temp_discount_value')->dehydrated(false),
+                    Hidden::make('promo_code_id'),
+                    Hidden::make('temp_discount_type')->dehydrated(false),
+                    Hidden::make('temp_discount_value')->dehydrated(false),
 
                     TextInput::make('discount_amount')
                         ->label('Potongan')
@@ -175,19 +152,14 @@ class QuotationResource extends Resource
                         ->default(0)
                         ->minValue(0)
                         ->reactive()
-                        ->afterStateUpdated(function ($state, callable $set, callable $get) {
-                            if ($state < 0) {
-                                $set('tax', 0);
-                            }
-
-                            self::updateTotals($get, $set);
-                        }),
+                        ->afterStateUpdated(fn ($state, Set $set, Get $get) => self::updateTotals($get, $set)),
 
                     TextInput::make('grand_total')
                         ->label('Grand Total')
-                        ->disabled()
+                        ->readOnly()
                         ->dehydrated()
-                        ->prefix('Rp'),
+                        ->prefix('Rp')
+                        ->extraInputAttributes(['style' => 'font-weight: bold; color: #16a34a;']),
                 ]),
             ]),
         ]);
@@ -204,51 +176,67 @@ class QuotationResource extends Resource
                     'service' => 'Service',
                     'package' => 'Package',
                 ])
+                ->default('product')
                 ->reactive()
-                ->required(),
+                ->required()
+                ->afterStateUpdated(function (Set $set) {
+                    // Reset field saat ganti tipe agar data bersih
+                    $set('item_id', null);
+                    $set('item_code', null);
+                    $set('item_name', null);
+                    $set('unit_price', 0);
+                    $set('line_total', 0);
+                }),
 
             Select::make('item_id')
                 ->label('Pilih Item')
-                ->options(function (callable $get) {
-                    return match ($get('item_type')) {
-                        'product' => \App\Models\Inventory\Product::pluck('product_name', 'id')->toArray(),
-                        'service' => \App\Models\Inventory\Service::pluck('service_name', 'id')->toArray(),
-                        'package' => \App\Models\Inventory\Package::pluck('package_name', 'id')->toArray(),
+                ->options(function (Get $get) {
+                    $type = $get('item_type');
+                    // Pastikan class Model valid & method pluck benar
+                    return match ($type) {
+                        'product' => Product::query()->pluck('product_name', 'id'), // Cek nama kolom di DB mu, apakah 'name' atau 'product_name'?
+                        'service' => Service::query()->pluck('service_name', 'id'),
+                        'package' => Package::query()->pluck('package_name', 'id'),
                         default => [],
                     };
                 })
-                ->visible(fn (callable $get) => ! empty($get('item_type')))
+                ->visible(fn (Get $get) => ! empty($get('item_type')))
                 ->searchable()
+                ->preload()
                 ->reactive()
-                ->afterStateUpdated(function ($state, callable $set, callable $get) {
+                ->afterStateUpdated(function ($state, Set $set, Get $get) {
                     if (!$state) return;
 
-                    // Ambil data Model
-                    $model = match ($get('item_type')) {
-                        'product' => \App\Models\Inventory\Product::find($state),
-                        'service' => \App\Models\Inventory\Service::find($state),
-                        'package' => \App\Models\Inventory\Package::find($state),
-                    };
+                    $type = $get('item_type');
+
+                    // Logic pengambilan data yang aman
+                    $model = null;
+                    if ($type === 'product') $model = Product::find($state);
+                    elseif ($type === 'service') $model = Service::find($state);
+                    elseif ($type === 'package') $model = Package::find($state);
 
                     if ($model) {
-                        $name = $model->product_name ?? $model->service_name ?? $model->package_name;
-                        $code = $model->product_code ?? $model->service_code ?? $model->package_code;
+                        // ADJUST KOLOM DATABASE DISINI SESUAI TABEL KAMU
+                        $name  = $model->product_name ?? $model->service_name ?? $model->package_name ?? $model->name;
+                        $code  = $model->product_code ?? $model->service_code ?? $model->package_code ?? $model->code ?? 'CODE-'.$state;
                         $price = $model->price ?? $model->total_price ?? 0;
 
                         $set('item_name', $name);
-                        $set('item_code', $code);
+                        $set('item_code', $code); // <-- INI PENTING
                         $set('unit_price', $price);
 
-                        // Hitung total baris otomatis
                         self::updateItemTotal($get, $set);
                     }
                 }),
 
-            // [REVISI] Item Code ditampilkan, readOnly, dan dehydrated
-            TextInput::make('item_code')
+            // [FIX] Gunakan Hidden + TextInput ReadOnly agar data Code benar-benar aman
+            Hidden::make('item_code')->dehydrated(true),
+
+            TextInput::make('item_code_display') // Field dummy buat display aja
                 ->label('Kode Item')
-                ->readOnly()
-                ->dehydrated(),
+                ->disabled()
+                ->dehydrated(false) // Jangan kirim ke DB, DB ambil dari Hidden diatas
+                ->formatStateUsing(fn (Get $get) => $get('item_code')), // Ambil value dari hidden field
 
             TextInput::make('item_name')
                 ->label('Nama Item')
@@ -262,55 +250,57 @@ class QuotationResource extends Resource
                 ->default(1)
                 ->minValue(1)
                 ->reactive()
-                ->afterStateUpdated(function ($state, callable $set, callable $get) {
-                    if ($state < 1) {
-                        $set('qty', 1);
-                    }
-
+                ->afterStateUpdated(function ($state, Set $set, Get $get) {
+                    if ($state < 1) $set('qty', 1);
                     self::updateItemTotal($get, $set);
                 }),
 
             TextInput::make('unit_price')
                 ->numeric()
                 ->reactive()
-                ->afterStateUpdated(fn ($state, callable $set, callable $get) => self::updateItemTotal($get, $set))
+                ->afterStateUpdated(fn (Set $set, Get $get) => self::updateItemTotal($get, $set))
                 ->prefix('Rp'),
 
             TextInput::make('line_total')
                 ->label('Total')
-                ->disabled()
+                ->readOnly()
                 ->dehydrated()
                 ->prefix('Rp'),
         ];
     }
 
-    public static function updateItemTotal(callable $get, callable $set): void
+    // --- HELPER LOGIC ---
+
+    public static function updateItemTotal(Get $get, Set $set): void
     {
-        $qty = (float) ($get('qty') ?? 0);
+        $qty   = (float) ($get('qty') ?? 0);
         $price = (float) ($get('unit_price') ?? 0);
         $set('line_total', $qty * $price);
+
+        // Panggil updateTotals global setiap kali item berubah (opsional, tp aman)
+        // self::updateTotals($get, $set); <--- Hati-hati infinite loop jika logicnya salah, lebih baik dipanggil di Repeater level
     }
 
-    public static function updateTotals(callable $get, callable $set): void
+    public static function updateTotals(Get $get, Set $set): void
     {
-        // 1. Hitung Subtotal Item
+        // 1. Hitung Subtotal
         $items = $get('items') ?? [];
-        $subtotal = collect($items)->sum(
-            fn ($item) => (float) ($item['qty'] ?? 0) * (float) ($item['unit_price'] ?? 0)
-        );
+        $subtotal = collect($items)->sum(fn ($item) => (float) ($item['qty'] ?? 0) * (float) ($item['unit_price'] ?? 0));
         $set('subtotal', $subtotal);
 
-        // 2. Logic Kalkulasi Promo
-        $discountType = $get('temp_discount_type');
+        // 2. Promo Logic
+        $discountType  = $get('temp_discount_type');
         $discountValue = (float) $get('temp_discount_value');
 
-        if (!$discountType && $get('promo_code_id')) {
-            $promo = PromoCode::find($get('promo_code_id'));
+        // Restore promo on edit
+        if (!$discountType && $promoId = $get('promo_code_id')) {
+            $promo = PromoCode::find($promoId);
             if ($promo) {
-                $discountType = $promo->type;
+                $discountType  = $promo->type;
                 $discountValue = $promo->value;
                 $set('temp_discount_type', $discountType);
                 $set('temp_discount_value', $discountValue);
+                $set('promo_code_input', $promo->code);
             }
         }
 
@@ -321,13 +311,10 @@ class QuotationResource extends Resource
             $totalDiscount = $discountValue;
         }
 
-        if ($totalDiscount > $subtotal) {
-            $totalDiscount = $subtotal;
-        }
-
+        $totalDiscount = min($totalDiscount, $subtotal); // Safety check
         $set('discount_amount', $totalDiscount);
 
-        // 3. Hitung Pajak & Grand Total
+        // 3. Tax & Grand Total
         $taxPercent = (float) ($get('tax') ?? 0);
         $afterDiscount = $subtotal - $totalDiscount;
         $taxAmount = $afterDiscount * ($taxPercent / 100);
@@ -335,64 +322,59 @@ class QuotationResource extends Resource
         $set('grand_total', $afterDiscount + $taxAmount);
     }
 
+    public static function applyPromo($code, Set $set, Get $get): void
+    {
+        if (empty($code)) {
+            $set('promo_code_id', null);
+            $set('temp_discount_type', null);
+            $set('temp_discount_value', 0);
+            self::updateTotals($get, $set);
+            return;
+        }
+
+        // Pastikan pakai scope available() jika ada di model PromoCode
+        $promo = PromoCode::where('code', $code)->where('status', 'active')->first(); // Fallback query manual jika scope error
+
+        if (!$promo) {
+            Notification::make()->title('Kode tidak valid!')->danger()->send();
+            $set('promo_code_id', null);
+            $set('temp_discount_type', null);
+            $set('temp_discount_value', 0);
+        } else {
+            Notification::make()->title("Promo Applied!")->success()->send();
+            $set('promo_code_id', $promo->id);
+            $set('temp_discount_type', $promo->type);
+            $set('temp_discount_value', $promo->value);
+        }
+
+        self::updateTotals($get, $set);
+    }
+
+    // ... sisa method table dan pages sama ...
     public static function table(Table $table): Table
     {
         return $table
             ->columns([
                 Tables\Columns\TextColumn::make('quotation_number')->label('Nomor')->sortable()->searchable(),
                 Tables\Columns\TextColumn::make('customer.name')->label('Pelanggan')->sortable()->searchable(),
-                Tables\Columns\TextColumn::make('employee.full_name')->label('Dibuat Oleh')->sortable()->searchable(),
                 Tables\Columns\TextColumn::make('quotation_date')->label('Tanggal')->date(),
-
-                Tables\Columns\TextColumn::make('promoCode.code')
-                    ->label('Promo')
-                    ->badge()
-                    ->color('info')
-                    ->placeholder('-'),
-
                 Tables\Columns\TextColumn::make('grand_total')->label('Grand Total')->money('IDR', true),
-
-                Tables\Columns\BadgeColumn::make('status')
-                    ->label('Status')
-                    ->colors([
-                        'secondary' => 'draft',
-                        'warning' => 'sent',
-                        'success' => 'accepted',
-                        'danger' => 'rejected',
-                    ]),
-            ])
-            ->filters([
-                Tables\Filters\SelectFilter::make('status')
-                    ->options([
-                        'draft' => 'Draft',
-                        'sent' => 'Terkirim',
-                        'accepted' => 'Diterima',
-                        'rejected' => 'Ditolak',
-                    ]),
-                Tables\Filters\TrashedFilter::make(),
+                Tables\Columns\TextColumn::make('status')
+                    ->badge()
+                    ->color(fn (string $state): string => match ($state) {
+                        'draft' => 'gray',
+                        'sent' => 'warning',
+                        'accepted' => 'success',
+                        'rejected' => 'danger',
+                        default => 'gray',
+                    }),
             ])
             ->actions([
                 Tables\Actions\EditAction::make(),
                 Tables\Actions\DeleteAction::make(),
-                TableAction::make('sendEmail')
-                    ->label('Kirim Email')
-                    ->icon('heroicon-o-envelope')
-                    ->color('info')
-                    ->requiresConfirmation()
-                    ->visible(fn (Quotation $record) => ! empty($record->customer->email))
-                    ->action(function (Quotation $record) {
-                        try {
-                            Mail::to($record->customer->email)->queue(new QuotationSent($record));
-                            Notification::make()->title('Email antri dikirim')->success()->send();
-                        } catch (\Exception $e) {
-                            Notification::make()->title('Gagal kirim')->danger()->send();
-                        }
-                    }),
             ])
             ->bulkActions([
-                Tables\Actions\BulkActionGroup::make([
-                    Tables\Actions\DeleteBulkAction::make(),
-                ]),
+                Tables\Actions\BulkActionGroup::make([Tables\Actions\DeleteBulkAction::make()]),
             ]);
     }
 

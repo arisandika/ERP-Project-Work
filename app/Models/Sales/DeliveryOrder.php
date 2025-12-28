@@ -23,6 +23,8 @@ class DeliveryOrder extends Model
         'do_date',
         'status',
         'notes',
+        'proof_image',
+        'proof_notes',
     ];
 
     protected $casts = [
@@ -31,9 +33,12 @@ class DeliveryOrder extends Model
 
     public function salesOrder(): BelongsTo
     {
-        return $this->belongsTo(SalesOrder::class, 'nx_sales_order_id');
+        return $this->belongsTo(
+            SalesOrder::class,
+            'nx_sales_order_id',
+            'id'
+        );
     }
-
     public function customer(): BelongsTo
     {
         return $this->belongsTo(Customer::class, 'nx_customer_id')->withDefault();

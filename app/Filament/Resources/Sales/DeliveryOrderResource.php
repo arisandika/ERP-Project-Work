@@ -5,6 +5,8 @@ namespace App\Filament\Resources\Sales;
 use App\Filament\Resources\Sales\DeliveryOrderResource\Pages;
 use App\Models\Sales\DeliveryOrder;
 use App\Models\Sales\SalesOrder;
+use Filament\Notifications\Notification;
+use Filament\Forms\Components\FileUpload;
 use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Forms\Components\Section;
@@ -190,11 +192,11 @@ class DeliveryOrderResource extends Resource
         ]);
     }
 
-    public static function table(Table $table): Table
+        public static function table(Table $table): Table
     {
         return $table
             ->columns([
-                Tables\Columns\TextColumn::make('do_number')->label('Nomor DO')->sortable()->searchable()->weight('bold'),
+                Tables\Columns\TextColumn::make('do_number')->label('Nomor DO')->sortable()->searchable(),
                 Tables\Columns\TextColumn::make('salesOrder.order_number')->label('Nomor SO')->sortable()->searchable(),
                 Tables\Columns\TextColumn::make('customer.name')->label('Pelanggan')->sortable()->searchable(),
                 Tables\Columns\TextColumn::make('do_date')->label('Tanggal DO')->date('d M Y'),
@@ -212,8 +214,8 @@ class DeliveryOrderResource extends Resource
                     ->formatStateUsing(fn (string $state): string => match ($state) {
                         'draft'       => 'Draft',
                         'ready'       => 'Siap Kirim',
-                        'on_delivery' => 'Dikirim',
-                        'delivered'   => 'Sampai',
+                        'on_delivery' => 'Dalam Pengiriman',
+                        'delivered'   => 'Diterima',
                         'cancelled'   => 'Batal',
                         default       => $state,
                     }),
@@ -223,7 +225,44 @@ class DeliveryOrderResource extends Resource
                 Tables\Filters\TrashedFilter::make(),
             ])
             ->actions([
-                // === ACTION CETAK: URL ke Route ===
+                // === [MULAI] ACTION UPLOAD BUKTI ===
+                Action::make('upload_proof')
+                    ->label('Upload Bukti')
+                    ->icon('heroicon-o-camera')
+                    ->color('info')
+                    // Button ini HANYA MUNCUL jika status 'on_delivery' atau 'delivered'
+                    ->visible(fn (DeliveryOrder $record) => in_array($record->status, ['on_delivery', 'delivered']))
+                    ->form([
+                        FileUpload::make('proof_image')
+                            ->label('Foto Penerimaan')
+                            ->image()
+                            ->imageEditor()
+                            ->directory('delivery-proofs')
+                            ->required(),
+
+                        Textarea::make('proof_notes')
+                            ->label('Catatan Penerima')
+                            ->placeholder('Diterima oleh siapa? Keterangan barang?')
+                            ->rows(2),
+                    ])
+                    ->action(function (DeliveryOrder $record, array $data): void {
+                        $record->update([
+                            'proof_image' => $data['proof_image'],
+                            'proof_notes' => $data['proof_notes'],
+                            'status'      => 'delivered',
+                        ]);
+
+                        Notification::make()
+                            ->title('Berhasil')
+                            ->body('Bukti foto tersimpan & status update ke Terkirim.')
+                            ->success()
+                            ->send();
+                    })
+                    ->modalHeading('Upload Bukti Barang Sampai')
+                    ->modalSubmitActionLabel('Simpan Bukti')
+                    ->modalWidth('md'),
+                // === [SELESAI] ACTION UPLOAD BUKTI ===
+
                 Action::make('print')
                     ->label('Cetak')
                     ->icon('heroicon-o-printer')
@@ -231,7 +270,6 @@ class DeliveryOrderResource extends Resource
                     ->url(fn (DeliveryOrder $record) => route('print.delivery-order', $record))
                     ->openUrlInNewTab(),
 
-                Tables\Actions\ViewAction::make(),
                 Tables\Actions\EditAction::make(),
                 Tables\Actions\DeleteAction::make(),
             ])
@@ -241,6 +279,7 @@ class DeliveryOrderResource extends Resource
                 ]),
             ]);
     }
+
 
     public static function getRelations(): array
     {

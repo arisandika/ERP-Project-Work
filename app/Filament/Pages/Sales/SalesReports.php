@@ -24,7 +24,7 @@ class SalesReports extends Page implements HasForms
     use HasPageShield;
 
     protected static ?string $navigationIcon = 'heroicon-o-document-chart-bar';
-    protected static ?string $navigationGroup = 'Manajemen Sales';
+    protected static ?string $navigationGroup = 'Manajemen Finance';
     protected static ?string $navigationLabel = 'Laporan Penjualan';
     protected static ?string $title = 'Laporan Penjualan';
 

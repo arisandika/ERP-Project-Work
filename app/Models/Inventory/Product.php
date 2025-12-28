@@ -5,7 +5,6 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
-use Illuminate\Database\Eloquent\Relations\MorphMany; // Untuk Polymorphic
 use Illuminate\Support\Facades\Storage;
 
 class Product extends Model
@@ -15,6 +14,7 @@ class Product extends Model
     protected $table = 'nx_products';
 
     protected $fillable = [
+        'product_code',    // Menambahkan ini
         'product_name',
         'category_id',
         'label',
@@ -24,7 +24,30 @@ class Product extends Model
         'image_path',
     ];
 
-    // Relasi BelongsTo
+    protected $appends = ['image_url'];
+
+    // === AUTO-GENERATE PRODUCT CODE ===
+    protected static function booted(): void
+    {
+        // Logic auto-generate saat create (sebelum simpan ke DB)
+        static::creating(function (Product $product) {
+            if (empty($product->product_code)) {
+                // Generate kode temporary pakai uniqid biar aman dari race condition
+                // Nanti bisa di-update jadi ID based setelah insert via 'created' event
+                $product->product_code = 'TEMP-' . strtoupper(uniqid());
+            }
+        });
+
+        // Update kode jadi format BRG-XXXXXX setelah ID tersedia
+        static::created(function (Product $product) {
+            if (str_starts_with($product->product_code, 'TEMP-')) {
+                $product->product_code = 'BRG-' . str_pad($product->id, 6, '0', STR_PAD_LEFT);
+                $product->saveQuietly();
+            }
+        });
+    }
+
+    // === RELASI ===
     public function category(): BelongsTo
     {
         return $this->belongsTo(Category::class, 'category_id');
@@ -35,7 +58,6 @@ class Product extends Model
         return $this->belongsTo(Unit::class, 'unit_id');
     }
 
-    // Relasi HasMany
     public function productStocks(): HasMany
     {
         return $this->hasMany(ProductStock::class, 'product_id');
@@ -43,122 +65,78 @@ class Product extends Model
 
     public function stockTransactions(): HasMany
     {
-        return $this->hasMany(\App\Models\Inventory\StockTransaction::class, 'product_id', 'id');
+        return $this->hasMany(StockTransaction::class, 'product_id', 'id');
     }
 
-    // Accessor untuk total stock
+    // === ACCESSORS ===
     public function getTotalStockAttribute(): int
     {
         return $this->productStocks()->sum('qty');
     }
 
-    // Accessor untuk kode produk
+    // Accessor legacy (tetap ada untuk backward compatibility)
     public function getKodeBarangAttribute(): string
     {
-        return 'BRG-' . str_pad($this->id, 6, '0', STR_PAD_LEFT);
+        // Sekarang ambil dari kolom DB, kalau kosong baru generate
+        return $this->product_code ?? 'BRG-' . str_pad($this->id, 6, '0', STR_PAD_LEFT);
     }
 
-    protected $appends = ['image_url'];
-
-    // Accessor untuk status low stock
     public function getIsLowStockAttribute(): bool
     {
-        $threshold = 10;
-        return $this->total_stock < $threshold;
+        return $this->total_stock < 10;
     }
 
-    // Accessor untuk threshold stock
     public function getStockThresholdAttribute(): int
     {
         return 10;
     }
 
-    // Method untuk get low stock items
-    public static function getLowStockProducts()
-    {
-        return static::with(['unit', 'category', 'productStocks.warehouse'])
-            ->whereHas('productStocks', function ($query) {
-                $query->where('nx_product_stock.qty', '<=', 10);
-            })
-            ->get();
-    }
-
-    // Accessor untuk URL foto
     public function getImageUrlAttribute(): string
     {
         if ($this->image_path && Storage::disk('public')->exists($this->image_path)) {
             return Storage::disk('public')->url($this->image_path);
         }
-
         return 'https://thumbs2.imgbox.com/98/e9/y65t3ovR_t.png';
     }
 
-    // Method untuk check apakah produk ini low stock di warehouse tertentu
+    // === METHODS ===
+    public static function getLowStockProducts()
+    {
+        return static::with(['unit', 'category', 'productStocks.warehouse'])
+            ->whereHas('productStocks', function ($query) {
+                $query->where('qty', '<=', 10);
+            })
+            ->get();
+    }
+
     public function isLowStockInWarehouse(?int $warehouseId = null): bool
     {
         $query = $this->productStocks();
-
         if ($warehouseId) {
-            $query->where('id', $warehouseId);
+            $query->where('warehouse_id', $warehouseId);
         }
-
-        $threshold = $this->stock_threshold;
-
-        return $query->where('qty', '<', $threshold)->exists();
+        return $query->where('qty', '<', $this->stock_threshold)->exists();
     }
 
-    // Method untuk get stock status label
     public function getStockStatusLabel(?int $qty = null): string
     {
         $checkQty = $qty ?? $this->total_stock;
-
         return match (true) {
-            $checkQty <= 0                     => 'OUT OF STOCK',
-            $checkQty <= 5                     => 'CRITICAL',
-            $checkQty <= 10                    => 'LOW',
-            $checkQty < $this->stock_threshold => 'WARNING',
-            default                            => 'AVAILABLE',
+            $checkQty <= 0  => 'OUT OF STOCK',
+            $checkQty <= 5  => 'CRITICAL',
+            $checkQty <= 10 => 'LOW',
+            default         => 'AVAILABLE',
         };
     }
 
-    // Method untuk get stock status color
     public function getStockStatusColor(?int $qty = null): string
     {
         $checkQty = $qty ?? $this->total_stock;
-
         return match (true) {
-            $checkQty <= 0                     => 'danger',
-            $checkQty <= 5                     => 'danger',
-            $checkQty <= 10                    => 'warning',
-            $checkQty < $this->stock_threshold => 'warning',
-            default                            => 'success',
+            $checkQty <= 0  => 'danger',
+            $checkQty <= 5  => 'danger',
+            $checkQty <= 10 => 'warning',
+            default         => 'success',
         };
-    }
-
-    /**
-     * Find the smallest available ID (gap filling)
-     */
-    public static function getNextAvailableId(): int
-    {
-        // Get all existing IDs
-        $existingIds = static::pluck('id')->toArray();
-
-        // If no records exist, start from 1
-        if (empty($existingIds)) {
-            return 1;
-        }
-
-        // Sort IDs
-        sort($existingIds);
-
-        // Find the first gap
-        for ($i = 1; $i <= max($existingIds); $i++) {
-            if (! in_array($i, $existingIds)) {
-                return $i;
-            }
-        }
-
-        // If no gap found, return next ID after max
-        return max($existingIds) + 1;
     }
 }
