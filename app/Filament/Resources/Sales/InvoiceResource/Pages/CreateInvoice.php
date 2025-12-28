@@ -5,6 +5,7 @@ namespace App\Filament\Resources\Sales\InvoiceResource\Pages;
 use App\Filament\Resources\Sales\InvoiceResource;
 use App\Models\Sales\Invoice;
 use Filament\Resources\Pages\CreateRecord;
+use Illuminate\Database\Eloquent\Model;
 
 class CreateInvoice extends CreateRecord
 {
@@ -19,38 +20,61 @@ class CreateInvoice extends CreateRecord
         return [
             'invoice_number' => $this->generateInvoiceNumber(),
             'invoice_date'   => now(),
-            'nx_employee_id' => auth()->user()?->employee?->id, // Asumsi relasi user ke employee ada
+            'nx_employee_id' => auth()->user()?->employee?->id,
         ];
     }
 
     /**
      * 2. MUTATE BEFORE CREATE
      * Wajib generate ulang nomor sesaat sebelum simpan ke DB.
-     * Ini mencegah error "Duplicate Entry" jika ada 2 admin input bersamaan.
      */
     protected function mutateFormDataBeforeCreate(array $data): array
     {
         $data['invoice_number'] = $this->generateInvoiceNumber();
-
-        // Opsional: Jika butuh track user login yang buat
-        // $data['created_by'] = auth()->id();
-
         return $data;
     }
 
     /**
-     * 3. LOGIC GENERATOR (Format: 001/INV/NEX/XII/2025)
+     * 3. OVERRIDE HANDLE RECORD CREATION
+     * Ini yang WAJIB ditambahin buat save items!
+     */
+    protected function handleRecordCreation(array $data): Model
+    {
+        // Pisahkan items dari data utama
+        $items = $data['items'] ?? [];
+        unset($data['items']);
+
+        // Buat invoice dulu (parent record)
+        $invoice = static::getModel()::create($data);
+
+        // Setelah invoice punya ID, baru save items
+        if (!empty($items)) {
+            foreach ($items as $item) {
+                $invoice->items()->create([
+                    'item_type'  => $item['item_type'] ?? null,
+                    'item_id'    => $item['item_id'] ?? null,
+                    'item_code'  => $item['item_code'] ?? null,
+                    'item_name'  => $item['item_name'] ?? null,
+                    'qty'        => $item['qty'] ?? 0,
+                    'unit_price' => $item['unit_price'] ?? 0,
+                    'line_total' => $item['line_total'] ?? 0,
+                ]);
+            }
+        }
+
+        return $invoice;
+    }
+
+    /**
+     * 4. LOGIC GENERATOR (Format: 001/INV/NEX/XII/2025)
      */
     private function generateInvoiceNumber(): string
     {
-        // Komponen Nomor
         $roman   = $this->getRomanMonth(now()->month);
         $year    = now()->year;
-        $company = 'NEX'; // Kode Perusahaan
-        $code    = 'INV'; // Kode Dokumen
+        $company = 'NEX';
+        $code    = 'INV';
 
-        // Cari nomor terakhir dengan pola bulan & tahun INI
-        // Contoh pola: %/INV/NEX/XII/2025
         $suffix = "/{$code}/{$company}/{$roman}/{$year}";
 
         $lastInvoice = Invoice::query()
@@ -58,23 +82,15 @@ class CreateInvoice extends CreateRecord
             ->orderByDesc('id')
             ->value('invoice_number');
 
-        // Logic Urutan
         $seq = 1;
         if ($lastInvoice) {
-            // Pecah string berdasarkan '/'
-            // Contoh: "005/INV/NEX/XII/2025" -> ambil "005"
             $parts = explode('/', $lastInvoice);
-
-            // Ambil bagian pertama, ubah jadi integer, tambah 1
             if (isset($parts[0]) && is_numeric($parts[0])) {
                 $seq = (int) $parts[0] + 1;
             }
         }
 
-        // Padding 3 digit (001, 002, dst)
         $seqStr = str_pad((string)$seq, 3, '0', STR_PAD_LEFT);
-
-        // Gabungkan
         return "{$seqStr}{$suffix}";
     }
 
@@ -92,7 +108,6 @@ class CreateInvoice extends CreateRecord
 
     protected function getRedirectUrl(): string
     {
-        // Redirect ke halaman Index (List Table) setelah create sukses
         return $this->getResource()::getUrl('index');
     }
 }
