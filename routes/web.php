@@ -24,5 +24,6 @@ Route::middleware(['auth'])->group(function () {
         ->name('print.delivery-order');
 
     Route::get('/invoice/verify/{number}', [PrintController::class, 'verifyInvoice'])
-        ->name('invoice.verify');
+        ->name('invoice.verify')
+        ->where('number', '.*');
 });
