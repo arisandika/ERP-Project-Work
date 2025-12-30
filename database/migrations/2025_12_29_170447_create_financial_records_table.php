@@ -9,18 +9,18 @@ return new class extends Migration
     /**
      * Run the migrations.
      */
-
     public function up(): void
     {
-        Schema::create('nx_payments', function (Blueprint $table) {
+        Schema::create('nx_financial_records', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('nx_invoice_id')->constrained('nx_invoices')->cascadeOnDelete();
-            $table->string('payment_number')->unique();
-            $table->date('payment_date');
+            $table->date('transaction_date');
+            $table->string('description');
+            $table->enum('type', ['pemasukan', 'pengeluaran']);
             $table->decimal('amount', 15, 2);
-            $table->string('payment_method');
-            $table->text('notes')->nullable();
+            $table->string('category')->default('Umum');
             $table->timestamps();
+
+            $table->softDeletes();
         });
     }
 
@@ -30,6 +30,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('nx_payments');
+        Schema::dropIfExists('nx_financial_records');
     }
 };
