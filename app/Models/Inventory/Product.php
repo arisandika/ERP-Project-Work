@@ -21,6 +21,8 @@ class Product extends Model
         'unit_id',
         'min_stock',
         'price',
+        'purchase_price',
+        'selling_price',
         'image_path',
     ];
 

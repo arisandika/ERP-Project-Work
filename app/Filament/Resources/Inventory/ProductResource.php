@@ -83,8 +83,15 @@ class ProductResource extends Resource
                                     ->rows(2),
                             ]),
 
-                        Forms\Components\TextInput::make('price')
-                            ->label('Harga')
+                        Forms\Components\TextInput::make('purchase_price')
+                            ->label('Harga Beli')
+                            ->required()
+                            ->numeric()
+                            ->prefix('Rp')
+                            ->step(0.01),
+
+                        Forms\Components\TextInput::make('selling_price')
+                            ->label('Harga Jual')
                             ->required()
                             ->numeric()
                             ->prefix('Rp')
@@ -213,8 +220,13 @@ class ProductResource extends Resource
                     })
                     ->suffix(fn($record) => ' ' . ($record->unit->symbol ?? $record->unit->name ?? '')),
 
-                Tables\Columns\TextColumn::make('price')
-                    ->label('Harga')
+                Tables\Columns\TextColumn::make('purchase_price')
+                    ->label('Harga Beli')
+                    ->money('idr')
+                    ->sortable(),
+
+                Tables\Columns\TextColumn::make('selling_price')
+                    ->label('Harga Jual')
                     ->money('idr')
                     ->sortable(),
 
