@@ -131,6 +131,7 @@ class EditInvoice extends EditRecord
         $items = $data['items'] ?? [];
         unset($data['items']);
 
+        // Update data header invoice
         $record->update($data);
 
         // 1. Kumpulkan ID item yang ada di form (yang tidak dihapus user)
@@ -144,12 +145,17 @@ class EditInvoice extends EditRecord
 
         // 3. Loop items untuk update atau create
         foreach ($items as $item) {
+            // --- BEST PRACTICE: Hitung ulang total di server ---
+            $qty = (float) ($item['qty'] ?? 0);
+            $price = (float) ($item['unit_price'] ?? 0);
+            $lineTotal = $qty * $price;
+
             if (isset($item['id']) && $item['id']) {
                 // UPDATE: Jika item punya ID
                 $record->items()->where('id', $item['id'])->update([
-                    'qty'        => $item['qty'],
-                    'unit_price' => $item['unit_price'],
-                    'line_total' => $item['line_total'],
+                    'qty'        => $qty,
+                    'unit_price' => $price,
+                    'line_total' => $lineTotal, // Gunakan hasil hitung server
                 ]);
             } else {
                 // CREATE: Jika item baru (ID null)
@@ -158,15 +164,16 @@ class EditInvoice extends EditRecord
                     'item_id'    => $item['item_id'] ?? null,
                     'item_code'  => $item['item_code'] ?? null,
                     'item_name'  => $item['item_name'] ?? null,
-                    'qty'        => $item['qty'] ?? 0,
-                    'unit_price' => $item['unit_price'] ?? 0,
-                    'line_total' => $item['line_total'] ?? 0,
+                    'qty'        => $qty,
+                    'unit_price' => $price,
+                    'line_total' => $lineTotal, // Gunakan hasil hitung server
                 ]);
             }
         }
 
         return $record;
     }
+
 
     protected function getRedirectUrl(): string
     {

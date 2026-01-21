@@ -38,10 +38,10 @@ class QuotationItem extends Model
 
     protected $casts = [
         'qty'              => 'integer',
-        'unit_price'       => 'decimal:2',
-        'discount'         => 'decimal:2',
-        'tax'              => 'decimal:2',
-        'line_total'         => 'decimal:2',
+        'unit_price'       => 'integer',
+        'discount'         => 'integer',
+        'tax'              => 'integer',
+        'line_total'         => 'integer',
         'extra_attributes' => 'array',
     ];
 
@@ -63,7 +63,6 @@ class QuotationItem extends Model
 
     /**
      * Relasi ke tabel satuan (Unit of Measure)
-     * TAMBAHKAN FUNGSI INI
      */
     public function unit(): BelongsTo
     {
