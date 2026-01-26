@@ -7,6 +7,8 @@ use App\Observers\LeaveRequestObserver;
 use Illuminate\Support\ServiceProvider;
 use App\Models\Inventory\ProductStock;
 use App\Observers\ProductStockObserver;
+use App\Models\Sales\DeliveryOrder;
+use App\Observers\DeliveryOrderObserver;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -25,7 +27,10 @@ class AppServiceProvider extends ServiceProvider
     {
         // Register ProductStock Observer untuk auto-check low stock
         ProductStock::observe(ProductStockObserver::class);
-        
+
         LeaveRequest::observe(LeaveRequestObserver::class);
+
+        // Register Observer untuk DeliveryOrder
+        DeliveryOrder::observe(DeliveryOrderObserver::class);
     }
 }
