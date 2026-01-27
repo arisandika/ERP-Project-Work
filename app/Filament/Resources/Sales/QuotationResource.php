@@ -207,7 +207,7 @@ class QuotationResource extends Resource
         ];
     }
 
-    // --- CALCULATIONS (FIXED LOGIC WITH PREFIX) ---
+    // --- CALCULATIONS ---
 
     public static function updateItemTotal(Get $get, Set $set): void
     {
@@ -224,10 +224,10 @@ class QuotationResource extends Resource
         $items = $get('items');
         $pathPrefix = '';
 
-        // DETEKSI SCOPE REPEATER
+        // DETEKSI SCOPE REPEATER (Apakah dipanggil dari dalam row repeater?)
         if ($items === null) {
             $items = $get('../../items');
-            $pathPrefix = '../../'; // Set prefix path untuk update field parent
+            $pathPrefix = '../../';
         }
 
         $items = $items ?? [];
@@ -245,7 +245,7 @@ class QuotationResource extends Resource
             $promo = PromoCode::find($promoId);
             if ($promo) {
                 $discountType  = $promo->type;
-                $discountValue = $promo->value;
+                $discountValue = (float) $promo->value;
                 $set($pathPrefix . 'temp_discount_type', $discountType);
                 $set($pathPrefix . 'temp_discount_value', $discountValue);
                 $set($pathPrefix . 'promo_code_input', $promo->code);
@@ -280,10 +280,15 @@ class QuotationResource extends Resource
             return;
         }
 
-        $promo = PromoCode::where('code', $code)->where('status', 'active')->first();
+        // --- LOGIC PROMO ---
+        $promo = PromoCode::where('code', $code)
+            ->where('is_active', 1)
+            ->whereDate('start_date', '<=', now())
+            ->whereDate('end_date', '>=', now())
+            ->first();
 
         if (!$promo) {
-            Notification::make()->title('Kode tidak valid!')->danger()->send();
+            Notification::make()->title('Kode tidak valid atau kadaluwarsa!')->danger()->send();
             $set('promo_code_id', null);
             $set('temp_discount_type', null);
             $set('temp_discount_value', 0);

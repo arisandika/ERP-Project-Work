@@ -8,6 +8,8 @@ use App\Models\Sales\Quotation;
 use App\Models\Sales\PromoCode;
 use Filament\Forms;
 use Filament\Forms\Form;
+use Filament\Forms\Get; // Tambahan import biar rapi
+use Filament\Forms\Set; // Tambahan import biar rapi
 use Filament\Forms\Components\Section;
 use Filament\Forms\Components\Grid;
 use Filament\Forms\Components\Repeater;
@@ -84,11 +86,17 @@ class SalesOrderResource extends Resource
                             ->orderByDesc('created_at')
                             ->limit(50)
                             ->pluck('quotation_number', 'id'))
-
                         ->disabled(fn ($record) => $record && $record->exists)
-                        ->afterStateUpdated(function ($state, callable $set, callable $get) {
+                        ->afterStateUpdated(function ($state, Set $set, Get $get) {
                             if (! $state) {
+                                // Reset semua jika dihapus
                                 $set('items', []);
+                                $set('subtotal', 0);
+                                $set('tax', 0);
+                                $set('discount_amount', 0);
+                                $set('grand_total', 0);
+                                $set('promo_code_id', null);
+                                $set('promo_code_input', null);
                                 return;
                             }
 
@@ -98,13 +106,25 @@ class SalesOrderResource extends Resource
                             // 1. Copy Header
                             $set('nx_customer_id', $quotation->nx_customer_id);
 
-                            // 2. Copy Promo Code
+                            // 2. Copy Pajak
+                            $taxPercent = (float) ($quotation->tax ?? 0);
+                            $set('tax', $taxPercent);
+
+                            // 3. Setup Variabel Kalkulasi
+                            $calculatedSubtotal = 0;
+
+                            // Setup Promo (Data Only)
+                            $discountType = null;
+                            $discountValue = 0;
+
                             if ($quotation->promo_code_id) {
                                 $set('promo_code_id', $quotation->promo_code_id);
                                 $set('promo_code_input', $quotation->promoCode?->code);
                                 if ($quotation->promoCode) {
-                                    $set('temp_discount_type', $quotation->promoCode->type);
-                                    $set('temp_discount_value', $quotation->promoCode->value);
+                                    $discountType = $quotation->promoCode->type;
+                                    $discountValue = (float) $quotation->promoCode->value;
+                                    $set('temp_discount_type', $discountType);
+                                    $set('temp_discount_value', $discountValue);
                                 }
                             } else {
                                 $set('promo_code_id', null);
@@ -113,14 +133,14 @@ class SalesOrderResource extends Resource
                                 $set('temp_discount_value', 0);
                             }
 
-                            // 3. Copy Pajak
-                            $taxPercent = (float) ($quotation->tax ?? 0);
-                            $set('tax', $taxPercent);
-
-                            // 4. Copy Items
-                            $items = $quotation->items->map(function ($item) {
+                            // 4. Map Items & Hitung Subtotal Manual
+                            $items = $quotation->items->map(function ($item) use (&$calculatedSubtotal) {
                                 $qty   = (float) $item->qty;
                                 $price = (float) $item->unit_price;
+                                $lineTotal = (float) $item->line_total ?: $qty * $price;
+
+                                $calculatedSubtotal += $lineTotal;
+
                                 return [
                                     'item_type'  => $item->item_type ?? 'product',
                                     'item_id'    => $item->item_id,
@@ -128,12 +148,30 @@ class SalesOrderResource extends Resource
                                     'item_name'  => $item->item_name,
                                     'qty'        => $qty,
                                     'unit_price' => $price,
-                                    'line_total' => (float) $item->line_total ?: $qty * $price,
+                                    'line_total' => $lineTotal,
                                 ];
                             })->toArray();
 
                             $set('items', $items);
-                            self::updateTotals($get, $set);
+                            $set('subtotal', $calculatedSubtotal);
+
+                            // 5. Hitung Diskon Manual
+                            $calculatedDiscount = 0;
+                            if ($discountType === 'percentage') {
+                                $calculatedDiscount = $calculatedSubtotal * ($discountValue / 100);
+                            } elseif ($discountType === 'fixed') {
+                                $calculatedDiscount = $discountValue;
+                            }
+                            // Cegah diskon minus
+                            $calculatedDiscount = min($calculatedDiscount, $calculatedSubtotal);
+                            $set('discount_amount', $calculatedDiscount);
+
+                            // 6. Hitung Grand Total Manual
+                            $afterDiscount = $calculatedSubtotal - $calculatedDiscount;
+                            $taxAmount     = $afterDiscount * ($taxPercent / 100);
+                            $grandTotal    = $afterDiscount + $taxAmount;
+
+                            $set('grand_total', $grandTotal);
                         }),
                 ]),
 
@@ -143,8 +181,7 @@ class SalesOrderResource extends Resource
                         ->relationship('customer', 'name')
                         ->searchable()
                         ->required()
-                        // REVISI 2: Disabled jika ambil dari SQ
-                        ->disabled(fn (Forms\Get $get) => filled($get('nx_quotation_id')))
+                        ->disabled(fn (Get $get) => filled($get('nx_quotation_id')))
                         ->dehydrated()
                         ->prefixIcon('heroicon-o-user-circle'),
 
@@ -181,9 +218,8 @@ class SalesOrderResource extends Resource
             Section::make('Daftar Item Pesanan')->schema([
                 Repeater::make('items')
                     ->relationship()
-                    // REVISI 3: Kunci Tambah/Hapus item jika SQ terpilih
-                    ->addable(fn (Forms\Get $get) => blank($get('nx_quotation_id')))
-                    ->deletable(fn (Forms\Get $get) => blank($get('nx_quotation_id')))
+                    ->addable(fn (Get $get) => blank($get('nx_quotation_id')))
+                    ->deletable(fn (Get $get) => blank($get('nx_quotation_id')))
                     ->reorderable(false)
                     ->schema([
                         Hidden::make('item_type')->default('product')->dehydrated(true),
@@ -192,7 +228,7 @@ class SalesOrderResource extends Resource
 
                         TextInput::make('item_name')
                             ->label('Nama Item')
-                            ->readOnly() // Nama item selalu readonly (sesuai kodingan awal lu)
+                            ->readOnly()
                             ->dehydrated()
                             ->columnSpanFull(),
 
@@ -203,10 +239,9 @@ class SalesOrderResource extends Resource
                                 ->integer()
                                 ->default(1)
                                 ->minValue(1)
-                                // REVISI 4: Kunci Qty jika dari SQ
-                                ->readOnly(fn (Forms\Get $get) => filled($get('../../nx_quotation_id')))
+                                ->readOnly(fn (Get $get) => filled($get('../../nx_quotation_id')))
                                 ->reactive()
-                                ->afterStateUpdated(function ($state, callable $set, callable $get) {
+                                ->afterStateUpdated(function ($state, Set $set, Get $get) {
                                     if ($state < 1) $set('qty', 1);
                                     self::updateItemTotal($get, $set);
                                     self::updateTotals($get, $set);
@@ -217,10 +252,9 @@ class SalesOrderResource extends Resource
                                 ->numeric()
                                 ->required()
                                 ->prefix('Rp')
-                                // REVISI 5: Kunci Harga jika dari SQ
-                                ->readOnly(fn (Forms\Get $get) => filled($get('../../nx_quotation_id')))
+                                ->readOnly(fn (Get $get) => filled($get('../../nx_quotation_id')))
                                 ->reactive()
-                                ->afterStateUpdated(function ($state, callable $set, callable $get) {
+                                ->afterStateUpdated(function ($state, Set $set, Get $get) {
                                     self::updateItemTotal($get, $set);
                                     self::updateTotals($get, $set);
                                 }),
@@ -251,16 +285,14 @@ class SalesOrderResource extends Resource
                         ->label('Kode Promo')
                         ->placeholder('Masukkan kode')
                         ->dehydrated(false)
-                        // REVISI 6: Kunci Promo jika dari SQ
-                        ->disabled(fn (Forms\Get $get) => filled($get('nx_quotation_id')))
+                        ->disabled(fn (Get $get) => filled($get('nx_quotation_id')))
                         ->formatStateUsing(fn ($record) => $record?->promoCode?->code)
                         ->suffixAction(
                             FormAction::make('apply_promo')
                                 ->icon('heroicon-m-ticket')
                                 ->color('success')
                                 ->label('Apply')
-                                ->action(function ($state, callable $set, callable $get) {
-                                    // ... logic apply promo (sama persis kaya punya lu)
+                                ->action(function ($state, Set $set, Get $get) {
                                     if (empty($state)) {
                                         $set('promo_code_id', null);
                                         $set('temp_discount_type', null);
@@ -299,10 +331,9 @@ class SalesOrderResource extends Resource
                         ->numeric()
                         ->default(0)
                         ->minValue(0)
-                        // REVISI 7: Kunci Pajak jika dari SQ
-                        ->readOnly(fn (Forms\Get $get) => filled($get('nx_quotation_id')))
+                        ->readOnly(fn (Get $get) => filled($get('nx_quotation_id')))
                         ->reactive()
-                        ->afterStateUpdated(function ($state, callable $set, callable $get) {
+                        ->afterStateUpdated(function ($state, Set $set, Get $get) {
                             if ($state < 0) $set('tax', 0);
                             self::updateTotals($get, $set);
                         })
@@ -318,37 +349,47 @@ class SalesOrderResource extends Resource
         ]);
     }
 
-    // --- LOGIC HITUNG (Sama Persis punya lu) ---
-    public static function updateItemTotal(callable $get, callable $set): void
+    // --- LOGIC HITUNG (Diperbaiki Path-nya) ---
+    public static function updateItemTotal(Get $get, Set $set): void
     {
         $qty = (float) ($get('qty') ?? 0);
         $price = (float) ($get('unit_price') ?? 0);
         $set('line_total', $qty * $price);
     }
 
-    public static function updateTotals(callable $get, callable $set): void
+    public static function updateTotals(Get $get, Set $set): void
     {
-        // Support path prefix agar jalan dari dalam repeater atau luar
-        $items = $get('items') ?? $get('../../items') ?? [];
-        $pathPrefix = is_null($get('subtotal')) ? '../../' : '';
+        // 1. Deteksi apakah kita di Root atau di dalam Repeater
+        $items = $get('items');
 
+        // Jika $items adalah array, berarti kita di ROOT (Subtotal, Tax, dll)
+        // Jika $items null, berarti kita di dalam REPEATER (Qty, Price change)
+        if (is_array($items)) {
+            $pathPrefix = '';
+        } else {
+            $pathPrefix = '../../';
+            $items = $get($pathPrefix . 'items') ?? [];
+        }
+
+        // 2. Hitung Subtotal
         $subtotal = collect($items)->sum(
             fn ($item) => (float) ($item['qty'] ?? 0) * (float) ($item['unit_price'] ?? 0)
         );
-        $set($pathPrefix.'subtotal', $subtotal);
+        $set($pathPrefix . 'subtotal', $subtotal);
 
-        $discountType = $get($pathPrefix.'temp_discount_type');
-        $discountValue = (float) $get($pathPrefix.'temp_discount_value');
+        // 3. Logic Diskon
+        $discountType = $get($pathPrefix . 'temp_discount_type');
+        $discountValue = (float) $get($pathPrefix . 'temp_discount_value');
 
         // Logic promo code ID (existing)
-        if (!$discountType && $get($pathPrefix.'promo_code_id')) {
-            $promo = PromoCode::find($get($pathPrefix.'promo_code_id'));
+        if (!$discountType && $get($pathPrefix . 'promo_code_id')) {
+            $promo = PromoCode::find($get($pathPrefix . 'promo_code_id'));
             if ($promo) {
                 $discountType = $promo->type;
                 $discountValue = $promo->value;
-                $set($pathPrefix.'temp_discount_type', $discountType);
-                $set($pathPrefix.'temp_discount_value', $discountValue);
-                $set($pathPrefix.'promo_code_input', $promo->code);
+                $set($pathPrefix . 'temp_discount_type', $discountType);
+                $set($pathPrefix . 'temp_discount_value', $discountValue);
+                $set($pathPrefix . 'promo_code_input', $promo->code);
             }
         }
 
@@ -360,17 +401,17 @@ class SalesOrderResource extends Resource
         }
 
         if ($totalDiscount > $subtotal) $totalDiscount = $subtotal;
+        $set($pathPrefix . 'discount_amount', $totalDiscount);
 
-        $set($pathPrefix.'discount_amount', $totalDiscount);
-
-        $taxPercent = (float) ($get($pathPrefix.'tax') ?? 0);
+        // 4. Hitung Tax & Grand Total
+        $taxPercent = (float) ($get($pathPrefix . 'tax') ?? 0);
         $afterDiscount = $subtotal - $totalDiscount;
         $taxAmount = $afterDiscount * ($taxPercent / 100);
 
-        $set($pathPrefix.'grand_total', $afterDiscount + $taxAmount);
+        $set($pathPrefix . 'grand_total', $afterDiscount + $taxAmount);
     }
 
-    // --- TABLE & PAGES (Sama Persis punya lu) ---
+    // --- TABLE & PAGES ---
     public static function table(Table $table): Table
     {
         return $table

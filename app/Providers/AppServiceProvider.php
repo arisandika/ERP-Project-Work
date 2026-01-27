@@ -9,6 +9,8 @@ use App\Models\Inventory\ProductStock;
 use App\Observers\ProductStockObserver;
 use App\Models\Sales\DeliveryOrder;
 use App\Observers\DeliveryOrderObserver;
+use App\Models\Sales\SalesOrder;
+use App\Observers\SalesOrderObserver;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -32,5 +34,8 @@ class AppServiceProvider extends ServiceProvider
 
         // Register Observer untuk DeliveryOrder
         DeliveryOrder::observe(DeliveryOrderObserver::class);
+
+        // Register Observer untuk SalesOrder
+        SalesOrder::observe(SalesOrderObserver::class);
     }
 }
