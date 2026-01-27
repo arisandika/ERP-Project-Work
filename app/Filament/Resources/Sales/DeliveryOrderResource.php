@@ -163,7 +163,7 @@ class DeliveryOrderResource extends Resource
                         TextInput::make('item_name')
                             ->label('Nama Item')
                             ->disabled()
-                            ->dehydrated(false)
+                            ->dehydrated()
                             ->columnSpanFull(),
 
                         Grid::make(3)->schema([
@@ -171,7 +171,7 @@ class DeliveryOrderResource extends Resource
                                 ->label('Sisa Jatah')
                                 ->numeric()
                                 ->default(0)
-                                ->readOnly()
+                                ->disabled()
                                 ->dehydrated(),
 
                             TextInput::make('qty')
@@ -192,7 +192,7 @@ class DeliveryOrderResource extends Resource
                                 ->label('Sisa Nanti')
                                 ->numeric()
                                 ->default(0)
-                                ->readOnly()
+                                ->disabled()
                                 ->dehydrated(),
                         ]),
                     ])
