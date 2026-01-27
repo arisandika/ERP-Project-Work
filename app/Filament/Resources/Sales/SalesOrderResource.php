@@ -71,26 +71,23 @@ class SalesOrderResource extends Resource
                         ->searchable()
                         ->preload()
                         ->live()
-                        // Ganti relationship() dengan options() manual agar query filter 100% jalan
                         ->getSearchResultsUsing(fn (string $search) => Quotation::query()
-                            ->where('status', 'approved')
-                            ->whereDoesntHave('salesOrder') // Filter yang belum punya SO
-                            ->where('quotation_number', 'like', "%{$search}%") // Logic search manual
+                            ->where('status', 'accepted')
+                            ->whereDoesntHave('salesOrder')
+                            ->where('quotation_number', 'like', "%{$search}%")
                             ->limit(50)
                             ->pluck('quotation_number', 'id'))
                         ->getOptionLabelUsing(fn ($value): ?string => Quotation::find($value)?->quotation_number)
-                        // Options awal (saat belum search)
                         ->options(fn () => Quotation::query()
-                            ->where('status', 'approved')
+                            ->where('status', 'accepted')
                             ->whereDoesntHave('salesOrder')
-                            ->orderByDesc('created_at') // Biar yang baru muncul duluan
+                            ->orderByDesc('created_at')
                             ->limit(50)
                             ->pluck('quotation_number', 'id'))
 
                         ->disabled(fn ($record) => $record && $record->exists)
                         ->afterStateUpdated(function ($state, callable $set, callable $get) {
                             if (! $state) {
-                                // Reset jika SQ dihapus user
                                 $set('items', []);
                                 return;
                             }
