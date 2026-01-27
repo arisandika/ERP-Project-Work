@@ -14,13 +14,14 @@ class CreateDeliveryOrder extends CreateRecord
     {
         return [
             'do_number'      => $this->generateDoNumber(),
-            'delivery_date'  => now(),
-            // 'nx_employee_id' => auth()->user()?->employee?->id, // Jika ada field driver/staff gudang
+            'do_date'        => now(), // Fix nama kolom 'do_date' bukan 'delivery_date' (sesuai resource)
+            // 'nx_employee_id' => auth()->user()?->employee?->id,
         ];
     }
 
     protected function mutateFormDataBeforeCreate(array $data): array
     {
+        // Generate ulang saat submit untuk meminimalisir race condition
         $data['do_number'] = $this->generateDoNumber();
         return $data;
     }
@@ -34,16 +35,16 @@ class CreateDeliveryOrder extends CreateRecord
         $roman   = $this->getRomanMonth(now()->month);
         $year    = now()->year;
         $company = 'NEX';
-        $code    = 'DO'; // Atau ganti 'SJ' jika mau Surat Jalan
+        $code    = 'DO';
 
         // Tampilan: /DO/NEX/XII/2025
         $visualSuffix = "/{$code}/{$company}/{$roman}/{$year}";
 
-        // Cari nomor terakhir di TAHUN INI (abaikan bulan)
         // Pola: %/DO/NEX/%/2025
         $searchPattern = "%/{$code}/{$company}/%/{$year}";
 
-        $lastDo = DeliveryOrder::query()
+        // FIX: Tambahkan withTrashed() agar nomor yang dihapus tetap dihitung
+        $lastDo = DeliveryOrder::withTrashed()
             ->where('do_number', 'like', $searchPattern)
             ->orderByDesc('id')
             ->value('do_number');

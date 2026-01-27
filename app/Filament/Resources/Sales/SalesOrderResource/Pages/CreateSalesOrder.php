@@ -66,7 +66,7 @@ class CreateSalesOrder extends CreateRecord
         }
 
         // Padding 4 digit (0001) agar muat sampai 9999 order/tahun
-        $seqStr = str_pad((string)$seq, 4, '0', STR_PAD_LEFT);
+        $seqStr = str_pad((string)$seq, 3, '0', STR_PAD_LEFT);
 
         return "{$seqStr}{$visualSuffix}";
     }
