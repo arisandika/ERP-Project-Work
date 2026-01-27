@@ -4,7 +4,6 @@ namespace App\Filament\Resources\Inventory;
 use App\Filament\Resources\Inventory\ProductResource\Pages;
 use App\Filament\Resources\Inventory\ProductResource\RelationManagers;
 use App\Models\Inventory\Product;
-use App\Models\Inventory\Unit;
 use App\Models\Inventory\Warehouse;
 use Filament\Forms;
 use Filament\Forms\Form;
@@ -16,15 +15,10 @@ use Illuminate\Database\Eloquent\Builder;
 class ProductResource extends Resource
 {
     protected static ?string $model = Product::class;
-
     protected static ?string $navigationIcon = 'heroicon-o-cube';
-
     protected static ?string $navigationGroup = 'Manajemen Inventory';
-
     protected static ?int $navigationSort = 4;
-
     protected static ?string $slug = 'inventory/products';
-
     protected static ?string $pluralModelLabel = 'Produk';
 
     public static function form(Form $form): Form
@@ -33,6 +27,15 @@ class ProductResource extends Resource
             ->schema([
                 Forms\Components\Section::make('Informasi Produk')
                     ->schema([
+                        // === KODE PRODUK (Best Practice Input) ===
+                        Forms\Components\TextInput::make('product_code')
+                            ->label('Kode Produk')
+                            ->unique(ignoreRecord: true)
+                            ->maxLength(50)
+                            ->placeholder('Kosongkan untuk auto-generate (BRG-XXXXXX)')
+                            ->helperText('Kode otomatis dibuat jika dikosongkan')
+                            ->prefixIcon('heroicon-o-qr-code'),
+
                         Forms\Components\TextInput::make('product_name')
                             ->label('Nama Produk')
                             ->required()
@@ -105,7 +108,6 @@ class ProductResource extends Resource
                             ->openable()
                             ->downloadable()
                             ->preserveFilenames(),
-
                     ])
                     ->columns(2),
 
@@ -146,7 +148,7 @@ class ProductResource extends Resource
                             ])
                             ->columns(3)
                             ->defaultItems(1)
-                            ->addActionLabel('Tambah Stock di Gudang')
+                            ->addActionLabel('Tambah Stok di Gudang')
                             ->reorderable(false)
                             ->collapsible(),
                     ])
@@ -163,22 +165,27 @@ class ProductResource extends Resource
                     ->getStateUsing(fn($record) => $record->image_url)
                     ->circular(),
 
-                Tables\Columns\TextColumn::make('kode_barang')
+                // === FIX: Ambil dari kolom DB, bukan accessor lagi ===
+                Tables\Columns\TextColumn::make('product_code')
                     ->label('Kode Produk')
-                    ->getStateUsing(fn($record) => 'BRG-' . str_pad($record->id, 6, '0', STR_PAD_LEFT))
                     ->searchable()
-                    ->sortable(),
+                    ->sortable()
+                    ->copyable()
+                    ->copyMessage('Kode disalin!')
+                    ->icon('heroicon-o-qr-code'),
 
                 Tables\Columns\TextColumn::make('product_name')
                     ->label('Nama Produk')
                     ->searchable()
-                    ->sortable(),
+                    ->sortable()
+                    ->weight('bold'),
 
                 Tables\Columns\TextColumn::make('category.name')
                     ->label('Kategori')
                     ->searchable()
                     ->sortable()
-                    ->icon('heroicon-o-tag'),
+                    ->icon('heroicon-o-tag')
+                    ->color('info'),
 
                 Tables\Columns\TextColumn::make('warehouses')
                     ->label('Gudang')
@@ -222,6 +229,12 @@ class ProductResource extends Resource
                     ->label('Harga Jual')
                     ->money('idr')
                     ->sortable(),
+
+                Tables\Columns\TextColumn::make('created_at')
+                    ->label('Dibuat')
+                    ->date('d M Y')
+                    ->sortable()
+                    ->toggleable(isToggledHiddenByDefault: true),
             ])
             ->filters([
                 Tables\Filters\Filter::make('stock')
@@ -246,15 +259,13 @@ class ProductResource extends Resource
                     ->indicateUsing(function (array $data): array {
                         $indicators = [];
                         if (($data['status'] ?? null) === 'low') {
-                            $indicators[] = 'Status Stok: Hanya Stok Rendah';
+                            $indicators[] = 'Stok: Rendah';
                         } elseif (($data['status'] ?? null) === 'normal') {
-                            $indicators[] = 'Status Stok: Stok Normal';
+                            $indicators[] = 'Stok: Normal';
                         }
-                        if (! empty($data['warehouse_id'])) {
+                        if (!empty($data['warehouse_id'])) {
                             $name = Warehouse::find($data['warehouse_id'])?->warehouse_name;
-                            if ($name) {
-                                $indicators[] = 'Gudang: ' . $name;
-                            }
+                            if ($name) $indicators[] = 'Gudang: ' . $name;
                         }
                         return $indicators;
                     })
@@ -264,26 +275,18 @@ class ProductResource extends Resource
 
                         if ($status === 'low') {
                             return $query->whereHas('productStocks', function ($subQuery) use ($warehouseId) {
-                                if ($warehouseId) {
-                                    $subQuery->where('id', $warehouseId);
-                                }
+                                if ($warehouseId) $subQuery->where('warehouse_id', $warehouseId);
                                 $subQuery->where('qty', '<=', 10);
                             });
                         }
 
                         if ($status === 'normal') {
-                            return $query
-                                ->whereHas('productStocks', function ($subQuery) use ($warehouseId) {
-                                    if ($warehouseId) {
-                                        $subQuery->where('id', $warehouseId);
-                                    }
-                                })
-                                ->whereDoesntHave('productStocks', function ($subQuery) use ($warehouseId) {
-                                    if ($warehouseId) {
-                                        $subQuery->where('id', $warehouseId);
-                                    }
-                                    $subQuery->where('qty', '<=', 10);
-                                });
+                            return $query->whereHas('productStocks', function ($subQuery) use ($warehouseId) {
+                                if ($warehouseId) $subQuery->where('warehouse_id', $warehouseId);
+                            })->whereDoesntHave('productStocks', function ($subQuery) use ($warehouseId) {
+                                if ($warehouseId) $subQuery->where('warehouse_id', $warehouseId);
+                                $subQuery->where('qty', '<=', 10);
+                            });
                         }
 
                         return $query;
@@ -327,10 +330,9 @@ class ProductResource extends Resource
 
     public static function getNavigationBadge(): ?string
     {
-        $count = \App\Models\Inventory\ProductStock::where('qty', '<=', 10)
-            ->distinct('product_id')
-            ->count('id');
-
+        $count = Product::whereHas('productStocks', fn($q) => $q->where('qty', '<=', 10))
+            ->distinct()
+            ->count();
         return $count > 0 ? (string) $count : null;
     }
 
@@ -341,6 +343,6 @@ class ProductResource extends Resource
 
     public static function getNavigationBadgeTooltip(): ?string
     {
-        return 'Produk dengan stock rendah (≤ 10)';
+        return 'Produk dengan stok rendah (≤ 10)';
     }
 }

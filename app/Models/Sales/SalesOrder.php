@@ -35,19 +35,19 @@ class SalesOrder extends Model
         'order_date' => 'date',
     ];
 
-    // Relasi ke SalesOrderItem (ini juga perlu dibuat)
+    // Relasi ke SalesOrderItem
     public function items(): HasMany
     {
         return $this->hasMany(SalesOrderItem::class, 'nx_sales_order_id');
     }
 
-    // Relasi ke Customer (sama seperti di Quotation)
+    // Relasi ke Customer
     public function customer(): BelongsTo
     {
         return $this->belongsTo(Customer::class, 'nx_customer_id')->withDefault();
     }
 
-    // Relasi ke Employee/Sales (sama seperti di Quotation)
+    // Relasi ke Employee/Sales
     public function employee(): BelongsTo
     {
         return $this->belongsTo(Employee::class, 'nx_employee_id')->withDefault();
@@ -58,6 +58,13 @@ class SalesOrder extends Model
     {
         return $this->belongsTo(Quotation::class, 'nx_quotation_id')->withDefault();
     }
+
+    // App\Models\Sales\SalesOrder.php
+    public function promoCode()
+    {
+        return $this->belongsTo(\App\Models\Sales\PromoCode::class, 'promo_code_id');
+    }
+
 
 
 }

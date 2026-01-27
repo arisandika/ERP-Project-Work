@@ -24,9 +24,9 @@ class DeliveryOrderItem extends Model
     ];
 
     protected $casts = [
-        'qty'           => 'decimal:4',
-        'qty_ordered'   => 'decimal:4',
-        'qty_remaining' => 'decimal:4',
+        'qty'           => 'integer',
+        'qty_ordered'   => 'integer',
+        'qty_remaining' => 'integer',
     ];
 
 

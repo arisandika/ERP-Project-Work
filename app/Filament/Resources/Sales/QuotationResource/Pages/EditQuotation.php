@@ -58,16 +58,6 @@ class EditQuotation extends EditRecord
 
     protected function mutateFormDataBeforeSave(array $data): array
     {
-        // $items = $data['items'] ?? [];
-        // $subtotal = collect($items)->sum(fn($item) => (float)($item['quantity'] ?? 0) * (float)($item['unit_price'] ?? 0));
-
-        // $discount = (float)($data['discount'] ?? 0);
-        // $tax = (float)($data['tax'] ?? 0);
-
-        // $grandTotal = ($subtotal * (1 - $discount / 100)) * (1 + $tax / 100);
-
-        // $data['subtotal'] = $subtotal;
-        // $data['grand_total'] = $grandTotal;
 
         if ($this->record->status !== 'accepted' && $data['status'] === 'accepted') {
             $user = auth()->user();
