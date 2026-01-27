@@ -16,7 +16,8 @@ use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\DatePicker;
-use Filament\Forms\Components\Hidden; // PENTING: Pakai ini biar save item aman
+use Filament\Forms\Components\Hidden;
+use Filament\Forms\Get;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
@@ -45,7 +46,7 @@ class DeliveryOrderResource extends Resource
                 Grid::make(3)->schema([
                     TextInput::make('do_number')
                         ->label('Nomor DO')
-                        ->default('DO-' . strtoupper(uniqid())) // REVISI: Tambah default generator
+                        ->default('DO-' . strtoupper(uniqid()))
                         ->disabled()
                         ->dehydrated()
                         ->unique(ignoreRecord: true)
@@ -57,16 +58,18 @@ class DeliveryOrderResource extends Resource
                         ->required()
                         ->prefixIcon('heroicon-o-calendar-days'),
 
-                    // === LOGIKA AUTO-FILL & PARTIAL DELIVERY ===
+                    // === LOGIKA PILIH SALES ORDER (PARTIAL SUPPORTED) ===
                     Select::make('nx_sales_order_id')
                         ->label('No. Sales Order')
-                        ->relationship('salesOrder', 'order_number', fn ($query) =>
-                            $query->whereIn('status', ['confirmed', 'processing']) // Hanya SO yang valid
+                        ->relationship('salesOrder', 'order_number', modifyQueryUsing: fn (Builder $query) =>
+                            $query->whereIn('status', ['confirmed', 'processing', 'shipped'])
+                                ->orderByDesc('created_at')
                         )
                         ->searchable()
+                        ->preload()
+                        ->live()
                         ->placeholder('Pilih Sales Order')
-                        ->reactive()
-                        ->disabled(fn ($record) => $record && $record->exists) // Disabled kalau edit
+                        ->disabled(fn ($record) => $record && $record->exists)
                         ->afterStateUpdated(function ($state, callable $set) {
                             $set('items', []);
                             $set('nx_customer_id', null);
@@ -78,7 +81,7 @@ class DeliveryOrderResource extends Resource
 
                             $set('nx_customer_id', $so->nx_customer_id);
 
-                            // REVISI LOGIC PARTIAL: Cek DO yang sudah ada sebelumnya
+                            // --- LOGIC PARTIAL: Cek DO Lain yang Aktif ---
                             $existingDOs = DeliveryOrder::with('items')
                                 ->where('nx_sales_order_id', $state)
                                 ->where('status', '!=', 'cancelled')
@@ -87,12 +90,12 @@ class DeliveryOrderResource extends Resource
                             $items = $so->items->map(function ($item) use ($existingDOs) {
                                 $qtyOrder = floatval($item->qty ?? 0);
 
-                                // Hitung total yg sdh dikirim di DO lain
+                                // Hitung total qty item ini yang SUDAH dikirim di DO lain
                                 $qtyShipped = $existingDOs->flatMap->items
                                     ->where('item_id', $item->item_id)
                                     ->sum('qty');
 
-                                // Sisa jatah kirim
+                                // Sisa jatah yang BOLEH dikirim sekarang
                                 $qtyRemainingQuota = max($qtyOrder - $qtyShipped, 0);
 
                                 return [
@@ -100,9 +103,9 @@ class DeliveryOrderResource extends Resource
                                     'item_id'       => $item->item_id,
                                     'item_code'     => (string) $item->item_code,
                                     'item_name'     => (string) $item->item_name,
-                                    'qty_ordered'   => $qtyRemainingQuota, // Tampilkan sisa jatah
-                                    'qty'           => 0, // Default input user 0
-                                    'qty_remaining' => $qtyRemainingQuota, // Sisa hitungan UI
+                                    'qty_ordered'   => $qtyRemainingQuota,
+                                    'qty'           => 0,
+                                    'qty_remaining' => $qtyRemainingQuota,
                                 ];
                             })->values()->toArray();
 
@@ -116,7 +119,7 @@ class DeliveryOrderResource extends Resource
                         ->label('Pelanggan')
                         ->relationship('customer', 'name')
                         ->searchable()
-                        ->disabled() // Readonly krn ikut SO
+                        ->disabled()
                         ->dehydrated()
                         ->required()
                         ->prefixIcon('heroicon-o-user-circle'),
@@ -153,7 +156,6 @@ class DeliveryOrderResource extends Resource
                 Repeater::make('items')
                     ->relationship()
                     ->schema([
-                        // REVISI: Gunakan Hidden::make() agar value tersimpan aman
                         Hidden::make('item_type')->default('product'),
                         Hidden::make('item_id'),
                         Hidden::make('item_code'),
@@ -161,33 +163,33 @@ class DeliveryOrderResource extends Resource
                         TextInput::make('item_name')
                             ->label('Nama Item')
                             ->disabled()
-                            ->dehydrated(false) // Gak usah simpan teks nama, hemat DB
+                            ->dehydrated(false)
                             ->columnSpanFull(),
 
                         Grid::make(3)->schema([
                             TextInput::make('qty_ordered')
-                                ->label('Sisa Jatah') // Ubah label biar jelas ini bukan total order awal
+                                ->label('Sisa Jatah')
                                 ->numeric()
                                 ->default(0)
                                 ->readOnly()
                                 ->dehydrated(),
 
                             TextInput::make('qty')
-                                ->label('Kirim Sekarang') // Input user
+                                ->label('Kirim Sekarang')
                                 ->numeric()
                                 ->default(0)
                                 ->minValue(0)
-                                ->lte('qty_ordered') // Validasi: Gak boleh lebih dari sisa jatah
+                                ->lte('qty_ordered')
                                 ->required()
                                 ->reactive()
-                                ->afterStateUpdated(function ($state, callable $set, callable $get) {
+                                ->afterStateUpdated(function ($state, callable $set, Get $get) {
                                     $quota = (float) ($get('qty_ordered') ?? 0);
                                     $kirim = (float) ($state ?? 0);
                                     $set('qty_remaining', max($quota - $kirim, 0));
                                 }),
 
                             TextInput::make('qty_remaining')
-                                ->label('Sisa Nanti') // UI only
+                                ->label('Sisa Nanti')
                                 ->numeric()
                                 ->default(0)
                                 ->readOnly()

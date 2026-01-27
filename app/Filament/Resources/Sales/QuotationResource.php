@@ -79,7 +79,7 @@ class QuotationResource extends Resource
                     ->relationship()
                     ->schema(self::getQuotationItemsSchema())
                     ->columns(2)
-                    ->live() // Live agar perubahan row terdeteksi
+                    ->live()
                     ->afterStateUpdated(fn (Get $get, Set $set) => self::updateTotals($get, $set))
                     ->createItemButtonLabel('Tambah Item')
                     ->defaultItems(1),
@@ -88,10 +88,13 @@ class QuotationResource extends Resource
             // --- SECTION 3: TOTALS ---
             Section::make('Perhitungan Akhir')->schema([
                 Grid::make(4)->schema([
+                    // 1. SUBTOTAL
                     TextInput::make('subtotal')->label('Subtotal')
-                        ->disabled()->dehydrated()->prefix('Rp'),
+                        ->disabled()->dehydrated()->prefix('Rp')
+                        ->numeric()
+                        ->formatStateUsing(fn ($state) => (int) $state), // Format Integer saat Edit
 
-                    // Promo Logic
+                    // 2. PROMO LOGIC
                     TextInput::make('promo_code_input')->label('Kode Promo')
                         ->placeholder('Kode...')
                         ->dehydrated(false)
@@ -105,17 +108,25 @@ class QuotationResource extends Resource
                     Hidden::make('temp_discount_type')->dehydrated(false),
                     Hidden::make('temp_discount_value')->dehydrated(false),
 
+                    // 3. DISCOUNT
                     TextInput::make('discount_amount')->label('Potongan')
-                        ->disabled()->dehydrated()->prefix('Rp'),
+                        ->disabled()->dehydrated()->prefix('Rp')
+                        ->numeric()
+                        ->formatStateUsing(fn ($state) => (int) $state), // Format Integer saat Edit
 
+                    // 4. TAX
                     TextInput::make('tax')->label('Pajak (%)')
                         ->numeric()->default(0)->minValue(0)
-                        ->live(debounce: 500) // Live update saat ngetik pajak
-                        ->afterStateUpdated(fn ($state, Set $set, Get $get) => self::updateTotals($get, $set)),
+                        ->live(debounce: 500)
+                        ->afterStateUpdated(fn ($state, Set $set, Get $get) => self::updateTotals($get, $set))
+                        ->formatStateUsing(fn ($state) => (float) $state), // Pajak boleh float (misal 11.5)
 
+                    // 5. GRAND TOTAL
                     TextInput::make('grand_total')->label('Grand Total')
                         ->disabled()->dehydrated()->prefix('Rp')
-                        ->extraInputAttributes(['style' => 'font-weight: bold; color: #16a34a;']),
+                        ->extraInputAttributes(['style' => 'font-weight: bold; color: #16a34a;'])
+                        ->numeric()
+                        ->formatStateUsing(fn ($state) => (int) $state), // Format Integer saat Edit
                 ]),
             ]),
         ]);
@@ -201,14 +212,15 @@ class QuotationResource extends Resource
                 }),
 
             TextInput::make('unit_price')->label('Harga')->numeric()->disabled()->dehydrated()->prefix('Rp')
+                ->formatStateUsing(fn ($state) => (int) $state)
                 ->reactive()->afterStateUpdated(fn (Set $set, Get $get) => self::updateItemTotal($get, $set)),
 
-            TextInput::make('line_total')->label('Total')->disabled()->dehydrated()->numeric()->prefix('Rp'),
+            TextInput::make('line_total')->label('Total')->disabled()->dehydrated()->numeric()->prefix('Rp')
+                ->formatStateUsing(fn ($state) => (int) $state),
         ];
     }
 
     // --- CALCULATIONS ---
-
     public static function updateItemTotal(Get $get, Set $set): void
     {
         $qty   = (float) ($get('qty') ?? 0);
@@ -220,11 +232,9 @@ class QuotationResource extends Resource
 
     public static function updateTotals(Get $get, Set $set): void
     {
-        // 1. Ambil data items
         $items = $get('items');
         $pathPrefix = '';
 
-        // DETEKSI SCOPE REPEATER (Apakah dipanggil dari dalam row repeater?)
         if ($items === null) {
             $items = $get('../../items');
             $pathPrefix = '../../';
@@ -232,12 +242,10 @@ class QuotationResource extends Resource
 
         $items = $items ?? [];
 
-        // 2. Hitung Subtotal
         $subtotal = collect($items)->sum(fn ($item) => (float) ($item['qty'] ?? 0) * (float) ($item['unit_price'] ?? 0));
 
         $set($pathPrefix . 'subtotal', $subtotal);
 
-        // 3. Promo Logic
         $discountType  = $get($pathPrefix . 'temp_discount_type');
         $discountValue = (float) $get($pathPrefix . 'temp_discount_value');
 
@@ -262,7 +270,6 @@ class QuotationResource extends Resource
         $totalDiscount = min($totalDiscount, $subtotal);
         $set($pathPrefix . 'discount_amount', $totalDiscount);
 
-        // 4. Tax & Grand Total
         $taxPercent = (float) ($get($pathPrefix . 'tax') ?? 0);
         $afterDiscount = $subtotal - $totalDiscount;
         $taxAmount = $afterDiscount * ($taxPercent / 100);
@@ -280,7 +287,6 @@ class QuotationResource extends Resource
             return;
         }
 
-        // --- LOGIC PROMO ---
         $promo = PromoCode::where('code', $code)
             ->where('is_active', 1)
             ->whereDate('start_date', '<=', now())

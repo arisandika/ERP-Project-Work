@@ -8,8 +8,8 @@ use App\Models\Sales\Quotation;
 use App\Models\Sales\PromoCode;
 use Filament\Forms;
 use Filament\Forms\Form;
-use Filament\Forms\Get; // Tambahan import biar rapi
-use Filament\Forms\Set; // Tambahan import biar rapi
+use Filament\Forms\Get;
+use Filament\Forms\Set;
 use Filament\Forms\Components\Section;
 use Filament\Forms\Components\Grid;
 use Filament\Forms\Components\Repeater;
@@ -162,7 +162,6 @@ class SalesOrderResource extends Resource
                             } elseif ($discountType === 'fixed') {
                                 $calculatedDiscount = $discountValue;
                             }
-                            // Cegah diskon minus
                             $calculatedDiscount = min($calculatedDiscount, $calculatedSubtotal);
                             $set('discount_amount', $calculatedDiscount);
 
@@ -218,6 +217,7 @@ class SalesOrderResource extends Resource
             Section::make('Daftar Item Pesanan')->schema([
                 Repeater::make('items')
                     ->relationship()
+                    // KUNCI: Tidak bisa tambah/hapus kalau dari SQ
                     ->addable(fn (Get $get) => blank($get('nx_quotation_id')))
                     ->deletable(fn (Get $get) => blank($get('nx_quotation_id')))
                     ->reorderable(false)
@@ -239,6 +239,7 @@ class SalesOrderResource extends Resource
                                 ->integer()
                                 ->default(1)
                                 ->minValue(1)
+                                // KUNCI: Readonly kalau dari SQ
                                 ->readOnly(fn (Get $get) => filled($get('../../nx_quotation_id')))
                                 ->reactive()
                                 ->afterStateUpdated(function ($state, Set $set, Get $get) {
@@ -252,6 +253,8 @@ class SalesOrderResource extends Resource
                                 ->numeric()
                                 ->required()
                                 ->prefix('Rp')
+                                // UPDATE: Format tampilan integer
+                                ->formatStateUsing(fn ($state) => (int) $state)
                                 ->readOnly(fn (Get $get) => filled($get('../../nx_quotation_id')))
                                 ->reactive()
                                 ->afterStateUpdated(function ($state, Set $set, Get $get) {
@@ -264,7 +267,9 @@ class SalesOrderResource extends Resource
                                 ->numeric()
                                 ->dehydrated()
                                 ->readOnly()
-                                ->prefix('Rp'),
+                                ->prefix('Rp')
+                                // UPDATE: Format tampilan integer
+                                ->formatStateUsing(fn ($state) => (int) $state),
                         ]),
                     ])
                     ->reactive()
@@ -279,7 +284,9 @@ class SalesOrderResource extends Resource
                         ->label('Subtotal')
                         ->readOnly()
                         ->dehydrated()
-                        ->prefix('Rp'),
+                        ->prefix('Rp')
+                        // UPDATE: Format tampilan integer
+                        ->formatStateUsing(fn ($state) => (int) $state),
 
                     TextInput::make('promo_code_input')
                         ->label('Kode Promo')
@@ -300,7 +307,14 @@ class SalesOrderResource extends Resource
                                         self::updateTotals($get, $set);
                                         return;
                                     }
-                                    $promo = PromoCode::where('code', $state)->where('status', 'active')->first();
+
+                                    // UPDATE LOGIC PROMO (Sesuai perbaikan sebelumnya)
+                                    $promo = PromoCode::where('code', $state)
+                                        ->where('is_active', 1)
+                                        ->whereDate('start_date', '<=', now())
+                                        ->whereDate('end_date', '>=', now())
+                                        ->first();
+
                                     if (!$promo) {
                                         Notification::make()->title('Kode tidak valid / expired!')->danger()->send();
                                         $set('promo_code_id', null);
@@ -310,7 +324,7 @@ class SalesOrderResource extends Resource
                                         Notification::make()->title("Promo '{$promo->code}' berhasil diterapkan!")->success()->send();
                                         $set('promo_code_id', $promo->id);
                                         $set('temp_discount_type', $promo->type);
-                                        $set('temp_discount_value', $promo->value);
+                                        $set('temp_discount_value', (float) $promo->value);
                                     }
                                     self::updateTotals($get, $set);
                                 })
@@ -324,7 +338,9 @@ class SalesOrderResource extends Resource
                         ->label('Potongan (Rp)')
                         ->readOnly()
                         ->dehydrated()
-                        ->prefix('Rp'),
+                        ->prefix('Rp')
+                        // UPDATE: Format tampilan integer
+                        ->formatStateUsing(fn ($state) => (int) $state),
 
                     TextInput::make('tax')
                         ->label('Pajak (%)')
@@ -337,19 +353,24 @@ class SalesOrderResource extends Resource
                             if ($state < 0) $set('tax', 0);
                             self::updateTotals($get, $set);
                         })
+                        // UPDATE: Pajak boleh float
+                        ->formatStateUsing(fn ($state) => (float) $state)
                         ->prefixIcon('heroicon-o-receipt-percent'),
 
                     TextInput::make('grand_total')
                         ->label('Grand Total')
                         ->readOnly()
                         ->dehydrated()
-                        ->prefix('Rp'),
+                        ->prefix('Rp')
+                        ->extraInputAttributes(['style' => 'font-weight: bold; color: #16a34a;'])
+                        // UPDATE: Format tampilan integer
+                        ->formatStateUsing(fn ($state) => (int) $state),
                 ]),
             ]),
         ]);
     }
 
-    // --- LOGIC HITUNG (Diperbaiki Path-nya) ---
+    // --- LOGIC HITUNG ---
     public static function updateItemTotal(Get $get, Set $set): void
     {
         $qty = (float) ($get('qty') ?? 0);
@@ -359,11 +380,8 @@ class SalesOrderResource extends Resource
 
     public static function updateTotals(Get $get, Set $set): void
     {
-        // 1. Deteksi apakah kita di Root atau di dalam Repeater
         $items = $get('items');
 
-        // Jika $items adalah array, berarti kita di ROOT (Subtotal, Tax, dll)
-        // Jika $items null, berarti kita di dalam REPEATER (Qty, Price change)
         if (is_array($items)) {
             $pathPrefix = '';
         } else {
@@ -371,22 +389,19 @@ class SalesOrderResource extends Resource
             $items = $get($pathPrefix . 'items') ?? [];
         }
 
-        // 2. Hitung Subtotal
         $subtotal = collect($items)->sum(
             fn ($item) => (float) ($item['qty'] ?? 0) * (float) ($item['unit_price'] ?? 0)
         );
         $set($pathPrefix . 'subtotal', $subtotal);
 
-        // 3. Logic Diskon
         $discountType = $get($pathPrefix . 'temp_discount_type');
         $discountValue = (float) $get($pathPrefix . 'temp_discount_value');
 
-        // Logic promo code ID (existing)
         if (!$discountType && $get($pathPrefix . 'promo_code_id')) {
             $promo = PromoCode::find($get($pathPrefix . 'promo_code_id'));
             if ($promo) {
                 $discountType = $promo->type;
-                $discountValue = $promo->value;
+                $discountValue = (float) $promo->value;
                 $set($pathPrefix . 'temp_discount_type', $discountType);
                 $set($pathPrefix . 'temp_discount_value', $discountValue);
                 $set($pathPrefix . 'promo_code_input', $promo->code);
@@ -403,7 +418,6 @@ class SalesOrderResource extends Resource
         if ($totalDiscount > $subtotal) $totalDiscount = $subtotal;
         $set($pathPrefix . 'discount_amount', $totalDiscount);
 
-        // 4. Hitung Tax & Grand Total
         $taxPercent = (float) ($get($pathPrefix . 'tax') ?? 0);
         $afterDiscount = $subtotal - $totalDiscount;
         $taxAmount = $afterDiscount * ($taxPercent / 100);
@@ -411,7 +425,7 @@ class SalesOrderResource extends Resource
         $set($pathPrefix . 'grand_total', $afterDiscount + $taxAmount);
     }
 
-    // --- TABLE & PAGES ---
+    // --- TABLE ---
     public static function table(Table $table): Table
     {
         return $table
@@ -421,7 +435,14 @@ class SalesOrderResource extends Resource
                 Tables\Columns\TextColumn::make('quotation.quotation_number')->label('Ref. SQ')->sortable()->searchable(),
                 Tables\Columns\TextColumn::make('customer.name')->label('Pelanggan')->sortable()->searchable(),
                 Tables\Columns\TextColumn::make('order_date')->label('Tgl Pesan')->date('d M Y'),
-                Tables\Columns\TextColumn::make('promoCode.code')->label('Promo')->badge()->color('info')->placeholder('-'),
+
+                // FIX: Pastikan relasi promoCode ada di Model SalesOrder
+                Tables\Columns\TextColumn::make('promoCode.code')
+                    ->label('Promo')
+                    ->badge()
+                    ->color('info')
+                    ->placeholder('-'),
+
                 Tables\Columns\TextColumn::make('grand_total')->label('Total')->money('IDR', true),
                 Tables\Columns\TextColumn::make('status')->badge()
                     ->color(fn (string $state): string => match ($state) {
