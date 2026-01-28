@@ -21,7 +21,7 @@ return new class extends Migration {
 
             // Bisa berisi product atau service
             $table->enum('item_type', ['product', 'service']);
-            $table->unsignedBigInteger('item_id'); // ID produk atau layanan
+            $table->unsignedBigInteger('item_id'); // ID Product atau layanan
 
             $table->integer('quantity')->default(1);
             $table->decimal('price', 15, 2)->default(0); // harga per item saat di-bundle

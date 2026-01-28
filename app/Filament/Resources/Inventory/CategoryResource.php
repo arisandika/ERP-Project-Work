@@ -44,8 +44,7 @@ class CategoryResource extends Resource
 
                                 Forms\Components\Textarea::make('description')
                                     ->label('Deskripsi')
-                                    ->rows(3)
-                                    ->columnSpanFull(),
+                                    ->rows(3),
                             ]),
                     ]),
             ]);

@@ -2,137 +2,114 @@
 
 namespace App\Models\Inventory;
 
+use App\Models\User;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Events\Created;
 use Illuminate\Database\Eloquent\Events\Updated;
 use Illuminate\Database\Eloquent\Events\Deleted;
+use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 
 class StockTransaction extends Model
 {
     use HasFactory;
 
     protected $table = 'nx_stock_transactions';
-    protected $primaryKey = 'id';
-    protected $guarded = ['id'];
 
-    protected $casts = [
-        'transaction_date' => 'date',
+    protected $fillable = [
+        'product_id',
+        'warehouse_id',
+        'transaction_date',
+        'type',
+        'quantity',
+        'price',
+        'total_price',
+        'stock_before',
+        'stock_after',
+        'reference',
+        'notes',
+        'created_by',
     ];
 
-    protected static function booted()
+    protected $casts = [
+        'transaction_date' => 'datetime',
+        'price' => 'decimal:2',
+        'total_price' => 'decimal:2',
+    ];
+
+    public function product()
     {
-        static::created(function ($transaction) {
-            $transaction->updateProductStock('created');
+        return $this->belongsTo(Product::class);
+    }
+
+    public function warehouse()
+    {
+        return $this->belongsTo(Warehouse::class);
+    }
+
+    public function creator()
+    {
+        return $this->belongsTo(User::class, 'created_by');
+    }
+
+    protected static function booted(): void
+    {
+        static::creating(function (StockTransaction $transaction) {
+
+            if ($transaction->quantity <= 0) {
+                throw new \Exception('Jumlah transaksi tidak valid.');
+            }
+
+            if ($transaction->transaction_date) {
+                $transaction->transaction_date = Carbon::parse($transaction->transaction_date)
+                    ->setTimeFromTimeString(now()->format('H:i:s'));
+            }
+
+            // Kunci jenis transaksi
+            $transaction->type = 'masuk';
+
+            $product = Product::findOrFail($transaction->product_id);
+
+            // Harga beli snapshot
+            $transaction->price = $product->purchase_price;
+            $transaction->total_price = $transaction->price * $transaction->quantity;
+
+            $transaction->created_by = Auth::id();
+
+            DB::transaction(function () use ($transaction) {
+
+                $productStock = ProductStock::firstOrCreate(
+                    [
+                        'product_id' => $transaction->product_id,
+                        'warehouse_id' => $transaction->warehouse_id,
+                    ],
+                    [
+                        'qty' => 0,
+                        'status' => 'out_of_stock',
+                    ]
+                );
+
+                // Audit Stock
+                $transaction->stock_before = $productStock->qty;
+                $transaction->stock_after = $productStock->qty + $transaction->quantity;
+
+                // Update Stock
+                $productStock->qty = $transaction->stock_after;
+                $productStock->status = $productStock->qty > 0 ? 'available' : 'out_of_stock';
+                $productStock->save();
+            });
         });
 
-        static::updated(function ($transaction) {
-            $transaction->updateProductStock('updated');
+        static::updating(function () {
+            throw new \Exception('Transaksi Stock tidak boleh diubah.');
         });
 
-        static::deleted(function ($transaction) {
-            $transaction->updateProductStock('deleted');
+        static::deleting(function () {
+            throw new \Exception('Transaksi Stock tidak boleh dihapus.');
         });
-    }
-
-    // Relasi BelongsTo: Product
-    public function product(): BelongsTo
-    {
-        return $this->belongsTo(Product::class, 'product_id', 'id');
-    }
-
-    // Relasi BelongsTo: Warehouse
-    public function warehouse(): BelongsTo
-    {
-        return $this->belongsTo(Warehouse::class, 'warehouse_id', 'id');
-    }
-
-    /**
-     * Get or create default warehouse
-     */
-    protected function getDefaultWarehouse(): \App\Models\Inventory\Warehouse
-    {
-        $defaultWarehouse = \App\Models\Inventory\Warehouse::first();
-        
-        if (!$defaultWarehouse) {
-            // Create default warehouse if not exists
-            $defaultWarehouse = \App\Models\Inventory\Warehouse::create([
-                'warehouse_name' => 'Gudang Utama',
-                'location' => 'Lokasi Utama',
-            ]);
-        }
-        
-        return $defaultWarehouse;
-    }
-
-    /**
-     * Update product stock based on transaction
-     */
-    protected function updateProductStock(string $event): void
-    {
-        if (!$this->product_id) {
-            return;
-        }
-
-        // Get default warehouse (warehouse_id might be null, use default)
-        $warehouseId = $this->warehouse_id ?? $this->getDefaultWarehouse()->id;
-
-        if ($event === 'created') {
-            // Transaksi baru: masuk = tambah, keluar = kurang
-            $quantityChange = $this->type === 'masuk' ? $this->quantity : -$this->quantity;
-            $this->updateStockForWarehouse($warehouseId, $quantityChange);
-            
-        } elseif ($event === 'updated') {
-            // Transaksi diupdate: perlu reverse perubahan lama dan apply perubahan baru
-            $original = $this->getOriginal();
-            $oldQuantity = $original['quantity'] ?? 0;
-            $oldType = $original['type'] ?? '';
-            $oldWarehouseId = $original['warehouse_id'] ?? $this->getDefaultWarehouse()->id;
-            $newWarehouseId = $this->warehouse_id ?? $this->getDefaultWarehouse()->id;
-            
-            // Reverse perubahan lama di warehouse lama
-            $oldChange = $oldType === 'masuk' ? -$oldQuantity : $oldQuantity;
-            $this->updateStockForWarehouse($oldWarehouseId, $oldChange);
-            
-            // Apply perubahan baru di warehouse baru
-            $newChange = $this->type === 'masuk' ? $this->quantity : -$this->quantity;
-            $this->updateStockForWarehouse($newWarehouseId, $newChange);
-            
-        } elseif ($event === 'deleted') {
-            // Transaksi dihapus: reverse perubahan
-            $quantityChange = $this->type === 'masuk' ? -$this->quantity : $this->quantity;
-            $this->updateStockForWarehouse($warehouseId, $quantityChange);
-        }
-    }
-
-    /**
-     * Update stock for specific warehouse
-     */
-    protected function updateStockForWarehouse(int $warehouseId, int $quantityChange): void
-    {
-        // Update atau create product stock
-        $productStock = \App\Models\Inventory\ProductStock::firstOrCreate(
-            [
-                'id' => $this->product_id,
-                'id' => $warehouseId,
-            ],
-            [
-                'qty' => 0,
-                'status' => 'available',
-            ]
-        );
-
-        $productStock->increment('qty', $quantityChange);
-
-        // Update status based on stock
-        if ($productStock->qty <= 0) {
-            $productStock->status = 'out_of_stock';
-        } else {
-            $productStock->status = 'available';
-        }
-        
-        $productStock->save();
     }
 }
 

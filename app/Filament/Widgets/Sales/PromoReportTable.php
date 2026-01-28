@@ -12,7 +12,7 @@ use Illuminate\Database\Eloquent\Builder;
 
 class PromoReportTable extends BaseWidget
 {
-    // use HasPageShield;
+    
     use InteractsWithPageFilters;
 
     protected static ?string $heading = 'Top Promo Performance';

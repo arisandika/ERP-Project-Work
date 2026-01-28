@@ -12,6 +12,6 @@ class CreatePackage extends CreateRecord
 
     public function getTitle(): string
     {
-        return 'Tambah Paket layanan';
+        return 'Tambah Paket';
     }
 }

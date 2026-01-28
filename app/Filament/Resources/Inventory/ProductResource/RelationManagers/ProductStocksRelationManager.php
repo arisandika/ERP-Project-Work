@@ -12,7 +12,7 @@ use Illuminate\Database\Eloquent\Builder;
 class ProductStocksRelationManager extends RelationManager
 {
     protected static string $relationship = 'productStocks';
-    protected static ?string $title = 'Stok per Gudang';
+    protected static ?string $title = 'Stock per Gudang';
     protected static ?string $recordTitleAttribute = 'id';
 
     public function form(Form $form): Form
@@ -28,7 +28,7 @@ class ProductStocksRelationManager extends RelationManager
                     ->disabled(fn ($context) => $context === 'edit'),
                 
                 Forms\Components\TextInput::make('qty')
-                    ->label('Jumlah Stok')
+                    ->label('Jumlah Stock')
                     ->required()
                     ->numeric()
                     ->minValue(0)
@@ -62,7 +62,7 @@ class ProductStocksRelationManager extends RelationManager
                     ->description(fn ($record) => $record->warehouse->location ?? ''),
                 
                 Tables\Columns\TextColumn::make('qty')
-                    ->label('Stok')
+                    ->label('Stock')
                     ->numeric()
                     ->sortable()
                     ->badge()
@@ -79,9 +79,9 @@ class ProductStocksRelationManager extends RelationManager
                     })
                     ->suffix(fn ($record) => ' ' . ($record->product->unit->symbol ?? $record->product->unit->unit_name ?? ''))
                     ->description(fn ($state) => match (true) {
-                        $state <= 0 => 'Stok Habis',
-                        $state <= 5 => 'Stok Kritis',
-                        $state <= 10 => 'Stok Rendah',
+                        $state <= 0 => 'Stock Habis',
+                        $state <= 5 => 'Stock Kritis',
+                        $state <= 10 => 'Stock Rendah',
                         default => null,
                     }),
                 
@@ -118,16 +118,16 @@ class ProductStocksRelationManager extends RelationManager
             ])
             ->headerActions([
                 Tables\Actions\CreateAction::make()
-                    ->label('Tambah Stok Gudang')
+                    ->label('Tambah Stock Gudang')
                     ->icon('heroicon-o-plus')
-                    ->modalHeading('Tambah Stok ke Gudang')
-                    ->successNotificationTitle('Stok berhasil ditambahkan'),
+                    ->modalHeading('Tambah Stock ke Gudang')
+                    ->successNotificationTitle('Stock berhasil ditambahkan'),
             ])
             ->actions([
                 Tables\Actions\EditAction::make()
-                    ->modalHeading('Edit Stok Gudang'),
+                    ->modalHeading('Edit Stock Gudang'),
                 Tables\Actions\DeleteAction::make()
-                    ->modalHeading('Hapus Stok Gudang')
+                    ->modalHeading('Hapus Stock Gudang')
                     ->modalDescription('Apakah Anda yakin ingin menghapus stock di gudang ini?'),
             ])
             ->bulkActions([
@@ -136,7 +136,7 @@ class ProductStocksRelationManager extends RelationManager
                 ]),
             ])
             ->emptyStateHeading('Belum ada stock di gudang')
-            ->emptyStateDescription('Tambahkan stock produk ini ke gudang dengan klik tombol di atas.')
+            ->emptyStateDescription('Tambahkan stock Product ini ke gudang dengan klik tombol di atas.')
             ->emptyStateIcon('heroicon-o-building-storefront')
             ->defaultSort('qty', 'asc');
     }

@@ -29,7 +29,7 @@ class Warehouse extends Model
     // Relasi: Warehouse memiliki banyak Stock records
     public function stocks(): HasMany
     {
-        return $this->hasMany(ProductStock::class, 'id');
+        return $this->hasMany(ProductStock::class, 'warehouse_id');
     }
 
     // Accessor untuk kode gudang

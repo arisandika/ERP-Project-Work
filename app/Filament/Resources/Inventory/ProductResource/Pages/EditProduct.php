@@ -19,6 +19,6 @@ class EditProduct extends EditRecord
 
     public function getTitle(): string
     {
-        return 'Edit Produk';
+        return 'Edit Product';
     }
 }

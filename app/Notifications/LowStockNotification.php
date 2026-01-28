@@ -48,7 +48,7 @@ class LowStockNotification extends Notification
             'warehouse_name' => $warehouseName,
             'current_qty' => $qty,
             'min_stock' => 10,
-            'title' => 'Stok Hampir Habis',
+            'title' => 'Stock Hampir Habis',
             'body' => "{$this->product->product_name} di {$warehouseName} tersisa {$qty} {$this->product->unit->unit_name}",
         ];
     }
@@ -70,7 +70,7 @@ class LowStockNotification extends Notification
 
         $notification = FilamentNotification::make()
             ->warning()
-            ->title('Stok Hampir Habis')
+            ->title('Stock Hampir Habis')
             ->body("{$product->product_name} di {$warehouseName} tersisa {$qty} {$product->unit->unit_name}")
             ->persistent()
             ->actions([

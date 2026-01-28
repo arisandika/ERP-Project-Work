@@ -47,14 +47,14 @@ class ServiceResource extends Resource
                                     ->numeric()
                                     ->prefix('Rp')
                                     ->required(),
-                            ]),
 
-                        Forms\Components\Select::make('category_id')
-                            ->label('Kategori')
-                            ->options(Category::pluck('name', 'id'))
-                            ->searchable()
-                            ->required()
-                            ->prefixIcon('heroicon-o-tag'),
+                                Forms\Components\Select::make('category_id')
+                                    ->label('Kategori')
+                                    ->options(Category::pluck('name', 'id'))
+                                    ->searchable()
+                                    ->required()
+                                    ->prefixIcon('heroicon-o-tag'),
+                            ]),
                     ]),
             ]);
     }
@@ -63,6 +63,12 @@ class ServiceResource extends Resource
     {
         return $table
             ->columns([
+                Tables\Columns\TextColumn::make('service_code')
+                    ->label('Kode Layanan')
+                    ->searchable()
+                    ->sortable()
+                    ->weight('bold'),
+
                 Tables\Columns\TextColumn::make('service_name')
                     ->label('Nama Layanan')
                     ->sortable()
@@ -170,10 +176,10 @@ class ServiceResource extends Resource
     public static function getPages(): array
     {
         return [
-            'index'  => Pages\ListServices::route('/'),
+            'index' => Pages\ListServices::route('/'),
             'create' => Pages\CreateService::route('/create'),
-            'view'   => Pages\ViewService::route('/{record}'),
-            'edit'   => Pages\EditService::route('/{record}/edit'),
+            'view' => Pages\ViewService::route('/{record}'),
+            'edit' => Pages\EditService::route('/{record}/edit'),
         ];
     }
 }

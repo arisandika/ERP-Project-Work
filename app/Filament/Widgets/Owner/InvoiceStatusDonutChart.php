@@ -8,7 +8,6 @@ use Leandrocfe\FilamentApexCharts\Widgets\ApexChartWidget;
 
 class InvoiceStatusDonutChart extends ApexChartWidget
 {
-    // use HasPageShield;
     protected static ?string $heading = 'Status Invoice';
 
     protected function getOptions(): array

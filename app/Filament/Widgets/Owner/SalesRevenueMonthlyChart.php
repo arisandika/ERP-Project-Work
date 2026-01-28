@@ -9,7 +9,6 @@ use Leandrocfe\FilamentApexCharts\Widgets\ApexChartWidget;
 
 class SalesRevenueMonthlyChart extends ApexChartWidget
 {
-    // use HasPageShield;
     protected static ?string $heading = 'Revenue Bulanan (12 Bulan)';
 
     protected function getOptions(): array

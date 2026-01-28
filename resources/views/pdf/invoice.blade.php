@@ -1,72 +1,242 @@
 <!DOCTYPE html>
 <html>
+
 <head>
     <title>Invoice - {{ $invoice->invoice_number }}</title>
     <style>
-        @page { margin: 25px 30px; }
-        body { font-family: 'Helvetica', sans-serif; font-size: 11px; color: #333; line-height: 1.3; }
+        @page {
+            margin: 25px 30px;
+        }
+
+        body {
+            font-family: 'Helvetica', sans-serif;
+            font-size: 11px;
+            color: #333;
+            line-height: 1.3;
+        }
 
         /* --- HEADER --- */
-        .header-table { width: 100%; border-collapse: collapse; margin-bottom: 15px; }
-        .header-table .logo-cell { width: 15%; vertical-align: middle; }
-        .header-table .logo-cell img { max-width: 80px; height: auto; }
-        .header-table .company-info-cell { vertical-align: middle; padding-left: 20px; }
-        .header-table .company-name { font-size: 26px; font-weight: bold; margin: 0; color: #222; }
-        .header-table .company-tagline { font-size: 12px; margin: 2px 0 5px 0; font-weight: bold; color: #555; }
-        .header-table .company-address { font-size: 10px; margin: 0; color: #444; }
+        .header-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 15px;
+        }
 
-        .header-divider { border-bottom: 3px double #333; margin-bottom: 25px; }
+        .header-table .logo-cell {
+            width: 15%;
+            vertical-align: middle;
+        }
+
+        .header-table .logo-cell img {
+            max-width: 80px;
+            height: auto;
+        }
+
+        .header-table .company-info-cell {
+            vertical-align: middle;
+            padding-left: 20px;
+        }
+
+        .header-table .company-name {
+            font-size: 26px;
+            font-weight: bold;
+            margin: 0;
+            color: #222;
+        }
+
+        .header-table .company-tagline {
+            font-size: 12px;
+            margin: 2px 0 5px 0;
+            font-weight: bold;
+            color: #555;
+        }
+
+        .header-table .company-address {
+            font-size: 10px;
+            margin: 0;
+            color: #444;
+        }
+
+        .header-divider {
+            border-bottom: 3px double #333;
+            margin-bottom: 25px;
+        }
 
         /* --- TITLE & STATUS --- */
-        .document-title { text-align: center; margin-bottom: 25px; }
-        .document-title h1 { margin: 0; font-size: 24px; text-transform: uppercase; letter-spacing: 3px; font-weight: 800; }
-        .document-title p { margin: 5px 0 0 0; font-size: 13px; font-weight: bold; }
+        .document-title {
+            text-align: center;
+            margin-bottom: 25px;
+        }
+
+        .document-title h1 {
+            margin: 0;
+            font-size: 24px;
+            text-transform: uppercase;
+            letter-spacing: 3px;
+            font-weight: 800;
+        }
+
+        .document-title p {
+            margin: 5px 0 0 0;
+            font-size: 13px;
+            font-weight: bold;
+        }
 
         .status-badge {
-            font-size: 9px; padding: 4px 10px; border: 1px solid #333;
-            border-radius: 12px; display: inline-block; margin-top: 8px;
-            text-transform: uppercase; letter-spacing: 1px; font-weight: bold;
+            font-size: 9px;
+            padding: 4px 10px;
+            border: 1px solid #333;
+            border-radius: 12px;
+            display: inline-block;
+            margin-top: 8px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            font-weight: bold;
         }
 
         /* --- DETAILS --- */
-        .details-table { width: 100%; margin-bottom: 30px; }
-        .details-table td { vertical-align: top; padding: 2px; }
-        .client-box { border-left: 3px solid #ddd; padding-left: 10px; }
+        .details-table {
+            width: 100%;
+            margin-bottom: 30px;
+        }
+
+        .details-table td {
+            vertical-align: top;
+            padding: 2px;
+        }
+
+        .client-box {
+            border-left: 3px solid #ddd;
+            padding-left: 10px;
+        }
 
         /* --- ITEMS TABLE --- */
-        .items-table { width: 100%; border-collapse: collapse; margin-bottom: 20px; font-size: 11px; }
-        .items-table th { background-color: #f4f4f4; border: 1px solid #ccc; padding: 8px; text-align: left; font-weight: bold; }
-        .items-table td { border: 1px solid #ccc; padding: 8px; }
-        .items-table .text-right { text-align: right; }
-        .items-table .text-center { text-align: center; }
-        .items-table .row-bg { background-color: #fafafa; }
+        .items-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 20px;
+            font-size: 11px;
+        }
+
+        .items-table th {
+            background-color: #f4f4f4;
+            border: 1px solid #ccc;
+            padding: 8px;
+            text-align: left;
+            font-weight: bold;
+        }
+
+        .items-table td {
+            border: 1px solid #ccc;
+            padding: 8px;
+        }
+
+        .items-table .text-right {
+            text-align: right;
+        }
+
+        .items-table .text-center {
+            text-align: center;
+        }
+
+        .items-table .row-bg {
+            background-color: #fafafa;
+        }
 
         /* --- TOTALS --- */
-        .totals-section { width: 100%; display: table; }
-        .payment-info { width: 55%; float: left; border: 1px dashed #aaa; padding: 12px; background: #fdfdfd; border-radius: 4px; }
-        .payment-info h4 { margin: 0 0 8px 0; font-size: 12px; text-decoration: underline; }
+        .totals-section {
+            width: 100%;
+            display: table;
+        }
 
-        .totals-table { width: 40%; float: right; border-collapse: collapse; }
-        .totals-table td { padding: 5px 0; }
-        .totals-table .label { font-weight: bold; text-align: right; padding-right: 15px; }
-        .totals-table .amount { text-align: right; }
+        .payment-info {
+            width: 55%;
+            float: left;
+            border: 1px dashed #aaa;
+            padding: 12px;
+            background: #fdfdfd;
+            border-radius: 4px;
+        }
+
+        .payment-info h4 {
+            margin: 0 0 8px 0;
+            font-size: 12px;
+            text-decoration: underline;
+        }
+
+        .totals-table {
+            width: 40%;
+            float: right;
+            border-collapse: collapse;
+        }
+
+        .totals-table td {
+            padding: 5px 0;
+        }
+
+        .totals-table .label {
+            font-weight: bold;
+            text-align: right;
+            padding-right: 15px;
+        }
+
+        .totals-table .amount {
+            text-align: right;
+        }
+
         .totals-table .grand-total-row td {
-            border-top: 2px solid #333; border-bottom: 2px solid #333;
-            padding: 8px 0; font-size: 14px; font-weight: bold; background-color: #f4f4f4;
+            border-top: 2px solid #333;
+            border-bottom: 2px solid #333;
+            padding: 8px 0;
+            font-size: 14px;
+            font-weight: bold;
+            background-color: #f4f4f4;
         }
 
         /* --- FOOTER & SIGNATURE --- */
-        .notes-section { margin-top: 30px; font-style: italic; color: #555; font-size: 10px; border-top: 1px solid #eee; padding-top: 10px; }
+        .notes-section {
+            margin-top: 30px;
+            font-style: italic;
+            color: #555;
+            font-size: 10px;
+            border-top: 1px solid #eee;
+            padding-top: 10px;
+        }
 
-        .signature-section { margin-top: 40px; page-break-inside: avoid; }
-        .signature-box { float: right; width: 35%; text-align: center; }
-        .qr-container { margin: 15px auto; padding: 5px; background: #fff; display: inline-block; border: 1px solid #eee; }
-        .sign-line { margin-top: 50px; border-top: 1px solid #333; width: 80%; margin-left: auto; margin-right: auto; }
+        .signature-section {
+            margin-top: 40px;
+            page-break-inside: avoid;
+        }
+
+        .signature-box {
+            float: right;
+            width: 35%;
+            text-align: center;
+        }
+
+        .qr-container {
+            margin: 15px auto;
+            padding: 5px;
+            background: #fff;
+            display: inline-block;
+            border: 1px solid #eee;
+        }
+
+        .sign-line {
+            margin-top: 50px;
+            border-top: 1px solid #333;
+            width: 80%;
+            margin-left: auto;
+            margin-right: auto;
+        }
 
         /* Helper */
-        .clearfix { clear: both; }
+        .clearfix {
+            clear: both;
+        }
     </style>
 </head>
+
 <body>
 
     <!-- 1. HEADER PERUSAHAAN -->
@@ -87,6 +257,7 @@
             </td>
         </tr>
     </table>
+
     <div class="header-divider"></div>
 
     <!-- 2. JUDUL DOKUMEN -->
@@ -96,13 +267,13 @@
 
         {{-- Status Badge Logic --}}
         @php
-            $statusColor = match($invoice->status) {
+            $statusColor = match ($invoice->status) {
                 'paid' => 'background-color: #dff0d8; color: #3c763d; border-color: #d6e9c6;', // Hijau
                 'cancelled' => 'background-color: #f2dede; color: #a94442; border-color: #ebccd1;', // Merah
                 'partial' => 'background-color: #d9edf7; color: #31708f; border-color: #bce8f1;', // Biru
                 default => 'background-color: #fcf8e3; color: #8a6d3b; border-color: #faebcc;', // Kuning (Unpaid/Sent)
             };
-            $statusLabel = match($invoice->status) {
+            $statusLabel = match ($invoice->status) {
                 'paid' => 'LUNAS',
                 'cancelled' => 'DIBATALKAN',
                 'partial' => 'SEBAGIAN',
@@ -205,7 +376,8 @@
                 No. Rek: <strong>555-000-1234</strong><br>
                 A/N: <strong>PT. NEXT GENERATION SOLUTIONS</strong><br>
                 <br>
-                <em style="font-size: 10px; color: #666;">*Mohon cantumkan No. Invoice ({{ $invoice->invoice_number }}) pada berita transfer.</em>
+                <em style="font-size: 10px; color: #666;">*Mohon cantumkan No. Invoice ({{ $invoice->invoice_number }})
+                    pada berita transfer.</em>
             </p>
         </div>
 
@@ -275,4 +447,5 @@
     </div>
 
 </body>
+
 </html>

@@ -22,66 +22,82 @@ class StockReportResource extends Resource
 
     protected static ?string $slug = 'inventory/stock-report';
 
-    protected static ?string $pluralModelLabel = 'Laporan Stok Produk';
+    protected static ?string $pluralModelLabel = 'Laporan Stock Product';
 
     public static function table(Table $table): Table
     {
         return $table
             ->columns([
-                Tables\Columns\TextColumn::make('kode_barang')
+                Tables\Columns\TextColumn::make('product_code')
                     ->label('Kode Produk')
-                    ->getStateUsing(fn($record) => 'BRG-' . str_pad($record->id, 6, '0', STR_PAD_LEFT))
                     ->searchable()
-                    ->sortable(),
+                    ->sortable()
+                    ->weight('bold'),
 
                 Tables\Columns\TextColumn::make('product_name')
                     ->label('Nama Produk')
                     ->searchable()
-                    ->sortable(),
+                    ->sortable()
+                    ->limit(30),
 
                 Tables\Columns\TextColumn::make('category.name')
-                    ->label('Kategori Produk')
+                    ->label('Kategori')
                     ->searchable()
-                    ->sortable(),
+                    ->sortable()
+                    ->icon('heroicon-o-tag'),
+
+                Tables\Columns\TextColumn::make('warehouses')
+                    ->label('Gudang')
+                    ->getStateUsing(function ($record) {
+                        return $record->productStocks()
+                            ->with('warehouse')
+                            ->get()
+                            ->pluck('warehouse.warehouse_name')
+                            ->unique()
+                            ->implode(', ');
+                    })
+                    ->badge()
+                    ->wrap()
+                    ->icon('heroicon-o-building-office'),
 
                 Tables\Columns\TextColumn::make('total_stock')
-                    ->label('Stok')
+                    ->label('Total Stock')
                     ->getStateUsing(fn($record) => $record->productStocks()->sum('qty'))
                     ->numeric()
                     ->sortable()
                     ->badge()
                     ->color(fn($state) => match (true) {
-                        $state <= 0  => 'danger',
-                        $state <= 5  => 'danger',
+                        $state <= 0 => 'danger',
+                        $state <= 5 => 'danger',
                         $state <= 10 => 'warning',
-                        default      => 'success',
+                        default => 'success',
                     })
                     ->icon(fn($state) => match (true) {
-                        $state <= 0  => 'heroicon-m-x-circle',
+                        $state <= 0 => 'heroicon-m-x-circle',
                         $state <= 10 => 'heroicon-m-exclamation-triangle',
-                        default      => 'heroicon-m-check-circle',
-                    }),
+                        default => 'heroicon-m-check-circle',
+                    })
+                    ->suffix(fn($record) => ' ' . ($record->unit->symbol ?? $record->unit->name ?? '')),
 
-                Tables\Columns\TextColumn::make('unit.name')
-                    ->label('Satuan')
-                    ->formatStateUsing(fn($state, $record) => $record->unit->symbol ?? $record->unit->name ?? '-')
-                    ->badge()
-                    ->color('info'),
+                Tables\Columns\TextColumn::make('purchase_price')
+                    ->label('Harga Beli')
+                    ->money('idr')
+                    ->sortable(),
 
-                Tables\Columns\TextColumn::make('price')
-                    ->label('Harga')
+                Tables\Columns\TextColumn::make('selling_price')
+                    ->label('Harga Jual')
                     ->money('idr')
                     ->sortable(),
             ])
             ->filters([
                 Tables\Filters\Filter::make('stock')
-                    ->label('Filter Stok')
+                    ->label('Filter Stock')
                     ->form([
                         Forms\Components\Select::make('status')
                             ->label('Status')
                             ->options([
-                                'low'    => 'Stok Rendah',
-                                'normal' => 'Stok Normal',
+                                'low'    => 'Stock Rendah',
+                                'normal' => 'Stock Normal',
                             ]),
                         Forms\Components\Select::make('warehouse_id')
                             ->label('Gudang')
@@ -96,9 +112,9 @@ class StockReportResource extends Resource
                         $indicators = [];
 
                         if (($data['status'] ?? null) === 'low') {
-                            $indicators[] = 'Status Stok: Hanya Stok Rendah';
+                            $indicators[] = 'Status Stock: Hanya Stock Rendah';
                         } elseif (($data['status'] ?? null) === 'normal') {
-                            $indicators[] = 'Status Stok: Stok Normal';
+                            $indicators[] = 'Status Stock: Stock Normal';
                         }
 
                         if (! empty($data['warehouse_id'])) {
@@ -195,6 +211,6 @@ class StockReportResource extends Resource
 
     public static function getNavigationBadgeTooltip(): ?string
     {
-        return 'Produk dengan stok rendah (≤ 10)';
+        return 'Product dengan Stock rendah (≤ 10)';
     }
 }

@@ -24,7 +24,7 @@ class ViewProduct extends ViewRecord
 
     public function getTitle(): string
     {
-        return 'Lihat Produk';
+        return 'Lihat Product';
     }
 }
 

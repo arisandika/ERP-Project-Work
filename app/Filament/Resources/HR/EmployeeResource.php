@@ -187,7 +187,7 @@ class EmployeeResource extends Resource
                                     ->maxLength(25),
 
                                 Forms\Components\TextInput::make('code')
-                                    ->label('Kode')
+                                    ->label('Kode Departemen')
                                     ->required()
                                     ->maxLength(3)
                                     ->afterStateUpdated(fn($state, callable $set) =>

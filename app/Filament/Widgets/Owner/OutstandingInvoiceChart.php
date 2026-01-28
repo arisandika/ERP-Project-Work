@@ -9,7 +9,6 @@ use Leandrocfe\FilamentApexCharts\Widgets\ApexChartWidget;
 
 class OutstandingInvoiceChart extends ApexChartWidget
 {
-    // use HasPageShield;
     protected static ?string $heading = 'Invoice Belum Dibayar';
 
     protected function getOptions(): array

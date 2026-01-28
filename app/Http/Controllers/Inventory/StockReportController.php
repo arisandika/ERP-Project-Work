@@ -8,7 +8,7 @@ use App\Models\Inventory\Warehouse;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
 
-class StockReportPdfController extends Controller
+class StockReportController extends Controller
 {
     public function download(Request $request)
     {
@@ -17,14 +17,14 @@ class StockReportPdfController extends Controller
         $status = $request->get('status');
         $warehouseId = $request->get('warehouse_id');
 
-        // Query produk sesuai filter
+        // Query Product sesuai filter
         $query = Product::with(['category', 'unit', 'productStocks']);
 
         if ($categoryId) {
             $query->where('category_id', $categoryId);
         }
 
-        // Filter stok rendah / normal
+        // Filter Stock rendah / normal
         if ($status === 'low') {
             $query->whereHas('productStocks', function ($q) use ($warehouseId) {
                 if ($warehouseId) {

@@ -15,7 +15,6 @@ use Filament\Notifications\Notification;
 
 class OperationalAlertTable extends BaseWidget
 {
-    // use HasPageShield;
     protected static ?string $heading = 'Jatuh Tempo (Perlu Penagihan)';
     protected int | string | array $columnSpan = 'full';
 

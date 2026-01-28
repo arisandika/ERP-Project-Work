@@ -26,10 +26,22 @@ class PackageResource extends Resource
 
     protected static ?string $slug = 'inventory/packages';
 
-    protected static ?string $pluralModelLabel = 'Paket Layanan';
+    protected static ?string $pluralModelLabel = 'Paket';
 
     public static function form(Form $form): Form
     {
+        $recalculateTotal = function (callable $get, callable $set) {
+            $items = $get('../../items') ?? [];
+
+            $total = collect($items)->sum(function ($item) {
+                $price = (float) ($item['price'] ?? 0);
+                $qty = max(1, (int) ($item['quantity'] ?? 1));
+                return $price * $qty;
+            });
+
+            $set('../../total_price', $total);
+        };
+
         return $form
             ->schema([
                 Forms\Components\Section::make('Informasi Paket')
@@ -52,17 +64,24 @@ class PackageResource extends Resource
                 Forms\Components\Section::make('Item dalam Paket')
                     ->schema([
                         Forms\Components\Repeater::make('items')
-                            ->label('Daftar Produk & Layanan')
+                            ->label('Daftar Product & Layanan')
                             ->relationship('items')
                             ->schema([
                                 Forms\Components\Select::make('item_type')
                                     ->label('Tipe Item')
                                     ->options([
-                                        'product' => 'Produk',
+                                        'product' => 'Product',
                                         'service' => 'Jasa',
                                     ])
                                     ->reactive()
-                                    ->required(),
+                                    ->required()
+                                    ->afterStateUpdated(function (callable $set, callable $get) use ($recalculateTotal) {
+                                        $set('item_id', null);
+                                        $set('price', 0);
+                                        $set('subtotal', 0);
+
+                                        $recalculateTotal($get, $set);
+                                    }),
 
                                 Forms\Components\Select::make('item_id')
                                     ->label('Nama Item')
@@ -70,42 +89,46 @@ class PackageResource extends Resource
                                         return match ($get('item_type')) {
                                             'product' => Product::pluck('product_name', 'id'),
                                             'service' => Service::pluck('service_name', 'id'),
-                                            default   => [],
+                                            default => [],
                                         };
                                     })
                                     ->reactive()
-                                    ->afterStateUpdated(function ($state, callable $set, callable $get) {
+                                    ->afterStateUpdated(function ($state, callable $set, callable $get) use ($recalculateTotal) {
                                         $type = $get('item_type');
-                                        if (! $state || ! $type) {
+
+                                        if (!$state || !$type) {
                                             $set('price', 0);
                                             $set('subtotal', 0);
+                                            $recalculateTotal($get, $set);
                                             return;
                                         }
 
                                         $price = match ($type) {
-                                            'product' => Product::find($state)?->price,
+                                            'product' => Product::find($state)?->selling_price,
                                             'service' => Service::find($state)?->price,
-                                            default   => 0,
+                                            default => 0,
                                         } ?? 0;
 
-                                        $set('price', $price);
+                                        $qty = max(1, (int) $get('quantity'));
 
-                                        $qty = (int) $get('quantity');
-                                        $qty = $qty > 0 ? $qty : 1;
+                                        $set('price', $price);
                                         $set('subtotal', $price * $qty);
+
+                                        $recalculateTotal($get, $set);
                                     })
+
                                     ->afterStateHydrated(function ($state, callable $set, callable $get) {
                                         $type = $get('item_type');
-                                        if (! $state || ! $type) {
+                                        if (!$state || !$type) {
                                             $set('price', 0);
                                             $set('subtotal', 0);
                                             return;
                                         }
 
                                         $price = match ($type) {
-                                            'product' => Product::find($state)?->price,
+                                            'product' => Product::find($state)?->selling_price,
                                             'service' => Service::find($state)?->price,
-                                            default   => 0,
+                                            default => 0,
                                         } ?? 0;
 
                                         $set('price', $price);
@@ -123,12 +146,15 @@ class PackageResource extends Resource
                                     ->default(1)
                                     ->minValue(0)
                                     ->reactive()
-                                    ->afterStateUpdated(function (callable $set, callable $get) {
+                                    ->afterStateUpdated(function (callable $set, callable $get) use ($recalculateTotal) {
                                         $price = (float) $get('price');
-                                        $qty   = (int) $get('quantity');
-                                        $qty   = $qty > 0 ? $qty : 1;
+                                        $qty = max(1, (int) $get('quantity'));
+
                                         $set('subtotal', $price * $qty);
-                                    }),
+
+                                        $recalculateTotal($get, $set);
+                                    })
+                                    ->required(),
 
                                 Forms\Components\TextInput::make('price')
                                     ->label('Harga Satuan')
@@ -176,13 +202,19 @@ class PackageResource extends Resource
     {
         return $table
             ->columns([
+                Tables\Columns\TextColumn::make('package_code')
+                    ->label('Kode Paket')
+                    ->searchable()
+                    ->sortable()
+                    ->weight('bold'),
+
                 Tables\Columns\TextColumn::make('package_name')
                     ->label('Nama Paket')
                     ->sortable()
                     ->searchable(),
 
                 Tables\Columns\TextColumn::make('total_price')
-                    ->label('Total Harga')
+                    ->label('Harga')
                     ->money('IDR', true)
                     ->sortable(),
 
@@ -276,9 +308,9 @@ class PackageResource extends Resource
     public static function getPages(): array
     {
         return [
-            'index'  => Pages\ListPackages::route('/'),
+            'index' => Pages\ListPackages::route('/'),
             'create' => Pages\CreatePackage::route('/create'),
-            'edit'   => Pages\EditPackage::route('/{record}/edit'),
+            'edit' => Pages\EditPackage::route('/{record}/edit'),
         ];
     }
 

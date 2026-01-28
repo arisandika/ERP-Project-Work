@@ -11,7 +11,7 @@ use Illuminate\Database\Eloquent\Builder;
 
 class QuotationReportTable extends BaseWidget
 {
-    // use HasPageShield;
+    
     
     public $filters = [];
 

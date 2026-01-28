@@ -17,7 +17,6 @@ class ListInventoryMonitorings extends ListRecords
     {
         return [
             InventorySummaryOverview::class,
-            StockMovementChart::class,
             LowStockStatsOverview::class,
             LowStockAlert::class,
         ];

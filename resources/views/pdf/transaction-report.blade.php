@@ -1,123 +1,285 @@
 <!DOCTYPE html>
-<html lang="id">
+<html>
+
 <head>
-    <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
-    <title>Laporan Transaksi</title>
+    <title>Laporan Transaksi Stok - {{ now()->format('d F Y') }}</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+
     <style>
+        @page {
+            margin: 25px 30px;
+        }
+
         body {
-            font-family: DejaVu Sans, Arial, sans-serif;
-            font-size: 12px;
-            margin: 20px;
+            font-family: 'Helvetica', sans-serif;
+            font-size: 11px;
+            color: #333;
+            line-height: 1.3;
         }
-        .header {
-            text-align: center;
-            margin-bottom: 30px;
-        }
-        .header h1 {
-            margin: 0;
-            font-size: 18px;
-            font-weight: bold;
-        }
-        .filter-info {
-            margin-bottom: 20px;
-            padding: 10px;
-            background-color: #f5f5f5;
-            border-radius: 5px;
-        }
-        table {
+
+        /* --- HEADER --- */
+        .header-table {
             width: 100%;
             border-collapse: collapse;
-            margin-top: 20px;
+            margin-bottom: 15px;
         }
-        th, td {
-            border: 1px solid #ddd;
-            padding: 8px;
-            text-align: left;
+
+        .header-table .logo-cell {
+            width: 15%;
+            vertical-align: middle;
         }
-        th {
-            background-color: #f8f9fa;
+
+        .header-table .logo-cell img {
+            max-width: 80px;
+            height: auto;
+        }
+
+        .header-table .company-info-cell {
+            vertical-align: middle;
+            padding-left: 20px;
+        }
+
+        .header-table .company-name {
+            font-size: 26px;
+            font-weight: bold;
+            margin: 0;
+            color: #222;
+        }
+
+        .header-table .company-tagline {
+            font-size: 12px;
+            margin: 2px 0 5px 0;
+            font-weight: bold;
+            color: #555;
+        }
+
+        .header-table .company-address {
+            font-size: 10px;
+            margin: 0;
+            color: #444;
+        }
+
+        .header-divider {
+            border-bottom: 3px double #333;
+            margin-bottom: 25px;
+        }
+
+        /* --- TITLE --- */
+        .document-title {
+            text-align: center;
+            margin-bottom: 25px;
+        }
+
+        .document-title h1 {
+            margin: 0;
+            font-size: 22px;
+            letter-spacing: 3px;
+            font-weight: 800;
+            text-transform: uppercase;
+        }
+
+        .document-title p {
+            margin: 5px 0 0;
+            font-size: 12px;
             font-weight: bold;
         }
-        tr:nth-child(even) {
-            background-color: #f9f9f9;
-        }
-        .badge-masuk {
-            background-color: #10b981;
-            color: white;
-            padding: 3px 8px;
-            border-radius: 3px;
-            font-size: 10px;
+
+        .status-badge {
+            font-size: 9px;
+            padding: 4px 10px;
+            border-radius: 12px;
+            border: 1px solid #333;
             display: inline-block;
+            margin-top: 8px;
+            letter-spacing: 1px;
+            font-weight: bold;
+            text-transform: uppercase;
+            background-color: #d9edf7;
+            color: #31708f;
         }
-        .badge-keluar {
-            background-color: #ef4444;
-            color: white;
-            padding: 3px 8px;
-            border-radius: 3px;
-            font-size: 10px;
-            display: inline-block;
+
+        /* --- DETAILS --- */
+        .details-table {
+            width: 100%;
+            margin-bottom: 30px;
         }
-        .footer {
-            margin-top: 30px;
+
+        .details-table td {
+            vertical-align: top;
+            padding: 2px;
+        }
+
+        .client-box {
+            border-left: 3px solid #ddd;
+            padding-left: 10px;
+        }
+
+        /* --- TABLE --- */
+        .items-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 11px;
+            margin-bottom: 20px;
+        }
+
+        .items-table th {
+            background-color: #f4f4f4;
+            border: 1px solid #ccc;
+            padding: 8px;
+            text-align: left;
+            font-weight: bold;
+        }
+
+        .items-table td {
+            border: 1px solid #ccc;
+            padding: 8px;
+        }
+
+        .items-table .text-center {
+            text-align: center;
+        }
+
+        .items-table .text-right {
             text-align: right;
+        }
+
+        .items-table .row-bg {
+            background-color: #fafafa;
+        }
+
+        /* --- BADGE JENIS --- */
+        .badge {
+            font-size: 9px;
+            padding: 3px 8px;
+            border-radius: 10px;
+            font-weight: bold;
+            text-transform: uppercase;
+            color: #fff;
+        }
+
+        .badge-masuk {
+            background-color: #5cb85c;
+        }
+
+        .badge-keluar {
+            background-color: #d9534f;
+        }
+
+        /* --- FOOTER --- */
+        .notes-section {
+            margin-top: 30px;
+            font-style: italic;
             font-size: 10px;
-            color: #666;
+            color: #555;
+            border-top: 1px solid #eee;
+            padding-top: 10px;
         }
     </style>
 </head>
+
 <body>
-    <div class="header">
-        <h1>Laporan Transaksi</h1>
+
+    <!-- 1. HEADER PERUSAHAAN -->
+    <table class="header-table">
+        <tr>
+            <td class="logo-cell">
+                {{-- Pastikan file ada di public/assets/logo2.png --}}
+                <img src="{{ public_path('assets/logo2.png') }}" alt="Logo">
+            </td>
+            <td class="company-info-cell">
+                <h2 class="company-name">NEXICON</h2>
+                <p class="company-tagline">PT. NEXT GENERATION SOLUTIONS</p>
+                <p class="company-address">
+                    Jl. Lingkar Selatan Sengkol No. 18, Setu, Tangerang Selatan<br>
+                    WA: 0838-1100-3426 | Email: nexicon.id@gmail.com<br>
+                    Website: www.nexicon.id
+                </p>
+            </td>
+        </tr>
+    </table>
+
+    <div class="header-divider"></div>
+
+    <!-- TITLE -->
+    <div class="document-title">
+        <h1>LAPORAN TRANSAKSI STOK</h1>
+        <p>Per {{ now()->format('d F Y') }}</p>
+        <span class="status-badge">STOCK TRANSACTION REPORT</span>
     </div>
 
-    @if($fromDate || $untilDate)
-    <div class="filter-info">
-        <strong>Periode:</strong>
-        @if($fromDate)
-            Dari: {{ \Carbon\Carbon::parse($fromDate)->format('d M Y') }}
-        @endif
-        @if($untilDate)
-            @if($fromDate) - @endif
-            Sampai: {{ \Carbon\Carbon::parse($untilDate)->format('d M Y') }}
-        @endif
-    </div>
-    @endif
+    <!-- DETAILS -->
+    <table class="details-table">
+        <tr>
+            <td style="width:55%;">
+                <div class="client-box">
+                    <span style="font-size:10px; color:#666; text-transform:uppercase;">Periode Laporan</span><br>
+                    <strong style="font-size:14px;">
+                        {{ $fromDate ? \Carbon\Carbon::parse($fromDate)->format('d F Y') : '-' }}
+                        s/d
+                        {{ $untilDate ? \Carbon\Carbon::parse($untilDate)->format('d F Y') : '-' }}
+                    </strong>
+                </div>
+            </td>
+            <td style="width:45%; padding-left:20px;">
+                <table style="width:100%; font-size:11px;">
+                    <tr>
+                        <td style="color:#666;">Dicetak Pada:</td>
+                        <td style="font-weight:bold;">{{ now()->format('d F Y H:i') }}</td>
+                    </tr>
+                    <tr>
+                        <td style="color:#666;">Total Transaksi:</td>
+                        <td style="font-weight:bold;">{{ $transactions->count() }}</td>
+                    </tr>
+                </table>
+            </td>
+        </tr>
+    </table>
 
-    <table>
+    <!-- TABLE -->
+    <table class="items-table">
         <thead>
             <tr>
-                <th>Tanggal</th>
-                <th>Produk</th>
-                <th>Jenis</th>
-                <th>Jumlah</th>
-                <th>Catatan</th>
+                <th style="width:5%;" class="text-center">No</th>
+                <th style="width:14%;">Tanggal</th>
+                <th style="width:10%;">Kode Produk</th>
+                <th style="width:18%;">Nama Produk</th>
+                <th style="width:13%;">Gudang</th>
+                <th style="width:9%;" class="text-center">Jenis</th>
+                <th style="width:9%;" class="text-center">Qty</th>
+                <th style="width:11%;" class="text-right">Harga</th>
+                <th style="width:11%;" class="text-right">Total Harga</th>
             </tr>
         </thead>
         <tbody>
-            @forelse($transactions as $transaction)
-            <tr>
-                <td>{{ isset($transaction['transaction_date']) ? \Carbon\Carbon::parse($transaction['transaction_date'])->format('d M Y') : '-' }}</td>
-                <td>{{ $transaction['product_name'] ?? '-' }}</td>
-                <td>
-                    <span class="badge-{{ $transaction['type'] }}">
-                        {{ $transaction['type'] === 'masuk' ? 'Masuk' : 'Keluar' }}
-                    </span>
-                </td>
-                <td>{{ number_format($transaction['quantity'] ?? 0, 0, ',', '.') }} {{ $transaction['unit_symbol'] ?? 'pcs' }}</td>
-                <td>{{ $transaction['notes'] ?? '-' }}</td>
-            </tr>
+            @forelse($transactions as $index => $trx)
+                <tr class="{{ $index % 2 ? 'row-bg' : '' }}">
+                    <td class="text-center">{{ $index + 1 }}</td>
+                    <td>{{ $trx->transaction_date->format('d M Y H:i') }}</td>
+                    <td style="font-family: monospace;">{{ $trx->product->product_code ?? '-' }}</td>
+                    <td><strong>{{ $trx->product->product_name ?? '-' }}</strong></td>
+                    <td>{{ $trx->warehouse->warehouse_name ?? '-' }}</td>
+                    <td class="text-center">
+                        <span class="badge badge-{{ $trx->type }}">
+                            {{ strtoupper($trx->type) }}
+                        </span>
+                    </td>
+                    <td class="text-center">{{ number_format($trx->quantity) }}</td>
+                    <td class="text-right">Rp {{ number_format($trx->price, 0, ',', '.') }}</td>
+                    <td class="text-right">Rp {{ number_format($trx->total_price, 0, ',', '.') }}</td>
+                </tr>
             @empty
-            <tr>
-                <td colspan="5" style="text-align: center;">Tidak ada data transaksi</td>
-            </tr>
+                <tr>
+                    <td colspan="9" class="text-center">Tidak ada data transaksi</td>
+                </tr>
             @endforelse
         </tbody>
     </table>
 
-    <div class="footer">
-        <p>Dicetak pada: {{ now()->format('d M Y H:i:s') }}</p>
-        <p>Total Record: {{ $transactions->count() }}</p>
+    <!-- FOOTER -->
+    <div class="notes-section">
+        Laporan ini dihasilkan secara otomatis oleh sistem dan sah tanpa tanda tangan.
     </div>
-</body>
-</html>
 
+</body>
+
+</html>

@@ -9,7 +9,7 @@ use Filament\Widgets\StatsOverviewWidget\Stat;
 
 class LeaveOverview extends StatsOverviewWidget
 {
-    // use HasPageShield;
+    
     
     protected function getStats(): array
     {
