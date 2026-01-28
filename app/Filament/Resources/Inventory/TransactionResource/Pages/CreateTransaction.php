@@ -3,6 +3,7 @@
 namespace App\Filament\Resources\Inventory\TransactionResource\Pages;
 
 use App\Filament\Resources\Inventory\TransactionResource;
+use App\Models\Inventory\Product;
 use App\Models\Inventory\Warehouse;
 use Filament\Resources\Pages\CreateRecord;
 
@@ -12,27 +13,26 @@ class CreateTransaction extends CreateRecord
 
     public function getTitle(): string
     {
-        return 'Tambah Stock Produk';
+        return 'Tambah Stock Product';
     }
 
-    protected function mutateFormDataBeforeCreate(array $data): array
+    public function mount(): void
     {
-        // Set default warehouse jika belum ada
-        if (empty($data['warehouse_id'])) {
-            $defaultWarehouse = Warehouse::first();
-            
-            if (!$defaultWarehouse) {
-                // Create default warehouse if not exists
-                $defaultWarehouse = Warehouse::create([
-                    'warehouse_name' => 'Gudang Utama',
-                    'location' => 'Lokasi Utama',
-                ]);
-            }
-            
-            $data['warehouse_id'] = $defaultWarehouse->id;
-        }
+        parent::mount();
 
-        return $data;
+        $this->form->fill([
+            'type' => 'masuk',
+            'transaction_date' => now()->toDateString(),
+        ]);
+
+        if (request()->has(['product', 'warehouse'])) {
+            $this->form->fill([
+                'product_id' => (int) request('product'),
+                'warehouse_id' => (int) request('warehouse'),
+                'type' => 'masuk',
+                'transaction_date' => now()->toDateString(),
+            ]);
+        }
     }
 }
 

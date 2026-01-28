@@ -111,7 +111,7 @@ class ProductResource extends Resource
                     ])
                     ->columns(2),
 
-                Forms\Components\Section::make('Stok per Gudang')
+                Forms\Components\Section::make('Stock per Gudang')
                     ->icon('heroicon-o-building-storefront')
                     ->schema([
                         Forms\Components\Repeater::make('productStocks')
@@ -128,18 +128,23 @@ class ProductResource extends Resource
                                     ->disableOptionsWhenSelectedInSiblingRepeaterItems(),
 
                                 Forms\Components\TextInput::make('qty')
-                                    ->label('Jumlah Stok')
-                                    ->required()
+                                    ->label('Jumlah Stock')
                                     ->numeric()
                                     ->default(0)
                                     ->minValue(0)
+                                    ->disabled()
+                                    ->dehydrated(true)
+                                    ->helperText(
+                                        'Stock awal otomatis 0. ' .
+                                        'Penambahan Stock dilakukan melalui menu "Transaksi Stock Product".'
+                                    )
                                     ->prefixIcon('heroicon-o-archive-box'),
 
                                 Forms\Components\Select::make('status')
                                     ->label('Status')
                                     ->options([
-                                        'available'    => 'Tersedia',
-                                        'reserved'     => 'Dipesan',
+                                        'available' => 'Tersedia',
+                                        'reserved' => 'Dipesan',
                                         'out_of_stock' => 'Habis',
                                     ])
                                     ->default('available')
@@ -202,21 +207,21 @@ class ProductResource extends Resource
                     ->icon('heroicon-o-building-office'),
 
                 Tables\Columns\TextColumn::make('total_stock')
-                    ->label('Total Stok')
+                    ->label('Total Stock')
                     ->getStateUsing(fn($record) => $record->productStocks()->sum('qty'))
                     ->numeric()
                     ->sortable()
                     ->badge()
                     ->color(fn($state) => match (true) {
-                        $state <= 0  => 'danger',
-                        $state <= 5  => 'danger',
+                        $state <= 0 => 'danger',
+                        $state <= 5 => 'danger',
                         $state <= 10 => 'warning',
-                        default      => 'success',
+                        default => 'success',
                     })
                     ->icon(fn($state) => match (true) {
-                        $state <= 0  => 'heroicon-m-x-circle',
+                        $state <= 0 => 'heroicon-m-x-circle',
                         $state <= 10 => 'heroicon-m-exclamation-triangle',
-                        default      => 'heroicon-m-check-circle',
+                        default => 'heroicon-m-check-circle',
                     })
                     ->suffix(fn($record) => ' ' . ($record->unit->symbol ?? $record->unit->name ?? '')),
 
@@ -238,20 +243,20 @@ class ProductResource extends Resource
             ])
             ->filters([
                 Tables\Filters\Filter::make('stock')
-                    ->label('Filter Stok')
+                    ->label('Filter Stock')
                     ->form([
                         Forms\Components\Select::make('status')
                             ->label('Status Stock')
                             ->options([
-                                'low'    => 'Stok Rendah',
-                                'normal' => 'Stok Normal',
+                                'low' => 'Stock Rendah',
+                                'normal' => 'Stock Normal',
                             ])
                             ->prefixIcon('heroicon-o-chart-bar'),
                         Forms\Components\Select::make('warehouse_id')
                             ->label('Gudang')
                             ->options(fn() => Warehouse::orderBy('warehouse_name')
-                                    ->pluck('warehouse_name', 'id')
-                                    ->toArray())
+                                ->pluck('warehouse_name', 'id')
+                                ->toArray())
                             ->searchable()
                             ->preload()
                             ->prefixIcon('heroicon-o-building-office'),
@@ -264,13 +269,14 @@ class ProductResource extends Resource
                             $indicators[] = 'Stok: Normal';
                         }
                         if (!empty($data['warehouse_id'])) {
+                        if (!empty($data['warehouse_id'])) {
                             $name = Warehouse::find($data['warehouse_id'])?->warehouse_name;
                             if ($name) $indicators[] = 'Gudang: ' . $name;
                         }
                         return $indicators;
                     })
                     ->query(function (Builder $query, array $data) {
-                        $status      = $data['status'] ?? null;
+                        $status = $data['status'] ?? null;
                         $warehouseId = $data['warehouse_id'] ?? null;
 
                         if ($status === 'low') {
@@ -321,10 +327,10 @@ class ProductResource extends Resource
     public static function getPages(): array
     {
         return [
-            'index'  => Pages\ListProducts::route('/'),
+            'index' => Pages\ListProducts::route('/'),
             'create' => Pages\CreateProduct::route('/create'),
-            'view'   => Pages\ViewProduct::route('/{record}'),
-            'edit'   => Pages\EditProduct::route('/{record}/edit'),
+            'view' => Pages\ViewProduct::route('/{record}'),
+            'edit' => Pages\EditProduct::route('/{record}/edit'),
         ];
     }
 

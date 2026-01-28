@@ -9,53 +9,70 @@ use Leandrocfe\FilamentApexCharts\Widgets\ApexChartWidget;
 
 class StockMovementChart extends ApexChartWidget
 {
-    // use HasPageShield;
-
     protected static ?string $chartId = 'stock_movement_chart';
 
     protected int|string|array $columnSpan = 'full';
 
     protected function getOptions(): array
     {
-        $end = Carbon::today();
-        $start = $end->copy()->subDays(6);
+        $end   = now()->endOfDay();
+        $start = now()->subDays(6)->startOfDay();
 
-        $labels = [];
-        $masukData = [];
-        $keluarData = [];
+        $labels      = [];
+        $masukData   = [];
+        $keluarData  = [];
 
-        $raw = StockTransaction::query()
-            ->selectRaw('transaction_date, SUM(CASE WHEN type = "masuk" THEN quantity ELSE 0 END) AS masuk, SUM(CASE WHEN type = "keluar" THEN quantity ELSE 0 END) AS keluar')
-            ->whereBetween('transaction_date', [$start->toDateString(), $end->toDateString()])
-            ->groupBy('transaction_date')
+        $transactions = StockTransaction::query()
+            ->selectRaw('DATE(transaction_date) as date')
+            ->selectRaw('SUM(CASE WHEN type = "masuk" THEN quantity ELSE 0 END) as total_masuk')
+            ->selectRaw('SUM(CASE WHEN type = "keluar" THEN quantity ELSE 0 END) as total_keluar')
+            ->whereBetween('transaction_date', [$start, $end])
+            ->groupByRaw('DATE(transaction_date)')
             ->get()
-            ->keyBy(fn ($row) => Carbon::parse($row->transaction_date)->toDateString());
+            ->keyBy('date');
 
         for ($i = 6; $i >= 0; $i--) {
-            $day = Carbon::today()->subDays($i);
-            $key = $day->toDateString();
-            $labels[] = $day->isoFormat('DD MMM');
-            $masukData[] = (int) ($raw[$key]->masuk ?? 0);
-            $keluarData[] = (int) ($raw[$key]->keluar ?? 0);
+            $day = now()->subDays($i)->toDateString();
+
+            $labels[]     = Carbon::parse($day)->isoFormat('DD MMM');
+            $masukData[]  = (int) ($transactions[$day]->total_masuk ?? 0);
+            $keluarData[] = (int) ($transactions[$day]->total_keluar ?? 0);
         }
 
         return [
             'chart' => [
-                'type' => 'area',
-                'height' => 320,
-                'toolbar' => [ 'show' => false ],
+                'type'    => 'area',
+                'height'  => 320,
+                'toolbar' => ['show' => false],
             ],
-            'stroke' => [ 'curve' => 'smooth' ],
+            'stroke' => [
+                'curve' => 'smooth',
+                'width' => 2,
+            ],
             'series' => [
-                [ 'name' => 'Masuk', 'data' => $masukData ],
-                [ 'name' => 'Keluar', 'data' => $keluarData ],
+                [
+                    'name' => 'Stock Masuk',
+                    'data' => $masukData,
+                ],
+                [
+                    'name' => 'Stock Keluar',
+                    'data' => $keluarData,
+                ],
             ],
-            'xaxis' => [ 'categories' => $labels ],
+            'xaxis' => [
+                'categories' => $labels,
+            ],
+            'legend' => [
+                'position' => 'top',
+            ],
+            'title' => [
+                'text'  => 'Pergerakan Stock (7 Hari Terakhir)',
+                'align' => 'left',
+            ],
             'colors' => ['#10B981', '#EF4444'],
-            'legend' => [ 'position' => 'top' ],
-            'title' => [ 'text' => 'Pergerakan Stok 7 Hari Terakhir', 'align' => 'left' ],
         ];
     }
 }
+
 
 

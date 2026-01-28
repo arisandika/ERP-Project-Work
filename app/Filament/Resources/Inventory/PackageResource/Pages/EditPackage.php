@@ -22,6 +22,6 @@ class EditPackage extends EditRecord
 
     public function getTitle(): string
     {
-        return 'Edit Paket layanan';
+        return 'Edit Paket';
     }
 }

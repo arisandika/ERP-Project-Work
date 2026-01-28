@@ -8,7 +8,6 @@ use Leandrocfe\FilamentApexCharts\Widgets\ApexChartWidget;
 
 class RevenueSalesVsNonSalesChart extends ApexChartWidget
 {
-    // use HasPageShield;
     protected static ?string $heading = 'Kontribusi Revenue';
 
     protected function getOptions(): array

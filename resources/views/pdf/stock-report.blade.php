@@ -1,163 +1,246 @@
 <!DOCTYPE html>
-<html lang="id">
+<html>
+
 <head>
-    <meta charset="UTF-8">
-    <title>Laporan Stok Produk - Nexicon ERP Dashboard</title>
+    <title>Laporan Stok Product - {{ now()->format('d F Y') }}</title>
     <style>
-        /* === Layout === */
         @page {
-            size: A4 landscape;
-            margin: 40px 25px 60px 25px;
+            margin: 25px 30px;
         }
 
         body {
-            font-family: DejaVu Sans, sans-serif;
-            color: #1f2937;
-            font-size: 12px;
+            font-family: 'Helvetica', sans-serif;
+            font-size: 11px;
+            color: #333;
+            line-height: 1.3;
         }
 
-        header {
-            position: fixed;
-            top: -30px;
-            left: 0;
-            right: 0;
-            height: 60px;
-            border-bottom: 1px solid #e5e7eb;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            padding: 0 25px;
-        }
-
-        footer {
-            position: fixed;
-            bottom: -30px;
-            left: 0;
-            right: 0;
-            height: 40px;
-            border-top: 1px solid #e5e7eb;
-            font-size: 10px;
-            color: #6b7280;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            padding: 0 25px;
-        }
-
-        /* === Table === */
-        table {
+        /* --- HEADER --- */
+        .header-table {
             width: 100%;
             border-collapse: collapse;
-            margin-top: 80px;
+            margin-bottom: 15px;
         }
 
-        th, td {
-            border: 1px solid #e5e7eb;
-            padding: 6px 8px;
+        .header-table .logo-cell {
+            width: 15%;
+            vertical-align: middle;
         }
 
-        th {
-            background-color: #f3f4f6;
-            font-weight: 600;
-            text-align: left;
+        .header-table .logo-cell img {
+            max-width: 80px;
+            height: auto;
         }
 
-        tr:nth-child(even) {
-            background-color: #f9fafb;
+        .header-table .company-info-cell {
+            vertical-align: middle;
+            padding-left: 20px;
         }
 
-        /* === Badge colors === */
-        .badge {
-            padding: 3px 8px;
-            border-radius: 6px;
-            font-weight: 600;
-            font-size: 11px;
-            color: white;
+        .header-table .company-name {
+            font-size: 26px;
+            font-weight: bold;
+            margin: 0;
+            color: #222;
+        }
+
+        .header-table .company-tagline {
+            font-size: 12px;
+            margin: 2px 0 5px 0;
+            font-weight: bold;
+            color: #555;
+        }
+
+        .header-table .company-address {
+            font-size: 10px;
+            margin: 0;
+            color: #444;
+        }
+
+        .header-divider {
+            border-bottom: 3px double #333;
+            margin-bottom: 25px;
+        }
+
+        /* --- TITLE --- */
+        .document-title {
+            text-align: center;
+            margin-bottom: 25px;
+        }
+
+        .document-title h1 {
+            margin: 0;
+            font-size: 22px;
+            letter-spacing: 3px;
+            font-weight: 800;
+            text-transform: uppercase;
+        }
+
+        .document-title p {
+            margin: 5px 0 0;
+            font-size: 12px;
+            font-weight: bold;
+        }
+
+        .status-badge {
+            font-size: 9px;
+            padding: 4px 10px;
+            border-radius: 12px;
+            border: 1px solid #333;
             display: inline-block;
+            margin-top: 8px;
+            letter-spacing: 1px;
+            font-weight: bold;
+            text-transform: uppercase;
+            background-color: #d9edf7;
+            color: #31708f;
         }
 
-        .badge-success { background-color: #16a34a; }
-        .badge-warning { background-color: #facc15; color: #1f2937; }
-        .badge-danger { background-color: #dc2626; }
-
-        /* === Header Logo === */
-        .brand {
-            display: flex;
-            align-items: center;
-            gap: 10px;
+        /* --- TABLE --- */
+        .items-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 11px;
+            margin-bottom: 20px;
         }
 
-        .brand img {
-            height: 35px;
+        .items-table th {
+            background-color: #f4f4f4;
+            border: 1px solid #ccc;
+            padding: 8px;
+            text-align: left;
+            font-weight: bold;
         }
 
-        /* === Page counter === */
-        .page-number:after {
-            content: counter(page);
+        .items-table td {
+            border: 1px solid #ccc;
+            padding: 8px;
+        }
+
+        .items-table .text-center {
+            text-align: center;
+        }
+
+        .items-table .text-right {
+            text-align: right;
+        }
+
+        .items-table .row-bg {
+            background-color: #fafafa;
+        }
+
+        /* --- STOCK BADGE --- */
+        .stock-badge {
+            padding: 3px 8px;
+            border-radius: 10px;
+            font-size: 10px;
+            font-weight: bold;
+            display: inline-block;
+            color: #fff;
+        }
+
+        .stock-success {
+            background: #5cb85c;
+        }
+
+        .stock-warning {
+            background: #f0ad4e;
+        }
+
+        .stock-danger {
+            background: #d9534f;
+        }
+
+        /* --- FOOTER NOTE --- */
+        .notes-section {
+            margin-top: 30px;
+            font-size: 10px;
+            color: #555;
+            border-top: 1px solid #eee;
+            padding-top: 10px;
+            font-style: italic;
         }
     </style>
 </head>
+
 <body>
 
-<header>
-    <div class="brand">
-        <img src="{{ public_path('images/logo-nexicon.png') }}" alt="Nexicon Logo">
-        <h1 style="font-size:14px; font-weight:700; color:#111827;">Nexicon ERP Dashboard</h1>
-    </div>
-    <div style="text-align:right;">
-        <p style="font-size:12px; color:#6b7280;">Laporan Stok Produk</p>
-        <p style="font-size:11px; color:#9ca3af;">{{ now()->format('d M Y H:i') }}</p>
-    </div>
-</header>
+    <!-- 1. HEADER PERUSAHAAN -->
+    <table class="header-table">
+        <tr>
+            <td class="logo-cell">
+                {{-- Pastikan file ada di public/assets/logo2.png --}}
+                <img src="{{ public_path('assets/logo2.png') }}" alt="Logo">
+            </td>
+            <td class="company-info-cell">
+                <h2 class="company-name">NEXICON</h2>
+                <p class="company-tagline">PT. NEXT GENERATION SOLUTIONS</p>
+                <p class="company-address">
+                    Jl. Lingkar Selatan Sengkol No. 18, Setu, Tangerang Selatan<br>
+                    WA: 0838-1100-3426 | Email: nexicon.id@gmail.com<br>
+                    Website: www.nexicon.id
+                </p>
+            </td>
+        </tr>
+    </table>
 
-<footer>
-    <div>
-        © {{ now()->year }} Nexicon ERP • Semua hak dilindungi
-    </div>
-    <div class="page-number">
-        Halaman 
-    </div>
-</footer>
+    <div class="header-divider"></div>
 
-<main>
-    <table>
+    <!-- TITLE -->
+    <div class="document-title">
+        <h1>LAPORAN STOK PRODUCT</h1>
+        <p>Per {{ now()->format('d F Y H:i') }}</p>
+        <span class="status-badge">INVENTORY REPORT</span>
+    </div>
+
+    <!-- TABLE -->
+    <table class="items-table">
         <thead>
             <tr>
-                <th style="width:80px;">Kode Produk</th>
-                <th>Nama Produk</th>
-                <th style="width:140px;">Kategori</th>
-                <th style="width:90px;">Stok</th>
-                <th style="width:100px;">Satuan</th>
-                <th style="width:120px; text-align:right;">Harga</th>
+                <th style="width:5%;" class="text-center">No</th>
+                <th style="width: 13%;">Kode Produk</th>
+                <th style="width: 22%;">Nama Produk</th>
+                <th style="width: 12%;">Kategori</th>
+                <th style="width: 10%;" class="text-center">Stok</th>
+                <th style="width: 8%;" class="text-center">Satuan</th>
+                <th style="width: 15%;" class="text-right">Harga</th>
+                <th style="width: 15%;" class="text-right">Total Harga</th>
             </tr>
         </thead>
         <tbody>
-            @foreach ($products as $product)
+            @foreach ($products as $index => $product)
                 @php
                     $totalStock = $product->productStocks->sum('qty');
-                    $statusClass = $totalStock <= 0 ? 'badge-danger' :
-                                   ($totalStock <= 10 ? 'badge-warning' : 'badge-success');
+                    $stockClass = $totalStock <= 0 ? 'stock-danger' :
+                        ($totalStock <= 10 ? 'stock-warning' : 'stock-success');
+                    $price = $product->selling_price ?? $product->price;
+                    $totalHarga = $totalStock * $price;
                 @endphp
-                <tr>
-                    <td style="font-family: monospace;">
-                        BRG-{{ str_pad($product->id, 6, '0', STR_PAD_LEFT) }}
+                <tr class="{{ $index % 2 ? 'row-bg' : '' }}">
+                    <td class="text-center">{{ $index + 1 }}</td>
+                    <td style="font-family: monospace;">{{ $product->product_code }}</td>
+                    <td>
+                        <strong>{{ $product->product_name }}</strong>
                     </td>
-                    <td>{{ $product->product_name }}</td>
                     <td>{{ $product->category->name ?? '-' }}</td>
-                    <td style="text-align:center;">
-                        <span class="badge {{ $statusClass }}">{{ $totalStock }}</span>
+                    <td class="text-center">
+                        <span class="stock-badge {{ $stockClass }}">
+                            {{ $totalStock }}
+                        </span>
                     </td>
-                    <td style="text-align:center;">
+                    <td class="text-center">
                         {{ $product->unit->symbol ?? $product->unit->name ?? '-' }}
                     </td>
-                    <td style="text-align:right;">
-                        Rp {{ number_format($product->price, 0, ',', '.') }}
+                    <td class="text-right">
+                        Rp {{ number_format($price, 0, ',', '.') }}
+                    </td>
+                    <td class="text-right">
+                        Rp {{ number_format($totalHarga, 0, ',', '.') }}
                     </td>
                 </tr>
             @endforeach
         </tbody>
     </table>
-</main>
-
 </body>
+
 </html>

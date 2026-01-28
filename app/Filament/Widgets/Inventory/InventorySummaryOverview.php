@@ -11,7 +11,7 @@ use Filament\Widgets\StatsOverviewWidget\Stat;
 
 class InventorySummaryOverview extends BaseWidget
 {
-    // use HasPageShield;
+    
     
     protected int|string|array $columnSpan = 'full';
 
@@ -22,8 +22,8 @@ class InventorySummaryOverview extends BaseWidget
         $totalStockQty = (int) ProductStock::sum('qty');
 
         return [
-            Stat::make('Total Produk', (string) $totalProducts)
-                ->description('Seluruh produk terdaftar')
+            Stat::make('Total Product', (string) $totalProducts)
+                ->description('Seluruh Product terdaftar')
                 ->icon('heroicon-o-cube')
                 ->color('primary'),
 
@@ -32,7 +32,7 @@ class InventorySummaryOverview extends BaseWidget
                 ->icon('heroicon-o-building-storefront')
                 ->color('info'),
 
-            Stat::make('Total Qty Stok', (string) $totalStockQty)
+            Stat::make('Total Qty Stock', (string) $totalStockQty)
                 ->description('Akumulasi semua warehouse')
                 ->icon('heroicon-o-archive-box')
                 ->color('success'),

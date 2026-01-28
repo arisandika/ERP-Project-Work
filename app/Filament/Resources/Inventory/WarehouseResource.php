@@ -2,6 +2,7 @@
 namespace App\Filament\Resources\Inventory;
 
 use App\Filament\Resources\Inventory\WarehouseResource\Pages;
+use App\Filament\Resources\Inventory\WarehouseResource\RelationManagers\StocksRelationManager;
 use App\Models\Inventory\Warehouse;
 use Filament\Forms;
 use Filament\Forms\Form;
@@ -12,6 +13,7 @@ use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Support\Facades\DB;
 
 class WarehouseResource extends Resource
 {
@@ -120,15 +122,12 @@ class WarehouseResource extends Resource
 
                 Tables\Columns\TextColumn::make('total_products')
                     ->label('Jumlah Produk')
-                    ->getStateUsing(fn($record) => $record->stocks()->distinct('product_id')->count('id'))
                     ->badge()
                     ->color('info')
                     ->suffix(' items'),
 
                 Tables\Columns\TextColumn::make('total_qty')
-                    ->label('Total Stok')
-                    ->getStateUsing(fn($record) => $record->stocks()->sum('qty'))
-                    ->numeric()
+                    ->label('Total Stock')
                     ->badge()
                     ->color('success')
                     ->suffix(' unit'),
@@ -182,7 +181,17 @@ class WarehouseResource extends Resource
                     Tables\Actions\DeleteBulkAction::make(),
                 ]),
             ])
-            ->defaultSort('created_at', 'desc');
+            ->defaultSort('created_at', 'desc')
+            ->modifyQueryUsing(function ($query) {
+                $query->withCount([
+                    'stocks as total_products' => function ($q) {
+                        $q->select(DB::raw('COUNT(DISTINCT product_id)'));
+                    },
+                    'stocks as total_qty'      => function ($q) {
+                        $q->select(DB::raw('SUM(qty)'));
+                    },
+                ]);
+            });
     }
 
     public static function infolist(Infolist $infolist): Infolist
@@ -215,7 +224,7 @@ class WarehouseResource extends Resource
                             ->suffix(' items'),
 
                         TextEntry::make('total_qty')
-                            ->label('Total Stok')
+                            ->label('Total Stock')
                             ->badge()
                             ->color('success')
                             ->state(fn(Warehouse $record) => $record->stocks()->sum('qty'))
@@ -245,7 +254,7 @@ class WarehouseResource extends Resource
     public static function getRelations(): array
     {
         return [
-            //
+            StocksRelationManager::class,
         ];
     }
 

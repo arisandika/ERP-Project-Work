@@ -8,7 +8,6 @@ use Filament\Widgets\Widget;
 
 class LeaveBalancePerType extends Widget
 {
-    // use HasPageShield;
     protected static string $view = 'filament.widgets.hr.leave-balance-per-type';
 
     protected int|string|array $columnSpan = 'full';

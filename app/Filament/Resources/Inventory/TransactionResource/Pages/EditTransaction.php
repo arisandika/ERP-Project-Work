@@ -19,7 +19,7 @@ class EditTransaction extends EditRecord
 
     public function getTitle(): string
     {
-        return 'Edit Stock Produk';
+        return 'Edit Stock Product';
     }
 }
 

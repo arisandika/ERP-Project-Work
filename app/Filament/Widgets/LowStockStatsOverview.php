@@ -10,16 +10,15 @@ use Filament\Widgets\StatsOverviewWidget\Stat;
 
 class LowStockStatsOverview extends BaseWidget
 {
-    // use HasPageShield;
     protected static ?int $sort = 0;
     protected int | string | array $columnSpan = 'full';
 
     protected function getStats(): array
     {
-        // Hitung produk dengan stock kritis (qty < threshold)
+        // Hitung Product dengan stock kritis (qty < threshold)
         $lowStockCount = ProductStock::where('qty', '<=', 10)->count();
 
-        // Hitung produk yang benar-benar habis (qty = 0)
+        // Hitung Product yang benar-benar habis (qty = 0)
         $outOfStockCount = ProductStock::where('qty', '<=', 0)->count();
 
         // Total unique products dengan low stock
@@ -28,19 +27,19 @@ class LowStockStatsOverview extends BaseWidget
             ->count('id');
 
         return [
-            Stat::make('Produk Stok Kritis', $lowStockProducts)
-                ->description('Produk unique dengan stock rendah')
+            Stat::make('Product Stock Kritis', $lowStockProducts)
+                ->description('Product unique dengan stock rendah')
                 ->descriptionIcon('heroicon-m-exclamation-triangle')
                 ->color('danger')
                 ->chart([7, 8, 6, 9, 10, 12, $lowStockProducts]),
 
-            Stat::make('Total Items Stok Rendah', $lowStockCount)
+            Stat::make('Total Items Stock Rendah', $lowStockCount)
                 ->description('Termasuk semua warehouse')
                 ->descriptionIcon('heroicon-m-arrow-trending-down')
                 ->color('warning')
                 ->chart([5, 7, 6, 8, 9, 10, $lowStockCount]),
 
-            Stat::make('Stok Habis', $outOfStockCount)
+            Stat::make('Stock Habis', $outOfStockCount)
                 ->description('Item dengan qty = 0')
                 ->descriptionIcon('heroicon-m-x-circle')
                 ->color($outOfStockCount > 0 ? 'danger' : 'success')

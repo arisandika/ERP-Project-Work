@@ -14,7 +14,7 @@ class ListPackages extends ListRecords
     {
         return [
             Actions\CreateAction::make()
-                ->label('Tambah Paket Layanan'),
+                ->label('Tambah Paket'),
         ];
     }
 }

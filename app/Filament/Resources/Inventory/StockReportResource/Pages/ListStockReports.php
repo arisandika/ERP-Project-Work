@@ -19,7 +19,7 @@ class ListStockReports extends ListRecords
                 ->color('primary')
                 ->url(route('inventory.stock-report.download-pdf'))
                 ->openUrlInNewTab()
-                ->tooltip('Unduh laporan stok produk dalam format PDF'),
+                ->tooltip('Unduh laporan stock product dalam format PDF'),
         ];
     }
 
@@ -46,7 +46,7 @@ class ListStockReports extends ListRecords
 
             \Filament\Notifications\Notification::make()
                 ->warning()
-                ->title('Laporan Stok Rendah')
+                ->title('Laporan Stock Rendah')
                 ->body("Total {$lowStockCount} items | Kritis {$criticalCount} items | Habis {$outOfStockCount} items")
                 ->persistent()
                 ->send();

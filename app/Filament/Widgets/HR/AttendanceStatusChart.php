@@ -12,7 +12,6 @@ use Leandrocfe\FilamentApexCharts\Widgets\ApexChartWidget;
 
 class AttendanceStatusChart extends ApexChartWidget
 {
-    // use HasPageShield;
     protected static ?string $chartId = 'attendanceStatusChart';
     protected static ?string $heading = 'Status Presensi Karyawan Hari Ini';
     protected static ?string $subheading = 'Data kehadiran harian berdasarkan status absensi';

@@ -24,6 +24,6 @@ class ViewPackage extends ViewRecord
 
     public function getTitle(): string
     {
-        return 'Lihat Paket Layanan';
+        return 'Lihat Paket';
     }
 }

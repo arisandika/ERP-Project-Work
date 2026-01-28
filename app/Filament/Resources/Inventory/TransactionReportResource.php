@@ -29,69 +29,105 @@ class TransactionReportResource extends Resource
             ->columns([
                 Tables\Columns\TextColumn::make('transaction_date')
                     ->label('Tanggal')
-                    ->date('d F Y H:i')
+                    ->dateTime('d F Y H:i')
                     ->sortable(),
 
-                Tables\Columns\TextColumn::make('product.product_name')
-                    ->label('Produk')
+                Tables\Columns\TextColumn::make('product.product_code')
+                    ->label('Kode Produk')
                     ->searchable()
-                    ->sortable(),
+                    ->sortable()
+                    ->weight('bold'),
+
+                Tables\Columns\TextColumn::make('product.product_name')
+                    ->label('Nama Produk')
+                    ->searchable()
+                    ->sortable()
+                    ->limit(30),
+
+                Tables\Columns\TextColumn::make('warehouse.warehouse_name')
+                    ->label('Gudang')
+                    ->sortable()
+                    ->toggleable(),
 
                 Tables\Columns\TextColumn::make('type')
                     ->label('Jenis')
                     ->badge()
-                    ->color(fn(string $state): string => match ($state) {
-                        'masuk'  => 'success',
-                        'keluar' => 'danger',
-                        default  => 'gray',
-                    })
-                    ->icon(fn(string $state): string => match ($state) {
-                        'masuk'  => 'heroicon-m-arrow-down-tray',
-                        'keluar' => 'heroicon-m-arrow-up-tray',
-                        default  => 'heroicon-m-question-mark-circle',
-                    })
-                    ->formatStateUsing(fn(string $state): string => match ($state) {
-                        'masuk'  => 'Masuk',
-                        'keluar' => 'Keluar',
-                        default  => ucfirst($state),
-                    }),
+                    ->color(fn(string $state) => $state === 'masuk' ? 'success' : 'danger'),
 
                 Tables\Columns\TextColumn::make('quantity')
-                    ->label('Jumlah')
-                    ->formatStateUsing(fn($state, $record) => number_format($state) . ' ' . ($record->product->unit->symbol ?? 'pcs'))
-                    ->alignRight()
+                    ->label('Qty')
+                    ->badge()
+                    ->color('info')
+                    ->suffix(' unit')
                     ->sortable(),
+
+                Tables\Columns\TextColumn::make('price')
+                    ->label('Harga Satuan')
+                    ->money('IDR')
+                    ->sortable()
+                    ->toggleable(),
+
+                Tables\Columns\TextColumn::make('total_price')
+                    ->label('Total')
+                    ->money('IDR')
+                    ->weight('bold')
+                    ->sortable(),
+
+                Tables\Columns\TextColumn::make('creator.name')
+                    ->label('Input Oleh')
+                    ->toggleable(),
 
                 Tables\Columns\TextColumn::make('notes')
                     ->label('Catatan')
-                    ->limit(50)
-                    ->tooltip(fn($record) => $record->notes ?? '-'),
+                    ->limit(40)
+                    ->tooltip(fn($record) => $record->notes)
+                    ->toggleable(),
             ])
             ->filters([
+
                 Tables\Filters\Filter::make('transaction_date')
-                    ->label('Periode Transaksi')
                     ->form([
                         Forms\Components\DatePicker::make('from')
-                            ->label('Dari Tanggal')
-                            ->displayFormat('d/m/Y')
-                            ->icon('heroicon-o-calendar'),
-
+                            ->label('Dari'),
                         Forms\Components\DatePicker::make('until')
-                            ->label('Sampai Tanggal')
-                            ->displayFormat('d/m/Y')
-                            ->icon('heroicon-o-calendar'),
+                            ->label('Sampai'),
                     ])
                     ->query(function (Builder $query, array $data): Builder {
                         return $query
                             ->when(
                                 $data['from'],
-                                fn(Builder $query, $date): Builder => $query->whereDate('transaction_date', '>=', $date),
+                                fn($q) => $q->whereDate('transaction_date', '>=', $data['from'])
                             )
                             ->when(
                                 $data['until'],
-                                fn(Builder $query, $date): Builder => $query->whereDate('transaction_date', '<=', $date),
+                                fn($q) => $q->whereDate('transaction_date', '<=', $data['until'])
                             );
                     }),
+
+                Tables\Filters\SelectFilter::make('product_id')
+                    ->label('Nama Produk')
+                    ->relationship('product', 'product_name')
+                    ->searchable()
+                    ->preload(),
+
+                Tables\Filters\SelectFilter::make('warehouse_id')
+                    ->label('Gudang')
+                    ->relationship('warehouse', 'warehouse_name')
+                    ->searchable()
+                    ->preload(),
+
+                Tables\Filters\SelectFilter::make('created_by')
+                    ->label('Input Oleh')
+                    ->relationship('creator', 'name')
+                    ->searchable()
+                    ->preload(),
+
+                Tables\Filters\SelectFilter::make('type')
+                    ->label('Jenis')
+                    ->options([
+                        'masuk' => 'Masuk',
+                        'keluar' => 'Keluar',
+                    ]),
             ])
             ->defaultSort('transaction_date', 'desc')
             ->modifyQueryUsing(fn(Builder $query) => $query->with(['product.unit']))

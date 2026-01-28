@@ -5,6 +5,7 @@ namespace App\Filament\Resources\Inventory\ProductResource\Pages;
 use App\Filament\Resources\Inventory\ProductResource;
 use App\Models\Inventory\Product;
 use App\Models\Inventory\ProductStock;
+use App\Models\Inventory\ProductStock;
 use App\Models\Inventory\StockTransaction;
 use App\Models\Inventory\Warehouse;
 use Filament\Resources\Pages\CreateRecord;
@@ -16,7 +17,7 @@ class CreateProduct extends CreateRecord
 
     public function getTitle(): string
     {
-        return 'Tambah Produk';
+        return 'Tambah Product';
     }
 
     protected function getRedirectUrl(): string

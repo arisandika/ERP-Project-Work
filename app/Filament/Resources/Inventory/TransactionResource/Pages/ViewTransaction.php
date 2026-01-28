@@ -24,7 +24,7 @@ class ViewTransaction extends ViewRecord
 
     public function getTitle(): string
     {
-        return 'Lihat Transaksi Stock Produk';
+        return 'Lihat Transaksi Stock Product';
     }
 }
 

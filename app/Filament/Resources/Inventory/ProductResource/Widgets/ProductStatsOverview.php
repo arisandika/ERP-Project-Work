@@ -29,19 +29,19 @@ class ProductStatsOverview extends BaseWidget
             ->count();
 
         return [
-            Stat::make('Total Produk', (string) $totalProducts)
-                ->description('Seluruh produk terdaftar')
+            Stat::make('Total Product', (string) $totalProducts)
+                ->description('Seluruh Product terdaftar')
                 ->icon('heroicon-o-cube')
                 ->color('primary'),
 
-            Stat::make('Stok Rendah', (string) $lowStockProducts)
-                ->description('Produk dengan stock 1–10 unit')
+            Stat::make('Stock Rendah', (string) $lowStockProducts)
+                ->description('Product dengan stock 1–10 unit')
                 ->descriptionIcon('heroicon-m-exclamation-triangle')
                 ->icon('heroicon-o-exclamation-circle')
                 ->color('warning'),
 
-            Stat::make('Stok Habis', (string) $outOfStockProducts)
-                ->description('Produk dengan stock 0 atau belum ada stock')
+            Stat::make('Stock Habis', (string) $outOfStockProducts)
+                ->description('Product dengan stock 0 atau stock habis')
                 ->descriptionIcon('heroicon-m-x-circle')
                 ->icon('heroicon-o-x-circle')
                 ->color('danger'),

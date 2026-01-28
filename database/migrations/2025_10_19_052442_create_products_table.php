@@ -30,7 +30,6 @@ return new class extends Migration
                   ->cascadeOnDelete();
 
             $table->integer('min_stock')->default(0);
-            $table->decimal('price', 15, 2);
 
             $table->timestamps(); // kolom created_at dan updated_at
         });

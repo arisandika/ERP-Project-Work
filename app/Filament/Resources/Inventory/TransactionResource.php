@@ -3,7 +3,9 @@ namespace App\Filament\Resources\Inventory;
 
 use App\Filament\Resources\Inventory\TransactionResource\Pages;
 use App\Models\Inventory\Product;
+use App\Models\Inventory\ProductStock;
 use App\Models\Inventory\StockTransaction;
+use App\Models\Inventory\Warehouse;
 use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Resources\Resource;
@@ -23,54 +25,181 @@ class TransactionResource extends Resource
 
     protected static ?string $slug = 'inventory/transactions';
 
-    protected static ?string $pluralModelLabel = 'Transaksi Stok Produk';
+    protected static ?string $pluralModelLabel = 'Transaksi Stock Product';
 
     public static function form(Form $form): Form
     {
+        $calculateTotal = function (callable $get, callable $set) {
+            $price = (float) $get('price');
+            $qty = max(1, (int) $get('quantity'));
+
+            $set('total_price', $price * $qty);
+        };
+
         return $form
             ->schema([
-                Forms\Components\Section::make('Informasi Transaksi')
+                Forms\Components\Section::make('Transaksi Barang Masuk')
                     ->schema([
+
                         Forms\Components\Select::make('product_id')
                             ->label('Nama Produk')
                             ->relationship('product', 'product_name')
                             ->required()
                             ->searchable()
                             ->preload()
-                            ->getOptionLabelFromRecordUsing(fn(Product $record): string =>
-                                $record->product_name . ' (' . 'BRG-' . str_pad($record->id, 6, '0', STR_PAD_LEFT) . ')'
-                            ),
+                            ->reactive()
+                            ->default(fn() => request()->query('product'))
+                            ->disabled(fn() => request()->has('product'))
+                            ->dehydrated()
+                            ->getOptionLabelUsing(
+                                fn($value) =>
+                                Product::find($value)
+                                ? Product::find($value)->product_name
+                                : null
+                            )
+                            ->afterStateHydrated(function ($state, callable $get, callable $set) use ($calculateTotal) {
+                                if (!$state) {
+                                    return;
+                                }
 
-                        Forms\Components\DateTimePicker::make('transaction_date')
-                            ->label('Tanggal Transaksi')
+                                $price = Product::find($state)?->purchase_price ?? 0;
+                                $set('price', $price);
+
+                                $calculateTotal($get, $set);
+                            })
+                            ->afterStateUpdated(function ($state, callable $get, callable $set) use ($calculateTotal) {
+                                if (!$state) {
+                                    $set('price', 0);
+                                    $set('total_price', 0);
+                                    return;
+                                }
+
+                                $price = Product::find($state)?->purchase_price ?? 0;
+                                $set('price', $price);
+
+                                $calculateTotal($get, $set);
+                            }),
+
+                        Forms\Components\Select::make('warehouse_id')
+                            ->label('Gudang Tujuan')
                             ->required()
-                            ->default(now())
-                            ->displayFormat('d F Y H:i')
-                            ->icon('heroicon-o-calendar-days'),
+                            ->searchable()
+                            ->preload()
+                            ->options(
+                                Warehouse::where('is_active', true)
+                                    ->pluck('warehouse_name', 'id')
+                            )
+                            ->default(fn() => request()->query('warehouse'))
+                            ->disabled(fn() => request()->has('warehouse'))
+                            ->dehydrated(),
 
                         Forms\Components\Select::make('type')
                             ->label('Jenis Transaksi')
-                            ->required()
                             ->options([
-                                'masuk'  => 'Masuk (Barang Masuk)',
-                                'keluar' => 'Keluar (Barang Keluar)',
+                                'masuk' => 'Barang Masuk',
                             ])
-                            ->native(false),
+                            ->default('masuk')
+                            ->disabled()
+                            ->dehydrated(true),
+
+                        Forms\Components\DatePicker::make('transaction_date')
+                            ->label('Tanggal Transaksi')
+                            ->required()
+                            ->displayFormat('d-m-Y')
+                            ->default(now()),
 
                         Forms\Components\TextInput::make('quantity')
-                            ->label('Jumlah Stock Barang')
-                            ->required()
+                            ->label('Jumlah Barang')
                             ->numeric()
+                            ->required()
                             ->minValue(1)
-                            ->suffixIcon('heroicon-o-cube'),
+                            ->default(1)
+                            ->reactive()
+                            ->afterStateUpdated(
+                                fn($state, callable $get, callable $set)
+                                => $calculateTotal($get, $set)
+                            ),
+
+                        Forms\Components\TextInput::make('price')
+                            ->label('Harga Beli / Unit')
+                            ->prefix('Rp')
+                            ->disabled()
+                            ->dehydrated(true),
+
+                        Forms\Components\TextInput::make('total_price')
+                            ->label('Total Harga')
+                            ->prefix('Rp')
+                            ->disabled()
+                            ->dehydrated(true)
+                            ->helperText('Total = Harga × Jumlah'),
 
                         Forms\Components\Textarea::make('notes')
-                            ->label('Catatan Transaksi')
-                            ->rows(3)
-                            ->placeholder('Contoh: Barang retur, stock opname, atau penyesuaian stock')
-                            ->columnSpanFull(),
+                            ->label('Catatan'),
+
                     ])
                     ->columns(2),
+
+                Forms\Components\Section::make('Informasi Stock Gudang')
+                    ->schema([
+
+                        Forms\Components\Placeholder::make('stock_before')
+                            ->label('Stock Sebelum Transaksi')
+                            ->reactive()
+                            ->content(function (callable $get, $record) {
+                                if ($record) {
+                                    return $record->stock_before . ' unit';
+                                }
+                                $productId = $get('product_id');
+                                $warehouseId = $get('warehouse_id');
+
+                                if (!$productId || !$warehouseId) {
+                                    return '-';
+                                }
+
+                                $stock = ProductStock::query()
+                                    ->where('product_id', $productId)
+                                    ->where('warehouse_id', $warehouseId)
+                                    ->value('qty');
+
+                                return $stock !== null
+                                    ? "{$stock} unit"
+                                    : '0 unit (belum ada Stock)';
+                            }),
+
+                        Forms\Components\Placeholder::make('stock_in')
+                            ->label('Jumlah Masuk')
+                            ->reactive()
+                            ->content(
+                                fn(callable $get) =>
+                                max(1, (int) $get('quantity')) . ' unit'
+                            ),
+
+                        Forms\Components\Placeholder::make('stock_after')
+                            ->label('Stock Setelah Transaksi')
+                            ->reactive()
+                            ->content(function (callable $get, $record) {
+                                if ($record) {
+                                    return $record->stock_after . ' unit';
+                                }
+                                $productId = $get('product_id');
+                                $warehouseId = $get('warehouse_id');
+                                $qty = max(1, (int) $get('quantity'));
+
+                                if (!$productId || !$warehouseId) {
+                                    return '-';
+                                }
+
+                                $currentStock = ProductStock::query()
+                                    ->where('product_id', $productId)
+                                    ->where('warehouse_id', $warehouseId)
+                                    ->value('qty') ?? 0;
+
+                                return ($currentStock + $qty) . ' unit';
+                            }),
+
+                    ])
+                    ->columns(3)
+                    ->columnSpanFull(),
             ]);
     }
 
@@ -80,68 +209,112 @@ class TransactionResource extends Resource
             ->columns([
                 Tables\Columns\TextColumn::make('transaction_date')
                     ->label('Tanggal')
-                    ->date('d F Y H:i')
+                    ->dateTime('d F Y H:i')
                     ->sortable(),
+
+                Tables\Columns\TextColumn::make('product.product_code')
+                    ->label('Kode Produk')
+                    ->searchable()
+                    ->sortable()
+                    ->weight('bold'),
 
                 Tables\Columns\TextColumn::make('product.product_name')
                     ->label('Nama Produk')
                     ->searchable()
-                    ->sortable(),
+                    ->sortable()
+                    ->limit(30),
+
+                Tables\Columns\TextColumn::make('warehouse.warehouse_name')
+                    ->label('Gudang')
+                    ->sortable()
+                    ->toggleable(),
 
                 Tables\Columns\TextColumn::make('type')
-                    ->label('Jenis Transaksi')
+                    ->label('Jenis')
                     ->badge()
-                    ->color(fn(string $state): string => match ($state) {
-                        'masuk'  => 'success',
-                        'keluar' => 'danger',
-                    })
-                    ->formatStateUsing(fn(string $state): string => ucfirst($state)),
+                    ->color(fn(string $state) => $state === 'masuk' ? 'success' : 'danger'),
 
                 Tables\Columns\TextColumn::make('quantity')
-                    ->label('Jumlah Stock')
-                    ->numeric()
-                    ->sortable()
+                    ->label('Qty')
                     ->badge()
                     ->color('info')
-                    ->suffix(' unit'),
+                    ->suffix(' unit')
+                    ->sortable(),
+
+                Tables\Columns\TextColumn::make('price')
+                    ->label('Harga Satuan')
+                    ->money('IDR')
+                    ->sortable()
+                    ->toggleable(),
+
+                Tables\Columns\TextColumn::make('total_price')
+                    ->label('Total')
+                    ->money('IDR')
+                    ->weight('bold')
+                    ->sortable(),
+
+                Tables\Columns\TextColumn::make('creator.name')
+                    ->label('Input Oleh')
+                    ->toggleable(),
 
                 Tables\Columns\TextColumn::make('notes')
                     ->label('Catatan')
-                    ->limit(50)
-                    ->tooltip(fn($record) => $record->notes),
+                    ->limit(40)
+                    ->tooltip(fn($record) => $record->notes)
+                    ->toggleable()
+                    ->placeholder('–'),
             ])
             ->filters([
-                Tables\Filters\SelectFilter::make('type')
-                    ->label('Jenis')
-                    ->options([
-                        'masuk'  => 'Masuk',
-                        'keluar' => 'Keluar',
-                    ]),
 
                 Tables\Filters\Filter::make('transaction_date')
                     ->form([
                         Forms\Components\DatePicker::make('from')
-                            ->label('Dari Tanggal')
-                            ->icon('heroicon-o-calendar-days'),
+                            ->label('Dari'),
                         Forms\Components\DatePicker::make('until')
-                            ->label('Sampai Tanggal')
-                            ->icon('heroicon-o-calendar-days'),
+                            ->label('Sampai'),
                     ])
                     ->query(function (Builder $query, array $data): Builder {
                         return $query
-                            ->when($data['from'], fn($q, $date) => $q->whereDate('transaction_date', '>=', $date))
-                            ->when($data['until'], fn($q, $date) => $q->whereDate('transaction_date', '<=', $date));
+                            ->when(
+                                $data['from'],
+                                fn($q) => $q->whereDate('transaction_date', '>=', $data['from'])
+                            )
+                            ->when(
+                                $data['until'],
+                                fn($q) => $q->whereDate('transaction_date', '<=', $data['until'])
+                            );
                     }),
+
+                Tables\Filters\SelectFilter::make('product_id')
+                    ->label('Nama Produk')
+                    ->relationship('product', 'product_name')
+                    ->searchable()
+                    ->preload(),
+
+                Tables\Filters\SelectFilter::make('warehouse_id')
+                    ->label('Gudang')
+                    ->relationship('warehouse', 'warehouse_name')
+                    ->searchable()
+                    ->preload(),
+
+                Tables\Filters\SelectFilter::make('created_by')
+                    ->label('Input Oleh')
+                    ->relationship('creator', 'name')
+                    ->searchable()
+                    ->preload(),
+
+                Tables\Filters\SelectFilter::make('type')
+                    ->label('Jenis')
+                    ->options([
+                        'masuk' => 'Masuk',
+                        'keluar' => 'Keluar',
+                    ]),
             ])
             ->actions([
                 Tables\Actions\ViewAction::make(),
-                Tables\Actions\EditAction::make(),
-                Tables\Actions\DeleteAction::make(),
             ])
             ->bulkActions([
-                Tables\Actions\BulkActionGroup::make([
-                    Tables\Actions\DeleteBulkAction::make(),
-                ]),
+                //
             ])
             ->defaultSort('transaction_date', 'desc')
             ->modifyQueryUsing(fn(Builder $query) => $query->with('product'));
@@ -155,10 +328,19 @@ class TransactionResource extends Resource
     public static function getPages(): array
     {
         return [
-            'index'  => Pages\ListTransactions::route('/'),
+            'index' => Pages\ListTransactions::route('/'),
             'create' => Pages\CreateTransaction::route('/create'),
-            'view'   => Pages\ViewTransaction::route('/{record}'),
-            'edit'   => Pages\EditTransaction::route('/{record}/edit'),
+            'view' => Pages\ViewTransaction::route('/{record}'),
         ];
+    }
+
+    public static function canEdit($record): bool
+    {
+        return false;
+    }
+
+    public static function canDelete($record): bool
+    {
+        return false;
     }
 }
