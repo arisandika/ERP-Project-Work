@@ -269,7 +269,6 @@ class ProductResource extends Resource
                             $indicators[] = 'Stok: Normal';
                         }
                         if (!empty($data['warehouse_id'])) {
-                        if (!empty($data['warehouse_id'])) {
                             $name = Warehouse::find($data['warehouse_id'])?->warehouse_name;
                             if ($name) $indicators[] = 'Gudang: ' . $name;
                         }
