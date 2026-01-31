@@ -141,7 +141,7 @@ class PackageResource extends Resource
                                     ->searchable(),
 
                                 Forms\Components\TextInput::make('quantity')
-                                    ->label('Kuantitas')
+                                    ->label('Qty')
                                     ->numeric()
                                     ->default(1)
                                     ->minValue(0)
@@ -159,14 +159,14 @@ class PackageResource extends Resource
                                 Forms\Components\TextInput::make('price')
                                     ->label('Harga Satuan')
                                     ->numeric()
-                                    ->prefix('Rp')
+                                    ->prefix('IDR')
                                     ->disabled()
                                     ->dehydrated(),
 
                                 Forms\Components\TextInput::make('subtotal')
                                     ->label('Subtotal')
                                     ->numeric()
-                                    ->prefix('Rp')
+                                    ->prefix('IDR')
                                     ->disabled()
                                     ->dehydrated(),
                             ])
@@ -185,7 +185,7 @@ class PackageResource extends Resource
                         Forms\Components\TextInput::make('total_price')
                             ->label('Total Harga Paket')
                             ->numeric()
-                            ->prefix('Rp')
+                            ->prefix('IDR')
                             ->disabled()
                             ->dehydrated(),
                         Forms\Components\Toggle::make('is_active')
@@ -226,19 +226,19 @@ class PackageResource extends Resource
 
                 Tables\Columns\TextColumn::make('created_at')
                     ->label('Dibuat Pada')
-                    ->dateTime('d F Y')
+                    ->dateTime('d M Y')
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
 
                 Tables\Columns\TextColumn::make('updated_at')
                     ->label('Diperbarui Pada')
-                    ->dateTime('d F Y')
+                    ->dateTime('d M Y')
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
 
                 Tables\Columns\TextColumn::make('deleted_at')
                     ->label('Dihapus Pada')
-                    ->dateTime('d F Y')
+                    ->dateTime('d M Y')
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
             ])
@@ -246,12 +246,15 @@ class PackageResource extends Resource
                 Tables\Filters\Filter::make('created_at')
                     ->form([
                         Forms\Components\DatePicker::make('created_from')
-                            ->label('Dari Tanggal')
-                            ->displayFormat('d/m/Y')
+                            ->label('Created From')
+                            ->required()
+                            ->displayFormat('d M Y')
                             ->native(false),
+
                         Forms\Components\DatePicker::make('created_until')
-                            ->label('Sampai Tanggal')
-                            ->displayFormat('d/m/Y')
+                            ->label('Created Until')
+                            ->required()
+                            ->displayFormat('d M Y')
                             ->native(false),
                     ])
                     ->query(function (Builder $query, array $data): Builder {
@@ -269,17 +272,18 @@ class PackageResource extends Resource
                         $indicators = [];
 
                         if ($data['created_from'] ?? null) {
-                            $indicators[] = 'Dari ' . Carbon::parse($data['created_from'])->toFormattedDateString();
+                            $indicators[] = 'Created from ' . Carbon::parse($data['created_from'])->toFormattedDateString();
                         }
 
                         if ($data['created_until'] ?? null) {
-                            $indicators[] = 'Sampai ' . Carbon::parse($data['created_until'])->toFormattedDateString();
+                            $indicators[] = 'Created until ' . Carbon::parse($data['created_until'])->toFormattedDateString();
                         }
 
                         return $indicators;
                     }),
+                    
                 Tables\Filters\TrashedFilter::make()
-                    ->label('Status Dihapus')
+                    ->label('Deleted Status')
                     ->native(false),
             ])
             ->actions([

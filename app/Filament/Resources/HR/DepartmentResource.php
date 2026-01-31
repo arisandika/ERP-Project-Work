@@ -76,19 +76,19 @@ class DepartmentResource extends Resource
 
                 Tables\Columns\TextColumn::make('created_at')
                     ->label('Created At')
-                    ->dateTime('d F Y')
+                    ->dateTime('d M Y')
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
 
                 Tables\Columns\TextColumn::make('updated_at')
                     ->label('Updated At')
-                    ->dateTime('d F Y')
+                    ->dateTime('d M Y')
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
 
                 Tables\Columns\TextColumn::make('deleted_at')
                     ->label('Deleted At')
-                    ->dateTime('d F Y')
+                    ->dateTime('d M Y')
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
             ])
@@ -97,11 +97,14 @@ class DepartmentResource extends Resource
                     ->form([
                         Forms\Components\DatePicker::make('created_from')
                             ->label('Created From')
-                            ->displayFormat('d/m/Y')
+                            ->required()
+                            ->displayFormat('d M Y')
                             ->native(false),
+
                         Forms\Components\DatePicker::make('created_until')
                             ->label('Created Until')
-                            ->displayFormat('d/m/Y')
+                            ->required()
+                            ->displayFormat('d M Y')
                             ->native(false),
                     ])
                     ->query(function (Builder $query, array $data): Builder {
@@ -128,6 +131,7 @@ class DepartmentResource extends Resource
 
                         return $indicators;
                     }),
+                    
                 Tables\Filters\TrashedFilter::make()
                     ->label('Deleted Status')
                     ->native(false),
@@ -171,13 +175,13 @@ class DepartmentResource extends Resource
                     ->schema([
                         TextEntry::make('created_at')
                             ->label('Dibuat Pada')
-                            ->dateTime('d F Y H:i'),
+                            ->dateTime('d M Y H:i'),
                         TextEntry::make('updated_at')
                             ->label('Diperbarui Pada')
-                            ->dateTime('d F Y H:i'),
+                            ->dateTime('d M Y H:i'),
                         TextEntry::make('deleted_at')
                             ->label('Dihapus Pada')
-                            ->dateTime('d F Y H:i')
+                            ->dateTime('d M Y H:i')
                             ->visible(fn(Department $department) => $department->trashed()),
                     ]),
             ]);

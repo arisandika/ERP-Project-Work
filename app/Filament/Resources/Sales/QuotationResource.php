@@ -1,15 +1,13 @@
 <?php
-
 namespace App\Filament\Resources\Sales;
 
 use App\Filament\Resources\Sales\QuotationResource\Pages;
 use App\Mail\QuotationSent;
-use App\Models\Sales\PromoCode;
-use App\Models\Sales\Quotation;
+use App\Models\Inventory\Package;
 use App\Models\Inventory\Product;
 use App\Models\Inventory\Service;
-use App\Models\Inventory\Package;
-use Filament\Forms;
+use App\Models\Sales\PromoCode;
+use App\Models\Sales\Quotation;
 use Filament\Forms\Components\Actions\Action as FormAction;
 use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\Grid;
@@ -26,6 +24,8 @@ use Filament\Notifications\Notification;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Mail;
 
 class QuotationResource extends Resource
@@ -45,94 +45,289 @@ class QuotationResource extends Resource
     public static function form(Form $form): Form
     {
         return $form->schema([
-            // --- SECTION 1: HEADER ---
-            Section::make('Informasi Penawaran')->schema([
-                Grid::make(3)->schema([
-                    TextInput::make('quotation_number')
-                        ->label('Nomor Penawaran')
-                        ->default('SQ-' . strtoupper(uniqid()))
-                        ->disabled()->dehydrated()->unique(ignoreRecord: true),
-                    DatePicker::make('quotation_date')
-                        ->label('Tanggal')->default(now())->required(),
-                    DatePicker::make('valid_until')
-                        ->label('Berlaku Hingga')->default(now()->addDays(7))->required(),
+            Section::make('Informasi Penawaran')
+                ->schema([
+                    Grid::make(3)
+                        ->schema([
+                            TextInput::make('quotation_number')
+                                ->label('No. Penawaran')
+                                ->disabled()
+                                ->dehydrated()
+                                ->unique(ignoreRecord: true)
+                                ->prefixIcon('heroicon-o-hashtag'),
+
+                            DatePicker::make('quotation_date')
+                                ->label('Tanggal Penawaran')
+                                ->default(now())
+                                ->prefixIcon('heroicon-o-calendar-days')
+                                ->required()
+                                ->displayFormat('d M Y')
+                                ->native(false),
+
+                            DatePicker::make('valid_until')
+                                ->label('Berlaku Hingga')
+                                ->default(now()
+                                    ->addDays(7))
+                                ->prefixIcon('heroicon-o-calendar-days')
+                                ->required()
+                                ->displayFormat('d M Y')
+                                ->native(false),
+                        ]),
+
+                    Grid::make(2)
+                        ->schema([
+                            Select::make('nx_customer_id')
+                                ->label('Pelanggan')
+                                ->searchable()
+                                ->preload()
+                                ->relationship('customer', 'name')
+                                ->required()
+                                ->prefixIcon('heroicon-o-user-circle'),
+
+                            Select::make('nx_employee_id')
+                                ->label('Ditugaskan Kepada')
+                                ->relationship('employee', 'full_name')
+                                ->default(fn() => auth()
+                                    ->user()?->employee?->id)
+                                ->disabled()
+                                ->dehydrated()
+                                ->required()
+                                ->prefixIcon('heroicon-o-user'),
+
+                            Select::make('status')
+                                ->options([
+                                    'draft' => 'Draft',
+                                    'sent' => 'Terkirim',
+                                    'accepted' => 'Diterima',
+                                    'rejected' => 'Ditolak',
+                                ])
+                                ->default('draft')
+                                ->required()
+                                ->prefixIcon('heroicon-o-adjustments-vertical'),
+
+                            Textarea::make('notes')
+                                ->label('Catatan Tambahan')
+                                ->rows(3),
+                        ]),
                 ]),
-                Grid::make(2)->schema([
-                    Select::make('nx_customer_id')
-                        ->label('Pelanggan')
-                        ->searchable()->preload()->relationship('customer', 'name')->required(),
-                    Select::make('nx_employee_id')
-                        ->label('Sales / PIC')
-                        ->relationship('employee', 'full_name')
-                        ->default(fn () => auth()->user()?->employee?->id)
-                        ->disabled()->dehydrated()->required()->prefixIcon('heroicon-o-user'),
+
+            Section::make('Daftar Item Penawaran')
+                ->schema([
+                    Repeater::make('items')
+                        ->schema(self::getQuotationItemsSchema())
+                        ->relationship()
+                        ->columns(2)
+                        ->live()
+                        ->afterStateUpdated(fn(Get $get, Set $set) => self::updateTotals($get, $set))
+                        ->createItemButtonLabel('Tambah Item')
+                        ->defaultItems(1)
+                        ->deletable(true)
+                        ->addable(true)
+                        ->reorderable(false),
+                ])
+                ->collapsible(),
+
+            Section::make('Perhitungan Akhir')
+                ->schema([
+                    Grid::make(4)
+                        ->schema([
+                            // 1. SUBTOTAL
+                            TextInput::make('subtotal')
+                                ->label('Subtotal')
+                                ->disabled()
+                                ->dehydrated()
+                                ->prefix('IDR')
+                                ->numeric()
+                                ->formatStateUsing(fn($state) => (int) $state), // Format Integer saat Edit
+
+                            // 2. PROMO LOGIC
+                            TextInput::make('promo_code_input')
+                                ->label('Kode Promo')
+                                ->placeholder('Masukkan kode promo')
+                                ->dehydrated(false)
+                                ->formatStateUsing(fn($record) => $record?->promoCode?->code)
+                                ->suffixAction(
+                                    FormAction::make('apply_promo')
+                                        ->icon('heroicon-m-ticket')
+                                        ->color('success')
+                                        ->label('Apply')
+                                        ->action(fn($state, Set $set, Get $get) => self::applyPromo($state, $set, $get))
+                                ),
+
+                            Hidden::make('promo_code_id'),
+
+                            Hidden::make('temp_discount_type')
+                                ->dehydrated(false),
+
+                            Hidden::make('temp_discount_value')
+                                ->dehydrated(false),
+
+                            // 3. DISCOUNT
+                            TextInput::make('discount_amount')
+                                ->label('Potongan')
+                                ->disabled()
+                                ->dehydrated()
+                                ->prefix('IDR')
+                                ->numeric()
+                                ->formatStateUsing(fn($state) => (int) $state), // Format Integer saat Edit
+
+                            // 4. TAX
+                            TextInput::make('tax')
+                                ->label('Pajak (%)')
+                                ->numeric()
+                                ->default(0)
+                                ->minValue(0)
+                                ->live(debounce: 500)
+                                ->afterStateUpdated(fn($state, Set $set, Get $get) => self::updateTotals($get, $set))
+                                ->formatStateUsing(fn($state) => (float) $state)
+                                ->prefixIcon('heroicon-o-receipt-percent'),
+
+                            // 5. GRAND TOTAL
+                            TextInput::make('grand_total')
+                                ->label('Total')
+                                ->disabled()
+                                ->dehydrated()
+                                ->prefix('IDR')
+                                ->extraInputAttributes(['style' => 'font-weight: bold;'])
+                                ->numeric()
+                                ->formatStateUsing(fn($state) => (int) $state),
+                        ]),
                 ]),
-                Select::make('status')
-                    ->options(['draft' => 'Draft', 'sent' => 'Terkirim', 'accepted' => 'Diterima', 'rejected' => 'Ditolak'])
-                    ->default('draft')->required(),
-                Textarea::make('notes')->label('Catatan')->columnSpanFull(),
-            ]),
-
-            // --- SECTION 2: ITEMS ---
-            Section::make('Daftar Item Penawaran')->schema([
-                Repeater::make('items')
-                    ->relationship()
-                    ->schema(self::getQuotationItemsSchema())
-                    ->columns(2)
-                    ->live()
-                    ->afterStateUpdated(fn (Get $get, Set $set) => self::updateTotals($get, $set))
-                    ->createItemButtonLabel('Tambah Item')
-                    ->defaultItems(1),
-            ])->collapsible(),
-
-            // --- SECTION 3: TOTALS ---
-            Section::make('Perhitungan Akhir')->schema([
-                Grid::make(4)->schema([
-                    // 1. SUBTOTAL
-                    TextInput::make('subtotal')->label('Subtotal')
-                        ->disabled()->dehydrated()->prefix('Rp')
-                        ->numeric()
-                        ->formatStateUsing(fn ($state) => (int) $state), // Format Integer saat Edit
-
-                    // 2. PROMO LOGIC
-                    TextInput::make('promo_code_input')->label('Kode Promo')
-                        ->placeholder('Kode...')
-                        ->dehydrated(false)
-                        ->formatStateUsing(fn ($record) => $record?->promoCode?->code)
-                        ->suffixAction(
-                            FormAction::make('apply_promo')->icon('heroicon-m-ticket')->color('success')->label('Apply')
-                                ->action(fn ($state, Set $set, Get $get) => self::applyPromo($state, $set, $get))
-                        ),
-
-                    Hidden::make('promo_code_id'),
-                    Hidden::make('temp_discount_type')->dehydrated(false),
-                    Hidden::make('temp_discount_value')->dehydrated(false),
-
-                    // 3. DISCOUNT
-                    TextInput::make('discount_amount')->label('Potongan')
-                        ->disabled()->dehydrated()->prefix('Rp')
-                        ->numeric()
-                        ->formatStateUsing(fn ($state) => (int) $state), // Format Integer saat Edit
-
-                    // 4. TAX
-                    TextInput::make('tax')->label('Pajak (%)')
-                        ->numeric()->default(0)->minValue(0)
-                        ->live(debounce: 500)
-                        ->afterStateUpdated(fn ($state, Set $set, Get $get) => self::updateTotals($get, $set))
-                        ->formatStateUsing(fn ($state) => (float) $state), // Pajak boleh float (misal 11.5)
-
-                    // 5. GRAND TOTAL
-                    TextInput::make('grand_total')->label('Grand Total')
-                        ->disabled()->dehydrated()->prefix('Rp')
-                        ->extraInputAttributes(['style' => 'font-weight: bold; color: #16a34a;'])
-                        ->numeric()
-                        ->formatStateUsing(fn ($state) => (int) $state), // Format Integer saat Edit
-                ]),
-            ]),
         ]);
     }
 
-    // --- ITEM SCHEMA ---
+    public static function table(Table $table): Table
+    {
+        return $table
+            ->columns([
+                Tables\Columns\TextColumn::make('quotation_number')
+                    ->label('No. Penawaran')
+                    ->sortable()
+                    ->searchable()
+                    ->weight('bold'),
+
+                Tables\Columns\TextColumn::make('customer.name')
+                    ->label('Pelanggan')
+                    ->sortable()
+                    ->searchable(),
+
+                Tables\Columns\TextColumn::make('quotation_date')
+                    ->label('Tanggal')
+                    ->dateTime('d M Y H:i')
+                    ->sortable(),
+
+                Tables\Columns\TextColumn::make('grand_total')
+                    ->label('Total')
+                    ->money('IDR', true)
+                    ->weight('bold'),
+
+                Tables\Columns\TextColumn::make('status')
+                    ->badge()
+                    ->color(fn(string $state): string => match ($state) {
+                        'draft' => 'gray', 
+                        'sent' => 'warning', 
+                        'accepted' => 'success', 
+                        'rejected' => 'danger', 
+                        default => 'gray'
+                    })
+                    ->formatStateUsing(fn(string $state): string => match ($state) {
+                        'draft' => 'Draft',
+                        'sent' => 'Terkirim',
+                        'accepted' => 'Diterima',
+                        'rejected' => 'Ditolak',
+                        default => $state,
+                    }),
+            ])
+            ->filters([
+                Tables\Filters\Filter::make('created_at')
+                    ->form([
+                        DatePicker::make('created_from')
+                            ->label('Created From')
+                            ->required()
+                            ->displayFormat('d M Y')
+                            ->native(false),
+
+                        DatePicker::make('created_until')
+                            ->label('Created Until')
+                            ->required()
+                            ->displayFormat('d M Y')
+                            ->native(false),
+                    ])
+                    ->query(function (Builder $query, array $data): Builder {
+                        return $query
+                            ->when(
+                                $data['created_from'],
+                                fn(Builder $query, $date): Builder => $query->whereDate('created_at', '>=', $date),
+                            )
+                            ->when(
+                                $data['created_until'],
+                                fn(Builder $query, $date): Builder => $query->whereDate('created_at', '<=', $date),
+                            );
+                    })
+                    ->indicateUsing(function (array $data): array {
+                        $indicators = [];
+
+                        if ($data['created_from'] ?? null) {
+                            $indicators[] = 'Created from ' . Carbon::parse($data['created_from'])->toFormattedDateString();
+                        }
+
+                        if ($data['created_until'] ?? null) {
+                            $indicators[] = 'Created until ' . Carbon::parse($data['created_until'])->toFormattedDateString();
+                        }
+
+                        return $indicators;
+                    }),
+
+                Tables\Filters\TrashedFilter::make()
+                    ->label('Deleted Status')
+                    ->native(false),
+            ])
+            ->actions([
+                Tables\Actions\Action::make('send')
+                    ->label('Kirim Email')
+                    ->icon('heroicon-o-envelope')
+                    ->color('warning')
+                    ->requiresConfirmation()
+                    ->action(function (Quotation $record) {
+                        if (!$record->customer || !$record->customer->email) {
+                            Notification::make()
+                                ->title('Email customer tidak tersedia!')
+                                ->danger()
+                                ->send();
+                            return;
+                        }
+                        Mail::to($record->customer->email)
+                            ->send(new QuotationSent($record));
+                        $record->update(['status' => 'sent']);
+                        Notification::make()
+                            ->title('Penawaran berhasil dikirim')
+                            ->success()
+                            ->send();
+                    }),
+                Tables\Actions\EditAction::make(),
+                Tables\Actions\DeleteAction::make(),
+                Tables\Actions\ForceDeleteAction::make(),
+                Tables\Actions\RestoreAction::make(),
+            ])
+            ->bulkActions([
+                Tables\Actions\BulkActionGroup::make([
+                    Tables\Actions\DeleteBulkAction::make(),
+                    Tables\Actions\ForceDeleteBulkAction::make(),
+                    Tables\Actions\RestoreBulkAction::make(),
+                ]),
+            ])
+            ->defaultSort('created_at', 'desc');
+    }
+
+    public static function getPages(): array
+    {
+        return [
+            'index' => Pages\ListQuotations::route('/'),
+            'create' => Pages\CreateQuotation::route('/create'),
+            'edit' => Pages\EditQuotation::route('/{record}/edit'),
+        ];
+    }
+
     public static function getQuotationItemsSchema(): array
     {
         return [
@@ -140,11 +335,17 @@ class QuotationResource extends Resource
                 ->label('Tipe')
                 ->options(['product' => 'Product', 'service' => 'Service', 'package' => 'Package'])
                 ->default('product')
-                ->reactive()->required()
+                ->reactive()
+                ->required()
                 ->afterStateUpdated(function (Set $set, Get $get) {
-                    $set('item_id', null); $set('item_code', null); $set('item_code_display', null);
-                    $set('item_name', null); $set('unit_price', 0); $set('cost_price', 0);
-                    $set('line_total', 0); $set('qty', 1);
+                    $set('item_id', null);
+                    $set('item_code', null);
+                    $set('item_code_display', null);
+                    $set('item_name', null);
+                    $set('unit_price', 0);
+                    $set('cost_price', 0);
+                    $set('line_total', 0);
+                    $set('qty', 1);
                     self::updateTotals($get, $set);
                 }),
 
@@ -153,16 +354,24 @@ class QuotationResource extends Resource
                 ->options(function (Get $get) {
                     $type = $get('item_type');
                     return match ($type) {
-                        'product' => Product::query()->pluck('product_name', 'id'),
-                        'service' => Service::query()->pluck('service_name', 'id'),
-                        'package' => Package::query()->pluck('package_name', 'id'),
+                        'product' => Product::query()
+                            ->pluck('product_name', 'id'),
+                        'service' => Service::query()
+                            ->pluck('service_name', 'id'),
+                        'package' => Package::query()
+                            ->pluck('package_name', 'id'),
                         default => [],
                     };
                 })
-                ->visible(fn (Get $get) => ! empty($get('item_type')))
-                ->searchable()->preload()->reactive()
+                ->visible(fn(Get $get) => !empty($get('item_type')))
+                ->searchable()
+                ->preload()
+                ->reactive()
                 ->afterStateUpdated(function ($state, Set $set, Get $get) {
-                    if (!$state) return;
+                    if (!$state) {
+                        return;
+                    }
+
                     $type = $get('item_type');
 
                     $model = match ($type) {
@@ -174,16 +383,20 @@ class QuotationResource extends Resource
 
                     if ($model) {
                         $name = $model->product_name ?? $model->service_name ?? $model->package_name ?? $model->name;
-                        $code = $model->product_code ?? $model->service_code ?? $model->package_code ?? $model->code ?? 'CODE-'.$state;
+                        $code = $model->product_code ?? $model->service_code ?? $model->package_code ?? $model->code ?? 'CODE-' . $state;
 
                         $sellPrice = match ($type) {
                             'product' => (float) ($model->selling_price ?? $model->price ?? 0),
+
                             'service' => (float) ($model->price ?? 0),
+
                             'package' => (float) ($model->total_price ?? 0),
+
                             default => 0
                         };
                         $buyPrice = match ($type) {
                             'product' => (float) ($model->purchase_price ?? 0),
+
                             default => 0
                         };
 
@@ -197,33 +410,61 @@ class QuotationResource extends Resource
                     }
                 }),
 
-            Hidden::make('item_code')->dehydrated(true),
-            Hidden::make('cost_price')->dehydrated(true),
+            Hidden::make('item_code')
+                ->dehydrated(true),
 
-            TextInput::make('item_code_display')->label('Kode')->disabled()->dehydrated(false)->columnSpan(1),
-            TextInput::make('item_name')->label('Nama')->disabled()->dehydrated(true)->columnSpan(1),
+            Hidden::make('cost_price')
+                ->dehydrated(true),
+
+            TextInput::make('item_code')
+                ->label('Kode Produk')
+                ->disabled()
+                ->dehydrated(false),
+
+            TextInput::make('item_name')
+                ->label('Nama Produk')
+                ->disabled()
+                ->dehydrated(true),
 
             TextInput::make('qty')
-                ->label('Qty')->numeric()->integer()->default(1)->minValue(1)
+                ->label('Qty')
+                ->numeric()
+                ->integer()
+                ->default(1)
+                ->minValue(1)
                 ->live(onBlur: true)
                 ->afterStateUpdated(function ($state, Set $set, Get $get) {
-                    if ($state < 1) $set('qty', 1);
+                    if ($state < 1) {
+                        $set('qty', 1);
+                    }
+
                     self::updateItemTotal($get, $set);
                 }),
 
-            TextInput::make('unit_price')->label('Harga')->numeric()->disabled()->dehydrated()->prefix('Rp')
-                ->formatStateUsing(fn ($state) => (int) $state)
-                ->reactive()->afterStateUpdated(fn (Set $set, Get $get) => self::updateItemTotal($get, $set)),
+            TextInput::make('unit_price')
+                ->label('Harga Satuan')
+                ->numeric()
+                ->disabled()
+                ->dehydrated()
+                ->prefix('IDR')
+                ->formatStateUsing(fn($state) => (int) $state)
+                ->reactive()
+                ->afterStateUpdated(fn(Set $set, Get $get) => self::updateItemTotal($get, $set)),
 
-            TextInput::make('line_total')->label('Total')->disabled()->dehydrated()->numeric()->prefix('Rp')
-                ->formatStateUsing(fn ($state) => (int) $state),
+            TextInput::make('line_total')
+                ->label('Subtotal')
+                ->disabled()
+                ->dehydrated()
+                ->numeric()
+                ->prefix('IDR')
+                ->extraInputAttributes(['style' => 'font-weight: bold;'])
+                ->formatStateUsing(fn($state) => (int) $state),
         ];
     }
 
-    // --- CALCULATIONS ---
     public static function updateItemTotal(Get $get, Set $set): void
     {
-        $qty   = (float) ($get('qty') ?? 0);
+        $qty = (float) ($get('qty') ?? 0);
         $price = (float) ($get('unit_price') ?? 0);
         $set('line_total', $qty * $price);
 
@@ -242,17 +483,18 @@ class QuotationResource extends Resource
 
         $items = $items ?? [];
 
-        $subtotal = collect($items)->sum(fn ($item) => (float) ($item['qty'] ?? 0) * (float) ($item['unit_price'] ?? 0));
+        $subtotal = collect($items)
+            ->sum(fn($item) => (float) ($item['qty'] ?? 0) * (float) ($item['unit_price'] ?? 0));
 
         $set($pathPrefix . 'subtotal', $subtotal);
 
-        $discountType  = $get($pathPrefix . 'temp_discount_type');
+        $discountType = $get($pathPrefix . 'temp_discount_type');
         $discountValue = (float) $get($pathPrefix . 'temp_discount_value');
 
         if (!$discountType && $promoId = $get($pathPrefix . 'promo_code_id')) {
             $promo = PromoCode::find($promoId);
             if ($promo) {
-                $discountType  = $promo->type;
+                $discountType = $promo->type;
                 $discountValue = (float) $promo->value;
                 $set($pathPrefix . 'temp_discount_type', $discountType);
                 $set($pathPrefix . 'temp_discount_value', $discountValue);
@@ -294,63 +536,22 @@ class QuotationResource extends Resource
             ->first();
 
         if (!$promo) {
-            Notification::make()->title('Kode tidak valid atau kadaluwarsa!')->danger()->send();
+            Notification::make()
+                ->title('Kode tidak valid atau kadaluwarsa!')
+                ->danger()
+                ->send();
             $set('promo_code_id', null);
             $set('temp_discount_type', null);
             $set('temp_discount_value', 0);
         } else {
-            Notification::make()->title("Promo Applied!")->success()->send();
+            Notification::make()
+                ->title("Promo Applied!")
+                ->success()
+                ->send();
             $set('promo_code_id', $promo->id);
             $set('temp_discount_type', $promo->type);
             $set('temp_discount_value', $promo->value);
         }
         self::updateTotals($get, $set);
-    }
-
-    // --- TABLE & ACTIONS ---
-    public static function table(Table $table): Table
-    {
-        return $table
-            ->columns([
-                Tables\Columns\TextColumn::make('quotation_number')->label('Nomor')->sortable()->searchable(),
-                Tables\Columns\TextColumn::make('customer.name')->label('Pelanggan')->sortable()->searchable(),
-                Tables\Columns\TextColumn::make('quotation_date')->label('Tanggal')->date(),
-                Tables\Columns\TextColumn::make('grand_total')->label('Grand Total')->money('IDR', true),
-                Tables\Columns\TextColumn::make('status')
-                    ->badge()
-                    ->color(fn (string $state): string => match ($state) {
-                        'draft' => 'gray', 'sent' => 'warning', 'accepted' => 'success', 'rejected' => 'danger', default => 'gray'
-                    }),
-            ])
-            ->actions([
-                Tables\Actions\EditAction::make(),
-                Tables\Actions\Action::make('send')
-                    ->label('Kirim Email')
-                    ->icon('heroicon-o-paper-airplane')
-                    ->color('warning')
-                    ->requiresConfirmation()
-                    ->action(function (Quotation $record) {
-                        if (!$record->customer || !$record->customer->email) {
-                            Notification::make()->title('Email customer tidak tersedia!')->danger()->send();
-                            return;
-                        }
-                        Mail::to($record->customer->email)->send(new QuotationSent($record));
-                        $record->update(['status' => 'sent']);
-                        Notification::make()->title('Penawaran berhasil dikirim')->success()->send();
-                    }),
-                Tables\Actions\DeleteAction::make(),
-            ])
-            ->bulkActions([
-                Tables\Actions\BulkActionGroup::make([Tables\Actions\DeleteBulkAction::make()]),
-            ]);
-    }
-
-    public static function getPages(): array
-    {
-        return [
-            'index' => Pages\ListQuotations::route('/'),
-            'create' => Pages\CreateQuotation::route('/create'),
-            'edit' => Pages\EditQuotation::route('/{record}/edit'),
-        ];
     }
 }

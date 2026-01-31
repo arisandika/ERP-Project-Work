@@ -59,19 +59,19 @@ class LeaveResource extends Resource
 
                 Tables\Columns\TextColumn::make('created_at')
                     ->label('Created At')
-                    ->dateTime('d F Y')
+                    ->dateTime('d M Y')
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
 
                 Tables\Columns\TextColumn::make('updated_at')
                     ->label('Updated At')
-                    ->dateTime('d F Y')
+                    ->dateTime('d M Y')
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
 
                 Tables\Columns\TextColumn::make('deleted_at')
                     ->label('Deleted At')
-                    ->dateTime('d F Y')
+                    ->dateTime('d M Y')
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
             ])
@@ -80,11 +80,14 @@ class LeaveResource extends Resource
                     ->form([
                         Forms\Components\DatePicker::make('created_from')
                             ->label('Created From')
-                            ->displayFormat('d/m/Y')
+                            ->required()
+                            ->displayFormat('d M Y')
                             ->native(false),
+
                         Forms\Components\DatePicker::make('created_until')
                             ->label('Created Until')
-                            ->displayFormat('d/m/Y')
+                            ->required()
+                            ->displayFormat('d M Y')
                             ->native(false),
                     ])
                     ->query(function (Builder $query, array $data): Builder {
@@ -111,6 +114,7 @@ class LeaveResource extends Resource
 
                         return $indicators;
                     }),
+                    
                 Tables\Filters\TrashedFilter::make()
                     ->label('Deleted Status')
                     ->native(false),
@@ -142,10 +146,10 @@ class LeaveResource extends Resource
     public static function getPages(): array
     {
         return [
-            'index'  => Pages\ListLeaves::route('/'),
+            'index' => Pages\ListLeaves::route('/'),
             'create' => Pages\CreateLeave::route('/create'),
-            'view'   => Pages\ViewLeave::route('/{record}'),
-            'edit'   => Pages\EditLeave::route('/{record}/edit'),
+            'view' => Pages\ViewLeave::route('/{record}'),
+            'edit' => Pages\EditLeave::route('/{record}/edit'),
         ];
     }
 

@@ -10,6 +10,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasOne;
+use Illuminate\Support\Carbon;
 
 class Quotation extends Model
 {
@@ -38,8 +39,8 @@ class Quotation extends Model
     ];
 
     protected $casts = [
-        'quotation_date' => 'date',
-        'valid_until' => 'date',
+        'quotation_date' => 'datetime',
+        'valid_until' => 'datetime',
         'approved_at' => 'datetime',
     ];
 
@@ -88,6 +89,19 @@ class Quotation extends Model
         return $this->belongsTo(PromoCode::class, 'promo_code_id');
     }
 
+    protected static function booted(): void
+    {
+        static::creating(function (Quotation $quotation) {
 
+            if ($quotation->quotation_date) {
+                $quotation->quotation_date = Carbon::parse($quotation->quotation_date)
+                    ->setTimeFromTimeString(now()->format('H:i:s'));
+            }
 
+            if ($quotation->valid_until) {
+                $quotation->valid_until = Carbon::parse($quotation->valid_until)
+                    ->setTimeFromTimeString(now()->format('H:i:s'));
+            }
+        });
+    }
 }

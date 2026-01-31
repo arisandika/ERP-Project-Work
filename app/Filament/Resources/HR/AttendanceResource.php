@@ -76,26 +76,29 @@ class AttendanceResource extends Resource
 
                 Tables\Columns\TextColumn::make('created_at')
                     ->label('Dibuat Pada')
-                    ->dateTime('d F Y')
+                    ->dateTime('d M Y')
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
 
                 Tables\Columns\TextColumn::make('deleted_at')
                     ->label('Dihapus Pada')
-                    ->dateTime('d F Y')
+                    ->dateTime('d M Y')
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
             ])
             ->filters([
                 Tables\Filters\Filter::make('date')
                     ->form([
-                        Forms\Components\DatePicker::make('from')
-                            ->label('Dari Tanggal')
-                            ->displayFormat('d/m/Y')
+                        Forms\Components\DatePicker::make('created_from')
+                            ->label('Created From')
+                            ->required()
+                            ->displayFormat('d M Y')
                             ->native(false),
-                        Forms\Components\DatePicker::make('until')
-                            ->label('Sampai Tanggal')
-                            ->displayFormat('d/m/Y')
+
+                        Forms\Components\DatePicker::make('created_until')
+                            ->label('Created Until')
+                            ->required()
+                            ->displayFormat('d M Y')
                             ->native(false),
                     ])
                     ->query(function (Builder $query, array $data): Builder {
@@ -171,13 +174,13 @@ class AttendanceResource extends Resource
                     ->schema([
                         TextEntry::make('created_at')
                             ->label('Dibuat Pada')
-                            ->dateTime('d F Y H:i'),
+                            ->dateTime('d M Y H:i'),
                         TextEntry::make('updated_at')
                             ->label('Diperbarui Pada')
-                            ->dateTime('d F Y H:i'),
+                            ->dateTime('d M Y H:i'),
                         TextEntry::make('deleted_at')
                             ->label('Dihapus Pada')
-                            ->dateTime('d F Y H:i')
+                            ->dateTime('d M Y H:i')
                             ->visible(fn(Attendance $attendance) => $attendance->trashed()),
                     ]),
             ]);

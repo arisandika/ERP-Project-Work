@@ -13,6 +13,11 @@ class EditDeliveryOrder extends EditRecord
 {
     protected static string $resource = DeliveryOrderResource::class;
 
+    public function getTitle(): string
+    {
+        return 'Edit Surat Jalan';
+    }
+
     protected function getHeaderActions(): array
     {
         return [
@@ -45,10 +50,5 @@ class EditDeliveryOrder extends EditRecord
             Actions\ForceDeleteAction::make(),
             Actions\RestoreAction::make(),
         ];
-    }
-
-    protected function getRedirectUrl(): string
-    {
-        return $this->getResource()::getUrl('index');
     }
 }

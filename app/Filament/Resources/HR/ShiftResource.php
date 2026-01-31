@@ -85,19 +85,19 @@ class ShiftResource extends Resource
 
                 Tables\Columns\TextColumn::make('created_at')
                     ->label('Created At')
-                    ->dateTime('d F Y')
+                    ->dateTime('d M Y')
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
 
                 Tables\Columns\TextColumn::make('updated_at')
                     ->label('Updated At')
-                    ->dateTime('d F Y')
+                    ->dateTime('d M Y')
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
 
                 Tables\Columns\TextColumn::make('deleted_at')
                     ->label('Deleted At')
-                    ->dateTime('d F Y')
+                    ->dateTime('d M Y')
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
             ])
@@ -106,11 +106,14 @@ class ShiftResource extends Resource
                     ->form([
                         Forms\Components\DatePicker::make('created_from')
                             ->label('Created From')
-                            ->displayFormat('d/m/Y')
+                            ->required()
+                            ->displayFormat('d M Y')
                             ->native(false),
+
                         Forms\Components\DatePicker::make('created_until')
                             ->label('Created Until')
-                            ->displayFormat('d/m/Y')
+                            ->required()
+                            ->displayFormat('d M Y')
                             ->native(false),
                     ])
                     ->query(function (Builder $query, array $data): Builder {
@@ -137,6 +140,7 @@ class ShiftResource extends Resource
 
                         return $indicators;
                     }),
+                    
                 Tables\Filters\TrashedFilter::make()
                     ->label('Deleted Status')
                     ->native(false),
@@ -175,13 +179,13 @@ class ShiftResource extends Resource
                     ->schema([
                         TextEntry::make('created_at')
                             ->label('Dibuat Pada')
-                            ->dateTime('d F Y H:i'),
+                            ->dateTime('d M Y H:i'),
                         TextEntry::make('updated_at')
                             ->label('Diperbarui Pada')
-                            ->dateTime('d F Y H:i'),
+                            ->dateTime('d M Y H:i'),
                         TextEntry::make('deleted_at')
                             ->label('Dihapus Pada')
-                            ->dateTime('d F Y H:i')
+                            ->dateTime('d M Y H:i')
                             ->visible(fn(Shift $shift) => $shift->trashed()),
                     ]),
             ]);
@@ -197,10 +201,10 @@ class ShiftResource extends Resource
     public static function getPages(): array
     {
         return [
-            'index'  => Pages\ListShifts::route('/'),
+            'index' => Pages\ListShifts::route('/'),
             'create' => Pages\CreateShift::route('/create'),
-            'view'   => Pages\ViewShift::route('/{record}'),
-            'edit'   => Pages\EditShift::route('/{record}/edit'),
+            'view' => Pages\ViewShift::route('/{record}'),
+            'edit' => Pages\EditShift::route('/{record}/edit'),
         ];
     }
 

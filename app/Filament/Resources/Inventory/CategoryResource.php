@@ -12,6 +12,7 @@ use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Support\Carbon;
 
 class CategoryResource extends Resource
 {
@@ -73,13 +74,13 @@ class CategoryResource extends Resource
 
                 Tables\Columns\TextColumn::make('created_at')
                     ->label('Dibuat Pada')
-                    ->dateTime('d F Y')
+                    ->dateTime('d M Y')
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
 
                 Tables\Columns\TextColumn::make('updated_at')
                     ->label('Diperbarui Pada')
-                    ->dateTime('d F Y')
+                    ->dateTime('d M Y')
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
             ])
@@ -87,24 +88,40 @@ class CategoryResource extends Resource
                 Tables\Filters\Filter::make('created_at')
                     ->form([
                         Forms\Components\DatePicker::make('created_from')
-                            ->label('Dibuat Dari')
-                            ->displayFormat('d/m/Y')
+                            ->label('Created From')
+                            ->required()
+                            ->displayFormat('d M Y')
                             ->native(false),
+
                         Forms\Components\DatePicker::make('created_until')
-                            ->label('Dibuat Sampai')
-                            ->displayFormat('d/m/Y')
+                            ->label('Created Until')
+                            ->required()
+                            ->displayFormat('d M Y')
                             ->native(false),
                     ])
                     ->query(function (Builder $query, array $data): Builder {
                         return $query
                             ->when(
                                 $data['created_from'],
-                                fn(Builder $query, $date): Builder => $query->whereDate('created_at', '>=', $date)
+                                fn(Builder $query, $date): Builder => $query->whereDate('created_at', '>=', $date),
                             )
                             ->when(
                                 $data['created_until'],
-                                fn(Builder $query, $date): Builder => $query->whereDate('created_at', '<=', $date)
+                                fn(Builder $query, $date): Builder => $query->whereDate('created_at', '<=', $date),
                             );
+                    })
+                    ->indicateUsing(function (array $data): array {
+                        $indicators = [];
+
+                        if ($data['created_from'] ?? null) {
+                            $indicators[] = 'Created from ' . Carbon::parse($data['created_from'])->toFormattedDateString();
+                        }
+
+                        if ($data['created_until'] ?? null) {
+                            $indicators[] = 'Created until ' . Carbon::parse($data['created_until'])->toFormattedDateString();
+                        }
+
+                        return $indicators;
                     }),
             ])
             ->actions([
@@ -144,10 +161,10 @@ class CategoryResource extends Resource
                     ->schema([
                         TextEntry::make('created_at')
                             ->label('Dibuat Pada')
-                            ->dateTime('d F Y H:i'),
+                            ->dateTime('d M Y H:i'),
                         TextEntry::make('updated_at')
                             ->label('Diperbarui Pada')
-                            ->dateTime('d F Y H:i'),
+                            ->dateTime('d M Y H:i'),
                     ]),
             ]);
     }
@@ -162,10 +179,10 @@ class CategoryResource extends Resource
     public static function getPages(): array
     {
         return [
-            'index'  => Pages\ListCategories::route('/'),
+            'index' => Pages\ListCategories::route('/'),
             'create' => Pages\CreateCategory::route('/create'),
-            'view'   => Pages\ViewCategory::route('/{record}'),
-            'edit'   => Pages\EditCategory::route('/{record}/edit'),
+            'view' => Pages\ViewCategory::route('/{record}'),
+            'edit' => Pages\EditCategory::route('/{record}/edit'),
         ];
     }
 }

@@ -4,6 +4,7 @@ namespace App\Filament\Resources\Sales\DeliveryOrderResource\Pages;
 
 use App\Filament\Resources\Sales\DeliveryOrderResource;
 use Filament\Actions;
+use Filament\Actions\Action;
 use Filament\Resources\Pages\ViewRecord;
 
 class ViewDeliveryOrder extends ViewRecord
@@ -14,6 +15,15 @@ class ViewDeliveryOrder extends ViewRecord
     {
         return [
             Actions\EditAction::make(),
+            Action::make('back')
+                ->url(static::getResource()::getUrl()) 
+                ->button()
+                ->color('gray'),
         ];
+    }
+
+    public function getTitle(): string
+    {
+        return 'Lihat Surat Jalan';
     }
 }

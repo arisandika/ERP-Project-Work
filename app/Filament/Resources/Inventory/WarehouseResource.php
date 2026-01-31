@@ -13,6 +13,7 @@ use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 
 class WarehouseResource extends Resource
@@ -124,13 +125,25 @@ class WarehouseResource extends Resource
                     ->label('Jumlah Produk')
                     ->badge()
                     ->color('info')
-                    ->suffix(' items'),
+                    ->suffix(' Items'),
 
                 Tables\Columns\TextColumn::make('total_qty')
                     ->label('Total Stock')
+                    ->numeric()
+                    ->sortable()
                     ->badge()
-                    ->color('success')
-                    ->suffix(' unit'),
+                    ->color(fn($state) => match (true) {
+                        $state <= 0 => 'danger',
+                        $state <= 5 => 'danger',
+                        $state <= 10 => 'warning',
+                        default => 'success',
+                    })
+                    ->icon(fn($state) => match (true) {
+                        $state <= 0 => 'heroicon-m-x-circle',
+                        $state <= 10 => 'heroicon-m-exclamation-triangle',
+                        default => 'heroicon-m-check-circle',
+                    })
+                    ->suffix(' Qty'),
 
                 Tables\Columns\ToggleColumn::make('is_active')
                     ->label('Aktif')
@@ -140,13 +153,13 @@ class WarehouseResource extends Resource
 
                 Tables\Columns\TextColumn::make('created_at')
                     ->label('Dibuat Pada')
-                    ->dateTime('d F Y H:i')
+                    ->dateTime('d M Y H:i')
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
 
                 Tables\Columns\TextColumn::make('updated_at')
                     ->label('Diperbarui Pada')
-                    ->dateTime('d F Y H:i')
+                    ->dateTime('d M Y H:i')
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
             ])
@@ -159,15 +172,42 @@ class WarehouseResource extends Resource
 
                 Tables\Filters\Filter::make('created_at')
                     ->form([
-                        Forms\Components\DatePicker::make('from')->label('Dari'),
-                        Forms\Components\DatePicker::make('until')->label('Sampai'),
+                        Forms\Components\DatePicker::make('created_from')
+                            ->label('Created From')
+                            ->required()
+                            ->displayFormat('d M Y')
+                            ->native(false),
+
+                        Forms\Components\DatePicker::make('created_until')
+                            ->label('Created Until')
+                            ->required()
+                            ->displayFormat('d M Y')
+                            ->native(false),
                     ])
-                    ->query(
-                        fn(Builder $query, array $data) =>
-                        $query
-                            ->when($data['from'], fn($q, $date) => $q->whereDate('created_at', '>=', $date))
-                            ->when($data['until'], fn($q, $date) => $q->whereDate('created_at', '<=', $date))
-                    ),
+                    ->query(function (Builder $query, array $data): Builder {
+                        return $query
+                            ->when(
+                                $data['created_from'],
+                                fn(Builder $query, $date): Builder => $query->whereDate('created_at', '>=', $date),
+                            )
+                            ->when(
+                                $data['created_until'],
+                                fn(Builder $query, $date): Builder => $query->whereDate('created_at', '<=', $date),
+                            );
+                    })
+                    ->indicateUsing(function (array $data): array {
+                        $indicators = [];
+
+                        if ($data['created_from'] ?? null) {
+                            $indicators[] = 'Created from ' . Carbon::parse($data['created_from'])->toFormattedDateString();
+                        }
+
+                        if ($data['created_until'] ?? null) {
+                            $indicators[] = 'Created until ' . Carbon::parse($data['created_until'])->toFormattedDateString();
+                        }
+
+                        return $indicators;
+                    }),
             ])
             ->actions([
                 Tables\Actions\ViewAction::make(),
@@ -187,7 +227,7 @@ class WarehouseResource extends Resource
                     'stocks as total_products' => function ($q) {
                         $q->select(DB::raw('COUNT(DISTINCT product_id)'));
                     },
-                    'stocks as total_qty'      => function ($q) {
+                    'stocks as total_qty' => function ($q) {
                         $q->select(DB::raw('SUM(qty)'));
                     },
                 ]);
@@ -242,11 +282,11 @@ class WarehouseResource extends Resource
 
                         TextEntry::make('created_at')
                             ->label('Dibuat Pada')
-                            ->dateTime('d F Y H:i'),
+                            ->dateTime('d M Y H:i'),
 
                         TextEntry::make('updated_at')
                             ->label('Diperbarui Pada')
-                            ->dateTime('d F Y H:i'),
+                            ->dateTime('d M Y H:i'),
                     ]),
             ]);
     }
@@ -261,10 +301,10 @@ class WarehouseResource extends Resource
     public static function getPages(): array
     {
         return [
-            'index'  => Pages\ListWarehouses::route('/'),
+            'index' => Pages\ListWarehouses::route('/'),
             'create' => Pages\CreateWarehouse::route('/create'),
-            'view'   => Pages\ViewWarehouse::route('/{record}'),
-            'edit'   => Pages\EditWarehouse::route('/{record}/edit'),
+            'view' => Pages\ViewWarehouse::route('/{record}'),
+            'edit' => Pages\EditWarehouse::route('/{record}/edit'),
         ];
     }
 }

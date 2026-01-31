@@ -77,14 +77,16 @@ class AttendanceHistoryResource extends Resource
             ->filters([
                 Tables\Filters\Filter::make('date')
                     ->form([
-                        Forms\Components\DatePicker::make('from')
-                            ->label('Dari Tanggal')
-                            ->displayFormat('d/m/Y')
+                        Forms\Components\DatePicker::make('created_from')
+                            ->label('Created From')
+                            ->required()
+                            ->displayFormat('d M Y')
                             ->native(false),
 
-                        Forms\Components\DatePicker::make('until')
-                            ->label('Sampai Tanggal')
-                            ->displayFormat('d/m/Y')
+                        Forms\Components\DatePicker::make('created_until')
+                            ->label('Created Until')
+                            ->required()
+                            ->displayFormat('d M Y')
                             ->native(false),
                     ])
                     ->query(function (Builder $query, array $data): Builder {
@@ -151,10 +153,10 @@ class AttendanceHistoryResource extends Resource
                     ->schema([
                         TextEntry::make('created_at')
                             ->label('Dibuat Pada')
-                            ->dateTime('d F Y H:i'),
+                            ->dateTime('d M Y H:i'),
                         TextEntry::make('updated_at')
                             ->label('Diperbarui Pada')
-                            ->dateTime('d F Y H:i'),
+                            ->dateTime('d M Y H:i'),
                     ]),
             ]);
     }

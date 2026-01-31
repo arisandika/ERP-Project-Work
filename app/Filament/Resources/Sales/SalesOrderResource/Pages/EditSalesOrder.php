@@ -20,8 +20,8 @@ class EditSalesOrder extends EditRecord
         ];
     }
 
-    protected function getRedirectUrl(): string
+    public function getTitle(): string
     {
-        return $this->getResource()::getUrl('index');
+        return 'Edit Pesanan';
     }
 }

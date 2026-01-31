@@ -1,48 +1,171 @@
 <!DOCTYPE html>
 <html>
+
 <head>
     <title>Surat Jalan - {{ $record->do_number }}</title>
     <style>
-        @page { margin: 25px 30px; }
-        body { font-family: 'Helvetica', sans-serif; font-size: 11px; color: #333; line-height: 1.3; }
+        @page {
+            margin: 25px 30px;
+        }
 
-        /* --- HEADER --- */
-        .header-table { width: 100%; border-collapse: collapse; margin-bottom: 15px; }
-        .header-table .logo-cell { width: 15%; vertical-align: middle; }
-        .header-table .logo-cell img { max-width: 80px; height: auto; }
-        .header-table .company-info-cell { vertical-align: middle; padding-left: 20px; }
-        .header-table .company-name { font-size: 24px; font-weight: bold; margin: 0; text-transform: uppercase; }
-        .header-table .company-tagline { font-size: 12px; margin: 2px 0; font-weight: bold; color: #555; }
-        .header-table .company-address { font-size: 10px; margin: 0; color: #444; }
+        body {
+            font-family: 'Helvetica', sans-serif;
+            font-size: 11px;
+            color: #333;
+            line-height: 1.3;
+        }
 
-        .header-divider { border-bottom: 3px double #333; margin-bottom: 20px; }
+        .header-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 15px;
+        }
 
-        /* --- TITLE --- */
-        .document-title { text-align: center; margin-bottom: 25px; }
-        .document-title h1 { margin: 0; font-size: 20px; text-transform: uppercase; letter-spacing: 2px; font-weight: 800; border: 2px solid #333; display: inline-block; padding: 5px 20px; }
-        .document-title p { margin: 5px 0 0 0; font-size: 12px; font-weight: bold; }
+        .header-table .logo-cell {
+            width: 15%;
+            vertical-align: middle;
+        }
 
-        /* --- DETAILS --- */
-        .details-table { width: 100%; margin-bottom: 20px; }
-        .details-table td { vertical-align: top; padding: 3px; font-size: 11px; }
-        .client-box { border: 1px solid #ccc; padding: 10px; border-radius: 4px; background: #fcfcfc; min-height: 80px; }
+        .header-table .logo-cell img {
+            max-width: 80px;
+            height: auto;
+        }
 
-        /* --- ITEMS TABLE --- */
-        .items-table { width: 100%; border-collapse: collapse; margin-bottom: 30px; }
-        .items-table th { background-color: #eee; border: 1px solid #999; padding: 8px; text-align: left; font-weight: bold; font-size: 11px; }
-        .items-table td { border: 1px solid #999; padding: 8px; font-size: 11px; }
-        .items-table .text-right { text-align: right; }
-        .items-table .text-center { text-align: center; }
+        .header-table .company-info-cell {
+            vertical-align: middle;
+            padding-left: 20px;
+        }
 
-        /* --- SIGNATURE --- */
-        .signature-table { width: 100%; margin-top: 40px; text-align: center; page-break-inside: avoid; }
-        .signature-table td { padding: 5px; vertical-align: top; }
-        .signature-header { font-weight: bold; margin-bottom: 40px; display: block; }
-        .signature-line { border-top: 1px solid #333; width: 80%; margin: 60px auto 5px auto; }
+        .header-table .company-name {
+            font-size: 24px;
+            font-weight: bold;
+            margin: 0;
+            text-transform: uppercase;
+        }
 
-        .footer-note { font-size: 9px; font-style: italic; color: #555; margin-top: 20px; border-top: 1px dashed #ccc; padding-top: 5px; }
+        .header-table .company-tagline {
+            font-size: 12px;
+            margin: 2px 0;
+            font-weight: bold;
+            color: #555;
+        }
+
+        .header-table .company-address {
+            font-size: 10px;
+            margin: 0;
+            color: #444;
+        }
+
+        .header-divider {
+            border-bottom: 3px double #333;
+            margin-bottom: 20px;
+        }
+
+        .document-title {
+            text-align: center;
+            margin-bottom: 25px;
+        }
+
+        .document-title h1 {
+            margin: 0;
+            font-size: 20px;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            font-weight: 800;
+            border: 2px solid #333;
+            display: inline-block;
+            padding: 5px 20px;
+        }
+
+        .document-title p {
+            margin: 5px 0 0 0;
+            font-size: 12px;
+            font-weight: bold;
+        }
+
+        .details-table {
+            width: 100%;
+            margin-bottom: 20px;
+        }
+
+        .details-table td {
+            vertical-align: top;
+            padding: 3px;
+            font-size: 11px;
+        }
+
+        .client-box {
+            border: 1px solid #ccc;
+            padding: 10px;
+            border-radius: 4px;
+            background: #fcfcfc;
+            min-height: 80px;
+        }
+
+        .items-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 30px;
+        }
+
+        .items-table th {
+            background-color: #eee;
+            border: 1px solid #999;
+            padding: 8px;
+            text-align: left;
+            font-weight: bold;
+            font-size: 11px;
+        }
+
+        .items-table td {
+            border: 1px solid #999;
+            padding: 8px;
+            font-size: 11px;
+        }
+
+        .items-table .text-right {
+            text-align: right;
+        }
+
+        .items-table .text-center {
+            text-align: center;
+        }
+
+        .signature-table {
+            width: 100%;
+            margin-top: 40px;
+            text-align: center;
+            page-break-inside: avoid;
+        }
+
+        .signature-table td {
+            padding: 5px;
+            vertical-align: top;
+        }
+
+        .signature-header {
+            font-weight: bold;
+            margin-bottom: 40px;
+            display: block;
+        }
+
+        .signature-line {
+            border-top: 1px solid #333;
+            width: 80%;
+            margin: 60px auto 5px auto;
+        }
+
+        .footer-note {
+            font-size: 9px;
+            font-style: italic;
+            color: #555;
+            margin-top: 20px;
+            border-top: 1px dashed #ccc;
+            padding-top: 5px;
+        }
     </style>
 </head>
+
 <body>
 
     <!-- 1. HEADER PERUSAHAAN -->
@@ -76,7 +199,8 @@
             <td style="width: 55%; padding-right: 20px;">
                 <strong>Dikirim Kepada:</strong>
                 <div class="client-box">
-                    <strong style="font-size: 13px; text-transform: uppercase;">{{ $record->customer->name ?? 'UMUM' }}</strong><br>
+                    <strong
+                        style="font-size: 13px; text-transform: uppercase;">{{ $record->customer->name ?? 'UMUM' }}</strong><br>
                     <div style="margin-top: 5px; color: #444;">
                         {{ $record->customer->address ?? 'Alamat tidak tersedia' }}<br>
                         Telp: {{ $record->customer->phone ?? '-' }}
@@ -130,10 +254,13 @@
                     </td>
                     <td class="text-center">{{ $item->uom ?? 'Pcs' }}</td>
                     <td class="text-center">{{ number_format($item->qty_ordered, 0, ',', '.') }}</td>
-                    <td class="text-center" style="font-weight: bold;">{{ number_format($item->qty_delivered, 0, ',', '.') }}</td>
+                    <td class="text-center" style="font-weight: bold;">
+                        {{ number_format($item->qty_delivered, 0, ',', '.') }}</td>
                 </tr>
             @empty
-                <tr><td colspan="6" class="text-center">Data item tidak ditemukan.</td></tr>
+                <tr>
+                    <td colspan="6" class="text-center">Data item tidak ditemukan.</td>
+                </tr>
             @endforelse
         </tbody>
     </table>
@@ -169,9 +296,11 @@
                 @if(isset($barcode))
                     <div style="padding: 5px;">
                         <!-- PERBAIKAN: width: 100%, max-width: 160px agar pas di kolom, height: auto agar proporsional -->
-                        <img src="data:image/png;base64,{{ $barcode }}" alt="barcode" style="width: 100%; max-width: 160px; height: auto;">
+                        <img src="data:image/png;base64,{{ $barcode }}" alt="barcode"
+                            style="width: 100%; max-width: 160px; height: auto;">
                         <br>
-                        <span style="font-size: 8px; letter-spacing: 1px; display: block; margin-top: 3px;">{{ $record->do_number }}</span>
+                        <span
+                            style="font-size: 8px; letter-spacing: 1px; display: block; margin-top: 3px;">{{ $record->do_number }}</span>
                     </div>
                 @endif
             </td>
@@ -184,4 +313,5 @@
     </p>
 
 </body>
+
 </html>

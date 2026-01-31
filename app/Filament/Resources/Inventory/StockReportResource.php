@@ -44,6 +44,8 @@ class StockReportResource extends Resource
                     ->label('Kategori')
                     ->searchable()
                     ->sortable()
+                    ->badge()
+                    ->color('indigo')
                     ->icon('heroicon-o-tag'),
 
                 Tables\Columns\TextColumn::make('warehouses')
@@ -56,8 +58,10 @@ class StockReportResource extends Resource
                             ->unique()
                             ->implode(', ');
                     })
+                    ->searchable()
+                    ->sortable()
                     ->badge()
-                    ->wrap()
+                    ->color('info')
                     ->icon('heroicon-o-building-office'),
 
                 Tables\Columns\TextColumn::make('total_stock')
@@ -77,7 +81,7 @@ class StockReportResource extends Resource
                         $state <= 10 => 'heroicon-m-exclamation-triangle',
                         default => 'heroicon-m-check-circle',
                     })
-                    ->suffix(fn($record) => ' ' . ($record->unit->symbol ?? $record->unit->name ?? '')),
+                    ->suffix(' Qty'),
 
                 Tables\Columns\TextColumn::make('purchase_price')
                     ->label('Harga Beli')

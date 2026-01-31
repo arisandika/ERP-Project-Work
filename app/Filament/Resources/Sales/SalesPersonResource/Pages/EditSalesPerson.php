@@ -10,6 +10,11 @@ class EditSalesPerson extends EditRecord
 {
     protected static string $resource = SalesPersonResource::class;
 
+    public function getTitle(): string
+    {
+        return 'Edit PIC Sales';
+    }
+
     protected function getHeaderActions(): array
     {
         return [

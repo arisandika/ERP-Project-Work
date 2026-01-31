@@ -21,6 +21,7 @@ use Filament\Tables\Columns\ToggleColumn;
 use Filament\Tables\Filters\TrashedFilter;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
+use Illuminate\Support\Carbon;
 
 class PromoCodeResource extends Resource
 {
@@ -112,7 +113,7 @@ class PromoCodeResource extends Resource
         return $table
             ->columns([
                 TextColumn::make('code')
-                    ->label('Kode')
+                    ->label('Kode Produk')
                     ->weight('bold')
                     ->copyable()
                     ->searchable()
@@ -122,7 +123,7 @@ class PromoCodeResource extends Resource
                     ->label('Nilai')
                     ->formatStateUsing(fn ($state, PromoCode $record) =>
                         $record->type === 'fixed'
-                            ? 'Rp ' . number_format($state, 0, ',', '.')
+                            ? 'IDR ' . number_format($state, 0, ',', '.')
                             : number_format($state, 0) . '%'
                     )
                     ->color(fn (PromoCode $record) => $record->type === 'fixed' ? 'success' : 'info')
@@ -143,11 +144,52 @@ class PromoCodeResource extends Resource
                     ->description(fn (PromoCode $record) => $record->end_date ? 's/d ' . $record->end_date->format('d M Y') : 'Selamanya')
                     ->sortable(),
             ])
-            ->defaultSort('created_at', 'desc')
             ->filters([
-                TrashedFilter::make(), // Filter Tong Sampah
+                Tables\Filters\Filter::make('created_at')
+                    ->form([
+                        Forms\Components\DatePicker::make('created_from')
+                            ->label('Created From')
+                            ->required()
+                            ->displayFormat('d M Y')
+                            ->native(false),
+
+                        Forms\Components\DatePicker::make('created_until')
+                            ->label('Created Until')
+                            ->required()
+                            ->displayFormat('d M Y')
+                            ->native(false),
+                    ])
+                    ->query(function (Builder $query, array $data): Builder {
+                        return $query
+                            ->when(
+                                $data['created_from'],
+                                fn(Builder $query, $date): Builder => $query->whereDate('created_at', '>=', $date),
+                            )
+                            ->when(
+                                $data['created_until'],
+                                fn(Builder $query, $date): Builder => $query->whereDate('created_at', '<=', $date),
+                            );
+                    })
+                    ->indicateUsing(function (array $data): array {
+                        $indicators = [];
+
+                        if ($data['created_from'] ?? null) {
+                            $indicators[] = 'Created from ' . Carbon::parse($data['created_from'])->toFormattedDateString();
+                        }
+
+                        if ($data['created_until'] ?? null) {
+                            $indicators[] = 'Created until ' . Carbon::parse($data['created_until'])->toFormattedDateString();
+                        }
+
+                        return $indicators;
+                    }),
+                    
+                Tables\Filters\TrashedFilter::make()
+                    ->label('Deleted Status')
+                    ->native(false),
             ])
             ->actions([
+                Tables\Actions\ViewAction::make(),
                 Tables\Actions\EditAction::make(),
                 Tables\Actions\DeleteAction::make(),
                 Tables\Actions\ForceDeleteAction::make(),
@@ -159,7 +201,8 @@ class PromoCodeResource extends Resource
                     Tables\Actions\ForceDeleteBulkAction::make(),
                     Tables\Actions\RestoreBulkAction::make(),
                 ]),
-            ]);
+            ])
+            ->defaultSort('created_at', 'desc');
     }
 
     public static function getRelations(): array

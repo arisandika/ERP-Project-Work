@@ -80,7 +80,7 @@ class LeaveApprovalResource extends Resource
                     Forms\Components\Select::make('status')
                         ->label('Status Persetujuan')
                         ->options([
-                            'pending'  => 'Menunggu Persetujuan',
+                            'pending' => 'Menunggu Persetujuan',
                             'approved' => 'Disetujui',
                             'rejected' => 'Ditolak',
                         ])
@@ -135,13 +135,13 @@ class LeaveApprovalResource extends Resource
                     ->colors([
                         'warning' => 'pending',
                         'success' => 'approved',
-                        'danger'  => 'rejected',
+                        'danger' => 'rejected',
                     ])
                     ->formatStateUsing(fn(string $state) => match ($state) {
-                        'pending'  => 'Menunggu',
+                        'pending' => 'Menunggu',
                         'approved' => 'Disetujui',
                         'rejected' => 'Ditolak',
-                        default    => ucwords($state),
+                        default => ucwords($state),
                     }),
 
                 Tables\Columns\TextColumn::make('approver.full_name')
@@ -150,39 +150,30 @@ class LeaveApprovalResource extends Resource
 
                 Tables\Columns\TextColumn::make('created_at')
                     ->label('Diajukan')
-                    ->dateTime('d F Y H:i')
+                    ->dateTime('d M Y H:i')
                     ->sortable(),
             ])
             ->filters([
                 Tables\Filters\SelectFilter::make('status')
                     ->options([
-                        'pending'  => 'Menunggu Persetujuan',
+                        'pending' => 'Menunggu Persetujuan',
                         'approved' => 'Disetujui',
                         'rejected' => 'Ditolak',
                     ])
                     ->label('Status'),
 
-                Tables\Filters\Filter::make('tanggal_pengajuan')
-                    ->form([
-                        Forms\Components\DatePicker::make('from')->label('Dari'),
-                        Forms\Components\DatePicker::make('until')->label('Sampai'),
-                    ])
-                    ->query(
-                        fn(Builder $query, array $data): Builder =>
-                        $query
-                            ->when($data['from'], fn($q, $date) => $q->whereDate('start_date', '>=', $date))
-                            ->when($data['until'], fn($q, $date) => $q->whereDate('end_date', '<=', $date))
-                    ),
-
                 Tables\Filters\Filter::make('created_at')
                     ->form([
                         Forms\Components\DatePicker::make('created_from')
                             ->label('Created From')
-                            ->displayFormat('d/m/Y')
+                            ->required()
+                            ->displayFormat('d M Y')
                             ->native(false),
+
                         Forms\Components\DatePicker::make('created_until')
                             ->label('Created Until')
-                            ->displayFormat('d/m/Y')
+                            ->required()
+                            ->displayFormat('d M Y')
                             ->native(false),
                     ])
                     ->query(function (Builder $query, array $data): Builder {
@@ -209,6 +200,7 @@ class LeaveApprovalResource extends Resource
 
                         return $indicators;
                     }),
+                    
                 Tables\Filters\TrashedFilter::make()
                     ->label('Deleted Status')
                     ->native(false),
@@ -260,10 +252,10 @@ class LeaveApprovalResource extends Resource
                             ->label('Status')
                             ->badge()
                             ->color(fn(string $state) => match ($state) {
-                                'pending'  => 'warning',
+                                'pending' => 'warning',
                                 'approved' => 'success',
                                 'rejected' => 'danger',
-                                default    => 'secondary',
+                                default => 'secondary',
                             }),
 
                         TextEntry::make('approver.full_name')
@@ -272,7 +264,7 @@ class LeaveApprovalResource extends Resource
 
                         TextEntry::make('approved_at')
                             ->label('Waktu Persetujuan')
-                            ->dateTime('d F Y H:i')
+                            ->dateTime('d M Y H:i')
                             ->visible(fn($record) => $record->approved_at !== null),
 
                         TextEntry::make('approval_note')
@@ -286,15 +278,15 @@ class LeaveApprovalResource extends Resource
                     ->schema([
                         TextEntry::make('created_at')
                             ->label('Diajukan Pada')
-                            ->dateTime('d F Y H:i'),
+                            ->dateTime('d M Y H:i'),
 
                         TextEntry::make('updated_at')
                             ->label('Diperbarui Pada')
-                            ->dateTime('d F Y H:i'),
+                            ->dateTime('d M Y H:i'),
 
                         TextEntry::make('deleted_at')
                             ->label('Dihapus Pada')
-                            ->dateTime('d F Y H:i')
+                            ->dateTime('d M Y H:i')
                             ->visible(fn($record) => $record->trashed()),
                     ]),
             ]);
@@ -311,8 +303,8 @@ class LeaveApprovalResource extends Resource
     {
         return [
             'index' => Pages\ListLeaveApprovals::route('/'),
-            'view'  => Pages\ViewLeaveApproval::route('/{record}'),
-            'edit'  => Pages\EditLeaveApproval::route('/{record}/edit'),
+            'view' => Pages\ViewLeaveApproval::route('/{record}'),
+            'edit' => Pages\EditLeaveApproval::route('/{record}/edit'),
         ];
     }
 

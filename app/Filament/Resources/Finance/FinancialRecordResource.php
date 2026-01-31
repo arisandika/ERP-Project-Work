@@ -38,7 +38,9 @@ class FinancialRecordResource extends Resource
                                 Forms\Components\DatePicker::make('transaction_date')
                                     ->label('Tanggal')
                                     ->required()
-                                    ->default(now()),
+                                    ->displayFormat('d M Y')
+                                    ->default(now())
+                                    ->native(false),
 
                                 Forms\Components\Select::make('type')
                                     ->label('Jenis Transaksi')
@@ -61,7 +63,7 @@ class FinancialRecordResource extends Resource
                                 Forms\Components\TextInput::make('amount')
                                     ->label('Nominal')
                                     ->numeric()
-                                    ->prefix('Rp')
+                                    ->prefix('IDR')
                                     ->required(),
 
                                 Forms\Components\Select::make('category')

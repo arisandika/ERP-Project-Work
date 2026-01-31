@@ -21,9 +21,7 @@ class SalesOrderObserver
             $newStatus = $salesOrder->status;
             $oldStatus = $salesOrder->getOriginal('status');
 
-            // --------------------------------------------------------
             // 1. KASUS: DEAL (Draft -> Confirmed)
-            // --------------------------------------------------------
             if ($newStatus === 'confirmed' && $oldStatus !== 'confirmed') {
 
                 DB::transaction(function () use ($salesOrder) {
@@ -47,9 +45,7 @@ class SalesOrderObserver
                 Notification::make()->title('Stok & Promo Berhasil di-Booking')->success()->send();
             }
 
-            // --------------------------------------------------------
             // 2. KASUS: BATAL (Confirmed -> Cancelled)
-            // --------------------------------------------------------
             if ($newStatus === 'cancelled' && $oldStatus === 'confirmed') {
 
                 DB::transaction(function () use ($salesOrder) {
@@ -72,9 +68,7 @@ class SalesOrderObserver
         }
     }
 
-    // --------------------------------------------------------
     // 3. KASUS: DIHAPUS (Hapus Permanen)
-    // --------------------------------------------------------
     public function deleted(SalesOrder $salesOrder): void
     {
 

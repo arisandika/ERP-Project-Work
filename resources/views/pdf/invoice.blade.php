@@ -15,7 +15,6 @@
             line-height: 1.3;
         }
 
-        /* --- HEADER --- */
         .header-table {
             width: 100%;
             border-collapse: collapse;
@@ -62,7 +61,6 @@
             margin-bottom: 25px;
         }
 
-        /* --- TITLE & STATUS --- */
         .document-title {
             text-align: center;
             margin-bottom: 25px;
@@ -94,7 +92,6 @@
             font-weight: bold;
         }
 
-        /* --- DETAILS --- */
         .details-table {
             width: 100%;
             margin-bottom: 30px;
@@ -110,7 +107,6 @@
             padding-left: 10px;
         }
 
-        /* --- ITEMS TABLE --- */
         .items-table {
             width: 100%;
             border-collapse: collapse;
@@ -143,7 +139,6 @@
             background-color: #fafafa;
         }
 
-        /* --- TOTALS --- */
         .totals-section {
             width: 100%;
             display: table;
@@ -193,7 +188,6 @@
             background-color: #f4f4f4;
         }
 
-        /* --- FOOTER & SIGNATURE --- */
         .notes-section {
             margin-top: 30px;
             font-style: italic;

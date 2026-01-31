@@ -9,6 +9,11 @@ class CreateSalesPerson extends CreateRecord
 {
     protected static string $resource = SalesPersonResource::class;
 
+    public function getTitle(): string
+    {
+        return 'Tambah PIC Sales';
+    }
+
     protected function mutateFormDataBeforeCreate(array $data): array
     {
         if (($data['type'] ?? null) === 'internal' && !empty($data['employee_id'])) {
