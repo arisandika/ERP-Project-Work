@@ -29,7 +29,35 @@ class PaymentsRelationManager extends RelationManager
         return $table
             ->recordTitleAttribute('payment_number')
             ->columns([
-                Tables\Columns\TextColumn::make('payment_number'),
+                Tables\Columns\TextColumn::make('payment_number')
+                    ->label('No. Pembayaran')
+                    ->sortable()
+                    ->searchable()
+                    ->weight('bold'),
+                Tables\Columns\TextColumn::make('payment_date')
+                    ->label('Tanggal Pembayaran')
+                    ->dateTime('d M Y H:i')
+                    ->sortable(),
+                Tables\Columns\TextColumn::make('amount')
+                    ->label('Jumlah Pembayaran')
+                    ->money('IDR', true)
+                    ->sortable(),
+                Tables\Columns\TextColumn::make('payment_method')
+                    ->label('Metode Pembayaran')
+                    ->badge()
+                    ->color('primary')
+                    ->formatStateUsing(fn (string $state): string => match ($state) {
+                        'bank_transfer' => 'Transfer Bank',
+                        'cash' => 'Tunai',
+                        'cheque' => 'Cek/Giro',
+                        'qris' => 'QRIS',
+                        default => $state,
+                    })
+                    ->sortable(),
+                Tables\Columns\TextColumn::make('notes')
+                    ->label('Catatan')
+                    ->limit(30)
+                    ->toggleable(isToggledHiddenByDefault: true),
             ])
             ->filters([
                 //

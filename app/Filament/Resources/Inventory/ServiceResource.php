@@ -13,6 +13,7 @@ use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Support\Carbon;
 
 class ServiceResource extends Resource
 {
@@ -45,7 +46,7 @@ class ServiceResource extends Resource
                                 Forms\Components\TextInput::make('price')
                                     ->label('Harga')
                                     ->numeric()
-                                    ->prefix('Rp')
+                                    ->prefix('IDR')
                                     ->required(),
 
                                 Forms\Components\Select::make('category_id')
@@ -86,13 +87,13 @@ class ServiceResource extends Resource
 
                 Tables\Columns\TextColumn::make('created_at')
                     ->label('Dibuat Pada')
-                    ->dateTime('d F Y')
+                    ->dateTime('d M Y')
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
 
                 Tables\Columns\TextColumn::make('updated_at')
                     ->label('Diperbarui Pada')
-                    ->dateTime('d F Y')
+                    ->dateTime('d M Y')
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
             ])
@@ -100,12 +101,15 @@ class ServiceResource extends Resource
                 Tables\Filters\Filter::make('created_at')
                     ->form([
                         Forms\Components\DatePicker::make('created_from')
-                            ->label('Dari Tanggal')
-                            ->displayFormat('d/m/Y')
+                            ->label('Created From')
+                            ->required()
+                            ->displayFormat('d M Y')
                             ->native(false),
+
                         Forms\Components\DatePicker::make('created_until')
-                            ->label('Sampai Tanggal')
-                            ->displayFormat('d/m/Y')
+                            ->label('Created Until')
+                            ->required()
+                            ->displayFormat('d M Y')
                             ->native(false),
                     ])
                     ->query(function (Builder $query, array $data): Builder {
@@ -123,11 +127,11 @@ class ServiceResource extends Resource
                         $indicators = [];
 
                         if ($data['created_from'] ?? null) {
-                            $indicators[] = 'Dari ' . Carbon::parse($data['created_from'])->toFormattedDateString();
+                            $indicators[] = 'Created from ' . Carbon::parse($data['created_from'])->toFormattedDateString();
                         }
 
                         if ($data['created_until'] ?? null) {
-                            $indicators[] = 'Sampai ' . Carbon::parse($data['created_until'])->toFormattedDateString();
+                            $indicators[] = 'Created until ' . Carbon::parse($data['created_until'])->toFormattedDateString();
                         }
 
                         return $indicators;
@@ -160,8 +164,8 @@ class ServiceResource extends Resource
                 Section::make('Waktu Pengelolaan')
                     ->columns(2)
                     ->schema([
-                        TextEntry::make('created_at')->label('Dibuat Pada')->dateTime('d F Y H:i'),
-                        TextEntry::make('updated_at')->label('Diperbarui Pada')->dateTime('d F Y H:i'),
+                        TextEntry::make('created_at')->label('Dibuat Pada')->dateTime('d M Y H:i'),
+                        TextEntry::make('updated_at')->label('Diperbarui Pada')->dateTime('d M Y H:i'),
                     ]),
             ]);
     }

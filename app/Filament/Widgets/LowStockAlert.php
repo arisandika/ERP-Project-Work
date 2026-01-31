@@ -43,21 +43,26 @@ class LowStockAlert extends BaseWidget
                     ->searchable()
                     ->sortable()
                     ->badge()
-                    ->color('info'),
+                    ->color('info')
+                    ->icon('heroicon-o-building-office'),
 
                 Tables\Columns\TextColumn::make('qty')
                     ->label('Stock Saat Ini')
                     ->numeric()
                     ->sortable()
                     ->badge()
-                    ->color(fn(int $state): string => match (true) {
+                    ->color(fn($state) => match (true) {
                         $state <= 0 => 'danger',
                         $state <= 5 => 'danger',
                         $state <= 10 => 'warning',
                         default => 'success',
                     })
-                    ->alignCenter()
-                    ->suffix(fn(ProductStock $record): string => ' ' . $record->product->unit->unit_name),
+                    ->icon(fn($state) => match (true) {
+                        $state <= 0 => 'heroicon-m-x-circle',
+                        $state <= 10 => 'heroicon-m-exclamation-triangle',
+                        default => 'heroicon-m-check-circle',
+                    })
+                    ->suffix(' Qty'),
 
                 Tables\Columns\TextColumn::make('status')
                     ->label('Status')
@@ -77,8 +82,9 @@ class LowStockAlert extends BaseWidget
             ])
             ->actions([
                 Tables\Actions\Action::make('view')
-                    ->label('Lihat')
+                    ->label('View')
                     ->icon('heroicon-o-eye')
+                    ->color('gray')
                     ->url(
                         fn(ProductStock $record): string =>
                         route('filament.admin.resources.inventory.products.view', [

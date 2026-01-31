@@ -1,30 +1,29 @@
 <?php
-
 namespace App\Filament\Resources\Sales;
 
 use App\Filament\Resources\Sales\SalesOrderResource\Pages;
-use App\Models\Sales\SalesOrder;
-use App\Models\Sales\Quotation;
 use App\Models\Sales\PromoCode;
-use Filament\Forms;
+use App\Models\Sales\Quotation;
+use App\Models\Sales\SalesOrder;
+use Filament\Forms\Components\Actions\Action as FormAction;
+use Filament\Forms\Components\DatePicker;
+use Filament\Forms\Components\Grid;
+use Filament\Forms\Components\Hidden;
+use Filament\Forms\Components\Repeater;
+use Filament\Forms\Components\Section;
+use Filament\Forms\Components\Select;
+use Filament\Forms\Components\Textarea;
+use Filament\Forms\Components\TextInput;
 use Filament\Forms\Form;
 use Filament\Forms\Get;
 use Filament\Forms\Set;
-use Filament\Forms\Components\Section;
-use Filament\Forms\Components\Grid;
-use Filament\Forms\Components\Repeater;
-use Filament\Forms\Components\Select;
-use Filament\Forms\Components\TextInput;
-use Filament\Forms\Components\Textarea;
-use Filament\Forms\Components\DatePicker;
-use Filament\Forms\Components\Actions\Action as FormAction;
-use Filament\Forms\Components\Hidden;
 use Filament\Notifications\Notification;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
+use Illuminate\Support\Carbon;
 
 class SalesOrderResource extends Resource
 {
@@ -43,11 +42,10 @@ class SalesOrderResource extends Resource
     public static function form(Form $form): Form
     {
         return $form->schema([
-            // --- SECTION 1: HEADER ---
             Section::make('Informasi Pesanan')->schema([
                 Grid::make(3)->schema([
                     TextInput::make('order_number')
-                        ->label('Nomor Pesanan')
+                        ->label('No. Pesanan')
                         ->disabled()
                         ->dehydrated()
                         ->unique(ignoreRecord: true)
@@ -56,8 +54,10 @@ class SalesOrderResource extends Resource
                     DatePicker::make('order_date')
                         ->label('Tanggal Pesanan')
                         ->default(now())
+                        ->prefixIcon('heroicon-o-calendar-days')
                         ->required()
-                        ->prefixIcon('heroicon-o-calendar-days'),
+                        ->displayFormat('d M Y')
+                        ->native(false),
 
                     TextInput::make('customer_po_number')
                         ->label('No. PO Customer')
@@ -66,29 +66,28 @@ class SalesOrderResource extends Resource
                         ->maxLength(50),
                 ]),
 
-                // --- LOGIC COPY QUOTATION ---
-                Grid::make(1)->schema([
+                Grid::make(2)->schema([
                     Select::make('nx_quotation_id')
                         ->label('No. Penawaran (Ref)')
                         ->searchable()
                         ->preload()
                         ->live()
-                        ->getSearchResultsUsing(fn (string $search) => Quotation::query()
+                        ->getSearchResultsUsing(fn(string $search) => Quotation::query()
                             ->where('status', 'accepted')
                             ->whereDoesntHave('salesOrder')
                             ->where('quotation_number', 'like', "%{$search}%")
                             ->limit(50)
                             ->pluck('quotation_number', 'id'))
-                        ->getOptionLabelUsing(fn ($value): ?string => Quotation::find($value)?->quotation_number)
-                        ->options(fn () => Quotation::query()
+                        ->getOptionLabelUsing(fn($value): ?string => Quotation::find($value)?->quotation_number)
+                        ->options(fn() => Quotation::query()
                             ->where('status', 'accepted')
                             ->whereDoesntHave('salesOrder')
                             ->orderByDesc('created_at')
                             ->limit(50)
                             ->pluck('quotation_number', 'id'))
-                        ->disabled(fn ($record) => $record && $record->exists)
+                        ->disabled(fn($record) => $record && $record->exists)
                         ->afterStateUpdated(function ($state, Set $set, Get $get) {
-                            if (! $state) {
+                            if (!$state) {
                                 // Reset semua jika dihapus
                                 $set('items', []);
                                 $set('subtotal', 0);
@@ -101,7 +100,9 @@ class SalesOrderResource extends Resource
                             }
 
                             $quotation = Quotation::with('items', 'promoCode')->find($state);
-                            if (! $quotation) return;
+                            if (!$quotation) {
+                                return;
+                            }
 
                             // 1. Copy Header
                             $set('nx_customer_id', $quotation->nx_customer_id);
@@ -135,18 +136,18 @@ class SalesOrderResource extends Resource
 
                             // 4. Map Items & Hitung Subtotal Manual
                             $items = $quotation->items->map(function ($item) use (&$calculatedSubtotal) {
-                                $qty   = (float) $item->qty;
+                                $qty = (float) $item->qty;
                                 $price = (float) $item->unit_price;
                                 $lineTotal = (float) $item->line_total ?: $qty * $price;
 
                                 $calculatedSubtotal += $lineTotal;
 
                                 return [
-                                    'item_type'  => $item->item_type ?? 'product',
-                                    'item_id'    => $item->item_id,
-                                    'item_code'  => $item->item_code,
-                                    'item_name'  => $item->item_name,
-                                    'qty'        => $qty,
+                                    'item_type' => $item->item_type ?? 'product',
+                                    'item_id' => $item->item_id,
+                                    'item_code' => $item->item_code,
+                                    'item_name' => $item->item_name,
+                                    'qty' => $qty,
                                     'unit_price' => $price,
                                     'line_total' => $lineTotal,
                                 ];
@@ -167,27 +168,28 @@ class SalesOrderResource extends Resource
 
                             // 6. Hitung Grand Total Manual
                             $afterDiscount = $calculatedSubtotal - $calculatedDiscount;
-                            $taxAmount     = $afterDiscount * ($taxPercent / 100);
-                            $grandTotal    = $afterDiscount + $taxAmount;
+                            $taxAmount = $afterDiscount * ($taxPercent / 100);
+                            $grandTotal = $afterDiscount + $taxAmount;
 
                             $set('grand_total', $grandTotal);
-                        }),
-                ]),
+                        })
+                        ->prefixIcon('heroicon-o-hashtag'),
 
-                Grid::make(3)->schema([
                     Select::make('nx_customer_id')
                         ->label('Pelanggan')
                         ->relationship('customer', 'name')
                         ->searchable()
                         ->required()
-                        ->disabled(fn (Get $get) => filled($get('nx_quotation_id')))
+                        ->disabled(fn(Get $get) => filled($get('nx_quotation_id')))
                         ->dehydrated()
                         ->prefixIcon('heroicon-o-user-circle'),
+                ]),
 
+                Grid::make(2)->schema([
                     Select::make('nx_employee_id')
-                        ->label('Dibuat Oleh')
+                        ->label('Ditugaskan Kepada')
                         ->relationship('employee', 'full_name')
-                        ->default(fn () => auth()->user()->employee?->id)
+                        ->default(fn() => auth()->user()->employee?->id)
                         ->disabled()
                         ->dehydrated()
                         ->required()
@@ -196,54 +198,54 @@ class SalesOrderResource extends Resource
                     Select::make('status')
                         ->label('Status')
                         ->options([
-                            'draft'      => 'Draft',
-                            'confirmed'  => 'Dikonfirmasi',
+                            'draft' => 'Draft',
+                            'confirmed' => 'Dikonfirmasi',
                             'processing' => 'Diproses',
-                            'shipped'    => 'Dikirim',
-                            'completed'  => 'Selesai',
-                            'cancelled'  => 'Dibatalkan',
+                            'shipped' => 'Dikirim',
+                            'completed' => 'Selesai',
+                            'cancelled' => 'Dibatalkan',
                         ])
                         ->default('draft')
                         ->required()
                         ->prefixIcon('heroicon-o-adjustments-vertical'),
+
+                    Textarea::make('notes')
+                        ->label('Catatan Tambahan')
+                        ->rows(3),
                 ]),
+            ]),
 
-                Textarea::make('notes')
-                    ->label('Catatan Tambahan')
-                    ->columnSpanFull(),
-            ])->columns(1),
-
-            // --- SECTION 2: ITEMS ---
             Section::make('Daftar Item Pesanan')->schema([
                 Repeater::make('items')
-                    ->relationship()
-                    // KUNCI: Tidak bisa tambah/hapus kalau dari SQ
-                    ->addable(fn (Get $get) => blank($get('nx_quotation_id')))
-                    ->deletable(fn (Get $get) => blank($get('nx_quotation_id')))
-                    ->reorderable(false)
                     ->schema([
                         Hidden::make('item_type')->default('product')->dehydrated(true),
                         Hidden::make('item_id')->dehydrated(true),
                         Hidden::make('item_code')->dehydrated(true),
 
-                        TextInput::make('item_name')
-                            ->label('Nama Item')
-                            ->readOnly()
-                            ->dehydrated()
-                            ->columnSpanFull(),
+                        Grid::make(2)->schema([
+                            TextInput::make('item_code')
+                                ->label('Kode Produk')
+                                ->disabled()
+                                ->dehydrated(false),
 
-                        Grid::make(3)->schema([
+                            TextInput::make('item_name')
+                                ->label('Nama Produk')
+                                ->disabled()
+                                ->dehydrated(true),
+
                             TextInput::make('qty')
-                                ->label('Jumlah')
+                                ->label('Qty')
                                 ->numeric()
                                 ->integer()
                                 ->default(1)
                                 ->minValue(1)
-                                // KUNCI: Readonly kalau dari SQ
-                                ->readOnly(fn (Get $get) => filled($get('../../nx_quotation_id')))
+                                ->readOnly(fn(Get $get) => filled($get('../../nx_quotation_id')))
                                 ->reactive()
                                 ->afterStateUpdated(function ($state, Set $set, Get $get) {
-                                    if ($state < 1) $set('qty', 1);
+                                    if ($state < 1) {
+                                        $set('qty', 1);
+                                    }
+
                                     self::updateItemTotal($get, $set);
                                     self::updateTotals($get, $set);
                                 }),
@@ -252,10 +254,9 @@ class SalesOrderResource extends Resource
                                 ->label('Harga Satuan')
                                 ->numeric()
                                 ->required()
-                                ->prefix('Rp')
-                                // UPDATE: Format tampilan integer
-                                ->formatStateUsing(fn ($state) => (int) $state)
-                                ->readOnly(fn (Get $get) => filled($get('../../nx_quotation_id')))
+                                ->prefix('IDR')
+                                ->formatStateUsing(fn($state) => (int) $state)
+                                ->readOnly(fn(Get $get) => filled($get('../../nx_quotation_id')))
                                 ->reactive()
                                 ->afterStateUpdated(function ($state, Set $set, Get $get) {
                                     self::updateItemTotal($get, $set);
@@ -264,36 +265,39 @@ class SalesOrderResource extends Resource
 
                             TextInput::make('line_total')
                                 ->label('Subtotal')
-                                ->numeric()
+                                ->disabled()
                                 ->dehydrated()
-                                ->readOnly()
-                                ->prefix('Rp')
-                                // UPDATE: Format tampilan integer
-                                ->formatStateUsing(fn ($state) => (int) $state),
+                                ->numeric()
+                                ->prefix('IDR')
+                                ->extraInputAttributes(['style' => 'font-weight: bold;'])
+                                ->formatStateUsing(fn($state) => (int) $state),
                         ]),
                     ])
-                    ->reactive()
-                    ->columns(1)
-                    ->createItemButtonLabel('Tambah Item Manual'),
+                    ->relationship()
+                    ->addable(false)
+                    ->deletable(false)
+                    ->reorderable(false)
+                    ->relationship()
+                    ->addable(false)
+                    ->deletable(false)
+                    ->reorderable(false)
             ])->collapsed(),
 
-            // --- SECTION 3: TOTALS ---
             Section::make('Perhitungan Akhir')->schema([
                 Grid::make(4)->schema([
                     TextInput::make('subtotal')
                         ->label('Subtotal')
                         ->readOnly()
                         ->dehydrated()
-                        ->prefix('Rp')
-                        // UPDATE: Format tampilan integer
-                        ->formatStateUsing(fn ($state) => (int) $state),
+                        ->prefix('IDR')
+                        ->formatStateUsing(fn($state) => (int) $state),
 
                     TextInput::make('promo_code_input')
                         ->label('Kode Promo')
-                        ->placeholder('Masukkan kode')
+                        ->placeholder('Masukkan kode promo')
                         ->dehydrated(false)
-                        ->disabled(fn (Get $get) => filled($get('nx_quotation_id')))
-                        ->formatStateUsing(fn ($record) => $record?->promoCode?->code)
+                        ->disabled(fn(Get $get) => filled($get('nx_quotation_id')))
+                        ->formatStateUsing(fn($record) => $record?->promoCode?->code)
                         ->suffixAction(
                             FormAction::make('apply_promo')
                                 ->icon('heroicon-m-ticket')
@@ -335,42 +339,183 @@ class SalesOrderResource extends Resource
                     Hidden::make('temp_discount_value')->dehydrated(false),
 
                     TextInput::make('discount_amount')
-                        ->label('Potongan (Rp)')
+                        ->label('Potongan')
                         ->readOnly()
                         ->dehydrated()
-                        ->prefix('Rp')
-                        // UPDATE: Format tampilan integer
-                        ->formatStateUsing(fn ($state) => (int) $state),
+                        ->prefix('IDR')
+                        ->formatStateUsing(fn($state) => (int) $state),
 
                     TextInput::make('tax')
                         ->label('Pajak (%)')
                         ->numeric()
                         ->default(0)
                         ->minValue(0)
-                        ->readOnly(fn (Get $get) => filled($get('nx_quotation_id')))
+                        ->readOnly(fn(Get $get) => filled($get('nx_quotation_id')))
                         ->reactive()
                         ->afterStateUpdated(function ($state, Set $set, Get $get) {
-                            if ($state < 0) $set('tax', 0);
+                            if ($state < 0) {
+                                $set('tax', 0);
+                            }
+
                             self::updateTotals($get, $set);
                         })
                         // UPDATE: Pajak boleh float
-                        ->formatStateUsing(fn ($state) => (float) $state)
+                        ->formatStateUsing(fn($state) => (float) $state)
                         ->prefixIcon('heroicon-o-receipt-percent'),
 
                     TextInput::make('grand_total')
-                        ->label('Grand Total')
+                        ->label('Total')
                         ->readOnly()
                         ->dehydrated()
-                        ->prefix('Rp')
-                        ->extraInputAttributes(['style' => 'font-weight: bold; color: #16a34a;'])
-                        // UPDATE: Format tampilan integer
-                        ->formatStateUsing(fn ($state) => (int) $state),
+                        ->prefix('IDR')
+                        ->extraInputAttributes(['style' => 'font-weight: bold;'])
+                        ->formatStateUsing(fn($state) => (int) $state),
                 ]),
             ]),
         ]);
     }
 
-    // --- LOGIC HITUNG ---
+    public static function table(Table $table): Table
+    {
+        return $table
+            ->columns([
+                Tables\Columns\TextColumn::make('order_number')
+                    ->label('No. Pesanan')
+                    ->sortable()
+                    ->searchable()
+                    ->weight('bold'),
+
+                Tables\Columns\TextColumn::make('customer_po_number')
+                    ->label('PO Customer')
+                    ->searchable()
+                    ->toggleable(isToggledHiddenByDefault: true),
+
+                Tables\Columns\TextColumn::make('quotation.quotation_number')
+                    ->label('Ref. Penawaran')
+                    ->sortable()
+                    ->searchable(),
+
+                Tables\Columns\TextColumn::make('customer.name')
+                    ->label('Pelanggan')
+                    ->sortable()
+                    ->searchable(),
+
+                Tables\Columns\TextColumn::make('order_date')
+                    ->label('Tanggal')
+                    ->dateTime('d M Y H:i')
+                    ->sortable(),
+
+                // FIX: Pastikan relasi promoCode ada di Model SalesOrder
+                Tables\Columns\TextColumn::make('promoCode.code')
+                    ->label('Promo')
+                    ->badge()
+                    ->color('info')
+                    ->placeholder('-'),
+
+                Tables\Columns\TextColumn::make('grand_total')
+                    ->label('Total')
+                    ->money('IDR', true)
+                    ->weight('bold'),
+
+                Tables\Columns\TextColumn::make('status')
+                    ->badge()
+                    ->color(fn(string $state): string => match ($state) {
+                        'draft' => 'gray',
+                        'processing' => 'warning',
+                        'confirmed' => 'primary',
+                        'shipped' => 'info',
+                        'completed' => 'success',
+                        'cancelled' => 'danger',
+                        default => 'gray',
+                    })
+                    ->formatStateUsing(fn(string $state): string => match ($state) {
+                        'draft' => 'Draft',
+                        'processing' => 'Sedang Diproses',
+                        'confirmed' => 'Dikonfirmasi',
+                        'shipped' => 'Dalam Pengiriman',
+                        'completed' => 'Selesai',
+                        'cancelled' => 'Dibatalkan',
+                        default => $state,
+                    }),
+            ])
+            ->filters([
+                Tables\Filters\Filter::make('created_at')
+                    ->form([
+                        DatePicker::make('created_from')
+                            ->label('Created From')
+                            ->required()
+                            ->displayFormat('d M Y')
+                            ->native(false),
+
+                        DatePicker::make('created_until')
+                            ->label('Created Until')
+                            ->required()
+                            ->displayFormat('d M Y')
+                            ->native(false),
+                    ])
+                    ->query(function (Builder $query, array $data): Builder {
+                        return $query
+                            ->when(
+                                $data['created_from'],
+                                fn(Builder $query, $date): Builder => $query->whereDate('created_at', '>=', $date),
+                            )
+                            ->when(
+                                $data['created_until'],
+                                fn(Builder $query, $date): Builder => $query->whereDate('created_at', '<=', $date),
+                            );
+                    })
+                    ->indicateUsing(function (array $data): array {
+                        $indicators = [];
+
+                        if ($data['created_from'] ?? null) {
+                            $indicators[] = 'Created from ' . Carbon::parse($data['created_from'])->toFormattedDateString();
+                        }
+
+                        if ($data['created_until'] ?? null) {
+                            $indicators[] = 'Created until ' . Carbon::parse($data['created_until'])->toFormattedDateString();
+                        }
+
+                        return $indicators;
+                    }),
+
+                Tables\Filters\TrashedFilter::make()
+                    ->label('Deleted Status')
+                    ->native(false),
+            ])
+            ->actions([
+                Tables\Actions\EditAction::make(),
+                Tables\Actions\DeleteAction::make(),
+                Tables\Actions\ForceDeleteAction::make(),
+                Tables\Actions\RestoreAction::make(),
+            ])
+            ->bulkActions([
+                Tables\Actions\BulkActionGroup::make([
+                    Tables\Actions\DeleteBulkAction::make(),
+                    Tables\Actions\ForceDeleteBulkAction::make(),
+                    Tables\Actions\RestoreBulkAction::make(),
+                ]),
+            ])
+            ->defaultSort('created_at', 'desc');
+    }
+
+    public static function getRelations(): array
+    {
+        return [];
+    }
+    public static function getPages(): array
+    {
+        return [
+            'index' => Pages\ListSalesOrders::route('/'),
+            'create' => Pages\CreateSalesOrder::route('/create'),
+            'view' => Pages\ViewSalesOrder::route('/{record}'),
+            'edit' => Pages\EditSalesOrder::route('/{record}/edit'),
+        ];
+    }
+    public static function getEloquentQuery(): Builder
+    {
+        return parent::getEloquentQuery()->withoutGlobalScopes([SoftDeletingScope::class]);
+    }
+
     public static function updateItemTotal(Get $get, Set $set): void
     {
         $qty = (float) ($get('qty') ?? 0);
@@ -390,7 +535,7 @@ class SalesOrderResource extends Resource
         }
 
         $subtotal = collect($items)->sum(
-            fn ($item) => (float) ($item['qty'] ?? 0) * (float) ($item['unit_price'] ?? 0)
+            fn($item) => (float) ($item['qty'] ?? 0) * (float) ($item['unit_price'] ?? 0)
         );
         $set($pathPrefix . 'subtotal', $subtotal);
 
@@ -415,7 +560,10 @@ class SalesOrderResource extends Resource
             $totalDiscount = $discountValue;
         }
 
-        if ($totalDiscount > $subtotal) $totalDiscount = $subtotal;
+        if ($totalDiscount > $subtotal) {
+            $totalDiscount = $subtotal;
+        }
+
         $set($pathPrefix . 'discount_amount', $totalDiscount);
 
         $taxPercent = (float) ($get($pathPrefix . 'tax') ?? 0);
@@ -423,53 +571,5 @@ class SalesOrderResource extends Resource
         $taxAmount = $afterDiscount * ($taxPercent / 100);
 
         $set($pathPrefix . 'grand_total', $afterDiscount + $taxAmount);
-    }
-
-    // --- TABLE ---
-    public static function table(Table $table): Table
-    {
-        return $table
-            ->columns([
-                Tables\Columns\TextColumn::make('order_number')->label('Nomor SO')->sortable()->searchable(),
-                Tables\Columns\TextColumn::make('customer_po_number')->label('PO Customer')->searchable()->toggleable(isToggledHiddenByDefault: true),
-                Tables\Columns\TextColumn::make('quotation.quotation_number')->label('Ref. SQ')->sortable()->searchable(),
-                Tables\Columns\TextColumn::make('customer.name')->label('Pelanggan')->sortable()->searchable(),
-                Tables\Columns\TextColumn::make('order_date')->label('Tgl Pesan')->date('d M Y'),
-
-                // FIX: Pastikan relasi promoCode ada di Model SalesOrder
-                Tables\Columns\TextColumn::make('promoCode.code')
-                    ->label('Promo')
-                    ->badge()
-                    ->color('info')
-                    ->placeholder('-'),
-
-                Tables\Columns\TextColumn::make('grand_total')->label('Total')->money('IDR', true),
-                Tables\Columns\TextColumn::make('status')->badge()
-                    ->color(fn (string $state): string => match ($state) {
-                        'draft' => 'gray', 'processing' => 'warning', 'confirmed' => 'primary', 'shipped' => 'info', 'completed' => 'success', 'cancelled' => 'danger', default => 'gray',
-                    }),
-            ])
-            ->defaultSort('created_at', 'desc')
-            ->filters([Tables\Filters\TrashedFilter::make()])
-            ->actions([
-                Tables\Actions\EditAction::make(),
-                Tables\Actions\DeleteAction::make(),
-            ])
-            ->bulkActions([Tables\Actions\BulkActionGroup::make([Tables\Actions\DeleteBulkAction::make()])]);
-    }
-
-    public static function getRelations(): array { return []; }
-    public static function getPages(): array
-    {
-        return [
-            'index' => Pages\ListSalesOrders::route('/'),
-            'create' => Pages\CreateSalesOrder::route('/create'),
-            'view' => Pages\ViewSalesOrder::route('/{record}'),
-            'edit' => Pages\EditSalesOrder::route('/{record}/edit'),
-        ];
-    }
-    public static function getEloquentQuery(): Builder
-    {
-        return parent::getEloquentQuery()->withoutGlobalScopes([SoftDeletingScope::class]);
     }
 }

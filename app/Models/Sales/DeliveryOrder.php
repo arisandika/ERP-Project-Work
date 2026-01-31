@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Support\Carbon;
 
 class DeliveryOrder extends Model
 {
@@ -28,7 +29,7 @@ class DeliveryOrder extends Model
     ];
 
     protected $casts = [
-        'do_date' => 'date',
+        'do_date' => 'datetime',
     ];
 
     public function salesOrder(): BelongsTo
@@ -39,6 +40,7 @@ class DeliveryOrder extends Model
             'id'
         );
     }
+
     public function customer(): BelongsTo
     {
         return $this->belongsTo(Customer::class, 'nx_customer_id')->withDefault();
@@ -52,5 +54,16 @@ class DeliveryOrder extends Model
     public function items(): HasMany
     {
         return $this->hasMany(DeliveryOrderItem::class, 'nx_delivery_order_id');
+    }
+
+    protected static function booted(): void
+    {
+        static::creating(function (DeliveryOrder $deliveryOrder) {
+
+            if ($deliveryOrder->do_date) {
+                $deliveryOrder->do_date = Carbon::parse($deliveryOrder->do_date)
+                    ->setTimeFromTimeString(now()->format('H:i:s'));
+            }
+        });
     }
 }

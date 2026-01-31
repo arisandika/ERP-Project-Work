@@ -4,6 +4,7 @@ namespace App\Filament\Resources\Sales\InvoiceResource\Pages;
 
 use App\Filament\Resources\Sales\InvoiceResource;
 use Filament\Actions;
+use Filament\Actions\Action;
 use Filament\Resources\Pages\ViewRecord;
 
 class ViewInvoice extends ViewRecord
@@ -14,6 +15,15 @@ class ViewInvoice extends ViewRecord
     {
         return [
             Actions\EditAction::make(),
+            Action::make('back')
+                ->url(static::getResource()::getUrl()) 
+                ->button()
+                ->color('gray'),
         ];
+    }
+
+    public function getTitle(): string
+    {
+        return 'Lihat Invoice';
     }
 }

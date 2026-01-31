@@ -57,8 +57,9 @@ class ProductStocksRelationManager extends RelationManager
                     ->label('Gudang')
                     ->searchable()
                     ->sortable()
-                    ->weight('bold')
-                    ->icon('heroicon-m-building-storefront')
+                    ->badge()
+                    ->color('info')
+                    ->icon('heroicon-o-building-office')
                     ->description(fn ($record) => $record->warehouse->location ?? ''),
                 
                 Tables\Columns\TextColumn::make('qty')

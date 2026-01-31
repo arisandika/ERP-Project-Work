@@ -8,6 +8,7 @@ use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Support\Carbon;
 
 class TransactionReportResource extends Resource
 {
@@ -29,7 +30,7 @@ class TransactionReportResource extends Resource
             ->columns([
                 Tables\Columns\TextColumn::make('transaction_date')
                     ->label('Tanggal')
-                    ->dateTime('d F Y H:i')
+                    ->dateTime('d M Y H:i')
                     ->sortable(),
 
                 Tables\Columns\TextColumn::make('product.product_code')
@@ -46,20 +47,25 @@ class TransactionReportResource extends Resource
 
                 Tables\Columns\TextColumn::make('warehouse.warehouse_name')
                     ->label('Gudang')
+                    ->searchable()
                     ->sortable()
-                    ->toggleable(),
+                    ->badge()
+                    ->color('info')
+                    ->icon('heroicon-o-building-office'),
 
                 Tables\Columns\TextColumn::make('type')
                     ->label('Jenis')
                     ->badge()
-                    ->color(fn(string $state) => $state === 'masuk' ? 'success' : 'danger'),
+                    ->color(fn(string $state) => $state === 'masuk' ? 'warning' : 'success')
+                    ->formatStateUsing(fn(string $state) => $state === 'masuk' ? 'Masuk/Beli' : 'Keluar/Terjual'),
 
                 Tables\Columns\TextColumn::make('quantity')
                     ->label('Qty')
+                    ->sortable()
                     ->badge()
-                    ->color('info')
-                    ->suffix(' unit')
-                    ->sortable(),
+                    ->color('success')
+                    ->icon('heroicon-m-check-circle')
+                    ->suffix(' Qty'),
 
                 Tables\Columns\TextColumn::make('price')
                     ->label('Harga Satuan')
@@ -81,27 +87,48 @@ class TransactionReportResource extends Resource
                     ->label('Catatan')
                     ->limit(40)
                     ->tooltip(fn($record) => $record->notes)
-                    ->toggleable(),
+                    ->toggleable()
+                    ->placeholder('-'),
             ])
             ->filters([
 
                 Tables\Filters\Filter::make('transaction_date')
                     ->form([
-                        Forms\Components\DatePicker::make('from')
-                            ->label('Dari'),
-                        Forms\Components\DatePicker::make('until')
-                            ->label('Sampai'),
+                        Forms\Components\DatePicker::make('created_from')
+                            ->label('Created From')
+                            ->required()
+                            ->displayFormat('d M Y')
+                            ->native(false),
+
+                        Forms\Components\DatePicker::make('created_until')
+                            ->label('Created Until')
+                            ->required()
+                            ->displayFormat('d M Y')
+                            ->native(false),
                     ])
                     ->query(function (Builder $query, array $data): Builder {
                         return $query
                             ->when(
-                                $data['from'],
-                                fn($q) => $q->whereDate('transaction_date', '>=', $data['from'])
+                                $data['created_from'],
+                                fn(Builder $query, $date): Builder => $query->whereDate('created_at', '>=', $date),
                             )
                             ->when(
-                                $data['until'],
-                                fn($q) => $q->whereDate('transaction_date', '<=', $data['until'])
+                                $data['created_until'],
+                                fn(Builder $query, $date): Builder => $query->whereDate('created_at', '<=', $date),
                             );
+                    })
+                    ->indicateUsing(function (array $data): array {
+                        $indicators = [];
+
+                        if ($data['created_from'] ?? null) {
+                            $indicators[] = 'Created from ' . Carbon::parse($data['created_from'])->toFormattedDateString();
+                        }
+
+                        if ($data['created_until'] ?? null) {
+                            $indicators[] = 'Created until ' . Carbon::parse($data['created_until'])->toFormattedDateString();
+                        }
+
+                        return $indicators;
                     }),
 
                 Tables\Filters\SelectFilter::make('product_id')
@@ -137,11 +164,17 @@ class TransactionReportResource extends Resource
 
     // Disable CRUD actions
     public static function canCreate(): bool
-    {return false;}
+    {
+        return false;
+    }
     public static function canEdit($record): bool
-    {return false;}
+    {
+        return false;
+    }
     public static function canDelete($record): bool
-    {return false;}
+    {
+        return false;
+    }
 
     public static function getRelations(): array
     {

@@ -11,33 +11,28 @@ class CreateInvoice extends CreateRecord
 {
     protected static string $resource = InvoiceResource::class;
 
-    /**
-     * 1. FORM DEFAULTS
-     * Mengisi nomor otomatis saat form pertama kali dibuka (hanya visual).
-     */
-    protected function getFormDefaults(): array
+    public function getTitle(): string
     {
-        return [
-            'invoice_number' => $this->generateInvoiceNumber(),
-            'invoice_date'   => now(),
-            'nx_employee_id' => auth()->user()?->employee?->id,
-        ];
+        return 'Buat Invoice';
     }
 
-    /**
-     * 2. MUTATE BEFORE CREATE
-     * Wajib generate ulang nomor sesaat sebelum simpan ke DB.
-     */
+    public function mount(): void
+    {
+        parent::mount();
+
+        $this->form->fill([
+            'invoice_number' => $this->generateInvoiceNumber(),
+            'nx_employee_id' => auth()->user()?->employee?->id,
+            'invoice_date' => now()->toDateString(),
+        ]);
+    }
+
     protected function mutateFormDataBeforeCreate(array $data): array
     {
         $data['invoice_number'] = $this->generateInvoiceNumber();
         return $data;
     }
 
-    /**
-     * 3. OVERRIDE HANDLE RECORD CREATION
-     * Ini yang WAJIB ditambahin buat save items!
-     */
     protected function handleRecordCreation(array $data): Model
     {
         // Pisahkan items dari data utama
@@ -51,11 +46,11 @@ class CreateInvoice extends CreateRecord
         if (!empty($items)) {
             foreach ($items as $item) {
                 $invoice->items()->create([
-                    'item_type'  => $item['item_type'] ?? null,
-                    'item_id'    => $item['item_id'] ?? null,
-                    'item_code'  => $item['item_code'] ?? null,
-                    'item_name'  => $item['item_name'] ?? null,
-                    'qty'        => $item['qty'] ?? 0,
+                    'item_type' => $item['item_type'] ?? null,
+                    'item_id' => $item['item_id'] ?? null,
+                    'item_code' => $item['item_code'] ?? null,
+                    'item_name' => $item['item_name'] ?? null,
+                    'qty' => $item['qty'] ?? 0,
                     'unit_price' => $item['unit_price'] ?? 0,
                     'line_total' => $item['line_total'] ?? 0,
                 ]);
@@ -65,49 +60,29 @@ class CreateInvoice extends CreateRecord
         return $invoice;
     }
 
-    /**
-     * 4. LOGIC GENERATOR (Format: 001/INV/NEX/XII/2025)
-     */
     private function generateInvoiceNumber(): string
     {
-        $roman   = $this->getRomanMonth(now()->month);
-        $year    = now()->year;
+        $roman = ['I', 'II', 'III', 'IV', 'V', 'VI', 'VII', 'VIII', 'IX', 'X', 'XI', 'XII'][now()->month - 1];
+        $year = now()->year;
         $company = 'NEX';
-        $code    = 'INV';
+        $code = 'INV';
 
-        $suffix = "/{$code}/{$company}/{$roman}/{$year}";
+        $prefixLike = "%/$code/$company/$roman/$year";
 
-        $lastInvoice = Invoice::query()
-            ->where('invoice_number', 'like', '%' . $suffix)
+        $last = \App\Models\Sales\Invoice::withTrashed()
+            ->where('invoice_number', 'like', $prefixLike)
             ->orderByDesc('id')
             ->value('invoice_number');
 
         $seq = 1;
-        if ($lastInvoice) {
-            $parts = explode('/', $lastInvoice);
-            if (isset($parts[0]) && is_numeric($parts[0])) {
-                $seq = (int) $parts[0] + 1;
-            }
+
+        if ($last) {
+            $parts = explode('/', $last);
+            $seq = ((int) $parts[0]) + 1;
         }
 
-        $seqStr = str_pad((string)$seq, 3, '0', STR_PAD_LEFT);
-        return "{$seqStr}{$suffix}";
-    }
+        $seqStr = str_pad((string) $seq, 3, '0', STR_PAD_LEFT);
 
-    /**
-     * Helper ubah angka bulan ke Romawi
-     */
-    private function getRomanMonth(int $month): string
-    {
-        $map = [
-            1 => 'I', 2 => 'II', 3 => 'III', 4 => 'IV', 5 => 'V', 6 => 'VI',
-            7 => 'VII', 8 => 'VIII', 9 => 'IX', 10 => 'X', 11 => 'XI', 12 => 'XII'
-        ];
-        return $map[$month] ?? 'I';
-    }
-
-    protected function getRedirectUrl(): string
-    {
-        return $this->getResource()::getUrl('index');
+        return "{$seqStr}/{$code}/{$company}/{$roman}/{$year}";
     }
 }

@@ -11,9 +11,9 @@ use Illuminate\Support\Carbon;
 
 class AttendancesRelationManager extends RelationManager
 {
-    protected static string $relationship          = 'attendances';
+    protected static string $relationship = 'attendances';
     protected static ?string $recordTitleAttribute = 'date';
-    protected static ?string $title                = 'Riwayat Presensi Karyawan';
+    protected static ?string $title = 'Riwayat Presensi Karyawan';
 
     public function form(Form $form): Form
     {
@@ -56,8 +56,8 @@ class AttendancesRelationManager extends RelationManager
                     ->colors([
                         'success' => 'hadir',
                         'warning' => 'izin',
-                        'info'    => 'sakit',
-                        'danger'  => 'alfa',
+                        'info' => 'sakit',
+                        'danger' => 'alfa',
                     ])
                     ->sortable(),
             ])
@@ -66,11 +66,14 @@ class AttendancesRelationManager extends RelationManager
                     ->form([
                         Forms\Components\DatePicker::make('created_from')
                             ->label('Created From')
-                            ->displayFormat('d/m/Y')
+                            ->required()
+                            ->displayFormat('d M Y')
                             ->native(false),
+
                         Forms\Components\DatePicker::make('created_until')
                             ->label('Created Until')
-                            ->displayFormat('d/m/Y')
+                            ->required()
+                            ->displayFormat('d M Y')
                             ->native(false),
                     ])
                     ->query(function (Builder $query, array $data): Builder {

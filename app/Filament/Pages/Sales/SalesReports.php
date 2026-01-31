@@ -60,11 +60,16 @@ class SalesReports extends Page implements HasForms
                         DatePicker::make('start_date')
                             ->label('Mulai Tanggal')
                             ->default(now()->startOfMonth())
-                            ->required(),
+                            ->required()
+                            ->displayFormat('d M Y')
+                            ->native(false),
+
                         DatePicker::make('end_date')
                             ->label('Sampai Tanggal')
                             ->default(now())
-                            ->required(),
+                            ->required()
+                            ->displayFormat('d M Y')
+                            ->native(false),
                     ])
                     ->columns(2)
                     ->statePath('data')

@@ -7,12 +7,13 @@ use Filament\Resources\RelationManagers\RelationManager;
 use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Support\Carbon;
 
 class LeaveRequestsRelationManager extends RelationManager
 {
-    protected static string $relationship          = 'leaveRequests';
+    protected static string $relationship = 'leaveRequests';
     protected static ?string $recordTitleAttribute = 'start_date';
-    protected static ?string $title                = 'Riwayat Permohonan Cuti Karyawan';
+    protected static ?string $title = 'Riwayat Permohonan Cuti Karyawan';
 
     public function form(Form $form): Form
     {
@@ -52,13 +53,13 @@ class LeaveRequestsRelationManager extends RelationManager
                     ->colors([
                         'warning' => 'pending',
                         'success' => 'approved',
-                        'danger'  => 'rejected',
+                        'danger' => 'rejected',
                     ])
                     ->formatStateUsing(fn(string $state) => match ($state) {
-                        'pending'  => 'Menunggu',
+                        'pending' => 'Menunggu',
                         'approved' => 'Disetujui',
                         'rejected' => 'Ditolak',
-                        default    => ucwords($state),
+                        default => ucwords($state),
                     }),
 
                 Tables\Columns\TextColumn::make('approver.full_name')
@@ -67,7 +68,7 @@ class LeaveRequestsRelationManager extends RelationManager
 
                 Tables\Columns\TextColumn::make('created_at')
                     ->label('Diajukan')
-                    ->dateTime('d F Y H:i')
+                    ->dateTime('d M Y H:i')
                     ->sortable(),
             ])
             ->filters([
@@ -75,11 +76,14 @@ class LeaveRequestsRelationManager extends RelationManager
                     ->form([
                         Forms\Components\DatePicker::make('created_from')
                             ->label('Created From')
-                            ->displayFormat('d/m/Y')
+                            ->required()
+                            ->displayFormat('d M Y')
                             ->native(false),
+
                         Forms\Components\DatePicker::make('created_until')
                             ->label('Created Until')
-                            ->displayFormat('d/m/Y')
+                            ->required()
+                            ->displayFormat('d M Y')
                             ->native(false),
                     ])
                     ->query(function (Builder $query, array $data): Builder {

@@ -15,7 +15,6 @@
             line-height: 1.3;
         }
 
-        /* --- HEADER --- */
         .header-table {
             width: 100%;
             border-collapse: collapse;
@@ -62,7 +61,6 @@
             margin-bottom: 25px;
         }
 
-        /* --- TITLE --- */
         .document-title {
             text-align: center;
             margin-bottom: 25px;
@@ -96,7 +94,6 @@
             color: #31708f;
         }
 
-        /* --- TABLE --- */
         .items-table {
             width: 100%;
             border-collapse: collapse;
@@ -129,7 +126,6 @@
             background-color: #fafafa;
         }
 
-        /* --- STOCK BADGE --- */
         .stock-badge {
             padding: 3px 8px;
             border-radius: 10px;
@@ -151,7 +147,6 @@
             background: #d9534f;
         }
 
-        /* --- FOOTER NOTE --- */
         .notes-section {
             margin-top: 30px;
             font-size: 10px;

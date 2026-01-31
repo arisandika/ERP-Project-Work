@@ -29,4 +29,9 @@ class ProductStock extends Model
     {
         return $this->belongsTo(Warehouse::class, 'warehouse_id');
     }
+
+    public function unitName()
+    {
+        return $this->product->unit->unit_name ?? null;
+    }
 }

@@ -127,19 +127,19 @@ class OfficeResource extends Resource
 
                 Tables\Columns\TextColumn::make('created_at')
                     ->label('Created At')
-                    ->dateTime('d F Y')
+                    ->dateTime('d M Y')
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
 
                 Tables\Columns\TextColumn::make('updated_at')
                     ->label('Updated At')
-                    ->dateTime('d F Y')
+                    ->dateTime('d M Y')
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
 
                 Tables\Columns\TextColumn::make('deleted_at')
                     ->label('Deleted At')
-                    ->dateTime('d F Y')
+                    ->dateTime('d M Y')
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
             ])
@@ -148,11 +148,14 @@ class OfficeResource extends Resource
                     ->form([
                         Forms\Components\DatePicker::make('created_from')
                             ->label('Created From')
-                            ->displayFormat('d/m/Y')
+                            ->required()
+                            ->displayFormat('d M Y')
                             ->native(false),
+
                         Forms\Components\DatePicker::make('created_until')
                             ->label('Created Until')
-                            ->displayFormat('d/m/Y')
+                            ->required()
+                            ->displayFormat('d M Y')
                             ->native(false),
                     ])
                     ->query(function (Builder $query, array $data): Builder {
@@ -179,6 +182,7 @@ class OfficeResource extends Resource
 
                         return $indicators;
                     }),
+                    
                 Tables\Filters\TrashedFilter::make()
                     ->label('Deleted Status')
                     ->native(false),
@@ -210,10 +214,10 @@ class OfficeResource extends Resource
     public static function getPages(): array
     {
         return [
-            'index'  => Pages\ListOffices::route('/'),
+            'index' => Pages\ListOffices::route('/'),
             'create' => Pages\CreateOffice::route('/create'),
-            'view'   => Pages\ViewOffice::route('/{record}'),
-            'edit'   => Pages\EditOffice::route('/{record}/edit'),
+            'view' => Pages\ViewOffice::route('/{record}'),
+            'edit' => Pages\EditOffice::route('/{record}/edit'),
         ];
     }
 

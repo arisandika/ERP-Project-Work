@@ -46,7 +46,7 @@ class PromoReportTable extends BaseWidget
 
             ->columns([
                 Tables\Columns\TextColumn::make('promoCode.code')
-                    ->label('Kode')
+                    ->label('Kode Produk')
                     ->badge()
                     ->color('info')
                     ->description(fn ($record) => $record->promoCode->type ?? '-'),

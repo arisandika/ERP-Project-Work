@@ -13,6 +13,11 @@ class EditQuotation extends EditRecord
 {
     protected static string $resource = QuotationResource::class;
 
+    public function getTitle(): string
+    {
+        return 'Edit Penawaran';
+    }
+
     protected function getHeaderActions(): array
     {
         return [
@@ -68,7 +73,4 @@ class EditQuotation extends EditRecord
 
         return $data;
     }
-
-
-
 }

@@ -1,20 +1,21 @@
 <?php
-
 namespace App\Filament\Resources\Sales;
 
 use App\Filament\Resources\Sales\SalesPersonResource\Pages;
+use App\Models\HR\Employee;
 use App\Models\Sales\SalesPerson;
-use Filament\Forms;
-use Filament\Forms\Form;
-use Filament\Forms\Components\Section;
+use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\Grid;
+use Filament\Forms\Components\Section;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
+use Filament\Forms\Form;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
+use Illuminate\Support\Carbon;
 
 class SalesPersonResource extends Resource
 {
@@ -22,9 +23,9 @@ class SalesPersonResource extends Resource
 
     protected static ?string $navigationIcon = 'heroicon-o-user-group';
     protected static ?string $navigationGroup = 'Manajemen Sales';
-    protected static ?string $navigationLabel = 'Sales';
-    protected static ?string $pluralModelLabel = 'Daftar Sales';
-    protected static ?string $modelLabel = 'Sales';
+    protected static ?string $navigationLabel = 'PIC Sales';
+    protected static ?string $pluralModelLabel = 'PIC Sales';
+    protected static ?string $modelLabel = 'PIC Sales';
     public static function getNavigationBadge(): ?string
     {
         return static::getModel()::count();
@@ -32,6 +33,20 @@ class SalesPersonResource extends Resource
 
     public static function form(Form $form): Form
     {
+        $fillEmployee = function ($state, callable $set) {
+            if (!$state) {
+                return;
+            }
+
+            $emp = Employee::find($state);
+
+            if ($emp) {
+                $set('full_name', $emp->full_name);
+                $set('email', $emp->email);
+                $set('phone', $emp->phone_number);
+            }
+        };
+
         return $form->schema([
             Section::make('Identitas Sales')
                 ->schema([
@@ -44,68 +59,52 @@ class SalesPersonResource extends Resource
                             ])
                             ->reactive()
                             ->afterStateUpdated(function ($state, callable $set) {
-                                if ($state === 'internal') {
-                                    $set('full_name', null);
-                                    $set('email', null);
-                                    $set('phone', null);
-                                } else {
-                                    $set('employee_id', null);
-                                }
+                                $set('employee_id', null);
+                                $set('full_name', null);
+                                $set('email', null);
+                                $set('phone', null);
                             })
                             ->required(),
 
                         Select::make('employee_id')
                             ->label('Karyawan')
-                            ->relationship('employee', 'id') 
-                            ->getOptionLabelFromRecordUsing(function ($record) {
-                                return $record->full_name ?: "Employee #{$record->id}";
-                            })
+                            ->relationship('employee', 'id')
+                            ->getOptionLabelFromRecordUsing(fn($record) => $record->full_name)
                             ->searchable(['full_name', 'email', 'phone_number'])
-                            ->visible(fn ($get) => $get('type') === 'internal')
-                            ->required(fn ($get) => $get('type') === 'internal')
+                            ->preload()
+                            ->optionsLimit(10)
                             ->reactive()
-                            ->afterStateUpdated(function ($state, callable $set) {
-                                if (!$state) return;
-                                $emp = \App\Models\HR\Employee::find($state);
-                                if ($emp) {
-                                    $set('full_name', $emp->full_name ?? null);
-                                    $set('email', $emp->email ?? null);
-                                    $set('phone', $emp->phone_number ?? null);
-                                }
-                            }),
-
+                            ->visible(fn($get) => $get('type') === 'internal')
+                            ->required(fn($get) => $get('type') === 'internal')
+                            ->afterStateUpdated($fillEmployee)
+                            ->afterStateHydrated($fillEmployee),
 
                         TextInput::make('full_name')
                             ->label('Nama')
-                            ->required(fn ($get) => $get('type') === 'external')
-                            ->disabled(fn ($get) => $get('type') === 'internal'),
+                            ->required(fn($get) => $get('type') === 'external')
+                            ->disabled(fn($get) => $get('type') === 'internal'),
 
                         TextInput::make('email')
                             ->label('Email')
                             ->email()
-                            ->required(fn ($get) => $get('type') === 'external')
-                            ->disabled(fn ($get) => $get('type') === 'internal'),
+                            ->required(fn($get) => $get('type') === 'external')
+                            ->disabled(fn($get) => $get('type') === 'internal'),
 
                         TextInput::make('phone')
                             ->label('Telepon')
-                            ->required(fn ($get) => $get('type') === 'external')
-                            ->disabled(fn ($get) => $get('type') === 'internal'),
+                            ->required(fn($get) => $get('type') === 'external')
+                            ->disabled(fn($get) => $get('type') === 'internal'),
+
+                        Select::make('status')
+                            ->label('Status')
+                            ->options([
+                                'active' => 'Aktif',
+                                'inactive' => 'Nonaktif',
+                            ])
+                            ->default('active')
+                            ->required(),
                     ]),
                 ])
-                ->columns(1),
-
-            Section::make('Pengaturan Sales')
-                ->schema([
-                    Select::make('status')
-                        ->label('Status')
-                        ->options([
-                            'active' => 'Aktif',
-                            'inactive' => 'Nonaktif',
-                        ])
-                        ->default('active')
-                        ->required(),
-                ])
-                ->columns(1),
         ]);
     }
 
@@ -113,27 +112,44 @@ class SalesPersonResource extends Resource
     {
         return $table
             ->columns([
-                Tables\Columns\TextColumn::make('type')
-                    ->label('Tipe')
-                    ->badge()
-                    ->sortable(),
-
                 Tables\Columns\TextColumn::make('display_name')
-                    ->label('Nama')
-                    ->getStateUsing(fn ($record) =>
+                    ->label('Nama PIC')
+                    ->getStateUsing(
+                        fn($record) =>
                         $record->type === 'internal'
-                            ? ($record->employee->full_name ?: "Employee #{$record->employee_id}")
-                            : ($record->full_name ?: '-')
+                        ? ($record->employee->full_name ?: "Employee #{$record->employee_id}")
+                        : ($record->full_name ?: '-')
                     )
                     ->searchable()
                     ->sortable(),
 
+                Tables\Columns\TextColumn::make('type')
+                    ->label('Tipe PIC')
+                    ->badge()
+                    ->sortable()
+                    ->color(fn(string $state): string => match ($state) {
+                        'internal' => 'primary',
+                        'external' => 'warning',
+                        default => 'gray'
+                    })
+                    ->formatStateUsing(fn(string $state): string => match ($state) {
+                        'internal' => 'Internal',
+                        'external' => 'Eksternal',
+                        default => $state,
+                    }),
+
                 Tables\Columns\BadgeColumn::make('status')
                     ->label('Status')
-                    ->colors([
-                        'success' => 'active',
-                        'secondary' => 'inactive',
-                    ])
+                    ->color(fn(string $state): string => match ($state) {
+                        'active' => 'success',
+                        'inactive' => 'danger',
+                        default => 'gray'
+                    })
+                    ->formatStateUsing(fn(string $state): string => match ($state) {
+                        'active' => 'Aktif',
+                        'inactive' => 'Nonaktif',
+                        default => $state,
+                    })
                     ->sortable(),
 
                 Tables\Columns\TextColumn::make('created_at')
@@ -148,25 +164,72 @@ class SalesPersonResource extends Resource
                         'internal' => 'Karyawan',
                         'external' => 'Non-karyawan',
                     ]),
+
                 Tables\Filters\SelectFilter::make('status')
                     ->label('Status')
                     ->options([
                         'active' => 'Aktif',
                         'inactive' => 'Nonaktif',
                     ]),
-                Tables\Filters\TrashedFilter::make(),
+
+                Tables\Filters\Filter::make('created_at')
+                    ->form([
+                        DatePicker::make('created_from')
+                            ->label('Created From')
+                            ->required()
+                            ->displayFormat('d M Y')
+                            ->native(false),
+
+                        DatePicker::make('created_until')
+                            ->label('Created Until')
+                            ->required()
+                            ->displayFormat('d M Y')
+                            ->native(false),
+                    ])
+                    ->query(function (Builder $query, array $data): Builder {
+                        return $query
+                            ->when(
+                                $data['created_from'],
+                                fn(Builder $query, $date): Builder => $query->whereDate('created_at', '>=', $date),
+                            )
+                            ->when(
+                                $data['created_until'],
+                                fn(Builder $query, $date): Builder => $query->whereDate('created_at', '<=', $date),
+                            );
+                    })
+                    ->indicateUsing(function (array $data): array {
+                        $indicators = [];
+
+                        if ($data['created_from'] ?? null) {
+                            $indicators[] = 'Created from ' . Carbon::parse($data['created_from'])->toFormattedDateString();
+                        }
+
+                        if ($data['created_until'] ?? null) {
+                            $indicators[] = 'Created until ' . Carbon::parse($data['created_until'])->toFormattedDateString();
+                        }
+
+                        return $indicators;
+                    }),
+
+                Tables\Filters\TrashedFilter::make()
+                    ->label('Deleted Status')
+                    ->native(false),
             ])
             ->actions([
-                Tables\Actions\ViewAction::make()->label('Detail'),
-                Tables\Actions\EditAction::make()->label('Ubah'),
+                Tables\Actions\ViewAction::make(),
+                Tables\Actions\EditAction::make(),
+                Tables\Actions\DeleteAction::make(),
+                Tables\Actions\ForceDeleteAction::make(),
+                Tables\Actions\RestoreAction::make(),
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([
-                    Tables\Actions\DeleteBulkAction::make()->label('Hapus'),
-                    Tables\Actions\ForceDeleteBulkAction::make()->label('Hapus Permanen'),
-                    Tables\Actions\RestoreBulkAction::make()->label('Pulihkan'),
+                    Tables\Actions\DeleteBulkAction::make(),
+                    Tables\Actions\ForceDeleteBulkAction::make(),
+                    Tables\Actions\RestoreBulkAction::make(),
                 ]),
-            ]);
+            ])
+            ->defaultSort('created_at', 'desc');
     }
 
     public static function getRelations(): array
@@ -179,10 +242,10 @@ class SalesPersonResource extends Resource
     public static function getPages(): array
     {
         return [
-            'index'  => Pages\ListSalesPeople::route('/'),
+            'index' => Pages\ListSalesPeople::route('/'),
             'create' => Pages\CreateSalesPerson::route('/create'),
-            'view'   => Pages\ViewSalesPerson::route('/{record}'),
-            'edit'   => Pages\EditSalesPerson::route('/{record}/edit'),
+            'view' => Pages\ViewSalesPerson::route('/{record}'),
+            'edit' => Pages\EditSalesPerson::route('/{record}/edit'),
         ];
     }
 

@@ -24,6 +24,7 @@ use Filament\Tables\Table;
 use Filament\Tables\Actions\Action;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
+use Illuminate\Support\Carbon;
 
 class DeliveryOrderResource extends Resource
 {
@@ -45,23 +46,26 @@ class DeliveryOrderResource extends Resource
             Section::make('Informasi Surat Jalan')->schema([
                 Grid::make(3)->schema([
                     TextInput::make('do_number')
-                        ->label('Nomor DO')
-                        ->default('DO-' . strtoupper(uniqid()))
+                        ->label('No. Surat Jalan')
                         ->disabled()
                         ->dehydrated()
                         ->unique(ignoreRecord: true)
                         ->prefixIcon('heroicon-o-hashtag'),
 
                     DatePicker::make('do_date')
-                        ->label('Tanggal DO')
+                        ->label('Tanggal Surat Jalan')
                         ->default(now())
+                        ->prefixIcon('heroicon-o-calendar-days')
                         ->required()
-                        ->prefixIcon('heroicon-o-calendar-days'),
+                        ->displayFormat('d M Y')
+                        ->native(false),
 
-                    // === LOGIKA PILIH SALES ORDER (PARTIAL SUPPORTED) ===
                     Select::make('nx_sales_order_id')
-                        ->label('No. Sales Order')
-                        ->relationship('salesOrder', 'order_number', modifyQueryUsing: fn (Builder $query) =>
+                        ->label('No. Sales Order (Ref)')
+                        ->relationship(
+                            'salesOrder',
+                            'order_number',
+                            modifyQueryUsing: fn(Builder $query) =>
                             $query->whereIn('status', ['confirmed', 'processing', 'shipped'])
                                 ->orderByDesc('created_at')
                         )
@@ -69,19 +73,20 @@ class DeliveryOrderResource extends Resource
                         ->preload()
                         ->live()
                         ->placeholder('Pilih Sales Order')
-                        ->disabled(fn ($record) => $record && $record->exists)
+                        ->disabled(fn($record) => $record && $record->exists)
                         ->afterStateUpdated(function ($state, callable $set) {
                             $set('items', []);
                             $set('nx_customer_id', null);
 
-                            if (! $state) return;
+                            if (!$state)
+                                return;
 
                             $so = SalesOrder::with('items')->find($state);
-                            if (! $so) return;
+                            if (!$so)
+                                return;
 
                             $set('nx_customer_id', $so->nx_customer_id);
 
-                            // --- LOGIC PARTIAL: Cek DO Lain yang Aktif ---
                             $existingDOs = DeliveryOrder::with('items')
                                 ->where('nx_sales_order_id', $state)
                                 ->where('status', '!=', 'cancelled')
@@ -99,19 +104,20 @@ class DeliveryOrderResource extends Resource
                                 $qtyRemainingQuota = max($qtyOrder - $qtyShipped, 0);
 
                                 return [
-                                    'item_type'     => $item->item_type,
-                                    'item_id'       => $item->item_id,
-                                    'item_code'     => (string) $item->item_code,
-                                    'item_name'     => (string) $item->item_name,
-                                    'qty_ordered'   => $qtyRemainingQuota,
-                                    'qty'           => 0,
+                                    'item_type' => $item->item_type,
+                                    'item_id' => $item->item_id,
+                                    'item_code' => (string) $item->item_code,
+                                    'item_name' => (string) $item->item_name,
+                                    'qty_ordered' => $qtyRemainingQuota,
+                                    'qty' => 0,
                                     'qty_remaining' => $qtyRemainingQuota,
                                 ];
                             })->values()->toArray();
 
                             $set('items', $items);
                         })
-                        ->required(),
+                        ->required()
+                        ->prefixIcon('heroicon-o-hashtag'),
                 ]),
 
                 Grid::make(2)->schema([
@@ -125,48 +131,52 @@ class DeliveryOrderResource extends Resource
                         ->prefixIcon('heroicon-o-user-circle'),
 
                     Select::make('nx_employee_id')
-                        ->label('Dibuat Oleh')
+                        ->label('Ditugaskan Kepada')
                         ->relationship('employee', 'full_name')
-                        ->default(fn () => auth()->user()?->employee?->id)
+                        ->default(fn() => auth()->user()->employee?->id)
                         ->disabled()
                         ->dehydrated()
                         ->required()
                         ->prefixIcon('heroicon-o-user'),
+
+                    Select::make('status')
+                        ->label('Status')
+                        ->options([
+                            'draft' => 'Draft',
+                            'ready' => 'Siap Kirim',
+                            'on_delivery' => 'Dalam Pengiriman',
+                            'delivered' => 'Terkirim',
+                            'cancelled' => 'Dibatalkan',
+                        ])
+                        ->default('draft')
+                        ->required()
+                        ->prefixIcon('heroicon-o-adjustments-vertical'),
+
+                    Textarea::make('notes')
+                        ->label('Catatan Tambahan')
+                        ->rows(3),
                 ]),
+            ]),
 
-                Select::make('status')
-                    ->label('Status')
-                    ->options([
-                        'draft'       => 'Draft',
-                        'ready'       => 'Siap Kirim',
-                        'on_delivery' => 'Dalam Pengiriman',
-                        'delivered'   => 'Terkirim',
-                        'cancelled'   => 'Dibatalkan',
-                    ])
-                    ->default('draft')
-                    ->required()
-                    ->prefixIcon('heroicon-o-adjustments-vertical'),
-
-                Textarea::make('notes')
-                    ->label('Catatan Tambahan')
-                    ->columnSpanFull(),
-            ])->columns(1),
-
-            Section::make('Item Surat Jalan')->schema([
+            Section::make('Daftar Item Surat Jalan')->schema([
                 Repeater::make('items')
                     ->relationship()
                     ->schema([
                         Hidden::make('item_type')->default('product'),
                         Hidden::make('item_id'),
                         Hidden::make('item_code'),
+                        
+                        Grid::make(2)->schema([
+                            TextInput::make('item_code')
+                                ->label('Kode Produk')
+                                ->disabled()
+                                ->dehydrated(false),
+    
+                            TextInput::make('item_name')
+                                ->label('Nama Produk')
+                                ->disabled()
+                                ->dehydrated(true),
 
-                        TextInput::make('item_name')
-                            ->label('Nama Item')
-                            ->disabled()
-                            ->dehydrated()
-                            ->columnSpanFull(),
-
-                        Grid::make(3)->schema([
                             TextInput::make('qty_ordered')
                                 ->label('Sisa Jatah')
                                 ->numeric()
@@ -208,30 +218,95 @@ class DeliveryOrderResource extends Resource
     {
         return $table
             ->columns([
-                Tables\Columns\TextColumn::make('do_number')->label('Nomor DO')->sortable()->searchable(),
-                Tables\Columns\TextColumn::make('salesOrder.order_number')->label('Nomor SO')->sortable()->searchable(),
-                Tables\Columns\TextColumn::make('customer.name')->label('Pelanggan')->sortable()->searchable(),
-                Tables\Columns\TextColumn::make('do_date')->label('Tanggal DO')->date('d M Y'),
+                Tables\Columns\TextColumn::make('do_number')
+                    ->label('No. Surat Jalan')
+                    ->sortable()
+                    ->searchable()
+                    ->weight('bold'),
+
+                Tables\Columns\TextColumn::make('salesOrder.order_number')
+                    ->label('Ref. Pesanan')
+                    ->sortable()
+                    ->searchable(),
+
+                Tables\Columns\TextColumn::make('customer.name')
+                    ->label('Pelanggan')
+                    ->sortable()
+                    ->searchable(),
+
+                Tables\Columns\TextColumn::make('do_date')
+                    ->label('Tanggal')
+                    ->date('d M Y H:i'),
+
                 Tables\Columns\TextColumn::make('status')
                     ->badge()
-                    ->color(fn (string $state): string => match ($state) {
-                        'draft' => 'gray', 'ready' => 'warning', 'on_delivery' => 'info', 'delivered' => 'success', 'cancelled' => 'danger', default => 'gray',
+                    ->color(fn(string $state): string => match ($state) {
+                        'draft' => 'gray',
+                        'ready' => 'warning',
+                        'on_delivery' => 'info',
+                        'delivered' => 'success',
+                        'cancelled' => 'danger',
+                        default => 'gray',
                     })
-                    ->formatStateUsing(fn (string $state): string => match ($state) {
-                        'draft' => 'Draft', 'ready' => 'Siap Kirim', 'on_delivery' => 'Dalam Pengiriman', 'delivered' => 'Diterima', 'cancelled' => 'Batal', default => $state,
+                    ->formatStateUsing(fn(string $state): string => match ($state) {
+                        'draft' => 'Draft',
+                        'ready' => 'Siap Kirim',
+                        'on_delivery' => 'Dalam Pengiriman',
+                        'delivered' => 'Diterima',
+                        'cancelled' => 'Batal',
+                        default => $state,
                     }),
             ])
-            ->defaultSort('created_at', 'desc')
             ->filters([
-                Tables\Filters\TrashedFilter::make(),
+                Tables\Filters\Filter::make('created_at')
+                    ->form([
+                        Forms\Components\DatePicker::make('created_from')
+                            ->label('Created From')
+                            ->required()
+                            ->displayFormat('d M Y')
+                            ->native(false),
+
+                        Forms\Components\DatePicker::make('created_until')
+                            ->label('Created Until')
+                            ->required()
+                            ->displayFormat('d M Y')
+                            ->native(false),
+                    ])
+                    ->query(function (Builder $query, array $data): Builder {
+                        return $query
+                            ->when(
+                                $data['created_from'],
+                                fn(Builder $query, $date): Builder => $query->whereDate('created_at', '>=', $date),
+                            )
+                            ->when(
+                                $data['created_until'],
+                                fn(Builder $query, $date): Builder => $query->whereDate('created_at', '<=', $date),
+                            );
+                    })
+                    ->indicateUsing(function (array $data): array {
+                        $indicators = [];
+
+                        if ($data['created_from'] ?? null) {
+                            $indicators[] = 'Created from ' . Carbon::parse($data['created_from'])->toFormattedDateString();
+                        }
+
+                        if ($data['created_until'] ?? null) {
+                            $indicators[] = 'Created until ' . Carbon::parse($data['created_until'])->toFormattedDateString();
+                        }
+
+                        return $indicators;
+                    }),
+
+                Tables\Filters\TrashedFilter::make()
+                    ->label('Deleted Status')
+                    ->native(false),
             ])
             ->actions([
-                // === ACTION UPLOAD BUKTI ===
                 Action::make('upload_proof')
                     ->label('Upload Bukti')
                     ->icon('heroicon-o-camera')
                     ->color('info')
-                    ->visible(fn (DeliveryOrder $record) => in_array($record->status, ['on_delivery', 'delivered']))
+                    ->visible(fn(DeliveryOrder $record) => in_array($record->status, ['on_delivery', 'delivered']))
                     ->form([
                         FileUpload::make('proof_image')
                             ->label('Foto Penerimaan')
@@ -248,7 +323,7 @@ class DeliveryOrderResource extends Resource
                         $record->update([
                             'proof_image' => $data['proof_image'],
                             'proof_notes' => $data['proof_notes'],
-                            'status'      => 'delivered',
+                            'status' => 'delivered',
                         ]);
                         Notification::make()->title('Berhasil')->body('Bukti foto tersimpan.')->success()->send();
                     })
@@ -256,31 +331,42 @@ class DeliveryOrderResource extends Resource
                     ->modalSubmitActionLabel('Simpan Bukti')
                     ->modalWidth('md'),
 
-                // === ACTION CETAK ===
                 Action::make('print')
                     ->label('Cetak')
                     ->icon('heroicon-o-printer')
                     ->color('success')
-                    ->url(fn (DeliveryOrder $record) => route('print.delivery-order', $record))
+                    ->url(fn(DeliveryOrder $record) => route('print.delivery-order', $record))
                     ->openUrlInNewTab(),
 
                 Tables\Actions\EditAction::make(),
                 Tables\Actions\DeleteAction::make(),
+                Tables\Actions\ForceDeleteAction::make(),
+                Tables\Actions\RestoreAction::make(),
             ])
             ->bulkActions([
-                Tables\Actions\BulkActionGroup::make([Tables\Actions\DeleteBulkAction::make()]),
-            ]);
+                Tables\Actions\BulkActionGroup::make([
+                    Tables\Actions\DeleteBulkAction::make(),
+                    Tables\Actions\ForceDeleteBulkAction::make(),
+                    Tables\Actions\RestoreBulkAction::make(),
+                ]),
+            ])
+            ->defaultSort('created_at', 'desc');
     }
 
-    public static function getRelations(): array { return []; }
+    public static function getRelations(): array
+    {
+        return [];
+    }
+
     public static function getPages(): array
     {
         return [
-            'index'  => Pages\ListDeliveryOrders::route('/'),
+            'index' => Pages\ListDeliveryOrders::route('/'),
             'create' => Pages\CreateDeliveryOrder::route('/create'),
-            'edit'   => Pages\EditDeliveryOrder::route('/{record}/edit'),
+            'edit' => Pages\EditDeliveryOrder::route('/{record}/edit'),
         ];
     }
+
     public static function getEloquentQuery(): Builder
     {
         return parent::getEloquentQuery()->withoutGlobalScopes([SoftDeletingScope::class]);

@@ -17,7 +17,6 @@
             line-height: 1.3;
         }
 
-        /* --- HEADER --- */
         .header-table {
             width: 100%;
             border-collapse: collapse;
@@ -64,7 +63,6 @@
             margin-bottom: 25px;
         }
 
-        /* --- TITLE --- */
         .document-title {
             text-align: center;
             margin-bottom: 25px;
@@ -98,7 +96,6 @@
             color: #31708f;
         }
 
-        /* --- DETAILS --- */
         .details-table {
             width: 100%;
             margin-bottom: 30px;
@@ -114,7 +111,6 @@
             padding-left: 10px;
         }
 
-        /* --- TABLE --- */
         .items-table {
             width: 100%;
             border-collapse: collapse;
@@ -147,7 +143,6 @@
             background-color: #fafafa;
         }
 
-        /* --- BADGE JENIS --- */
         .badge {
             font-size: 9px;
             padding: 3px 8px;
@@ -165,7 +160,6 @@
             background-color: #d9534f;
         }
 
-        /* --- FOOTER --- */
         .notes-section {
             margin-top: 30px;
             font-style: italic;

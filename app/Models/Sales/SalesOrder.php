@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Support\Carbon;
 
 class SalesOrder extends Model
 {
@@ -16,7 +17,7 @@ class SalesOrder extends Model
     protected $table = 'nx_sales_orders';
 
     protected $fillable = [
-        'nx_quotation_id', // Foreign key ke quotation
+        'nx_quotation_id',
         'nx_customer_id',
         'nx_employee_id',
         'order_number',
@@ -30,9 +31,8 @@ class SalesOrder extends Model
         'promo_code_id',
     ];
 
-    // Mengubah tipe data kolom tertentu secara otomatis
     protected $casts = [
-        'order_date' => 'date',
+        'order_date' => 'datetime',
     ];
 
     // Relasi ke SalesOrderItem
@@ -65,6 +65,14 @@ class SalesOrder extends Model
         return $this->belongsTo(\App\Models\Sales\PromoCode::class, 'promo_code_id');
     }
 
+    protected static function booted(): void
+    {
+        static::creating(function (SalesOrder $salesOrder) {
 
-
+            if ($salesOrder->order_date) {
+                $salesOrder->order_date = Carbon::parse($salesOrder->order_date)
+                    ->setTimeFromTimeString(now()->format('H:i:s'));
+            }
+        });
+    }
 }

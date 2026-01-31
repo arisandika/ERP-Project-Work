@@ -40,9 +40,8 @@ class CustomerResource extends Resource
                     ])
                     ->required()
                     ->native(false)
-                    ->live() // Ini akan membuat form interaktif
-                    ->afterStateUpdated(fn (Forms\Set $set) => $set('name', null)) // Reset nama saat tipe berubah
-                    ->columnSpanFull(),
+                    ->live()
+                    ->afterStateUpdated(fn (Forms\Set $set) => $set('name', null)),
 
                 Forms\Components\TextInput::make('name')
                     ->label(fn (Forms\Get $get) => $get('customer_type') === 'individual' ? 'Nama Lengkap' : 'Nama Perusahaan')
@@ -72,8 +71,7 @@ class CustomerResource extends Resource
                     ->rows(3)
                     ->maxLength(65535)
                     // ->prefixIcon('heroicon-o-home')
-                    ->hidden(fn (Forms\Get $get) => is_null($get('customer_type')))
-                    ->columnSpanFull(),
+                    ->hidden(fn (Forms\Get $get) => is_null($get('customer_type'))),
             ])->columns(2); // Menjadikan layout form menjadi 2 kolom
     }
 
@@ -112,19 +110,19 @@ class CustomerResource extends Resource
 
                 Tables\Columns\TextColumn::make('created_at')
                     ->label('Dibuat Pada')
-                    ->dateTime('d F Y H:i')
+                    ->dateTime('d M Y H:i')
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
 
                 Tables\Columns\TextColumn::make('updated_at')
                     ->label('Diperbarui Pada')
-                    ->dateTime('d F Y H:i')
+                    ->dateTime('d M Y H:i')
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
 
                 Tables\Columns\TextColumn::make('deleted_at')
                     ->label('Dihapus Pada')
-                    ->dateTime('d F Y H:i')
+                    ->dateTime('d M Y H:i')
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
             ])
@@ -140,12 +138,15 @@ class CustomerResource extends Resource
                 Tables\Filters\Filter::make('created_at')
                     ->form([
                         Forms\Components\DatePicker::make('created_from')
-                            ->label('Dibuat Dari')
-                            ->displayFormat('d/m/Y')
+                            ->label('Created From')
+                            ->required()
+                            ->displayFormat('d M Y')
                             ->native(false),
+
                         Forms\Components\DatePicker::make('created_until')
-                            ->label('Dibuat Hingga')
-                            ->displayFormat('d/m/Y')
+                            ->label('Created Until')
+                            ->required()
+                            ->displayFormat('d M Y')
                             ->native(false),
                     ])
                     ->query(function (Builder $query, array $data): Builder {

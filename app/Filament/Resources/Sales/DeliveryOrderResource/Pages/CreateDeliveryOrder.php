@@ -10,70 +10,50 @@ class CreateDeliveryOrder extends CreateRecord
 {
     protected static string $resource = DeliveryOrderResource::class;
 
-    protected function getFormDefaults(): array
+    public function getTitle(): string
     {
-        return [
-            'do_number'      => $this->generateDoNumber(),
-            'do_date'        => now(), // Fix nama kolom 'do_date' bukan 'delivery_date' (sesuai resource)
-            // 'nx_employee_id' => auth()->user()?->employee?->id,
-        ];
+        return 'Buat Surat Jalan';
     }
 
+    public function mount(): void
+    {
+        parent::mount();
+
+        $this->form->fill([
+            'do_number'   => $this->generateDeliveryNumber(),
+            'nx_employee_id' => auth()->user()?->employee?->id,
+            'do_date'     => now()->toDateString(),
+        ]);
+    }
     protected function mutateFormDataBeforeCreate(array $data): array
     {
-        // Generate ulang saat submit untuk meminimalisir race condition
-        $data['do_number'] = $this->generateDoNumber();
+        $data['do_number'] = $this->generateDeliveryNumber();
         return $data;
     }
 
-    /**
-     * Logic Generator: Reset Tahunan
-     * Format: 0001/DO/NEX/XII/2025
-     */
-    private function generateDoNumber(): string
+    private function generateDeliveryNumber(): string
     {
-        $roman   = $this->getRomanMonth(now()->month);
-        $year    = now()->year;
+        $roman = ['I', 'II', 'III', 'IV', 'V', 'VI', 'VII', 'VIII', 'IX', 'X', 'XI', 'XII'][now()->month - 1];
+        $year = now()->year;
         $company = 'NEX';
-        $code    = 'DO';
+        $code = 'DO';
 
-        // Tampilan: /DO/NEX/XII/2025
-        $visualSuffix = "/{$code}/{$company}/{$roman}/{$year}";
+        $prefixLike = "%/$code/$company/$roman/$year";
 
-        // Pola: %/DO/NEX/%/2025
-        $searchPattern = "%/{$code}/{$company}/%/{$year}";
-
-        // FIX: Tambahkan withTrashed() agar nomor yang dihapus tetap dihitung
-        $lastDo = DeliveryOrder::withTrashed()
-            ->where('do_number', 'like', $searchPattern)
+        $last = \App\Models\Sales\DeliveryOrder::withTrashed()
+            ->where('do_number', 'like', $prefixLike)
             ->orderByDesc('id')
             ->value('do_number');
 
         $seq = 1;
-        if ($lastDo) {
-            $parts = explode('/', $lastDo);
-            if (isset($parts[0]) && is_numeric($parts[0])) {
-                $seq = (int) $parts[0] + 1;
-            }
+
+        if ($last) {
+            $parts = explode('/', $last);
+            $seq = ((int) $parts[0]) + 1;
         }
 
-        // Padding 4 digit (0001)
-        $seqStr = str_pad((string)$seq, 4, '0', STR_PAD_LEFT);
+        $seqStr = str_pad((string) $seq, 3, '0', STR_PAD_LEFT);
 
-        return "{$seqStr}{$visualSuffix}";
-    }
-
-    private function getRomanMonth(int $month): string
-    {
-        $map = [
-            1 => 'I', 2 => 'II', 3 => 'III', 4 => 'IV', 5 => 'V', 6 => 'VI',
-            7 => 'VII', 8 => 'VIII', 9 => 'IX', 10 => 'X', 11 => 'XI', 12 => 'XII'
-        ];
-        return $map[$month] ?? 'I';
-    }
-
-    protected function getRedirectUrl(): string
-    {
-        return $this->getResource()::getUrl('index');
+        return "{$seqStr}/{$code}/{$company}/{$roman}/{$year}";
     }
 }
