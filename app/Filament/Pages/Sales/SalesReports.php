@@ -62,14 +62,16 @@ class SalesReports extends Page implements HasForms
                             ->default(now()->startOfMonth())
                             ->required()
                             ->displayFormat('d M Y')
-                            ->native(false),
+                            ->native(false)
+                            ->prefixIcon('heroicon-o-calendar-days'),
 
                         DatePicker::make('end_date')
                             ->label('Sampai Tanggal')
                             ->default(now())
                             ->required()
                             ->displayFormat('d M Y')
-                            ->native(false),
+                            ->native(false)
+                            ->prefixIcon('heroicon-o-calendar-days'),
                     ])
                     ->columns(2)
                     ->statePath('data')

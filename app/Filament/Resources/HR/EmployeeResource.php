@@ -111,6 +111,10 @@ class EmployeeResource extends Resource
 
                         Forms\Components\DatePicker::make('birth_date')
                             ->label('Tanggal Lahir')
+                            ->default(now())
+                            ->required()
+                            ->displayFormat('d M Y')
+                            ->native(false)
                             ->prefixIcon('heroicon-o-calendar-days'),
 
                         Forms\Components\Select::make('gender')
@@ -233,7 +237,11 @@ class EmployeeResource extends Resource
 
                         Forms\Components\DatePicker::make('join_date')
                             ->label('Tanggal Masuk')
-                            ->prefixIcon('heroicon-o-calendar'),
+                            ->default(now())
+                            ->required()
+                            ->displayFormat('d M Y')
+                            ->native(false)
+                            ->prefixIcon('heroicon-o-calendar-days'),
 
                         Forms\Components\Select::make('status')
                             ->label('Status Karyawan')
@@ -357,13 +365,15 @@ class EmployeeResource extends Resource
                             ->label('Created From')
                             ->required()
                             ->displayFormat('d M Y')
-                            ->native(false),
+                            ->native(false)
+                            ->prefixIcon('heroicon-o-calendar-days'),
 
                         Forms\Components\DatePicker::make('created_until')
                             ->label('Created Until')
                             ->required()
                             ->displayFormat('d M Y')
-                            ->native(false),
+                            ->native(false)
+                            ->prefixIcon('heroicon-o-calendar-days'),
                     ])
                     ->query(function (Builder $query, array $data): Builder {
                         return $query
