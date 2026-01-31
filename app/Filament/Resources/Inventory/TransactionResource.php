@@ -208,6 +208,13 @@ class TransactionResource extends Resource
     {
         return $table
             ->columns([
+                Tables\Columns\TextColumn::make('transaction_code')
+                    ->label('Kode Transaksi')
+                    ->searchable()
+                    ->sortable()
+                    ->placeholder('–')
+                    ->weight('bold'),
+
                 Tables\Columns\TextColumn::make('transaction_date')
                     ->label('Tanggal')
                     ->dateTime('d M Y H:i')

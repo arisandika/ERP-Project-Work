@@ -27,7 +27,7 @@ class EditInvoice extends EditRecord
             Actions\Action::make('add_payment')
                 ->label('Input Pembayaran')
                 ->icon('heroicon-o-banknotes')
-                ->color('warning')
+                ->color('primary')
                 // Hanya muncul jika status belum Lunas (paid) dan bukan Draft
                 ->visible(fn(Invoice $record) => $record->status !== 'paid' && $record->status !== 'draft')
                 ->form([
@@ -84,25 +84,6 @@ class EditInvoice extends EditRecord
 
                     // Refresh halaman agar status terbaru muncul
                     $this->redirect($this->getResource()::getUrl('edit', ['record' => $record]));
-                }),
-
-            Actions\Action::make('download_pdf')
-                ->label('Download PDF')
-                ->icon('heroicon-o-arrow-down-tray')
-                ->color('success')
-                ->action(function ($record) {
-                    $generator = new BarcodeGeneratorPNG();
-                    $barcodeData = $generator->getBarcode($record->invoice_number, $generator::TYPE_CODE_128);
-                    $barcodeBase64 = base64_encode($barcodeData);
-
-                    $pdf = Pdf::loadView('pdf.invoice', [
-                        'invoice' => $record,
-                        'barcode' => $barcodeBase64,
-                    ]);
-
-                    return response()->streamDownload(function () use ($pdf) {
-                        echo $pdf->output();
-                    }, 'Invoice-' . $record->invoice_number . '.pdf');
                 }),
 
             Actions\ViewAction::make(),
