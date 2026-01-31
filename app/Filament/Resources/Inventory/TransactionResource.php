@@ -42,6 +42,13 @@ class TransactionResource extends Resource
                 Forms\Components\Section::make('Transaksi Barang Masuk')
                     ->schema([
 
+                        Forms\Components\TextInput::make('transaction_code')
+                        ->label('No. Transaksi')
+                        ->disabled()
+                        ->dehydrated()
+                        ->unique(ignoreRecord: true)
+                        ->prefixIcon('heroicon-o-hashtag'),
+
                         Forms\Components\Select::make('product_id')
                             ->label('Nama Produk')
                             ->relationship('product', 'product_name')
@@ -105,12 +112,14 @@ class TransactionResource extends Resource
 
                         Forms\Components\DatePicker::make('transaction_date')
                             ->label('Tanggal Transaksi')
+                            ->default(now()->startOfMonth())
                             ->required()
                             ->displayFormat('d M Y')
-                            ->default(now()),
+                            ->native(false)
+                            ->prefixIcon('heroicon-o-calendar-days'),
 
                         Forms\Components\TextInput::make('quantity')
-                            ->label('Jumlah Barang')
+                            ->label('Qty Masuk')
                             ->numeric()
                             ->required()
                             ->minValue(1)
@@ -209,11 +218,17 @@ class TransactionResource extends Resource
         return $table
             ->columns([
                 Tables\Columns\TextColumn::make('transaction_code')
-                    ->label('Kode Transaksi')
+                    ->label('No. Transaksi')
                     ->searchable()
                     ->sortable()
                     ->placeholder('–')
                     ->weight('bold'),
+
+                Tables\Columns\TextColumn::make('no_reference')
+                    ->label('Ref. Sales')
+                    ->searchable()
+                    ->sortable()
+                    ->placeholder('–'),
 
                 Tables\Columns\TextColumn::make('transaction_date')
                     ->label('Tanggal')
@@ -285,13 +300,15 @@ class TransactionResource extends Resource
                             ->label('Created From')
                             ->required()
                             ->displayFormat('d M Y')
-                            ->native(false),
+                            ->native(false)
+                            ->prefixIcon('heroicon-o-calendar-days'),
 
                         Forms\Components\DatePicker::make('created_until')
                             ->label('Created Until')
                             ->required()
                             ->displayFormat('d M Y')
-                            ->native(false),
+                            ->native(false)
+                            ->prefixIcon('heroicon-o-calendar-days'),
                     ])
                     ->query(function (Builder $query, array $data): Builder {
                         return $query

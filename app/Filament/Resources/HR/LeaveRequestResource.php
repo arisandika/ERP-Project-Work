@@ -46,8 +46,9 @@ class LeaveRequestResource extends Resource
                     Forms\Components\DatePicker::make('start_date')
                         ->label('Tanggal Mulai')
                         ->required()
+                        ->displayFormat('d M Y')
                         ->native(false)
-                        ->prefixIcon('heroicon-o-calendar')
+                        ->prefixIcon('heroicon-o-calendar-days')
                         ->closeOnDateSelection()
                         ->reactive()
                         ->afterStateUpdated(function (callable $set, $get) {
@@ -79,8 +80,9 @@ class LeaveRequestResource extends Resource
                     Forms\Components\DatePicker::make('end_date')
                         ->label('Tanggal Selesai')
                         ->required()
+                        ->displayFormat('d M Y')
                         ->native(false)
-                        ->prefixIcon('heroicon-o-calendar')
+                        ->prefixIcon('heroicon-o-calendar-days')
                         ->closeOnDateSelection()
                         ->reactive()
                         ->afterStateUpdated(function (callable $set, $state, $get) {
@@ -191,13 +193,15 @@ class LeaveRequestResource extends Resource
                             ->label('Created From')
                             ->required()
                             ->displayFormat('d M Y')
-                            ->native(false),
+                            ->native(false)
+                            ->prefixIcon('heroicon-o-calendar-days'),
 
                         Forms\Components\DatePicker::make('created_until')
                             ->label('Created Until')
                             ->required()
                             ->displayFormat('d M Y')
-                            ->native(false),
+                            ->native(false)
+                            ->prefixIcon('heroicon-o-calendar-days'),
                     ])
                     ->query(function (Builder $query, array $data): Builder {
                         return $query
@@ -223,7 +227,7 @@ class LeaveRequestResource extends Resource
 
                         return $indicators;
                     }),
-                    
+
                 Tables\Filters\TrashedFilter::make()
                     ->label('Deleted Status')
                     ->native(false),

@@ -37,10 +37,11 @@ class FinancialRecordResource extends Resource
                             ->schema([
                                 Forms\Components\DatePicker::make('transaction_date')
                                     ->label('Tanggal')
+                                    ->default(now())
                                     ->required()
                                     ->displayFormat('d M Y')
-                                    ->default(now())
-                                    ->native(false),
+                                    ->native(false)
+                                    ->prefixIcon('heroicon-o-calendar-days'),
 
                                 Forms\Components\Select::make('type')
                                     ->label('Jenis Transaksi')
@@ -102,7 +103,7 @@ class FinancialRecordResource extends Resource
                 Tables\Columns\TextColumn::make('type')
                     ->label('Tipe')
                     ->badge()
-                    ->color(fn (string $state): string => match ($state) {
+                    ->color(fn(string $state): string => match ($state) {
                         'pemasukan' => 'success',
                         'pengeluaran' => 'danger',
                     }),

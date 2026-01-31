@@ -21,6 +21,8 @@ class StockTransaction extends Model
 
     protected $fillable = [
         'product_id',
+        'transaction_code',
+        'no_reference',
         'warehouse_id',
         'transaction_date',
         'type',
