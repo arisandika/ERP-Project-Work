@@ -355,7 +355,6 @@ class QuotationResource extends Resource
                 ->options(function (Get $get) {
                     $type = $get('item_type');
 
-                    // Normalisasi type (Jaga-jaga jika di DB tersimpan full class)
                     if ($type === 'App\\Models\\Inventory\\Product' || $type === Product::class) $type = 'product';
                     if ($type === 'App\\Models\\Inventory\\Service' || $type === Service::class) $type = 'service';
                     if ($type === 'App\\Models\\Inventory\\Package' || $type === Package::class) $type = 'package';
@@ -367,11 +366,9 @@ class QuotationResource extends Resource
                         default => [],
                     };
                 })
-                // === REVISI: Tambahkan ini agar saat EDIT datanya muncul ===
                 ->getOptionLabelUsing(function ($value, Get $get) {
                     $type = $get('item_type');
 
-                    // Normalisasi type
                     if ($type === 'App\\Models\\Inventory\\Product' || $type === Product::class) $type = 'product';
                     if ($type === 'App\\Models\\Inventory\\Service' || $type === Service::class) $type = 'service';
                     if ($type === 'App\\Models\\Inventory\\Package' || $type === Package::class) $type = 'package';
@@ -392,7 +389,6 @@ class QuotationResource extends Resource
                         ?? $record?->package_name
                         ?? $record?->name;
                 })
-                // ========================================================
                 ->visible(fn(Get $get) => !empty($get('item_type')))
                 ->searchable()
                 ->preload()
@@ -404,7 +400,6 @@ class QuotationResource extends Resource
 
                     $type = $get('item_type');
 
-                    // Normalisasi type
                     if ($type === 'App\\Models\\Inventory\\Product' || $type === Product::class) $type = 'product';
                     if ($type === 'App\\Models\\Inventory\\Service' || $type === Service::class) $type = 'service';
                     if ($type === 'App\\Models\\Inventory\\Package' || $type === Package::class) $type = 'package';
