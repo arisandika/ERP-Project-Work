@@ -246,13 +246,15 @@ class QuotationResource extends Resource
                             ->label('Created From')
                             ->required()
                             ->displayFormat('d M Y')
-                            ->native(false),
+                            ->native(false)
+                            ->prefixIcon('heroicon-o-calendar-days'),
 
                         DatePicker::make('created_until')
                             ->label('Created Until')
                             ->required()
                             ->displayFormat('d M Y')
-                            ->native(false),
+                            ->native(false)
+                            ->prefixIcon('heroicon-o-calendar-days'),
                     ])
                     ->query(function (Builder $query, array $data): Builder {
                         return $query

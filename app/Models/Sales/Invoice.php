@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Support\Carbon;
 
 class Invoice extends Model
 {
@@ -31,7 +32,7 @@ class Invoice extends Model
     ];
 
     protected $casts = [
-        'invoice_date' => 'date',
+        'invoice_date' => 'datetime',
         'due_date'     => 'date',
         'subtotal'     => 'decimal:2',
         'grand_total'  => 'decimal:2',
@@ -93,5 +94,16 @@ class Invoice extends Model
 
         // Update status di database tanpa mentrigger event 'updated' berulang kali
         $this->updateQuietly(['status' => $status]);
+    }
+
+    protected static function booted(): void
+    {
+        static::creating(function (Invoice $invoice) {
+
+            if ($invoice->invoice_date) {
+                $invoice->invoice_date = Carbon::parse($invoice->invoice_date)
+                    ->setTimeFromTimeString(now()->format('H:i:s'));
+            }
+        });
     }
 }

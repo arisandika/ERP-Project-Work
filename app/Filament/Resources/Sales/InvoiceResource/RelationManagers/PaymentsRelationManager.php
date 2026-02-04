@@ -13,14 +13,13 @@ use Illuminate\Database\Eloquent\SoftDeletingScope;
 class PaymentsRelationManager extends RelationManager
 {
     protected static string $relationship = 'payments';
+    protected static ?string $recordTitleAttribute = 'payment_number';
 
     public function form(Form $form): Form
     {
         return $form
             ->schema([
-                Forms\Components\TextInput::make('payment_number')
-                    ->required()
-                    ->maxLength(255),
+                //
             ]);
     }
 
@@ -46,7 +45,7 @@ class PaymentsRelationManager extends RelationManager
                     ->label('Metode Pembayaran')
                     ->badge()
                     ->color('primary')
-                    ->formatStateUsing(fn (string $state): string => match ($state) {
+                    ->formatStateUsing(fn(string $state): string => match ($state) {
                         'bank_transfer' => 'Transfer Bank',
                         'cash' => 'Tunai',
                         'cheque' => 'Cek/Giro',
@@ -63,8 +62,9 @@ class PaymentsRelationManager extends RelationManager
                 //
             ])
             ->headerActions([
-                Tables\Actions\CreateAction::make(),
+                //
             ])
+            ->heading('Tagihan Pembayaran')
             ->actions([
                 Tables\Actions\EditAction::make(),
                 Tables\Actions\DeleteAction::make(),

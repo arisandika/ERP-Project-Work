@@ -93,32 +93,34 @@ class AttendanceResource extends Resource
                             ->label('Created From')
                             ->required()
                             ->displayFormat('d M Y')
-                            ->native(false),
+                            ->native(false)
+                            ->prefixIcon('heroicon-o-calendar-days'),
 
                         Forms\Components\DatePicker::make('created_until')
                             ->label('Created Until')
                             ->required()
                             ->displayFormat('d M Y')
-                            ->native(false),
+                            ->native(false)
+                            ->prefixIcon('heroicon-o-calendar-days'),
                     ])
                     ->query(function (Builder $query, array $data): Builder {
                         return $query
                             ->when(
-                                $data['from'],
+                                $data['created_from'],
                                 fn(Builder $query, $date): Builder => $query->whereDate('date', '>=', $date),
                             )
                             ->when(
-                                $data['until'],
+                                $data['created_until'],
                                 fn(Builder $query, $date): Builder => $query->whereDate('date', '<=', $date),
                             );
                     })
                     ->indicateUsing(function (array $data): array {
                         $indicators = [];
-                        if ($data['from'] ?? null) {
-                            $indicators[] = 'Dari ' . Carbon::parse($data['from'])->toFormattedDateString();
+                        if ($data['created_from'] ?? null) {
+                            $indicators[] = 'Dari ' . Carbon::parse($data['created_from'])->toFormattedDateString();
                         }
-                        if ($data['until'] ?? null) {
-                            $indicators[] = 'Sampai ' . Carbon::parse($data['until'])->toFormattedDateString();
+                        if ($data['created_until'] ?? null) {
+                            $indicators[] = 'Sampai ' . Carbon::parse($data['created_until'])->toFormattedDateString();
                         }
                         return $indicators;
                     }),
