@@ -1,4 +1,5 @@
 <?php
+
 namespace App\Filament\Resources\Sales;
 
 use App\Filament\Resources\Sales\QuotationResource\Pages;
@@ -138,7 +139,7 @@ class QuotationResource extends Resource
                                 ->dehydrated()
                                 ->prefix('IDR')
                                 ->numeric()
-                                ->formatStateUsing(fn($state) => (int) $state), // Format Integer saat Edit
+                                ->formatStateUsing(fn($state) => (int) $state),
 
                             // 2. PROMO LOGIC
                             TextInput::make('promo_code_input')
@@ -169,7 +170,7 @@ class QuotationResource extends Resource
                                 ->dehydrated()
                                 ->prefix('IDR')
                                 ->numeric()
-                                ->formatStateUsing(fn($state) => (int) $state), // Format Integer saat Edit
+                                ->formatStateUsing(fn($state) => (int) $state),
 
                             // 4. TAX
                             TextInput::make('tax')
@@ -224,10 +225,10 @@ class QuotationResource extends Resource
                 Tables\Columns\TextColumn::make('status')
                     ->badge()
                     ->color(fn(string $state): string => match ($state) {
-                        'draft' => 'gray', 
-                        'sent' => 'warning', 
-                        'accepted' => 'success', 
-                        'rejected' => 'danger', 
+                        'draft' => 'gray',
+                        'sent' => 'warning',
+                        'accepted' => 'success',
+                        'rejected' => 'danger',
                         default => 'gray'
                     })
                     ->formatStateUsing(fn(string $state): string => match ($state) {
@@ -355,15 +356,40 @@ class QuotationResource extends Resource
                 ->label('Pilih Item')
                 ->options(function (Get $get) {
                     $type = $get('item_type');
+
+                    if ($type === 'App\\Models\\Inventory\\Product' || $type === Product::class) $type = 'product';
+                    if ($type === 'App\\Models\\Inventory\\Service' || $type === Service::class) $type = 'service';
+                    if ($type === 'App\\Models\\Inventory\\Package' || $type === Package::class) $type = 'package';
+
                     return match ($type) {
-                        'product' => Product::query()
-                            ->pluck('product_name', 'id'),
-                        'service' => Service::query()
-                            ->pluck('service_name', 'id'),
-                        'package' => Package::query()
-                            ->pluck('package_name', 'id'),
+                        'product' => Product::query()->pluck('product_name', 'id'),
+                        'service' => Service::query()->pluck('service_name', 'id'),
+                        'package' => Package::query()->pluck('package_name', 'id'),
                         default => [],
                     };
+                })
+                ->getOptionLabelUsing(function ($value, Get $get) {
+                    $type = $get('item_type');
+
+                    if ($type === 'App\\Models\\Inventory\\Product' || $type === Product::class) $type = 'product';
+                    if ($type === 'App\\Models\\Inventory\\Service' || $type === Service::class) $type = 'service';
+                    if ($type === 'App\\Models\\Inventory\\Package' || $type === Package::class) $type = 'package';
+
+                    $modelClass = match ($type) {
+                        'product' => Product::class,
+                        'service' => Service::class,
+                        'package' => Package::class,
+                        default => null
+                    };
+
+                    if (!$modelClass || !$value) return null;
+
+                    $record = $modelClass::find($value);
+
+                    return $record?->product_name
+                        ?? $record?->service_name
+                        ?? $record?->package_name
+                        ?? $record?->name;
                 })
                 ->visible(fn(Get $get) => !empty($get('item_type')))
                 ->searchable()
@@ -375,6 +401,10 @@ class QuotationResource extends Resource
                     }
 
                     $type = $get('item_type');
+
+                    if ($type === 'App\\Models\\Inventory\\Product' || $type === Product::class) $type = 'product';
+                    if ($type === 'App\\Models\\Inventory\\Service' || $type === Service::class) $type = 'service';
+                    if ($type === 'App\\Models\\Inventory\\Package' || $type === Package::class) $type = 'package';
 
                     $model = match ($type) {
                         'product' => Product::find($state),
@@ -389,16 +419,12 @@ class QuotationResource extends Resource
 
                         $sellPrice = match ($type) {
                             'product' => (float) ($model->selling_price ?? $model->price ?? 0),
-
                             'service' => (float) ($model->price ?? 0),
-
                             'package' => (float) ($model->total_price ?? 0),
-
                             default => 0
                         };
                         $buyPrice = match ($type) {
                             'product' => (float) ($model->purchase_price ?? 0),
-
                             default => 0
                         };
 
@@ -412,16 +438,14 @@ class QuotationResource extends Resource
                     }
                 }),
 
-            Hidden::make('item_code')
-                ->dehydrated(true),
-
             Hidden::make('cost_price')
                 ->dehydrated(true),
 
             TextInput::make('item_code')
                 ->label('Kode Produk')
                 ->disabled()
-                ->dehydrated(false),
+                ->dehydrated()
+                ->required(),
 
             TextInput::make('item_name')
                 ->label('Nama Produk')

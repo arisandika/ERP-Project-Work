@@ -5,6 +5,7 @@ use App\Http\Controllers\Inventory\StockReportController;
 use App\Http\Controllers\Inventory\TransactionReportController;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Sales\PrintController;
+use App\Http\Controllers\Sales\InvoiceVerificationController;
 
 
 // Route::get('/', function () {
@@ -27,7 +28,20 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/print/delivery-order/{record}', [PrintController::class, 'deliveryOrder'])
         ->name('print.delivery-order');
 
-    Route::get('/invoice/verify/{number}', [PrintController::class, 'verifyInvoice'])
-        ->name('invoice.verify')
-        ->where('number', '.*');
 });
+
+
+Route::get('/invoice/verify/{number}', [InvoiceVerificationController::class, 'showVerifyForm'])
+    ->where('number', '.*')
+    ->name('invoice.verify.form');
+
+Route::post('/invoice/verify/{number}', [InvoiceVerificationController::class, 'submitVerify'])
+    ->where('number', '.*')
+    ->middleware('throttle:10,1')
+    ->name('invoice.verify.submit');
+
+Route::get('/invoice/view/{number}', [InvoiceVerificationController::class, 'showInvoice'])
+    ->where('number', '.*')
+    ->middleware('signed')
+    ->name('invoice.view');
+
