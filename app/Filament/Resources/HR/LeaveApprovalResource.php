@@ -231,11 +231,11 @@ class LeaveApprovalResource extends Resource
 
                         TextEntry::make('start_date')
                             ->label('Tanggal Mulai')
-                            ->date('d F Y'),
+                            ->date('d M Y'),
 
                         TextEntry::make('end_date')
                             ->label('Tanggal Selesai')
-                            ->date('d F Y'),
+                            ->date('d M Y'),
 
                         TextEntry::make('total_days')
                             ->label('Durasi (Hari Kerja)')

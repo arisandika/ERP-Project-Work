@@ -488,7 +488,7 @@ class EmployeeResource extends Resource
 
                         TextEntry::make('join_date')
                             ->label('Tanggal Masuk')
-                            ->date('d F Y'),
+                            ->date('d M Y'),
 
                         IconEntry::make('can_wfa')
                             ->label('Boleh Work From Anywhere (WFA)')
@@ -517,7 +517,7 @@ class EmployeeResource extends Resource
 
                         TextEntry::make('birth_date')
                             ->label('Tanggal Lahir')
-                            ->date('d F Y'),
+                            ->date('d M Y'),
 
                         TextEntry::make('gender')
                             ->label('Jenis Kelamin'),

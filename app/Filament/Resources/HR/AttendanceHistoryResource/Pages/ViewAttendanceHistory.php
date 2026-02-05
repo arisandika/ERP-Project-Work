@@ -17,4 +17,9 @@ class ViewAttendanceHistory extends ViewRecord
             Action::make('back')->url(static::getResource()::getUrl())->button()->color('gray'),
         ];
     }
+
+    public function getTitle(): string
+    {
+        return 'Lihat Riwayat Presensi';
+    }
 }

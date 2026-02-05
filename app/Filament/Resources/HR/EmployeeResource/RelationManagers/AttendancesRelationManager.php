@@ -40,7 +40,7 @@ class AttendancesRelationManager extends RelationManager
 
                 Tables\Columns\TextColumn::make('date')
                     ->label('Tanggal')
-                    ->date('d F Y')
+                    ->date('d M Y')
                     ->sortable(),
 
                 Tables\Columns\TextColumn::make('clock_in')

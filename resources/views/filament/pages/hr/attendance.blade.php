@@ -113,7 +113,7 @@
 
                                     <button type="button" id="openCameraBtn">
                                         <div
-                                            class="flex items-center justify-center bg-gray-600 rounded-full w-14 h-14 hover:bg-gray-700">
+                                            class="flex items-center justify-center bg-gray-200 rounded-full hover:bg-gray-300 dark:bg-gray-600 w-14 h-14 dark:hover:bg-gray-700">
                                             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
                                                 stroke-width="1.5" stroke="currentColor" class="size-6">
                                                 <path stroke-linecap="round" stroke-linejoin="round"
@@ -123,10 +123,10 @@
                                             </svg>
                                         </div>
                                     </button>
-                                    <p class="px-4 py-2 text-sm text-white rounded-lg">
+                                    <p class="px-4 py-2 text-sm text-gray-700 dark:text-white">
                                         Klik untuk membuka kamera
                                     </p>
-                                    <p class="text-xs text-gray-400">
+                                    <p class="text-xs text-gray-500">
                                         Pastikan wajah Anda terlihat jelas dalam bingkai.
                                     </p>
                                 </div>
@@ -230,7 +230,7 @@
 
                                     <button type="button" id="openCameraBtnOut">
                                         <div
-                                            class="flex items-center justify-center bg-gray-600 rounded-full w-14 h-14 hover:bg-gray-700">
+                                            class="flex items-center justify-center bg-gray-200 rounded-full hover:bg-gray-300 dark:bg-gray-600 w-14 h-14 dark:hover:bg-gray-700">
                                             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
                                                 stroke-width="1.5" stroke="currentColor" class="size-6">
                                                 <path stroke-linecap="round" stroke-linejoin="round"
@@ -240,10 +240,10 @@
                                             </svg>
                                         </div>
                                     </button>
-                                    <p class="px-4 py-2 text-sm text-white rounded-lg">
+                                    <p class="px-4 py-2 text-sm text-gray-700 dark:text-white">
                                         Klik untuk membuka kamera
                                     </p>
-                                    <p class="text-xs text-gray-400">
+                                    <p class="text-xs text-gray-500">
                                         Pastikan wajah Anda terlihat jelas dalam bingkai.
                                     </p>
                                 </div>
