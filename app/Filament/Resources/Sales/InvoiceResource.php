@@ -404,7 +404,7 @@ class InvoiceResource extends Resource
                     ->icon('heroicon-o-printer')
                     ->color('success')
                     ->action(function (Invoice $record) {
-                        $validationUrl = route('invoice.verify', $record->invoice_number);
+                        $validationUrl = route('invoice.verify.form', ['number' => $record->invoice_number]);
                         $qrCode = new QrCode(data: $validationUrl, encoding: new Encoding('UTF-8'), size: 200, margin: 10);
                         $writer = new PngWriter();
                         $qrBase64 = base64_encode($writer->write($qrCode)->getString());
