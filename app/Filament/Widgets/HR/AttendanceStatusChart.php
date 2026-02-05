@@ -81,7 +81,7 @@ class AttendanceStatusChart extends ApexChartWidget
                 'mode' => 'dark',
             ],
             'title' => [
-                'text' => 'Rekapitulasi Presensi Karyawan — ' . $today->translatedFormat('d F Y'),
+                'text' => 'Rekapitulasi Presensi Karyawan — ' . $today->translatedFormat('d M Y'),
                 'align' => 'center',
                 'style' => [
                     'fontFamily' => 'inherit',

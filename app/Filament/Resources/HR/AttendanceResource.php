@@ -5,6 +5,7 @@ use App\Filament\Resources\HR\AttendanceResource\Pages;
 use App\Models\HR\Attendance;
 use Filament\Forms;
 use Filament\Forms\Form;
+use Filament\Infolists\Components\ImageEntry;
 use Filament\Infolists\Components\Section;
 use Filament\Infolists\Components\TextEntry;
 use Filament\Infolists\Infolist;
@@ -46,31 +47,31 @@ class AttendanceResource extends Resource
                     ->sortable()
                     ->searchable(),
 
-                Tables\Columns\TextColumn::make('shift.name')
-                    ->label('Shift')
-                    ->sortable()
-                    ->searchable(),
-
                 Tables\Columns\TextColumn::make('date')
                     ->label('Tanggal')
-                    ->date('d F Y H:i')
+                    ->date('d M Y')
                     ->sortable(),
 
                 Tables\Columns\TextColumn::make('clock_in')
                     ->label('Jam Masuk')
-                    ->time('H:i'),
+                    ->time('H:i')
+                    ->placeholder('-')
+                    ->sortable(),
 
                 Tables\Columns\TextColumn::make('clock_out')
                     ->label('Jam Keluar')
-                    ->time('H:i'),
+                    ->time('H:i')
+                    ->placeholder('-')
+                    ->sortable(),
 
                 Tables\Columns\BadgeColumn::make('status')
                     ->label('Status')
                     ->colors([
-                        'success' => 'hadir',
-                        'warning' => 'izin',
-                        'info'    => 'sakit',
-                        'danger'  => 'alfa',
+                        'success' => 'Hadir',
+                        'warning' => 'Terlambat',
+                        'info' => 'Cuti',
+                        'yellow' => 'Izin',
+                        'danger' => 'Absen',
                     ])
                     ->sortable(),
 
@@ -128,10 +129,11 @@ class AttendanceResource extends Resource
                 Tables\Filters\SelectFilter::make('status')
                     ->label('Status Presensi')
                     ->options([
-                        'hadir' => 'Hadir',
-                        'izin'  => 'Izin',
-                        'sakit' => 'Sakit',
-                        'alfa'  => 'Tanpa Keterangan',
+                        'Hadir' => 'Hadir',
+                        'Terlambat' => 'Terlambat',
+                        'Cuti' => 'Cuti',
+                        'Izin' => 'Izin',
+                        'Absen' => 'Absen',
                     ])
                     ->native(false),
 
@@ -163,27 +165,56 @@ class AttendanceResource extends Resource
                 Section::make('Informasi Presensi')
                     ->columns(2)
                     ->schema([
-                        TextEntry::make('employee.name')->label('Nama Karyawan'),
-                        TextEntry::make('shift.name')->label('Shift'),
-                        TextEntry::make('date')->label('Tanggal')->date('d F Y'),
-                        TextEntry::make('clock_in')->label('Jam Masuk')->time('H:i'),
-                        TextEntry::make('clock_out')->label('Jam Keluar')->time('H:i'),
-                        TextEntry::make('status')->label('Status')->badge(),
-                        TextEntry::make('note')->label('Catatan')->columnSpanFull(),
+                        TextEntry::make('employee.full_name')
+                            ->label('Nama Karyawan'),
+
+                        TextEntry::make('date')
+                            ->label('Tanggal')
+                            ->date('d M Y'),
+
+                        TextEntry::make('clock_in')
+                            ->label('Jam Masuk')
+                            ->time('H:i'),
+
+                        TextEntry::make('clock_out')
+                            ->label('Jam Keluar')
+                            ->time('H:i')
+                            ->placeholder('-'),
+
+                        TextEntry::make('status')
+                            ->label('Status')
+                            ->badge()
+                            ->colors([
+                                'success' => 'Hadir',
+                                'warning' => 'Terlambat',
+                                'info' => 'Cuti',
+                                'yellow' => 'Izin',
+                                'danger' => 'Absen',
+                            ]),
+
+                        TextEntry::make('note')
+                            ->label('Catatan')
+                            ->placeholder('-'),
+
+                        ImageEntry::make('face_snapshot_in')
+                            ->label('Foto Presensi Masuk')
+                            ->placeholder('-'),
+
+                        ImageEntry::make('face_snapshot_out')
+                            ->label('Foto Presensi Keluar')
+                            ->placeholder('-'),
                     ]),
+
                 Section::make('Pengelolaan Data')
                     ->columns(2)
                     ->schema([
                         TextEntry::make('created_at')
                             ->label('Dibuat Pada')
                             ->dateTime('d M Y H:i'),
+                            
                         TextEntry::make('updated_at')
                             ->label('Diperbarui Pada')
                             ->dateTime('d M Y H:i'),
-                        TextEntry::make('deleted_at')
-                            ->label('Dihapus Pada')
-                            ->dateTime('d M Y H:i')
-                            ->visible(fn(Attendance $attendance) => $attendance->trashed()),
                     ]),
             ]);
     }

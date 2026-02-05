@@ -5,6 +5,7 @@ use App\Filament\Resources\HR\AttendanceHistoryResource\Pages;
 use App\Models\HR\Attendance;
 use Filament\Forms;
 use Filament\Forms\Form;
+use Filament\Infolists\Components\ImageEntry;
 use Filament\Infolists\Components\Section;
 use Filament\Infolists\Components\TextEntry;
 use Filament\Infolists\Infolist;
@@ -46,33 +47,45 @@ class AttendanceHistoryResource extends Resource
                     ->sortable()
                     ->searchable(),
 
-                Tables\Columns\TextColumn::make('shift.name')
-                    ->label('Shift')
-                    ->sortable()
-                    ->searchable(),
-
                 Tables\Columns\TextColumn::make('date')
                     ->label('Tanggal')
-                    ->date('d F Y')
+                    ->date('d M Y')
                     ->sortable(),
 
                 Tables\Columns\TextColumn::make('clock_in')
                     ->label('Jam Masuk')
-                    ->time('H:i'),
+                    ->time('H:i')
+                    ->placeholder('-')
+                    ->sortable(),
 
                 Tables\Columns\TextColumn::make('clock_out')
                     ->label('Jam Keluar')
-                    ->time('H:i'),
+                    ->time('H:i')
+                    ->placeholder('-')
+                    ->sortable(),
 
                 Tables\Columns\BadgeColumn::make('status')
                     ->label('Status')
                     ->colors([
-                        'success' => 'hadir',
-                        'warning' => 'izin',
-                        'info'    => 'sakit',
-                        'danger'  => 'alfa',
+                        'success' => 'Hadir',
+                        'warning' => 'Terlambat',
+                        'info' => 'Cuti',
+                        'yellow' => 'Izin',
+                        'danger' => 'Absen',
                     ])
                     ->sortable(),
+
+                Tables\Columns\TextColumn::make('created_at')
+                    ->label('Dibuat Pada')
+                    ->dateTime('d M Y')
+                    ->sortable()
+                    ->toggleable(isToggledHiddenByDefault: true),
+
+                Tables\Columns\TextColumn::make('deleted_at')
+                    ->label('Dihapus Pada')
+                    ->dateTime('d M Y')
+                    ->sortable()
+                    ->toggleable(isToggledHiddenByDefault: true),
             ])
             ->filters([
                 Tables\Filters\Filter::make('date')
@@ -95,13 +108,11 @@ class AttendanceHistoryResource extends Resource
                         return $query
                             ->when(
                                 $data['created_from'],
-                                fn(Builder $query, $date): Builder =>
-                                $query->whereDate('date', '>=', $date)
+                                fn(Builder $query, $date): Builder => $query->whereDate('date', '>=', $date),
                             )
                             ->when(
                                 $data['created_until'],
-                                fn(Builder $query, $date): Builder =>
-                                $query->whereDate('date', '<=', $date)
+                                fn(Builder $query, $date): Builder => $query->whereDate('date', '<=', $date),
                             );
                     })
                     ->indicateUsing(function (array $data): array {
@@ -118,11 +129,16 @@ class AttendanceHistoryResource extends Resource
                 Tables\Filters\SelectFilter::make('status')
                     ->label('Status Presensi')
                     ->options([
-                        'hadir' => 'Hadir',
-                        'izin'  => 'Izin',
-                        'sakit' => 'Sakit',
-                        'alfa'  => 'Tanpa Keterangan',
+                        'Hadir' => 'Hadir',
+                        'Terlambat' => 'Terlambat',
+                        'Cuti' => 'Cuti',
+                        'Izin' => 'Izin',
+                        'Absen' => 'Absen',
                     ])
+                    ->native(false),
+
+                Tables\Filters\TrashedFilter::make()
+                    ->label('Deleted Status')
                     ->native(false),
             ])
             ->actions([
@@ -140,14 +156,44 @@ class AttendanceHistoryResource extends Resource
                 Section::make('Informasi Presensi')
                     ->columns(2)
                     ->schema([
-                        TextEntry::make('employee.full_name')->label('Nama Karyawan'),
-                        TextEntry::make('shift.name')->label('Shift'),
-                        TextEntry::make('date')->label('Tanggal')->date('d F Y'),
-                        TextEntry::make('clock_in')->label('Jam Masuk')->time('H:i'),
-                        TextEntry::make('clock_out')->label('Jam Keluar')->time('H:i')->placeholder('-'),
-                        TextEntry::make('status')->label('Status')->badge(),
-                        TextEntry::make('note')->label('Catatan')->columnSpanFull()
-                        ->placeholder('-'),
+                        TextEntry::make('employee.full_name')
+                            ->label('Nama Karyawan'),
+
+                        TextEntry::make('date')
+                            ->label('Tanggal')
+                            ->date('d M Y'),
+
+                        TextEntry::make('clock_in')
+                            ->label('Jam Masuk')
+                            ->time('H:i'),
+
+                        TextEntry::make('clock_out')
+                            ->label('Jam Keluar')
+                            ->time('H:i')
+                            ->placeholder('-'),
+
+                        TextEntry::make('status')
+                            ->label('Status')
+                            ->badge()
+                            ->colors([
+                                'success' => 'Hadir',
+                                'warning' => 'Terlambat',
+                                'info' => 'Cuti',
+                                'yellow' => 'Izin',
+                                'danger' => 'Absen',
+                            ]),
+
+                        TextEntry::make('note')
+                            ->label('Catatan')
+                            ->placeholder('-'),
+
+                        ImageEntry::make('face_snapshot_in')
+                            ->label('Foto Presensi Masuk')
+                            ->placeholder('-'),
+
+                        ImageEntry::make('face_snapshot_out')
+                            ->label('Foto Presensi Keluar')
+                            ->placeholder('-'),
                     ]),
 
                 Section::make('Pengelolaan Data')
@@ -156,6 +202,7 @@ class AttendanceHistoryResource extends Resource
                         TextEntry::make('created_at')
                             ->label('Dibuat Pada')
                             ->dateTime('d M Y H:i'),
+                            
                         TextEntry::make('updated_at')
                             ->label('Diperbarui Pada')
                             ->dateTime('d M Y H:i'),
@@ -174,7 +221,7 @@ class AttendanceHistoryResource extends Resource
     {
         return [
             'index' => Pages\ListAttendanceHistories::route('/'),
-            'view'  => Pages\ViewAttendanceHistory::route('/{record}'),
+            'view' => Pages\ViewAttendanceHistory::route('/{record}'),
         ];
     }
 
@@ -187,7 +234,7 @@ class AttendanceHistoryResource extends Resource
         $user = auth()->user();
 
         // Jika bukan super_admin, hanya tampilkan data cutinya sendiri
-        if (! $user->hasRole('super_admin')) {
+        if (!$user->hasRole('super_admin')) {
             $employee = $user->employee;
             if ($employee) {
                 $query->where('employee_id', $employee->id);
