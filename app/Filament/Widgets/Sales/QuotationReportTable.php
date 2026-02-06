@@ -11,8 +11,6 @@ use Illuminate\Database\Eloquent\Builder;
 
 class QuotationReportTable extends BaseWidget
 {
-    
-    
     public $filters = [];
 
     protected function getTableQuery(): Builder

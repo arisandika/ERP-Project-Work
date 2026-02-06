@@ -9,8 +9,6 @@ use Leandrocfe\FilamentApexCharts\Widgets\ApexChartWidget;
 
 class AttendanceMissingClockOutTrend extends ApexChartWidget
 {
-    
-    
     protected static ?string $heading = 'Trend Tidak Clock-Out (14 Hari)';
 
     protected function getOptions(): array
