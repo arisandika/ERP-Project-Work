@@ -28,6 +28,19 @@ class TransactionReportResource extends Resource
     {
         return $table
             ->columns([
+                Tables\Columns\TextColumn::make('transaction_code')
+                    ->label('No. Transaksi')
+                    ->searchable()
+                    ->sortable()
+                    ->placeholder('–')
+                    ->weight('bold'),
+
+                Tables\Columns\TextColumn::make('no_reference')
+                    ->label('Ref. Sales')
+                    ->searchable()
+                    ->sortable()
+                    ->placeholder('–'),
+
                 Tables\Columns\TextColumn::make('transaction_date')
                     ->label('Tanggal')
                     ->dateTime('d M Y H:i')
@@ -88,7 +101,7 @@ class TransactionReportResource extends Resource
                     ->limit(40)
                     ->tooltip(fn($record) => $record->notes)
                     ->toggleable()
-                    ->placeholder('-'),
+                    ->placeholder('–'),
             ])
             ->filters([
 
