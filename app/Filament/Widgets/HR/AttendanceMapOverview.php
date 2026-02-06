@@ -9,8 +9,6 @@ use Illuminate\Support\Carbon;
 
 class AttendanceMapOverview extends Widget
 {
-    
-    
     protected static string $view = 'filament.widgets.hr.attendance-map-overview';
 
     protected int|string|array $columnSpan = 'full';

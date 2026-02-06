@@ -9,8 +9,6 @@ use Illuminate\Support\Carbon;
 
 class AttendanceLeaveListWidget extends Widget
 {
-    
-
     protected static string $view = 'filament.widgets.hr.attendance-leave-list-widget';
 
     protected static ?string $pollingInterval = '30s';

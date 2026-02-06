@@ -13,7 +13,6 @@ use Illuminate\Support\Carbon;
 
 class SalesSummaryStats extends BaseWidget
 {
-    
     use InteractsWithPageFilters;
 
     protected function getStats(): array

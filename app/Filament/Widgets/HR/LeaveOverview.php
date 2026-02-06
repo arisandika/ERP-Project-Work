@@ -9,8 +9,6 @@ use Filament\Widgets\StatsOverviewWidget\Stat;
 
 class LeaveOverview extends StatsOverviewWidget
 {
-    
-    
     protected function getStats(): array
     {
         $user     = auth()->user();

@@ -8,8 +8,6 @@ use Leandrocfe\FilamentApexCharts\Widgets\ApexChartWidget;
 
 class AttendanceClockInHourChart extends ApexChartWidget
 {
-    
-    
     protected static ?string $heading = 'Distribusi Jam Clock-In (30 Hari)';
 
     protected function getOptions(): array

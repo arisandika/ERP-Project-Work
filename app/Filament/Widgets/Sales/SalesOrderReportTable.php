@@ -13,7 +13,6 @@ use Filament\Tables\Actions\ExportAction;
 
 class SalesOrderReportTable extends BaseWidget
 {
-    
     public $filters = [];
 
     protected function getTableQuery(): Builder

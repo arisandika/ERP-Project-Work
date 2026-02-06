@@ -8,8 +8,6 @@ use Leandrocfe\FilamentApexCharts\Widgets\ApexChartWidget;
 
 class AttendanceStatusDonutChart extends ApexChartWidget
 {
-    
-
     protected static ?string $heading = 'Komposisi Presensi Hari Ini';
 
     protected function getOptions(): array

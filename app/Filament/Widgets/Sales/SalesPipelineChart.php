@@ -12,7 +12,6 @@ use App\Models\Sales\Invoice;
 
 class SalesPipelineChart extends ChartWidget
 {
-    
     use InteractsWithPageFilters;
 
     protected static ?string $heading = 'Sales Pipeline Funnel';

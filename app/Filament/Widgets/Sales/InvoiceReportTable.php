@@ -11,7 +11,6 @@ use Illuminate\Database\Eloquent\Builder;
 
 class InvoiceReportTable extends BaseWidget
 {
-    
     public $filters = [];
 
     protected function getTableQuery(): Builder
