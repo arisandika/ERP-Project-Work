@@ -58,9 +58,13 @@ class TicketResource extends Resource
                             ->pluck('name', 'nx_projects.id')
                             ->toArray();
                     })
-                    ->default($projectId)
-                    ->disabledOn('ticket_on_board')
-                    ->dehydrated()
+                    ->default(fn() => request()->query('project_id'))
+                    ->afterStateHydrated(function ($state, callable $set) {
+                        if (!$state && request()->query('project_id')) {
+                            $set('project_id', request()->query('project_id'));
+                        }
+                    })
+                    ->disabled(fn() => request()->has('project_id'))
                     ->required()
                     ->searchable()
                     ->preload()
