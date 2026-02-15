@@ -39,8 +39,5 @@ class AppServiceProvider extends ServiceProvider
 
         // Register Observer untuk SalesOrder
         SalesOrder::observe(SalesOrderObserver::class);
-
-        // Register Observer untuk Invoice yang dipakai di Project
-        Invoice::observe(InvoiceObserver::class);
     }
 }

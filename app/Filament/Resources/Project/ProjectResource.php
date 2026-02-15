@@ -147,27 +147,10 @@ class ProjectResource extends Resource
                                 ->preload()
                                 ->live()
                                 ->afterStateUpdated(function ($state, callable $set) {
-
-                                    if (!$state) {
-                                        $set('sales_invoice_number', null);
-                                        $set('client', null);
-                                        $set('billing_status', null);
-                                        $set('due_date', null);
-                                        $set('grand_total', null);
-                                        $set('sales_pic', null);
-                                        return;
-                                    }
-
-                                    $invoice = Invoice::with(['customer', 'employee'])->find($state);
-
-                                    if ($invoice) {
-                                        $set('sales_invoice_number', $invoice->invoice_number);
-                                        $set('billing_status', $invoice->status);
-                                        $set('due_date', $invoice->due_date);
-                                        $set('grand_total', $invoice->grand_total);
-                                        $set('sales_pic', $invoice->employee?->full_name);
-                                        $set('client', $invoice->customer?->name);
-                                    }
+                                    self::fillInvoiceDerivedFields($state, $set);
+                                })
+                                ->afterStateHydrated(function ($state, callable $set) {
+                                    self::fillInvoiceDerivedFields($state, $set);
                                 }),
 
                             Forms\Components\TextInput::make('sales_invoice_number')
@@ -386,4 +369,33 @@ class ProjectResource extends Resource
             'edit' => Pages\EditProject::route('/{record}/edit'),
         ];
     }
+
+    protected static function fillInvoiceDerivedFields(
+        ?int $invoiceId,
+        callable $set
+    ): void {
+        if (!$invoiceId) {
+            $set('sales_invoice_number', null);
+            $set('client', null);
+            $set('billing_status', null);
+            $set('due_date', null);
+            $set('grand_total', null);
+            $set('sales_pic', null);
+            return;
+        }
+
+        $invoice = Invoice::with(['customer', 'employee'])->find($invoiceId);
+
+        if (!$invoice) {
+            return;
+        }
+
+        $set('sales_invoice_number', $invoice->invoice_number);
+        $set('billing_status', $invoice->status);
+        $set('due_date', $invoice->due_date);
+        $set('grand_total', $invoice->grand_total);
+        $set('sales_pic', $invoice->employee?->full_name);
+        $set('client', $invoice->customer?->name);
+    }
+
 }
