@@ -122,7 +122,7 @@ class DeliveryOrderResource extends Resource
 
                 Grid::make(2)->schema([
                     Select::make('nx_customer_id')
-                        ->label('Pelanggan')
+                        ->label('Client')
                         ->relationship('customer', 'name')
                         ->searchable()
                         ->disabled()
@@ -230,7 +230,7 @@ class DeliveryOrderResource extends Resource
                     ->searchable(),
 
                 Tables\Columns\TextColumn::make('customer.name')
-                    ->label('Pelanggan')
+                    ->label('Client')
                     ->sortable()
                     ->searchable(),
 
@@ -261,14 +261,14 @@ class DeliveryOrderResource extends Resource
                 Tables\Filters\Filter::make('created_at')
                     ->form([
                         Forms\Components\DatePicker::make('created_from')
-                            ->label('Created From')
+                            ->label('Dibuat Dari')
                             ->required()
                             ->displayFormat('d M Y')
                             ->native(false)
                             ->prefixIcon('heroicon-o-calendar-days'),
 
                         Forms\Components\DatePicker::make('created_until')
-                            ->label('Created Until')
+                            ->label('Dibuat Hingga')
                             ->required()
                             ->displayFormat('d M Y')
                             ->native(false)

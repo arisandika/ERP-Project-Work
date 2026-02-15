@@ -136,7 +136,7 @@ class InvoiceResource extends Resource
                         ->maxLength(50),
 
                     Select::make('nx_customer_id')
-                        ->label('Pelanggan')
+                        ->label('Client')
                         ->relationship('customer', 'name')
                         ->searchable()
                         ->required()
@@ -304,7 +304,7 @@ class InvoiceResource extends Resource
                     ->weight('bold'),
 
                 Tables\Columns\TextColumn::make('customer.name')
-                    ->label('Pelanggan')
+                    ->label('Client')
                     ->sortable()
                     ->searchable(),
 
@@ -356,14 +356,14 @@ class InvoiceResource extends Resource
                 Tables\Filters\Filter::make('created_at')
                     ->form([
                         Forms\Components\DatePicker::make('created_from')
-                            ->label('Created From')
+                            ->label('Dibuat Dari')
                             ->required()
                             ->displayFormat('d M Y')
                             ->native(false)
                             ->prefixIcon('heroicon-o-calendar-days'),
 
                         Forms\Components\DatePicker::make('created_until')
-                            ->label('Created Until')
+                            ->label('Dibuat Hingga')
                             ->required()
                             ->displayFormat('d M Y')
                             ->native(false)

@@ -3,6 +3,8 @@
 namespace App\Providers;
 
 use App\Models\HR\LeaveRequest;
+use App\Models\Sales\Invoice;
+use App\Observers\InvoiceObserver;
 use App\Observers\LeaveRequestObserver;
 use Illuminate\Support\ServiceProvider;
 use App\Models\Inventory\ProductStock;
@@ -37,5 +39,8 @@ class AppServiceProvider extends ServiceProvider
 
         // Register Observer untuk SalesOrder
         SalesOrder::observe(SalesOrderObserver::class);
+
+        // Register Observer untuk Invoice yang dipakai di Project
+        Invoice::observe(InvoiceObserver::class);
     }
 }

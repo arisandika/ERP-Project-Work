@@ -32,7 +32,7 @@
             </div>
 
             <div class="flex justify-between gap-4">
-                <span class="text-gray-600">Pelanggan:</span>
+                <span class="text-gray-600">Client:</span>
                 <span class="font-bold text-right">{{ $invoice->customer->name ?? '-' }}</span>
             </div>
 
