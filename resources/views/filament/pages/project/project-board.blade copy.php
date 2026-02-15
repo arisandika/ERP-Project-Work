@@ -78,11 +78,14 @@
                                 @if($project->ticket_prefix)
                                     @php
                                         $color = $project->color ?? '#6B7280';
+                                        // Convert hex to RGB
                                         $hex = ltrim($color, '#');
                                         $r = hexdec(substr($hex, 0, 2));
                                         $g = hexdec(substr($hex, 2, 2));
                                         $b = hexdec(substr($hex, 4, 2));
+                                        // Calculate brightness
                                         $brightness = (($r * 299) + ($g * 587) + ($b * 114)) / 1000;
+                                        // Use dark text for light colors, light text for dark colors
                                         $textColor = $brightness > 155 ? '#1F2937' : '#FFFFFF';
                                     @endphp
                                     <div class="inline-flex px-2.5 py-1 rounded text-xs font-semibold mb-3"
@@ -189,6 +192,10 @@
         <div
             x-data="{
                 draggingTicket: null,
+                isTouchDevice: false,
+                touchStartX: 0,
+                touchStartY: 0,
+                scrollStartX: 0,
                 columnScrollPositions: {},
 
                 moveTicketToStatus(ticketId, statusId) {
@@ -212,75 +219,163 @@
                 },
 
                 init() {
-                    // Initial setup
                     this.$nextTick(() => {
-                        this.setupDragDrop();
+                        this.removeAllEventListeners();
+                        this.attachAllEventListeners();
                         this.setupTouchScrolling();
+                        this.isTouchDevice = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
+                        this.setupPageVisibilityListener();
+                    });
+                },
+
+                setupPageVisibilityListener() {
+                    document.addEventListener('visibilitychange', () => {
+                        if (!document.hidden) {
+                            this.saveScrollPositions();
+                            setTimeout(() => {
+                                this.removeAllEventListeners();
+                                this.attachAllEventListeners();
+                                this.restoreScrollPositions();
+                            }, 100);
+                        }
                     });
 
-                    // Re-initialize when Livewire updates the DOM
-                    Livewire.hook('morph.updated', ({ el, component }) => {
-                        this.setupDragDrop();
-                        this.restoreScrollPositions();
+                    window.addEventListener('focus', () => {
+                        this.saveScrollPositions();
+                        setTimeout(() => {
+                            this.removeAllEventListeners();
+                            this.attachAllEventListeners();
+                            this.restoreScrollPositions();
+                        }, 100);
                     });
 
-                    // Event listeners for restoring scroll
+                    window.addEventListener('popstate', () => {
+                        this.saveScrollPositions();
+                        setTimeout(() => {
+                            this.removeAllEventListeners();
+                            this.attachAllEventListeners();
+                            this.restoreScrollPositions();
+                        }, 200);
+                    });
+
+                    document.addEventListener('livewire:navigated', () => {
+                        this.saveScrollPositions();
+                        setTimeout(() => {
+                            this.removeAllEventListeners();
+                            this.attachAllEventListeners();
+                            this.restoreScrollPositions();
+                        }, 300);
+                    });
+
+                    document.addEventListener('livewire:load', () => {
+                        this.saveScrollPositions();
+                        setTimeout(() => {
+                            this.removeAllEventListeners();
+                            this.attachAllEventListeners();
+                            this.restoreScrollPositions();
+                        }, 100);
+                    });
+
+                    document.addEventListener('livewire:updated', () => {
+                        this.saveScrollPositions();
+                        setTimeout(() => {
+                            this.removeAllEventListeners();
+                            this.attachAllEventListeners();
+                            this.restoreScrollPositions();
+                        }, 100);
+                    });
+
                     window.addEventListener('ticket-updated', () => {
                         this.saveScrollPositions();
+                        setTimeout(() => {
+                            this.removeAllEventListeners();
+                            this.attachAllEventListeners();
+                            this.restoreScrollPositions();
+                        }, 150);
                     });
+
+                    setInterval(() => {
+                        if (document.visibilityState === 'visible') {
+                            this.saveScrollPositions();
+                            this.ensureDragDropInitialized();
+                            this.restoreScrollPositions();
+                        }
+                    }, 2000);
+                },
+
+                ensureDragDropInitialized() {
+                    const tickets = document.querySelectorAll('.ticket-card');
+                    let needsReinitialization = false;
+
+                    tickets.forEach(ticket => {
+                        if (!ticket.getAttribute('draggable') || ticket.getAttribute('draggable') !== 'true') {
+                            needsReinitialization = true;
+                        }
+                    });
+
+                    if (needsReinitialization && tickets.length > 0) {
+                        this.removeAllEventListeners();
+                        this.attachAllEventListeners();
+                    }
                 },
 
                 setupTouchScrolling() {
                     const container = document.getElementById('board-container');
-                    let startX, startY, scrollLeft;
 
                     container.addEventListener('touchstart', (e) => {
-                        startX = e.touches[0].clientX;
-                        startY = e.touches[0].clientY;
-                        scrollLeft = container.scrollLeft;
+                        this.touchStartX = e.touches[0].clientX;
+                        this.touchStartY = e.touches[0].clientY;
+                        this.scrollStartX = container.scrollLeft;
                     }, { passive: true });
 
                     container.addEventListener('touchmove', (e) => {
                         if (e.touches.length !== 1) return;
-                        const x = e.touches[0].clientX;
-                        const y = e.touches[0].clientY;
-                        const walkX = startX - x;
-                        const walkY = startY - y;
 
-                        // Only scroll horizontally if moving more horizontal than vertical
-                        if (Math.abs(walkX) > Math.abs(walkY)) {
-                            // Don't prevent default if we are dragging a card
-                            if(!this.draggingTicket) {
-                                e.preventDefault();
-                                container.scrollLeft = scrollLeft + walkX;
-                            }
+                        const touchX = e.touches[0].clientX;
+                        const touchY = e.touches[0].clientY;
+                        const moveX = this.touchStartX - touchX;
+                        const moveY = this.touchStartY - touchY;
+
+                        if (Math.abs(moveX) > Math.abs(moveY)) {
+                            e.preventDefault();
+                            container.scrollLeft = this.scrollStartX + moveX;
                         }
                     }, { passive: false });
                 },
 
-                setupDragDrop() {
+                removeAllEventListeners() {
+                    const tickets = document.querySelectorAll('.ticket-card');
+                    tickets.forEach(ticket => {
+                        ticket.removeAttribute('draggable');
+                        const newTicket = ticket.cloneNode(true);
+                        ticket.parentNode.replaceChild(newTicket, ticket);
+                    });
+
+                    const columns = document.querySelectorAll('.status-column');
+                    columns.forEach(column => {
+                        const newColumn = column.cloneNode(false);
+                        while (column.firstChild) {
+                            newColumn.appendChild(column.firstChild);
+                        }
+                        if (column.parentNode) {
+                            column.parentNode.replaceChild(newColumn, column);
+                        }
+                    });
+                },
+
+                attachAllEventListeners() {
                     @if(!$this->canMoveTickets())
                         return;
                     @endif
 
-                    // --- TICKET LISTENERS ---
-                    // Only attach to tickets that don't have the listener yet
-                    const tickets = document.querySelectorAll('.ticket-card:not(.dnd-bound)');
-
+                    const tickets = document.querySelectorAll('.ticket-card');
                     tickets.forEach(ticket => {
-                        // Mark as bound so we don't attach listeners again
-                        ticket.classList.add('dnd-bound');
                         ticket.setAttribute('draggable', true);
 
-                        // --- DESKTOP DRAG EVENTS ---
                         ticket.addEventListener('dragstart', (e) => {
-                            const tId = ticket.getAttribute('data-ticket-id');
-                            this.draggingTicket = tId;
+                            this.draggingTicket = ticket.getAttribute('data-ticket-id');
                             ticket.classList.add('opacity-50');
-
                             e.dataTransfer.effectAllowed = 'move';
-                            // Critical for Production: Set data explicitly as backup
-                            e.dataTransfer.setData('text/plain', tId);
                         });
 
                         ticket.addEventListener('dragend', () => {
@@ -288,21 +383,19 @@
                             this.draggingTicket = null;
                         });
 
-                        // --- MOBILE TOUCH EVENTS ---
                         let longPressTimer;
                         let isDragging = false;
                         let originalColumn;
 
                         ticket.addEventListener('touchstart', (e) => {
                             if (isDragging) return;
+
                             longPressTimer = setTimeout(() => {
                                 originalColumn = ticket.closest('.status-column');
                                 this.draggingTicket = ticket.getAttribute('data-ticket-id');
                                 ticket.classList.add('opacity-50', 'relative', 'z-30');
                                 isDragging = true;
                                 ticket.style.boxShadow = '0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05)';
-                                // Vibrasi haptic feedback jika didukung
-                                if (navigator.vibrate) navigator.vibrate(50);
                             }, 500);
                         }, { passive: true });
 
@@ -311,12 +404,16 @@
                                 clearTimeout(longPressTimer);
                                 return;
                             }
+
                             const touch = e.touches[0];
                             const columns = document.querySelectorAll('.status-column');
+
                             columns.forEach(column => {
                                 const rect = column.getBoundingClientRect();
-                                if (touch.clientX >= rect.left && touch.clientX <= rect.right &&
-                                    touch.clientY >= rect.top && touch.clientY <= rect.bottom) {
+                                if (touch.clientX >= rect.left &&
+                                    touch.clientX <= rect.right &&
+                                    touch.clientY >= rect.top &&
+                                    touch.clientY <= rect.bottom) {
                                     column.classList.add('bg-primary-50', 'dark:bg-primary-950');
                                 } else {
                                     column.classList.remove('bg-primary-50', 'dark:bg-primary-950');
@@ -326,6 +423,7 @@
 
                         ticket.addEventListener('touchend', (e) => {
                             clearTimeout(longPressTimer);
+
                             if (!isDragging) return;
 
                             isDragging = false;
@@ -334,12 +432,14 @@
 
                             const touch = e.changedTouches[0];
                             const columns = document.querySelectorAll('.status-column');
-                            let targetColumn = null;
 
+                            let targetColumn = null;
                             columns.forEach(column => {
                                 const rect = column.getBoundingClientRect();
-                                if (touch.clientX >= rect.left && touch.clientX <= rect.right &&
-                                    touch.clientY >= rect.top && touch.clientY <= rect.bottom) {
+                                if (touch.clientX >= rect.left &&
+                                    touch.clientX <= rect.right &&
+                                    touch.clientY >= rect.top &&
+                                    touch.clientY <= rect.bottom) {
                                     targetColumn = column;
                                 }
                                 column.classList.remove('bg-primary-50', 'dark:bg-primary-950');
@@ -348,28 +448,32 @@
                             if (targetColumn && targetColumn !== originalColumn) {
                                 const statusId = targetColumn.getAttribute('data-status-id');
                                 const ticketId = this.draggingTicket;
+
                                 this.moveTicketToStatus(ticketId, statusId);
                             }
+
                             this.draggingTicket = null;
                         });
 
-                         ticket.addEventListener('touchcancel', () => {
+                        ticket.addEventListener('touchcancel', () => {
                             clearTimeout(longPressTimer);
+                            if (!isDragging) return;
+
                             isDragging = false;
                             ticket.classList.remove('opacity-50', 'relative', 'z-30');
                             ticket.style.boxShadow = '';
                             this.draggingTicket = null;
+
+                            document.querySelectorAll('.status-column').forEach(column => {
+                                column.classList.remove('bg-primary-50', 'dark:bg-primary-950');
+                            });
                         });
                     });
 
-                    // --- COLUMN LISTENERS ---
-                    const columns = document.querySelectorAll('.status-column:not(.dnd-bound)');
-
+                    const columns = document.querySelectorAll('.status-column');
                     columns.forEach(column => {
-                        column.classList.add('dnd-bound');
-
                         column.addEventListener('dragover', (e) => {
-                            e.preventDefault(); // Necessary to allow dropping
+                            e.preventDefault();
                             e.dataTransfer.dropEffect = 'move';
                             column.classList.add('bg-primary-50', 'dark:bg-primary-950');
                         });
@@ -382,22 +486,21 @@
                             e.preventDefault();
                             column.classList.remove('bg-primary-50', 'dark:bg-primary-950');
 
-                            // Retrieve ID from state OR dataTransfer (fallback)
-                            let ticketId = this.draggingTicket;
-                            if (!ticketId) {
-                                ticketId = e.dataTransfer.getData('text/plain');
-                            }
-
-                            if (ticketId) {
+                            if (this.draggingTicket) {
                                 const statusId = column.getAttribute('data-status-id');
+                                const ticketId = this.draggingTicket;
+                                this.draggingTicket = null;
                                 this.moveTicketToStatus(ticketId, statusId);
                             }
-                            this.draggingTicket = null;
                         });
                     });
                 }
             }"
-            wire:ignore.self
+            x-init="init()"
+            @ticket-moved.window="init()"
+            @ticket-updated.window="init()"
+            @refresh-board.window="init()"
+            wire:key="board-container-{{ $selectedProject->id }}"
             class="relative overflow-x-auto pb-6 {{ !$this->canMoveTickets() ? 'view-only-mode' : '' }}"
             id="board-container"
         >
@@ -527,20 +630,7 @@
                             </div>
                         </div>
 
-                        {{-- Ticket Container --}}
-                        <div
-                            class="flex flex-col flex-1 gap-3 p-3 overflow-y-auto"
-                            style="max-height: calc(100% - 60px);"
-                            x-data="{ visibleTickets: 10, totalTickets: {{ $status->tickets->count() }}, scrollPos: 0 }"
-                            x-on:scroll.debounce.100ms="
-                                scrollPos = $el.scrollTop;
-                                if ($el.scrollTop + $el.clientHeight >= $el.scrollHeight - 100 && visibleTickets < totalTickets) {
-                                    visibleTickets = Math.min(visibleTickets + 10, totalTickets);
-                                }
-                                $wire.dispatch('save-scroll', { index: {{ $loop->index }}, pos: $el.scrollTop });
-                            "
-                            x-ref="ticketContainer{{ $status->id }}"
-                        >
+                        <div class="flex flex-col flex-1 gap-3 p-3 overflow-y-auto" style="max-height: calc(100% - 60px);" x-data="{ visibleTickets: 10, totalTickets: {{ $status->tickets->count() }}, scrollPos: 0 }" x-init="$nextTick(() => { $el.addEventListener('scroll', () => { scrollPos = $el.scrollTop; if ($el.scrollTop + $el.clientHeight >= $el.scrollHeight - 100 && visibleTickets < totalTickets) { visibleTickets = Math.min(visibleTickets + 10, totalTickets); } }); })" x-ref="ticketContainer{{ $status->id }}">
                             @foreach ($status->tickets as $index => $ticket)
                                 <div
                                     wire:key="ticket-{{ $status->id }}-{{ $ticket->id }}"
@@ -551,7 +641,7 @@
                                     x-transition:enter-start="opacity-0 transform scale-95"
                                     x-transition:enter-end="opacity-100 transform scale-100"
                                 >
-                                    <div class="flex items-center justify-between mb-2 pointer-events-none">
+                                    <div class="flex items-center justify-between mb-2">
                                         <span class="text-xs font-mono text-gray-500 dark:text-gray-400 px-1.5 py-0.5 bg-gray-100 dark:bg-gray-700 rounded truncate max-w-[120px] sm:max-w-none">
                                             {{ $ticket->uuid }}
                                         </span>
@@ -569,17 +659,17 @@
                                         </div>
                                     </div>
 
-                                    <h4 class="mb-2 font-medium text-gray-900 pointer-events-none dark:text-white">{{ $ticket->name }}</h4>
+                                    <h4 class="mb-2 font-medium text-gray-900 dark:text-white">{{ $ticket->name }}</h4>
 
                                     @if ($ticket->description)
-                                        <p class="mb-3 text-sm text-gray-500 pointer-events-none dark:text-gray-400 line-clamp-2">
+                                        <p class="mb-3 text-sm text-gray-500 dark:text-gray-400 line-clamp-2">
                                             {{ \Illuminate\Support\Str::limit(strip_tags($ticket->description), 100) }}
                                         </p>
                                     @endif
 
                                     <div class="flex items-center justify-between mt-2">
                                        @if ($ticket->assignees->isNotEmpty())
-                                            <div class="flex flex-wrap gap-1 max-w-[180px] pointer-events-none">
+                                            <div class="flex flex-wrap gap-1 max-w-[180px]">
                                                 @foreach($ticket->assignees as $assignee)
                                                     <div class="inline-flex items-center gap-1 py-1 pl-1 pr-2 rounded-full bg-primary-100 dark:bg-primary-900/40 text-primary-700 dark:text-primary-300">
                                                         <span class="flex items-center justify-center flex-shrink-0 w-4 h-4 text-xs text-white rounded-full bg-primary-500">
@@ -588,9 +678,14 @@
                                                         <span class="text-xs font-medium truncate">{{ \Illuminate\Support\Str::limit($assignee->full_name, 8) }}</span>
                                                     </div>
                                                 @endforeach
+                                                @if($ticket->assignees->count() > 2)
+                                                    <!-- <div class="inline-flex items-center px-2 py-1 text-gray-700 bg-gray-100 rounded-full dark:bg-gray-800 dark:text-gray-400">
+                                                        <span class="text-xs font-medium">+{{ $ticket->assignees->count() - 2 }}</span>
+                                                    </div> -->
+                                                @endif
                                             </div>
                                         @else
-                                            <div class="inline-flex items-center px-2 py-1 text-gray-700 bg-gray-100 rounded-full pointer-events-none dark:bg-gray-800 dark:text-gray-400">
+                                            <div class="inline-flex items-center px-2 py-1 text-gray-700 bg-gray-100 rounded-full dark:bg-gray-800 dark:text-gray-400">
                                                 <svg xmlns="http://www.w3.org/2000/svg" class="flex-shrink-0 w-4 h-4 mr-1 text-gray-400 dark:text-gray-500" viewBox="0 0 20 20" fill="currentColor">
                                                     <path fill-rule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clip-rule="evenodd" />
                                                 </svg>
@@ -602,9 +697,17 @@
                                             href="{{ \App\Filament\Resources\Project\TicketResource::getUrl('view', ['record' => $ticket->id]) }}"
                                             target="_blank"
                                             rel="noopener noreferrer"
-                                            class="inline-flex items-center justify-center flex-shrink-0 w-8 h-8 text-sm font-medium border border-gray-200 rounded-lg pointer-events-auto dark:border-gray-700 text-primary-600 hover:text-primary-500 dark:text-primary-500 dark:hover:text-primary-400"
-                                            onmousedown="event.stopPropagation();"
-                                            ontouchstart="event.stopPropagation();"
+                                            onclick="
+                                                event.preventDefault();
+                                                const container = this.closest('.overflow-y-auto');
+                                                const scrollPos = container.scrollTop;
+                                                window.open(this.href, '_blank');
+                                                setTimeout(() => {
+                                                    container.scrollTop = scrollPos;
+                                                }, 0);
+                                                return false;
+                                            "
+                                            class="inline-flex items-center justify-center flex-shrink-0 w-8 h-8 text-sm font-medium border border-gray-200 rounded-lg dark:border-gray-700 text-primary-600 hover:text-primary-500 dark:text-primary-500 dark:hover:text-primary-400"
                                         >
                                             <x-heroicon-m-eye class="w-4 h-4" />
                                         </a>
@@ -617,7 +720,7 @@
                                     No tickets
                                 </div>
                             @else
-                                <!-- Loading indicator -->
+                                <!-- Loading indicator for more tickets -->
                                 <div x-show="visibleTickets < totalTickets" class="flex items-center justify-center py-4 text-sm text-gray-500 dark:text-gray-400">
                                     <div class="flex items-center gap-2">
                                         <svg class="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
