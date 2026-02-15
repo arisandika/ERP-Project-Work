@@ -314,53 +314,17 @@ class ProjectBoard extends Page
     {
         return [
             Action::make('new_ticket')
-                ->name('ticket_on_board')
                 ->label('New Ticket')
                 ->icon('heroicon-m-plus')
-                ->visible(fn() => $this->selectedProject !== null && auth()->user()->can('create_project::ticket'))
-                ->form(
-                    fn($form) => TicketResource::form($form)
-                        ->columns(2)
+                ->color('primary')
+                ->visible(fn() => auth()->user()->can('create_project::ticket'))
+                ->url(
+                    fn() =>
+                    TicketResource::getUrl('create', [
+                        'project_id' => request()->route('project_id'),
+                    ])
                 )
-                ->model(Ticket::class)
-                ->fillForm(function () {
-                    $assignees = [];
-                    $employee = $this->authEmployee();
-
-                    if ($employee && $project = $this->selectedProject) {
-                        $isMember = $project->members()
-                            ->where('nx_employees.id', $employee->id)
-                            ->exists();
-
-                        $assignees = $isMember ? [$employee->id] : [];
-                    }
-
-                    return [
-                        'project_id' => $this->selectedProject?->id,
-                        'ticket_status_id' => $this->ticketStatuses?->first()?->id,
-                        'assignees' => $assignees,
-                    ];
-                })
-                ->action(function (array $data) {
-                    $employee = $this->authEmployee();
-
-                    if ($employee) {
-                        $data['created_by'] = $employee->id;
-                    }
-
-                    $record = Ticket::create($data);
-
-                    // Simpan relasi many-to-many (assignees)
-                    if (!empty($data['assignees'] ?? [])) {
-                        $record->assignees()->sync($data['assignees']);
-                    }
-
-                    Notification::make()
-                        ->title('Ticket Created')
-                        ->body('The ticket has been created successfully.')
-                        ->success()
-                        ->send();
-                }),
+                ->openUrlInNewTab(),
 
             Action::make('refresh_board')
                 ->label('Refresh Board')

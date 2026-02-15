@@ -96,7 +96,7 @@ class CreateTicket extends CreateRecord
                 }
                 
                 if (empty($validAssignees)) {
-                    $currentUserIsMember = $project->members()->where('users.id', auth()->id())->exists();
+                    $currentUserIsMember = $project->members()->where('nx_employees.id', auth()->id())->exists();
                     
                     if ($currentUserIsMember) {
                         $ticket->assignees()->sync([auth()->id()]);
@@ -112,7 +112,7 @@ class CreateTicket extends CreateRecord
         } else {
             if (!empty($data['project_id'])) {
                 $project = Project::find($data['project_id']);
-                $currentUserIsMember = $project?->members()->where('users.id', auth()->id())->exists();
+                $currentUserIsMember = $project?->members()->where('nx_employees.id', auth()->id())->exists();
                 
                 if ($currentUserIsMember) {
                     $ticket->assignees()->sync([auth()->id()]);
