@@ -37,7 +37,7 @@ class SalesOrderReportTable extends BaseWidget
                 ->label('No. SO')
                 ->searchable(),
             Tables\Columns\TextColumn::make('customer.name')
-                ->label('Pelanggan'),
+                ->label('Client'),
             Tables\Columns\TextColumn::make('grand_total')
                 ->label('Total')
                 ->money('IDR'),

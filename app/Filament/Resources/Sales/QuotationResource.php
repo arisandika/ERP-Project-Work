@@ -78,7 +78,7 @@ class QuotationResource extends Resource
                     Grid::make(2)
                         ->schema([
                             Select::make('nx_customer_id')
-                                ->label('Pelanggan')
+                                ->label('Client')
                                 ->searchable()
                                 ->preload()
                                 ->relationship('customer', 'name')
@@ -208,7 +208,7 @@ class QuotationResource extends Resource
                     ->weight('bold'),
 
                 Tables\Columns\TextColumn::make('customer.name')
-                    ->label('Pelanggan')
+                    ->label('Client')
                     ->sortable()
                     ->searchable(),
 
@@ -243,14 +243,14 @@ class QuotationResource extends Resource
                 Tables\Filters\Filter::make('created_at')
                     ->form([
                         DatePicker::make('created_from')
-                            ->label('Created From')
+                            ->label('Dibuat Dari')
                             ->required()
                             ->displayFormat('d M Y')
                             ->native(false)
                             ->prefixIcon('heroicon-o-calendar-days'),
 
                         DatePicker::make('created_until')
-                            ->label('Created Until')
+                            ->label('Dibuat Hingga')
                             ->required()
                             ->displayFormat('d M Y')
                             ->native(false)

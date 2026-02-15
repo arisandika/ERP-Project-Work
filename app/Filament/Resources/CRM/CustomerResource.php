@@ -26,14 +26,14 @@ class CustomerResource extends Resource
 
     protected static ?string $slug = 'crm/customer';
 
-    protected static ?string $pluralModelLabel = 'Pelanggan';
+    protected static ?string $pluralModelLabel = 'Client';
 
     public static function form(Form $form): Form
     {
         return $form
             ->schema([
                 Forms\Components\Select::make('customer_type')
-                    ->label('Tipe Pelanggan')
+                    ->label('Tipe Client')
                     ->options([
                         'individual' => 'Individu',
                         'company' => 'Perusahaan',
@@ -90,7 +90,7 @@ class CustomerResource extends Resource
                     ->searchable(),
 
                 Tables\Columns\TextColumn::make('customer_type')
-                    ->label('Tipe Pelanggan')
+                    ->label('Tipe Client')
                     ->badge()
                     ->color(fn (string $state): string => match ($state) {
                         'individual' => 'info',
@@ -128,7 +128,7 @@ class CustomerResource extends Resource
             ])
             ->filters([
                 Tables\Filters\SelectFilter::make('customer_type')
-                    ->label('Tipe Pelanggan')
+                    ->label('Tipe Client')
                     ->options([
                         'individual' => 'Individu',
                         'company' => 'Perusahaan',
@@ -138,14 +138,14 @@ class CustomerResource extends Resource
                 Tables\Filters\Filter::make('created_at')
                     ->form([
                         Forms\Components\DatePicker::make('created_from')
-                            ->label('Created From')
+                            ->label('Dibuat Dari')
                             ->required()
                             ->displayFormat('d M Y')
                             ->native(false)
                             ->prefixIcon('heroicon-o-calendar-days'),
 
                         Forms\Components\DatePicker::make('created_until')
-                            ->label('Created Until')
+                            ->label('Dibuat Hingga')
                             ->required()
                             ->displayFormat('d M Y')
                             ->native(false)
