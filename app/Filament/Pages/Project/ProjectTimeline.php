@@ -3,11 +3,14 @@
 namespace App\Filament\Pages\Project;
 
 use App\Models\Project\Project;
+use BezhanSalleh\FilamentShield\Traits\HasPageShield;
 use Filament\Pages\Page;
 use Illuminate\Support\Carbon;
 
 class ProjectTimeline extends Page
 {
+    use HasPageShield;
+    
     protected static ?string $navigationIcon = 'heroicon-o-calendar-days';
 
     protected static string $view = 'filament.pages.project.project-timeline';

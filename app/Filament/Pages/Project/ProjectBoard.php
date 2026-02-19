@@ -8,6 +8,7 @@ use App\Filament\Resources\Project\TicketResource;
 use App\Models\HR\Employee;
 use App\Models\Project\Project;
 use App\Models\Project\Ticket;
+use BezhanSalleh\FilamentShield\Traits\HasPageShield;
 use Exception;
 use Filament\Actions\Action;
 use Filament\Forms\Components\CheckboxList;
@@ -21,6 +22,8 @@ use Maatwebsite\Excel\Facades\Excel;
 
 class ProjectBoard extends Page
 {
+    use HasPageShield;
+    
     protected static ?string $navigationIcon = 'heroicon-o-view-columns';
 
     protected static string $view = 'filament.pages.project.project-board';

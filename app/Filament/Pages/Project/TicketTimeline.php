@@ -4,6 +4,7 @@ namespace App\Filament\Pages\Project;
 
 use App\Models\Project\Project;
 use App\Models\Project\Ticket;
+use BezhanSalleh\FilamentShield\Traits\HasPageShield;
 use Exception;
 use Filament\Notifications\Notification;
 use Filament\Pages\Page;
@@ -13,6 +14,8 @@ use Log;
 
 class TicketTimeline extends Page
 {
+    use HasPageShield;
+    
     protected static ?string $navigationIcon = 'heroicon-o-calendar';
 
     protected static string $view = 'filament.pages.project.ticket-timeline';

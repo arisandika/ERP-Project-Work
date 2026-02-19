@@ -4,6 +4,7 @@ namespace App\Filament\Pages\Project;
 
 use App\Models\Project\Epic;
 use App\Models\Project\Project;
+use BezhanSalleh\FilamentShield\Traits\HasPageShield;
 use Filament\Notifications\Notification;
 use Filament\Pages\Page;
 use Illuminate\Database\Eloquent\Collection;
@@ -11,6 +12,8 @@ use Livewire\Attributes\On;
 
 class EpicsOverview extends Page
 {
+    use HasPageShield;
+    
     protected static ?string $navigationIcon = 'heroicon-o-bookmark';
 
     protected static string $view = 'filament.pages.project.epics-overview';
