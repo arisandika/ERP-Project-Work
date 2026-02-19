@@ -191,14 +191,132 @@
     @if($selectedProject)
         <div
             x-data="{
+                draggingTicket: null,
+                isTouchDevice: false,
                 touchStartX: 0,
                 touchStartY: 0,
                 scrollStartX: 0,
+                columnScrollPositions: {},
+
+                moveTicketToStatus(ticketId, statusId) {
+                    $wire.call('moveTicket', parseInt(ticketId), parseInt(statusId));
+                },
+
+                saveScrollPositions() {
+                    const columns = document.querySelectorAll('.status-column .overflow-y-auto');
+                    columns.forEach((column, index) => {
+                        this.columnScrollPositions[index] = column.scrollTop;
+                    });
+                },
+
+                restoreScrollPositions() {
+                    const columns = document.querySelectorAll('.status-column .overflow-y-auto');
+                    columns.forEach((column, index) => {
+                        if (this.columnScrollPositions[index] !== undefined) {
+                            column.scrollTop = this.columnScrollPositions[index];
+                        }
+                    });
+                },
 
                 init() {
                     this.$nextTick(() => {
+                        this.removeAllEventListeners();
+                        this.attachAllEventListeners();
                         this.setupTouchScrolling();
+                        this.isTouchDevice = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
+                        this.setupPageVisibilityListener();
                     });
+                },
+
+                setupPageVisibilityListener() {
+                    document.addEventListener('visibilitychange', () => {
+                        if (!document.hidden) {
+                            this.saveScrollPositions();
+                            setTimeout(() => {
+                                this.removeAllEventListeners();
+                                this.attachAllEventListeners();
+                                this.restoreScrollPositions();
+                            }, 100);
+                        }
+                    });
+
+                    window.addEventListener('focus', () => {
+                        this.saveScrollPositions();
+                        setTimeout(() => {
+                            this.removeAllEventListeners();
+                            this.attachAllEventListeners();
+                            this.restoreScrollPositions();
+                        }, 100);
+                    });
+
+                    window.addEventListener('popstate', () => {
+                        this.saveScrollPositions();
+                        setTimeout(() => {
+                            this.removeAllEventListeners();
+                            this.attachAllEventListeners();
+                            this.restoreScrollPositions();
+                        }, 200);
+                    });
+
+                    document.addEventListener('livewire:navigated', () => {
+                        this.saveScrollPositions();
+                        setTimeout(() => {
+                            this.removeAllEventListeners();
+                            this.attachAllEventListeners();
+                            this.restoreScrollPositions();
+                        }, 300);
+                    });
+
+                    document.addEventListener('livewire:load', () => {
+                        this.saveScrollPositions();
+                        setTimeout(() => {
+                            this.removeAllEventListeners();
+                            this.attachAllEventListeners();
+                            this.restoreScrollPositions();
+                        }, 100);
+                    });
+
+                    document.addEventListener('livewire:updated', () => {
+                        this.saveScrollPositions();
+                        setTimeout(() => {
+                            this.removeAllEventListeners();
+                            this.attachAllEventListeners();
+                            this.restoreScrollPositions();
+                        }, 100);
+                    });
+
+                    window.addEventListener('ticket-updated', () => {
+                        this.saveScrollPositions();
+                        setTimeout(() => {
+                            this.removeAllEventListeners();
+                            this.attachAllEventListeners();
+                            this.restoreScrollPositions();
+                        }, 150);
+                    });
+
+                    setInterval(() => {
+                        if (document.visibilityState === 'visible') {
+                            this.saveScrollPositions();
+                            this.ensureDragDropInitialized();
+                            this.restoreScrollPositions();
+                        }
+                    }, 2000);
+                },
+
+                ensureDragDropInitialized() {
+                    const tickets = document.querySelectorAll('.ticket-card');
+                    let needsReinitialization = false;
+
+                    tickets.forEach(ticket => {
+                        if (!ticket.getAttribute('draggable') || ticket.getAttribute('draggable') !== 'true') {
+                            needsReinitialization = true;
+                        }
+                    });
+
+                    if (needsReinitialization && tickets.length > 0) {
+                        this.removeAllEventListeners();
+                        this.attachAllEventListeners();
+                    }
                 },
 
                 setupTouchScrolling() {
@@ -223,10 +341,165 @@
                             container.scrollLeft = this.scrollStartX + moveX;
                         }
                     }, { passive: false });
+                },
+
+                removeAllEventListeners() {
+                    const tickets = document.querySelectorAll('.ticket-card');
+                    tickets.forEach(ticket => {
+                        ticket.removeAttribute('draggable');
+                        const newTicket = ticket.cloneNode(true);
+                        ticket.parentNode.replaceChild(newTicket, ticket);
+                    });
+
+                    const columns = document.querySelectorAll('.status-column');
+                    columns.forEach(column => {
+                        const newColumn = column.cloneNode(false);
+                        while (column.firstChild) {
+                            newColumn.appendChild(column.firstChild);
+                        }
+                        if (column.parentNode) {
+                            column.parentNode.replaceChild(newColumn, column);
+                        }
+                    });
+                },
+
+                attachAllEventListeners() {
+                    @if(!$this->canMoveTickets())
+                        return;
+                    @endif
+
+                    const tickets = document.querySelectorAll('.ticket-card');
+                    tickets.forEach(ticket => {
+                        ticket.setAttribute('draggable', true);
+
+                        ticket.addEventListener('dragstart', (e) => {
+                            this.draggingTicket = ticket.getAttribute('data-ticket-id');
+                            ticket.classList.add('opacity-50');
+                            e.dataTransfer.effectAllowed = 'move';
+                        });
+
+                        ticket.addEventListener('dragend', () => {
+                            ticket.classList.remove('opacity-50');
+                            this.draggingTicket = null;
+                        });
+
+                        let longPressTimer;
+                        let isDragging = false;
+                        let originalColumn;
+
+                        ticket.addEventListener('touchstart', (e) => {
+                            if (isDragging) return;
+
+                            longPressTimer = setTimeout(() => {
+                                originalColumn = ticket.closest('.status-column');
+                                this.draggingTicket = ticket.getAttribute('data-ticket-id');
+                                ticket.classList.add('opacity-50', 'relative', 'z-30');
+                                isDragging = true;
+                                ticket.style.boxShadow = '0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05)';
+                            }, 500);
+                        }, { passive: true });
+
+                        ticket.addEventListener('touchmove', (e) => {
+                            if (!isDragging) {
+                                clearTimeout(longPressTimer);
+                                return;
+                            }
+
+                            const touch = e.touches[0];
+                            const columns = document.querySelectorAll('.status-column');
+
+                            columns.forEach(column => {
+                                const rect = column.getBoundingClientRect();
+                                if (touch.clientX >= rect.left &&
+                                    touch.clientX <= rect.right &&
+                                    touch.clientY >= rect.top &&
+                                    touch.clientY <= rect.bottom) {
+                                    column.classList.add('bg-primary-50', 'dark:bg-primary-950');
+                                } else {
+                                    column.classList.remove('bg-primary-50', 'dark:bg-primary-950');
+                                }
+                            });
+                        });
+
+                        ticket.addEventListener('touchend', (e) => {
+                            clearTimeout(longPressTimer);
+
+                            if (!isDragging) return;
+
+                            isDragging = false;
+                            ticket.classList.remove('opacity-50', 'relative', 'z-30');
+                            ticket.style.boxShadow = '';
+
+                            const touch = e.changedTouches[0];
+                            const columns = document.querySelectorAll('.status-column');
+
+                            let targetColumn = null;
+                            columns.forEach(column => {
+                                const rect = column.getBoundingClientRect();
+                                if (touch.clientX >= rect.left &&
+                                    touch.clientX <= rect.right &&
+                                    touch.clientY >= rect.top &&
+                                    touch.clientY <= rect.bottom) {
+                                    targetColumn = column;
+                                }
+                                column.classList.remove('bg-primary-50', 'dark:bg-primary-950');
+                            });
+
+                            if (targetColumn && targetColumn !== originalColumn) {
+                                const statusId = targetColumn.getAttribute('data-status-id');
+                                const ticketId = this.draggingTicket;
+
+                                this.moveTicketToStatus(ticketId, statusId);
+                            }
+
+                            this.draggingTicket = null;
+                        });
+
+                        ticket.addEventListener('touchcancel', () => {
+                            clearTimeout(longPressTimer);
+                            if (!isDragging) return;
+
+                            isDragging = false;
+                            ticket.classList.remove('opacity-50', 'relative', 'z-30');
+                            ticket.style.boxShadow = '';
+                            this.draggingTicket = null;
+
+                            document.querySelectorAll('.status-column').forEach(column => {
+                                column.classList.remove('bg-primary-50', 'dark:bg-primary-950');
+                            });
+                        });
+                    });
+
+                    const columns = document.querySelectorAll('.status-column');
+                    columns.forEach(column => {
+                        column.addEventListener('dragover', (e) => {
+                            e.preventDefault();
+                            e.dataTransfer.dropEffect = 'move';
+                            column.classList.add('bg-primary-50', 'dark:bg-primary-950');
+                        });
+
+                        column.addEventListener('dragleave', () => {
+                            column.classList.remove('bg-primary-50', 'dark:bg-primary-950');
+                        });
+
+                        column.addEventListener('drop', (e) => {
+                            e.preventDefault();
+                            column.classList.remove('bg-primary-50', 'dark:bg-primary-950');
+
+                            if (this.draggingTicket) {
+                                const statusId = column.getAttribute('data-status-id');
+                                const ticketId = this.draggingTicket;
+                                this.draggingTicket = null;
+                                this.moveTicketToStatus(ticketId, statusId);
+                            }
+                        });
+                    });
                 }
             }"
             x-init="init()"
-            wire:ignore.self
+            @ticket-moved.window="init()"
+            @ticket-updated.window="init()"
+            @refresh-board.window="init()"
             wire:key="board-container-{{ $selectedProject->id }}"
             class="relative overflow-x-auto pb-6 {{ !$this->canMoveTickets() ? 'view-only-mode' : '' }}"
             id="board-container"
@@ -357,7 +630,7 @@
                             </div>
                         </div>
 
-                        <div wire:ignore.self class="flex flex-col flex-1 gap-3 p-3 overflow-y-auto" style="max-height: calc(100% - 60px);" x-data="{ visibleTickets: 10, totalTickets: {{ $status->tickets->count() }}, scrollPos: 0 }" x-init="$nextTick(() => { $el.addEventListener('scroll', () => { scrollPos = $el.scrollTop; if ($el.scrollTop + $el.clientHeight >= $el.scrollHeight - 100 && visibleTickets < totalTickets) { visibleTickets = Math.min(visibleTickets + 10, totalTickets); } }); })" x-ref="ticketContainer{{ $status->id }}">
+                        <div class="flex flex-col flex-1 gap-3 p-3 overflow-y-auto" style="max-height: calc(100% - 60px);" x-data="{ visibleTickets: 10, totalTickets: {{ $status->tickets->count() }}, scrollPos: 0 }" x-init="$nextTick(() => { $el.addEventListener('scroll', () => { scrollPos = $el.scrollTop; if ($el.scrollTop + $el.clientHeight >= $el.scrollHeight - 100 && visibleTickets < totalTickets) { visibleTickets = Math.min(visibleTickets + 10, totalTickets); } }); })" x-ref="ticketContainer{{ $status->id }}">
                             @foreach ($status->tickets as $index => $ticket)
                                 <div
                                     wire:key="ticket-{{ $status->id }}-{{ $ticket->id }}"
@@ -471,114 +744,3 @@
         </div>
     @endif
 </x-filament-panels::page>
-
-@push('styles')
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/jqueryui/1.14.1/themes/base/jquery-ui.min.css" />
-<style>
-    .ui-sortable-helper {
-        opacity: 0.7;
-        transform: rotate(2deg);
-        box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.15), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
-        z-index: 9999 !important;
-    }
-    .ui-sortable-placeholder {
-        visibility: visible !important;
-        border: 2px dashed rgba(var(--primary-500), 0.5) !important;
-        background: rgba(var(--primary-50), 0.3) !important;
-        border-radius: 0.5rem;
-        min-height: 60px;
-        margin-bottom: 0.75rem;
-    }
-    .sortable-drop-active {
-        background-color: rgba(var(--primary-50), 0.5) !important;
-    }
-    .dark .sortable-drop-active {
-        background-color: rgba(var(--primary-950), 0.3) !important;
-    }
-</style>
-@endpush
-
-@push('scripts')
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jqueryui/1.14.1/jquery-ui.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jqueryui-touch-punch/0.2.3/jquery.ui.touch-punch.min.js"></script>
-<script>
-    (function() {
-        var sortableReady = false;
-
-        function initSortable() {
-            var $containers = $('.status-column .overflow-y-auto');
-            if (!$containers.length) return;
-
-            // Skip if view-only mode
-            var board = document.getElementById('board-container');
-            if (board && board.classList.contains('view-only-mode')) return;
-
-            // Skip if already initialized
-            if (sortableReady && $containers.first().sortable('instance')) return;
-
-            $containers.sortable({
-                connectWith: '.status-column .overflow-y-auto',
-                items: '> .ticket-card',
-                placeholder: 'ui-sortable-placeholder',
-                tolerance: 'pointer',
-                cursor: 'grabbing',
-                revert: 100,
-                scroll: true,
-                scrollSensitivity: 50,
-                scrollSpeed: 20,
-                forcePlaceholderSize: true,
-                zIndex: 9999,
-
-                start: function(event, ui) {
-                    ui.item.addClass('opacity-50');
-                    ui.placeholder.height(ui.item.outerHeight());
-                },
-
-                over: function(event, ui) {
-                    $(this).closest('.status-column').addClass('sortable-drop-active');
-                },
-
-                out: function(event, ui) {
-                    $(this).closest('.status-column').removeClass('sortable-drop-active');
-                },
-
-                stop: function(event, ui) {
-                    ui.item.removeClass('opacity-50');
-                    $('.status-column').removeClass('sortable-drop-active');
-                },
-
-                update: function(event, ui) {
-                    // Only fire on the receiving container (not the sender)
-                    if (this !== ui.item.parent()[0]) return;
-
-                    var ticketId = ui.item.data('ticket-id');
-                    var newStatusId = $(this).closest('.status-column').data('status-id');
-
-                    if (ticketId && newStatusId) {
-                        // Find the closest Livewire component from the ticket (ProjectBoard)
-                        var wireEl = ui.item.closest('[wire\\:id]');
-                        if (wireEl.length) {
-                            var componentId = wireEl.attr('wire:id');
-                            Livewire.find(componentId).call('moveTicket', parseInt(ticketId), parseInt(newStatusId));
-                        }
-                    }
-                }
-            });
-
-            sortableReady = true;
-        }
-
-        // Initialize once when Livewire is ready
-        document.addEventListener('livewire:init', function() {
-            setTimeout(initSortable, 500);
-        });
-
-        // Reinitialize after Livewire re-renders (correct Livewire 3 event)
-        document.addEventListener('livewire:rendered', function() {
-            sortableReady = false;
-            setTimeout(initSortable, 300);
-        });
-    })();
-</script>
-@endpush
