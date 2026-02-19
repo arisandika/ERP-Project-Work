@@ -33,6 +33,7 @@
             $statusClass = $isPaid ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800';
         @endphp
 
+<<<<<<< HEAD
         <div class="p-6">
             <!-- Detail Utama -->
             <div class="space-y-3 text-sm">
@@ -47,6 +48,23 @@
                 <div class="flex justify-between border-b border-gray-100 pb-2">
                     <span class="text-gray-500">Tanggal</span>
                     <span class="font-medium text-gray-900">
+=======
+        <div class="border-t border-b border-gray-200 py-4 text-left space-y-2 text-sm">
+            <div class="flex justify-between gap-4">
+                <span class="text-gray-600">No. Invoice:</span>
+                <span class="font-bold text-right break-all">{{ $invoice->invoice_number }}</span>
+            </div>
+
+            <div class="flex justify-between gap-4">
+                <span class="text-gray-600">Client:</span>
+                <span class="font-bold text-right">{{ $invoice->customer->name ?? '-' }}</span>
+            </div>
+
+            @if(!empty($invoice->invoice_date))
+                <div class="flex justify-between gap-4">
+                    <span class="text-gray-600">Tanggal:</span>
+                    <span class="font-bold text-right">
+>>>>>>> e5a927c19b070690dd8e01a61f16ba62e6dd1dda
                         {{ \Illuminate\Support\Carbon::parse($invoice->invoice_date)->format('d M Y') }}
                     </span>
                 </div>

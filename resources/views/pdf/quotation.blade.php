@@ -61,7 +61,7 @@
         <p>No: {{ $quotation->quotation_number }}</p>
     </div>
 
-    <!-- Detail Pelanggan dan Tanggal -->
+    <!-- Detail Client dan Tanggal -->
     <table class="details-table">
         <tr>
             <td style="width: 60%;">

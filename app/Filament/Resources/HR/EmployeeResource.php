@@ -322,14 +322,14 @@ class EmployeeResource extends Resource
                     ->label(new HtmlString(Blade::render('<x-heroicon-o-clock class="w-6 h-6" />'))),
 
                 Tables\Columns\TextColumn::make('created_at')
-                    ->label('Created At')
-                    ->dateTime('d M Y')
+                    ->label('Dibuat Pada')
+                    ->dateTime('d M Y H:i')
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
 
                 Tables\Columns\TextColumn::make('updated_at')
-                    ->label('Updated At')
-                    ->dateTime('d M Y')
+                    ->label('Diperbarui Pada')
+                    ->dateTime('d M Y H:i')
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
 
@@ -362,14 +362,14 @@ class EmployeeResource extends Resource
                 Tables\Filters\Filter::make('created_at')
                     ->form([
                         Forms\Components\DatePicker::make('created_from')
-                            ->label('Created From')
+                            ->label('Dibuat Dari')
                             ->required()
                             ->displayFormat('d M Y')
                             ->native(false)
                             ->prefixIcon('heroicon-o-calendar-days'),
 
                         Forms\Components\DatePicker::make('created_until')
-                            ->label('Created Until')
+                            ->label('Dibuat Hingga')
                             ->required()
                             ->displayFormat('d M Y')
                             ->native(false)
@@ -488,7 +488,7 @@ class EmployeeResource extends Resource
 
                         TextEntry::make('join_date')
                             ->label('Tanggal Masuk')
-                            ->date('d F Y'),
+                            ->date('d M Y'),
 
                         IconEntry::make('can_wfa')
                             ->label('Boleh Work From Anywhere (WFA)')
@@ -517,7 +517,7 @@ class EmployeeResource extends Resource
 
                         TextEntry::make('birth_date')
                             ->label('Tanggal Lahir')
-                            ->date('d F Y'),
+                            ->date('d M Y'),
 
                         TextEntry::make('gender')
                             ->label('Jenis Kelamin'),

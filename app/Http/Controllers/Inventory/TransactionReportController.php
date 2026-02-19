@@ -40,7 +40,7 @@ class TransactionReportController extends Controller
             ->get();
 
         // 5. Info tambahan untuk header laporan
-        $printDate = now()->format('d F Y H:i');
+        $printDate = now()->format('d M Y H:i');
 
         // 6. Generate PDF
         $pdf = Pdf::loadView('pdf.transaction-report', [

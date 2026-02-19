@@ -16,4 +16,9 @@ class ViewAttendance extends ViewRecord
             Actions\EditAction::make(),
         ];
     }
+
+    public function getTitle(): string
+    {
+        return 'Lihat Presensi';
+    }
 }

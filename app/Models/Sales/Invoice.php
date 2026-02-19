@@ -4,6 +4,7 @@ namespace App\Models\Sales;
 
 use App\Models\CRM\Customer;
 use App\Models\HR\Employee;
+use App\Models\Project\Project;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -33,9 +34,9 @@ class Invoice extends Model
 
     protected $casts = [
         'invoice_date' => 'datetime',
-        'due_date'     => 'date',
-        'subtotal'     => 'decimal:2',
-        'grand_total'  => 'decimal:2',
+        'due_date' => 'date',
+        'subtotal' => 'decimal:2',
+        'grand_total' => 'decimal:2',
     ];
 
     public function salesOrder(): BelongsTo
@@ -76,7 +77,7 @@ class Invoice extends Model
 
     public function recalculateStatus(): void
     {
-        $totalPaid  = $this->total_paid;
+        $totalPaid = $this->total_paid;
         $grandTotal = (float) $this->grand_total;
 
         // Toleransi selisih koma (float precision)
@@ -105,5 +106,10 @@ class Invoice extends Model
                     ->setTimeFromTimeString(now()->format('H:i:s'));
             }
         });
+    }
+
+    public function project()
+    {
+        return $this->hasOne(Project::class, 'nx_invoice_id');
     }
 }

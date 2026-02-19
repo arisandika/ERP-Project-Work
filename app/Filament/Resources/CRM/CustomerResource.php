@@ -25,12 +25,13 @@ class CustomerResource extends Resource
 
     protected static ?string $slug = 'crm/customer';
 
-    protected static ?string $pluralModelLabel = 'Pelanggan';
+    protected static ?string $pluralModelLabel = 'Client';
 
     public static function form(Form $form): Form
     {
         return $form
             ->schema([
+<<<<<<< HEAD
                 // --- SECTION 1: INFORMASI DASAR ---
                 Forms\Components\Section::make('Informasi Pelanggan')
                     ->description('Pilih tipe pelanggan untuk menampilkan form yang sesuai.')
@@ -69,6 +70,13 @@ class CustomerResource extends Resource
                             ->maxLength(65535)
                             ->columnSpanFull()
                             ->visible(fn (Forms\Get $get) => filled($get('customer_type'))),
+=======
+                Forms\Components\Select::make('customer_type')
+                    ->label('Tipe Client')
+                    ->options([
+                        'individual' => 'Individu',
+                        'company' => 'Perusahaan',
+>>>>>>> e5a927c19b070690dd8e01a61f16ba62e6dd1dda
                     ])
                     ->columns(2),
 
@@ -140,7 +148,7 @@ class CustomerResource extends Resource
                     ->description(fn (Customer $record) => $record->customer_type === 'company' ? 'PIC: ' . $record->pic_name : 'NIK: ' . $record->nik),
 
                 Tables\Columns\TextColumn::make('customer_type')
-                    ->label('Tipe Pelanggan')
+                    ->label('Tipe Client')
                     ->badge()
                     ->color(fn (string $state): string => match ($state) {
                         'individual' => 'info',
@@ -182,7 +190,7 @@ class CustomerResource extends Resource
             ])
             ->filters([
                 Tables\Filters\SelectFilter::make('customer_type')
-                    ->label('Tipe Pelanggan')
+                    ->label('Tipe Client')
                     ->options([
                         'individual' => 'Perorangan',
                         'company'    => 'Perusahaan',
@@ -192,8 +200,24 @@ class CustomerResource extends Resource
 
                 Tables\Filters\Filter::make('created_at')
                     ->form([
+<<<<<<< HEAD
                         Forms\Components\DatePicker::make('created_from')->label('Dari Tanggal'),
                         Forms\Components\DatePicker::make('created_until')->label('Sampai Tanggal'),
+=======
+                        Forms\Components\DatePicker::make('created_from')
+                            ->label('Dibuat Dari')
+                            ->required()
+                            ->displayFormat('d M Y')
+                            ->native(false)
+                            ->prefixIcon('heroicon-o-calendar-days'),
+
+                        Forms\Components\DatePicker::make('created_until')
+                            ->label('Dibuat Hingga')
+                            ->required()
+                            ->displayFormat('d M Y')
+                            ->native(false)
+                            ->prefixIcon('heroicon-o-calendar-days'),
+>>>>>>> e5a927c19b070690dd8e01a61f16ba62e6dd1dda
                     ])
                     ->query(function (Builder $query, array $data): Builder {
                         return $query

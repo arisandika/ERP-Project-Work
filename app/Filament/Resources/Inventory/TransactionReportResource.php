@@ -28,6 +28,19 @@ class TransactionReportResource extends Resource
     {
         return $table
             ->columns([
+                Tables\Columns\TextColumn::make('transaction_code')
+                    ->label('No. Transaksi')
+                    ->searchable()
+                    ->sortable()
+                    ->placeholder('–')
+                    ->weight('bold'),
+
+                Tables\Columns\TextColumn::make('no_reference')
+                    ->label('Ref. Sales')
+                    ->searchable()
+                    ->sortable()
+                    ->placeholder('–'),
+
                 Tables\Columns\TextColumn::make('transaction_date')
                     ->label('Tanggal')
                     ->dateTime('d M Y H:i')
@@ -88,21 +101,21 @@ class TransactionReportResource extends Resource
                     ->limit(40)
                     ->tooltip(fn($record) => $record->notes)
                     ->toggleable()
-                    ->placeholder('-'),
+                    ->placeholder('–'),
             ])
             ->filters([
 
                 Tables\Filters\Filter::make('transaction_date')
                     ->form([
                         Forms\Components\DatePicker::make('created_from')
-                            ->label('Created From')
+                            ->label('Dibuat Dari')
                             ->required()
                             ->displayFormat('d M Y')
                             ->native(false)
                             ->prefixIcon('heroicon-o-calendar-days'),
 
                         Forms\Components\DatePicker::make('created_until')
-                            ->label('Created Until')
+                            ->label('Dibuat Hingga')
                             ->required()
                             ->displayFormat('d M Y')
                             ->native(false)
