@@ -197,6 +197,8 @@
                 touchStartY: 0,
                 scrollStartX: 0,
                 columnScrollPositions: {},
+                _abortController: null,
+                _reinitScheduled: false,
 
                 moveTicketToStatus(ticketId, statusId) {
                     $wire.call('moveTicket', parseInt(ticketId), parseInt(statusId));
@@ -228,75 +230,54 @@
                     });
                 },
 
+                scheduleReinit(delay = 100) {
+                    if (this._reinitScheduled) return;
+                    this._reinitScheduled = true;
+                    this.saveScrollPositions();
+                    setTimeout(() => {
+                        this._reinitScheduled = false;
+                        this.removeAllEventListeners();
+                        this.attachAllEventListeners();
+                        this.restoreScrollPositions();
+                    }, delay);
+                },
+
                 setupPageVisibilityListener() {
                     document.addEventListener('visibilitychange', () => {
                         if (!document.hidden) {
-                            this.saveScrollPositions();
-                            setTimeout(() => {
-                                this.removeAllEventListeners();
-                                this.attachAllEventListeners();
-                                this.restoreScrollPositions();
-                            }, 100);
+                            this.scheduleReinit(100);
                         }
                     });
 
                     window.addEventListener('focus', () => {
-                        this.saveScrollPositions();
-                        setTimeout(() => {
-                            this.removeAllEventListeners();
-                            this.attachAllEventListeners();
-                            this.restoreScrollPositions();
-                        }, 100);
+                        this.scheduleReinit(100);
                     });
 
                     window.addEventListener('popstate', () => {
-                        this.saveScrollPositions();
-                        setTimeout(() => {
-                            this.removeAllEventListeners();
-                            this.attachAllEventListeners();
-                            this.restoreScrollPositions();
-                        }, 200);
+                        this.scheduleReinit(200);
                     });
 
                     document.addEventListener('livewire:navigated', () => {
-                        this.saveScrollPositions();
-                        setTimeout(() => {
-                            this.removeAllEventListeners();
-                            this.attachAllEventListeners();
-                            this.restoreScrollPositions();
-                        }, 300);
-                    });
-
-                    document.addEventListener('livewire:load', () => {
-                        this.saveScrollPositions();
-                        setTimeout(() => {
-                            this.removeAllEventListeners();
-                            this.attachAllEventListeners();
-                            this.restoreScrollPositions();
-                        }, 100);
-                    });
-
-                    document.addEventListener('livewire:updated', () => {
-                        this.saveScrollPositions();
-                        setTimeout(() => {
-                            this.removeAllEventListeners();
-                            this.attachAllEventListeners();
-                            this.restoreScrollPositions();
-                        }, 100);
+                        this.scheduleReinit(300);
                     });
 
                     window.addEventListener('ticket-updated', () => {
-                        this.saveScrollPositions();
-                        setTimeout(() => {
-                            this.removeAllEventListeners();
-                            this.attachAllEventListeners();
-                            this.restoreScrollPositions();
-                        }, 150);
+                        this.scheduleReinit(150);
                     });
 
-                    document.addEventListener('livewire:updated', () => {
-                        this.attachAllEventListeners();
-                    });
+                    if (typeof Livewire !== 'undefined') {
+                        Livewire.hook('morph.updated', ({el}) => {
+                            if (el.id === 'board-container' || el.closest('#board-container')) {
+                                this.scheduleReinit(50);
+                            }
+                        });
+                    }
+
+                    setInterval(() => {
+                        if (document.visibilityState === 'visible') {
+                            this.ensureDragDropInitialized();
+                        }
+                    }, 3000);
                 },
 
                 ensureDragDropInitialized() {
@@ -310,8 +291,7 @@
                     });
 
                     if (needsReinitialization && tickets.length > 0) {
-                        this.removeAllEventListeners();
-                        this.attachAllEventListeners();
+                        this.scheduleReinit(50);
                     }
                 },
 
@@ -340,23 +320,13 @@
                 },
 
                 removeAllEventListeners() {
+                    if (this._abortController) {
+                        this._abortController.abort();
+                        this._abortController = null;
+                    }
                     const tickets = document.querySelectorAll('.ticket-card');
-
                     tickets.forEach(ticket => {
                         ticket.removeAttribute('draggable');
-
-                        ticket.replaceWith(ticket.cloneNode(true));
-                    });
-
-                    const columns = document.querySelectorAll('.status-column');
-                    columns.forEach(column => {
-                        const newColumn = column.cloneNode(false);
-                        while (column.firstChild) {
-                            newColumn.appendChild(column.firstChild);
-                        }
-                        if (column.parentNode) {
-                            column.parentNode.replaceChild(newColumn, column);
-                        }
                     });
                 },
 
@@ -365,20 +335,24 @@
                         return;
                     @endif
 
+                    this._abortController = new AbortController();
+                    const signal = this._abortController.signal;
+
                     const tickets = document.querySelectorAll('.ticket-card');
                     tickets.forEach(ticket => {
                         ticket.setAttribute('draggable', true);
 
                         ticket.addEventListener('dragstart', (e) => {
-                            this.draggingTicket = ticket.dataset.ticketId;
-                            e.dataTransfer.setData('text/plain', this.draggingTicket);
+                            this.draggingTicket = ticket.getAttribute('data-ticket-id');
+                            ticket.classList.add('opacity-50');
                             e.dataTransfer.effectAllowed = 'move';
-                        });
+                            e.dataTransfer.setData('text/plain', this.draggingTicket);
+                        }, { signal });
 
                         ticket.addEventListener('dragend', () => {
                             ticket.classList.remove('opacity-50');
                             this.draggingTicket = null;
-                        });
+                        }, { signal });
 
                         let longPressTimer;
                         let isDragging = false;
@@ -394,7 +368,7 @@
                                 isDragging = true;
                                 ticket.style.boxShadow = '0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05)';
                             }, 500);
-                        }, { passive: true });
+                        }, { passive: true, signal });
 
                         ticket.addEventListener('touchmove', (e) => {
                             if (!isDragging) {
@@ -416,7 +390,7 @@
                                     column.classList.remove('bg-primary-50', 'dark:bg-primary-950');
                                 }
                             });
-                        });
+                        }, { signal });
 
                         ticket.addEventListener('touchend', (e) => {
                             clearTimeout(longPressTimer);
@@ -450,7 +424,7 @@
                             }
 
                             this.draggingTicket = null;
-                        });
+                        }, { signal });
 
                         ticket.addEventListener('touchcancel', () => {
                             clearTimeout(longPressTimer);
@@ -464,7 +438,7 @@
                             document.querySelectorAll('.status-column').forEach(column => {
                                 column.classList.remove('bg-primary-50', 'dark:bg-primary-950');
                             });
-                        });
+                        }, { signal });
                     });
 
                     const columns = document.querySelectorAll('.status-column');
@@ -473,11 +447,11 @@
                             e.preventDefault();
                             e.dataTransfer.dropEffect = 'move';
                             column.classList.add('bg-primary-50', 'dark:bg-primary-950');
-                        });
+                        }, { signal });
 
                         column.addEventListener('dragleave', () => {
                             column.classList.remove('bg-primary-50', 'dark:bg-primary-950');
-                        });
+                        }, { signal });
 
                         column.addEventListener('drop', (e) => {
                             e.preventDefault();
@@ -489,12 +463,10 @@
                                 this.draggingTicket = null;
                                 this.moveTicketToStatus(ticketId, statusId);
                             }
-                        });
+                        }, { signal });
                     });
                 }
             }"
-            wire:ignore.self
-            x-data="{ ... }"
             x-init="init()"
             @ticket-moved.window="init()"
             @ticket-updated.window="init()"
@@ -632,10 +604,9 @@
                         <div class="flex flex-col flex-1 gap-3 p-3 overflow-y-auto" style="max-height: calc(100% - 60px);" x-data="{ visibleTickets: 10, totalTickets: {{ $status->tickets->count() }}, scrollPos: 0 }" x-init="$nextTick(() => { $el.addEventListener('scroll', () => { scrollPos = $el.scrollTop; if ($el.scrollTop + $el.clientHeight >= $el.scrollHeight - 100 && visibleTickets < totalTickets) { visibleTickets = Math.min(visibleTickets + 10, totalTickets); } }); })" x-ref="ticketContainer{{ $status->id }}">
                             @foreach ($status->tickets as $index => $ticket)
                                 <div
-                                    wire:key="ticket-{{ $ticket->id }}"
+                                    wire:key="ticket-{{ $status->id }}-{{ $ticket->id }}"
                                     class="p-3 bg-white border border-gray-200 rounded-lg shadow-sm cursor-move ticket-card dark:bg-gray-800 dark:border-gray-700"
                                     data-ticket-id="{{ $ticket->id }}"
-                                    draggable="true"
                                     x-show="{{ $index }} < visibleTickets"
                                     x-transition:enter="transition ease-out duration-200"
                                     x-transition:enter-start="opacity-0 transform scale-95"
