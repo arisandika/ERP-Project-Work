@@ -14,3 +14,7 @@
 nav.fi-sidebar-nav.flex-grow.flex.flex-col.gap-y-7.overflow-y-auto.overflow-x-hidden.px-6.py-8::-webkit-scrollbar {
     display: none;
 }
+
+.no-scrollbar::-webkit-scrollbar {
+    display: none;
+}

@@ -54,7 +54,7 @@
                         </div>
                         
                         <div class="flex items-center mt-1 text-xs text-gray-400 gap-x-1">
-                            <span>Updated by: {{ $history->user->name ?? 'System' }}</span>
+                            <span>Updated by: {{ $history->employee->full_name ?? 'System' }}</span>
                             <span class="mx-1 text-gray-300">•</span>
                             <span>{{ $history->created_at->format('d M H:i') }}</span>
                         </div>

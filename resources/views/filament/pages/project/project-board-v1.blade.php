@@ -1,4 +1,3 @@
-
 <x-filament-panels::page>
 
     {{-- Project Selector --}}
@@ -191,8 +190,318 @@
 
     @if($selectedProject)
         <div
+            x-data="{
+                draggingTicket: null,
+                isTouchDevice: false,
+                touchStartX: 0,
+                touchStartY: 0,
+                scrollStartX: 0,
+                columnScrollPositions: {},
+
+                moveTicketToStatus(ticketId, statusId) {
+                    $wire.call('moveTicket', parseInt(ticketId), parseInt(statusId));
+                },
+
+                saveScrollPositions() {
+                    const columns = document.querySelectorAll('.status-column .overflow-y-auto');
+                    columns.forEach((column, index) => {
+                        this.columnScrollPositions[index] = column.scrollTop;
+                    });
+                },
+
+                restoreScrollPositions() {
+                    const columns = document.querySelectorAll('.status-column .overflow-y-auto');
+                    columns.forEach((column, index) => {
+                        if (this.columnScrollPositions[index] !== undefined) {
+                            column.scrollTop = this.columnScrollPositions[index];
+                        }
+                    });
+                },
+
+                init() {
+                    this.$nextTick(() => {
+                        this.removeAllEventListeners();
+                        this.attachAllEventListeners();
+                        this.setupTouchScrolling();
+                        this.isTouchDevice = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
+                        this.setupPageVisibilityListener();
+                    });
+                },
+
+                setupPageVisibilityListener() {
+                    document.addEventListener('visibilitychange', () => {
+                        if (!document.hidden) {
+                            this.saveScrollPositions();
+                            setTimeout(() => {
+                                this.removeAllEventListeners();
+                                this.attachAllEventListeners();
+                                this.restoreScrollPositions();
+                            }, 100);
+                        }
+                    });
+
+                    window.addEventListener('focus', () => {
+                        this.saveScrollPositions();
+                        setTimeout(() => {
+                            this.removeAllEventListeners();
+                            this.attachAllEventListeners();
+                            this.restoreScrollPositions();
+                        }, 100);
+                    });
+
+                    window.addEventListener('popstate', () => {
+                        this.saveScrollPositions();
+                        setTimeout(() => {
+                            this.removeAllEventListeners();
+                            this.attachAllEventListeners();
+                            this.restoreScrollPositions();
+                        }, 200);
+                    });
+
+                    document.addEventListener('livewire:navigated', () => {
+                        this.saveScrollPositions();
+                        setTimeout(() => {
+                            this.removeAllEventListeners();
+                            this.attachAllEventListeners();
+                            this.restoreScrollPositions();
+                        }, 300);
+                    });
+
+                    document.addEventListener('livewire:load', () => {
+                        this.saveScrollPositions();
+                        setTimeout(() => {
+                            this.removeAllEventListeners();
+                            this.attachAllEventListeners();
+                            this.restoreScrollPositions();
+                        }, 100);
+                    });
+
+                    document.addEventListener('livewire:updated', () => {
+                        this.saveScrollPositions();
+                        setTimeout(() => {
+                            this.removeAllEventListeners();
+                            this.attachAllEventListeners();
+                            this.restoreScrollPositions();
+                        }, 100);
+                    });
+
+                    window.addEventListener('ticket-updated', () => {
+                        this.saveScrollPositions();
+                        setTimeout(() => {
+                            this.removeAllEventListeners();
+                            this.attachAllEventListeners();
+                            this.restoreScrollPositions();
+                        }, 150);
+                    });
+
+                    setInterval(() => {
+                        if (document.visibilityState === 'visible') {
+                            this.saveScrollPositions();
+                            this.ensureDragDropInitialized();
+                            this.restoreScrollPositions();
+                        }
+                    }, 2000);
+                },
+
+                ensureDragDropInitialized() {
+                    const tickets = document.querySelectorAll('.ticket-card');
+                    let needsReinitialization = false;
+
+                    tickets.forEach(ticket => {
+                        if (!ticket.getAttribute('draggable') || ticket.getAttribute('draggable') !== 'true') {
+                            needsReinitialization = true;
+                        }
+                    });
+
+                    if (needsReinitialization && tickets.length > 0) {
+                        this.removeAllEventListeners();
+                        this.attachAllEventListeners();
+                    }
+                },
+
+                setupTouchScrolling() {
+                    const container = document.getElementById('board-container');
+
+                    container.addEventListener('touchstart', (e) => {
+                        this.touchStartX = e.touches[0].clientX;
+                        this.touchStartY = e.touches[0].clientY;
+                        this.scrollStartX = container.scrollLeft;
+                    }, { passive: true });
+
+                    container.addEventListener('touchmove', (e) => {
+                        if (e.touches.length !== 1) return;
+
+                        const touchX = e.touches[0].clientX;
+                        const touchY = e.touches[0].clientY;
+                        const moveX = this.touchStartX - touchX;
+                        const moveY = this.touchStartY - touchY;
+
+                        if (Math.abs(moveX) > Math.abs(moveY)) {
+                            e.preventDefault();
+                            container.scrollLeft = this.scrollStartX + moveX;
+                        }
+                    }, { passive: false });
+                },
+
+                removeAllEventListeners() {
+                    const tickets = document.querySelectorAll('.ticket-card');
+                    tickets.forEach(ticket => {
+                        ticket.removeAttribute('draggable');
+                        const newTicket = ticket.cloneNode(true);
+                        ticket.parentNode.replaceChild(newTicket, ticket);
+                    });
+
+                    const columns = document.querySelectorAll('.status-column');
+                    columns.forEach(column => {
+                        const newColumn = column.cloneNode(false);
+                        while (column.firstChild) {
+                            newColumn.appendChild(column.firstChild);
+                        }
+                        if (column.parentNode) {
+                            column.parentNode.replaceChild(newColumn, column);
+                        }
+                    });
+                },
+
+                attachAllEventListeners() {
+                    @if(!$this->canMoveTickets())
+                        return;
+                    @endif
+
+                    const tickets = document.querySelectorAll('.ticket-card');
+                    tickets.forEach(ticket => {
+                        ticket.setAttribute('draggable', true);
+
+                        ticket.addEventListener('dragstart', (e) => {
+                            this.draggingTicket = ticket.getAttribute('data-ticket-id');
+                            ticket.classList.add('opacity-50');
+                            e.dataTransfer.effectAllowed = 'move';
+                        });
+
+                        ticket.addEventListener('dragend', () => {
+                            ticket.classList.remove('opacity-50');
+                            this.draggingTicket = null;
+                        });
+
+                        let longPressTimer;
+                        let isDragging = false;
+                        let originalColumn;
+
+                        ticket.addEventListener('touchstart', (e) => {
+                            if (isDragging) return;
+
+                            longPressTimer = setTimeout(() => {
+                                originalColumn = ticket.closest('.status-column');
+                                this.draggingTicket = ticket.getAttribute('data-ticket-id');
+                                ticket.classList.add('opacity-50', 'relative', 'z-30');
+                                isDragging = true;
+                                ticket.style.boxShadow = '0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05)';
+                            }, 500);
+                        }, { passive: true });
+
+                        ticket.addEventListener('touchmove', (e) => {
+                            if (!isDragging) {
+                                clearTimeout(longPressTimer);
+                                return;
+                            }
+
+                            const touch = e.touches[0];
+                            const columns = document.querySelectorAll('.status-column');
+
+                            columns.forEach(column => {
+                                const rect = column.getBoundingClientRect();
+                                if (touch.clientX >= rect.left &&
+                                    touch.clientX <= rect.right &&
+                                    touch.clientY >= rect.top &&
+                                    touch.clientY <= rect.bottom) {
+                                    column.classList.add('bg-primary-50', 'dark:bg-primary-950');
+                                } else {
+                                    column.classList.remove('bg-primary-50', 'dark:bg-primary-950');
+                                }
+                            });
+                        });
+
+                        ticket.addEventListener('touchend', (e) => {
+                            clearTimeout(longPressTimer);
+
+                            if (!isDragging) return;
+
+                            isDragging = false;
+                            ticket.classList.remove('opacity-50', 'relative', 'z-30');
+                            ticket.style.boxShadow = '';
+
+                            const touch = e.changedTouches[0];
+                            const columns = document.querySelectorAll('.status-column');
+
+                            let targetColumn = null;
+                            columns.forEach(column => {
+                                const rect = column.getBoundingClientRect();
+                                if (touch.clientX >= rect.left &&
+                                    touch.clientX <= rect.right &&
+                                    touch.clientY >= rect.top &&
+                                    touch.clientY <= rect.bottom) {
+                                    targetColumn = column;
+                                }
+                                column.classList.remove('bg-primary-50', 'dark:bg-primary-950');
+                            });
+
+                            if (targetColumn && targetColumn !== originalColumn) {
+                                const statusId = targetColumn.getAttribute('data-status-id');
+                                const ticketId = this.draggingTicket;
+
+                                this.moveTicketToStatus(ticketId, statusId);
+                            }
+
+                            this.draggingTicket = null;
+                        });
+
+                        ticket.addEventListener('touchcancel', () => {
+                            clearTimeout(longPressTimer);
+                            if (!isDragging) return;
+
+                            isDragging = false;
+                            ticket.classList.remove('opacity-50', 'relative', 'z-30');
+                            ticket.style.boxShadow = '';
+                            this.draggingTicket = null;
+
+                            document.querySelectorAll('.status-column').forEach(column => {
+                                column.classList.remove('bg-primary-50', 'dark:bg-primary-950');
+                            });
+                        });
+                    });
+
+                    const columns = document.querySelectorAll('.status-column');
+                    columns.forEach(column => {
+                        column.addEventListener('dragover', (e) => {
+                            e.preventDefault();
+                            e.dataTransfer.dropEffect = 'move';
+                            column.classList.add('bg-primary-50', 'dark:bg-primary-950');
+                        });
+
+                        column.addEventListener('dragleave', () => {
+                            column.classList.remove('bg-primary-50', 'dark:bg-primary-950');
+                        });
+
+                        column.addEventListener('drop', (e) => {
+                            e.preventDefault();
+                            column.classList.remove('bg-primary-50', 'dark:bg-primary-950');
+
+                            if (this.draggingTicket) {
+                                const statusId = column.getAttribute('data-status-id');
+                                const ticketId = this.draggingTicket;
+                                this.draggingTicket = null;
+                                this.moveTicketToStatus(ticketId, statusId);
+                            }
+                        });
+                    });
+                }
+            }"
+            x-init="init()"
+            @ticket-moved.window="init()"
+            @ticket-updated.window="init()"
+            @refresh-board.window="init()"
             wire:key="board-container-{{ $selectedProject->id }}"
-            class="no-scrollbar relative overflow-x-auto pb-6 {{ !$this->canMoveTickets() ? 'view-only-mode' : '' }}"
+            class="relative overflow-x-auto pb-6 {{ !$this->canMoveTickets() ? 'view-only-mode' : '' }}"
             id="board-container"
         >
             {{-- Mobile swipe hint --}}
@@ -232,9 +541,9 @@
                             style="background-color: {{ $status->color ?? '#f3f4f6' }};"
                         >
                             <div class="flex items-center justify-between">
-                                <h3 class="flex items-center gap-3 font-medium" style="color: white; text-shadow: 0px 0px 1px rgba(0,0,0,0.5);">
+                                <h3 class="flex items-center gap-2 font-medium" style="color: white; text-shadow: 0px 0px 1px rgba(0,0,0,0.5);">
                                     <span>{{ $status->name }}</span>
-                                    <span class="inline-flex items-center justify-center flex-shrink-0 w-6 h-6 text-xs font-medium text-gray-700 bg-gray-100 border border-gray-300 rounded-lg dark:text-gray-50 dark:bg-gray-700 dark:border-gray-600">{{ $status->tickets->count() }}</span>
+                                    <span class="text-sm opacity-80">{{ $status->tickets->count() }}</span>
                                     @if($status->is_completed)
                                         <div class="flex items-center justify-center w-6 h-6 bg-green-500 border-2 border-white rounded-full shadow-lg" title="Completed Status">
                                             <svg class="w-3 h-3 font-bold text-white" fill="currentColor" viewBox="0 0 20 20">
@@ -321,30 +630,36 @@
                             </div>
                         </div>
 
-                        <div class="flex flex-col flex-1 gap-4 p-3 overflow-y-auto no-scrollbar" style="max-height: calc(100% - 60px);" x-data="{ visibleTickets: 10, totalTickets: {{ $status->tickets->count() }}, scrollPos: 0 }" x-init="$nextTick(() => { $el.addEventListener('scroll', () => { scrollPos = $el.scrollTop; if ($el.scrollTop + $el.clientHeight >= $el.scrollHeight - 100 && visibleTickets < totalTickets) { visibleTickets = Math.min(visibleTickets + 10, totalTickets); } }); })" x-ref="ticketContainer{{ $status->id }}">
+                        <div class="flex flex-col flex-1 gap-3 p-3 overflow-y-auto" style="max-height: calc(100% - 60px);" x-data="{ visibleTickets: 10, totalTickets: {{ $status->tickets->count() }}, scrollPos: 0 }" x-init="$nextTick(() => { $el.addEventListener('scroll', () => { scrollPos = $el.scrollTop; if ($el.scrollTop + $el.clientHeight >= $el.scrollHeight - 100 && visibleTickets < totalTickets) { visibleTickets = Math.min(visibleTickets + 10, totalTickets); } }); })" x-ref="ticketContainer{{ $status->id }}">
                             @foreach ($status->tickets as $index => $ticket)
                                 <div
                                     wire:key="ticket-{{ $status->id }}-{{ $ticket->id }}"
-                                    class="relative p-3 bg-white border border-gray-200 rounded-lg shadow-sm ticket-card dark:bg-gray-800 dark:border-gray-700"
+                                    class="p-3 bg-white border border-gray-200 rounded-lg shadow-sm cursor-move ticket-card dark:bg-gray-800 dark:border-gray-700"
+                                    data-ticket-id="{{ $ticket->id }}"
                                     x-show="{{ $index }} < visibleTickets"
-                                    style="border-left: 4px solid {{ $ticket->priority->color }};"
                                     x-transition:enter="transition ease-out duration-200"
                                     x-transition:enter-start="opacity-0 transform scale-95"
                                     x-transition:enter-end="opacity-100 transform scale-100"
                                 >
-                                    <div class="flex items-center justify-between mb-3">
-                                        <span class="text-xs font-mono text-gray-500 dark:text-gray-400 px-1.5 py-0.5 bg-gray-100 dark:bg-gray-700 rounded truncate max-w- sm:max-w-none">
+                                    <div class="flex items-center justify-between mb-2">
+                                        <span class="text-xs font-mono text-gray-500 dark:text-gray-400 px-1.5 py-0.5 bg-gray-100 dark:bg-gray-700 rounded truncate max-w-[120px] sm:max-w-none">
                                             {{ $ticket->uuid }}
                                         </span>
-                                        @if ($ticket->due_date)
-                                            <span class="inline-flex items-center text-xs whitespace-nowrap {{ $ticket->due_date->isPast() ? 'text-red-800 dark:text-red-300' : 'text-blue-800 dark:text-blue-300' }}">
-                                                <x-heroicon-m-calendar class="w-3 h-3 mr-1" />
-                                                {{ $ticket->due_date->format('d M y') }}
-                                            </span>
-                                        @endif
+                                        <div class="flex items-center gap-1">
+                                            @if ($ticket->priority)
+                                                <span class="text-xs px-1.5 py-0.5 rounded whitespace-nowrap text-white font-medium" style="background-color: {{ $ticket->priority->color }};">
+                                                    {{ $ticket->priority->name }}
+                                                </span>
+                                            @endif
+                                            @if ($ticket->due_date)
+                                                <span class="text-xs px-1.5 py-0.5 rounded whitespace-nowrap {{ $ticket->due_date->isPast() ? 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300' : 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300' }}">
+                                                    {{ $ticket->due_date->format('M d') }}
+                                                </span>
+                                            @endif
+                                        </div>
                                     </div>
 
-                                    <h4 class="mb-2 text-[15px] font-medium text-gray-900 dark:text-white">{{ $ticket->name }}</h4>
+                                    <h4 class="mb-2 font-medium text-gray-900 dark:text-white">{{ $ticket->name }}</h4>
 
                                     @if ($ticket->description)
                                         <p class="mb-3 text-sm text-gray-500 dark:text-gray-400 line-clamp-2">
@@ -352,159 +667,50 @@
                                         </p>
                                     @endif
 
-                                    
-                                    <div class="flex items-center justify-between gap-3 mt-4">
-                                        
-                                        @if($this->canMoveTickets())
-                                            <div class="relative flex-1 min-w-0" x-data="{ open: false }">
-                                                
-                                                <div 
-                                                    wire:loading 
-                                                    wire:target="moveTicket({{ $ticket->id }})" 
-                                                    class="absolute inset-0 z-20 flex items-center justify-center rounded-lg bg-white/80 dark:bg-gray-800/80 backdrop-blur-[1px]"
-                                                >
-                                                    <svg class="w-4 h-4 text-primary-500 animate-spin" fill="none" viewBox="0 0 24 24">
-                                                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                                                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                                                    </svg>
-                                                </div>
-
-                                                <button
-                                                    @click="open = !open"
-                                                    @click.away="open = false"
-                                                    type="button"
-                                                    class="flex items-center justify-between w-full px-2.5 py-1.5 text-xs font-medium text-gray-700 transition-all bg-white border border-gray-200 rounded-lg shadow-sm hover:bg-gray-50 hover:border-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:text-gray-200 dark:hover:bg-gray-600"
-                                                >
-                                                    <div class="flex items-center gap-2 overflow-hidden">
-                                                        <div class="flex-shrink-0 w-2 h-2 rounded-full shadow-sm" style="background-color: {{ $status->color ?? '#9CA3AF' }};"></div>
-                                                        <span class="truncate">{{ $status->name }}</span>
+                                    <div class="flex items-center justify-between mt-2">
+                                       @if ($ticket->assignees->isNotEmpty())
+                                            <div class="flex flex-wrap gap-1 max-w-[180px]">
+                                                @foreach($ticket->assignees as $assignee)
+                                                    <div class="inline-flex items-center gap-1 py-1 pl-1 pr-2 rounded-full bg-primary-100 dark:bg-primary-900/40 text-primary-700 dark:text-primary-300">
+                                                        <span class="flex items-center justify-center flex-shrink-0 w-4 h-4 text-xs text-white rounded-full bg-primary-500">
+                                                            {{ substr($assignee->full_name, 0, 1) }}
+                                                        </span>
+                                                        <span class="text-xs font-medium truncate">{{ \Illuminate\Support\Str::limit($assignee->full_name, 8) }}</span>
                                                     </div>
-                                                    
-                                                    <svg class="flex-shrink-0 w-3.5 h-3.5 ml-1 text-gray-400 transition-transform duration-200" :class="{ 'rotate-180': open }" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
-                                                    </svg>
-                                                </button>
-
-                                                <div
-                                                    x-show="open"
-                                                    x-transition:enter="transition ease-out duration-100"
-                                                    x-transition:enter-start="opacity-0 scale-95 -translate-y-2"
-                                                    x-transition:enter-end="opacity-100 scale-100 translate-y-0"
-                                                    class="absolute left-0 z-30 w-full min-w-[150px] mt-1 overflow-y-auto origin-top bg-white border border-gray-200 rounded-lg shadow-xl dark:bg-gray-800 dark:border-gray-700 max-h-48"
-                                                    style="display: none;"
-                                                >
-                                                    <div class="p-1">
-                                                        @foreach($this->ticketStatuses as $statusOption)
-                                                            <button
-                                                                type="button"
-                                                                wire:click="moveTicket({{ $ticket->id }}, {{ $statusOption->id }})"
-                                                                @click="open = false"
-                                                                class="flex items-center w-full gap-2 px-3 py-2 text-sm text-left rounded-md transition-colors group
-                                                                {{ $statusOption->id === $status->id 
-                                                                    ? 'bg-primary-50 text-primary-700 dark:bg-primary-900/20 dark:text-primary-400 font-semibold' 
-                                                                    : 'text-gray-700 hover:bg-gray-100 dark:text-gray-200 dark:hover:bg-gray-700' 
-                                                                }}"
-                                                            >
-                                                                <div class="flex-shrink-0 w-2 h-2 rounded-full" style="background-color: {{ $statusOption->color ?? '#9CA3AF' }};"></div>
-                                                                <span class="truncate">{{ $statusOption->name }}</span>
-                                                                
-                                                                @if($statusOption->id === $status->id)
-                                                                    <svg class="w-3.5 h-3.5 ml-auto text-primary-600 dark:text-primary-400 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
-                                                                    </svg>
-                                                                @endif
-                                                            </button>
-                                                        @endforeach
-                                                    </div>
-                                                </div>
+                                                @endforeach
+                                                @if($ticket->assignees->count() > 2)
+                                                    <!-- <div class="inline-flex items-center px-2 py-1 text-gray-700 bg-gray-100 rounded-full dark:bg-gray-800 dark:text-gray-400">
+                                                        <span class="text-xs font-medium">+{{ $ticket->assignees->count() - 2 }}</span>
+                                                    </div> -->
+                                                @endif
+                                            </div>
+                                        @else
+                                            <div class="inline-flex items-center px-2 py-1 text-gray-700 bg-gray-100 rounded-full dark:bg-gray-800 dark:text-gray-400">
+                                                <svg xmlns="http://www.w3.org/2000/svg" class="flex-shrink-0 w-4 h-4 mr-1 text-gray-400 dark:text-gray-500" viewBox="0 0 20 20" fill="currentColor">
+                                                    <path fill-rule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clip-rule="evenodd" />
+                                                </svg>
+                                                <span class="text-xs font-medium">Unassigned</span>
                                             </div>
                                         @endif
-                                        
-                                        <div class="flex items-center flex-shrink-0 gap-2">
-                                            
-                                            @if ($ticket->assignees->isNotEmpty())
-                                                <div class="relative" x-data="{ open: false }">
-                                                    <button
-                                                        @click="open = !open"
-                                                        @click.away="open = false"
-                                                        class="flex items-center justify-center w-8 h-8 transition-colors bg-white border border-gray-200 rounded-full shadow-sm hover:bg-gray-50 dark:bg-gray-800 dark:border-gray-700 dark:hover:bg-gray-700 text-primary-600 dark:text-primary-500"
-                                                        title="View all {{ $ticket->assignees->count() }} assignees"
-                                                    >
-                                                        <x-heroicon-o-user class="w-4 h-4" />
-                                                    </button>
 
-                                                    <div
-                                                        x-show="open"
-                                                        x-transition:enter="transition ease-out duration-100"
-                                                        x-transition:enter-start="opacity-0 scale-95"
-                                                        x-transition:enter-end="opacity-100 scale-100"
-                                                        class="absolute right-0 z-40 w-56 p-2 mt-2 origin-top-right bg-white border border-gray-200 rounded-lg shadow-xl dark:bg-gray-800 dark:border-gray-700"
-                                                        style="display: none;"
-                                                    >
-                                                        <div class="px-2 py-1.5 mb-2 text-xs font-semibold tracking-wider text-gray-500 uppercase border-b dark:text-gray-400 dark:border-gray-700">
-                                                            {{ $ticket->assignees->count() }} Assignees
-                                                        </div>
-                                                        
-                                                        <div class="flex flex-col gap-1 overflow-y-auto max-h-48 custom-scrollbar">
-                                                            @foreach($ticket->assignees as $assignee)
-                                                                <div class="flex items-center gap-2 px-2 py-1.5 rounded-md hover:bg-gray-50 dark:hover:bg-gray-700">
-                                                                    <span class="flex items-center justify-center flex-shrink-0 w-6 h-6 text-xs text-white rounded-full bg-primary-500">
-                                                                        {{ substr($assignee->full_name, 0, 1) }}
-                                                                    </span>
-                                                                    <span class="text-sm font-medium text-gray-700 truncate dark:text-gray-200">
-                                                                        {{ $assignee->full_name }}
-                                                                    </span>
-                                                                </div>
-                                                            @endforeach
-                                                        </div>
-
-                                                        @if($ticket->creator) 
-                                                            <div class="my-2 border-t border-gray-200 dark:border-gray-700"></div>
-
-                                                            <div class="px-2 py-1 text-xs font-semibold tracking-wider text-gray-500 uppercase dark:text-gray-400">
-                                                                Created By
-                                                            </div>
-
-                                                            <div class="flex items-center gap-2 px-2 py-1.5 rounded-md hover:bg-gray-50 dark:hover:bg-gray-700">
-                                                                <span class="flex items-center justify-center flex-shrink-0 w-6 h-6 text-xs text-white rounded-full bg-slate-500">
-                                                                    {{ substr($ticket->creator->full_name ?? 'Admin', 0, 1) }}
-                                                                </span>
-                                                                <span class="text-sm font-medium text-gray-700 truncate dark:text-gray-200">
-                                                                    {{ $ticket->creator->full_name ?? 'Admin' }}
-                                                                </span>
-                                                            </div>
-                                                        @endif
-                                                    </div>
-                                                </div>
-                                            @else
-                                                <div class="inline-flex items-center px-2 py-1 text-gray-700 bg-gray-100 rounded-full dark:bg-gray-800 dark:text-gray-400" title="Unassigned">
-                                                    <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 text-gray-400 dark:text-gray-500" viewBox="0 0 20 20" fill="currentColor">
-                                                        <path fill-rule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clip-rule="evenodd" />
-                                                    </svg>
-                                                </div>
-                                            @endif
-
-                                            <a
-                                                href="{{ \App\Filament\Resources\Project\TicketResource::getUrl('edit', ['record' => $ticket->id]) }}"
-                                                target="_blank"
-                                                rel="noopener noreferrer"
-                                                onclick="
-                                                    event.preventDefault();
-                                                    const container = this.closest('.overflow-y-auto');
-                                                    const scrollPos = container.scrollTop;
-                                                    window.open(this.href, '_blank');
-                                                    setTimeout(() => {
-                                                        container.scrollTop = scrollPos;
-                                                    }, 0);
-                                                    return false;
-                                                "
-                                                class="flex items-center justify-center w-8 h-8 transition-colors bg-white border border-gray-200 rounded-full shadow-sm hover:bg-gray-50 dark:bg-gray-800 dark:border-gray-700 dark:hover:bg-gray-700 text-primary-600 dark:text-primary-500"
-                                                title="Edit Ticket"
-                                            >
-                                                <x-heroicon-o-pencil class="w-4 h-4" />
-                                            </a>
-                                        </div>
-
+                                        <a
+                                            href="{{ \App\Filament\Resources\Project\TicketResource::getUrl('view', ['record' => $ticket->id]) }}"
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            onclick="
+                                                event.preventDefault();
+                                                const container = this.closest('.overflow-y-auto');
+                                                const scrollPos = container.scrollTop;
+                                                window.open(this.href, '_blank');
+                                                setTimeout(() => {
+                                                    container.scrollTop = scrollPos;
+                                                }, 0);
+                                                return false;
+                                            "
+                                            class="inline-flex items-center justify-center flex-shrink-0 w-8 h-8 text-sm font-medium border border-gray-200 rounded-lg dark:border-gray-700 text-primary-600 hover:text-primary-500 dark:text-primary-500 dark:hover:text-primary-400"
+                                        >
+                                            <x-heroicon-m-eye class="w-4 h-4" />
+                                        </a>
                                     </div>
                                 </div>
                             @endforeach
