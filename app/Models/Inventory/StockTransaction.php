@@ -4,11 +4,7 @@ namespace App\Models\Inventory;
 
 use App\Models\User;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
-use Illuminate\Database\Eloquent\Events\Created;
-use Illuminate\Database\Eloquent\Events\Updated;
-use Illuminate\Database\Eloquent\Events\Deleted;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -31,7 +27,8 @@ class StockTransaction extends Model
         'total_price',
         'stock_before',
         'stock_after',
-        'reference',
+        'reference_id',
+        'reference_type',
         'notes',
         'created_by',
     ];
@@ -41,6 +38,8 @@ class StockTransaction extends Model
         'price' => 'decimal:2',
         'total_price' => 'decimal:2',
     ];
+    
+    public static bool $autoUpdateStock = true;
 
     public function product()
     {
@@ -61,6 +60,12 @@ class StockTransaction extends Model
     {
         static::creating(function (StockTransaction $transaction) {
 
+            // Jika saklar dimatikan, skip logic otomatis
+            if (!self::$autoUpdateStock) {
+                $transaction->created_by = $transaction->created_by ?? Auth::id();
+                return;
+            }
+
             if ($transaction->quantity <= 0) {
                 throw new \Exception('Jumlah transaksi tidak valid.');
             }
@@ -70,39 +75,32 @@ class StockTransaction extends Model
                     ->setTimeFromTimeString(now()->format('H:i:s'));
             }
 
-            // Kunci jenis transaksi
-            $transaction->type = 'masuk';
+            // Hanya set default 'masuk' jika type kosong
+            if (empty($transaction->type)) {
+                $transaction->type = 'masuk';
+            }
 
             $product = Product::findOrFail($transaction->product_id);
-
-            // Harga beli snapshot
             $transaction->price = $product->purchase_price;
             $transaction->total_price = $transaction->price * $transaction->quantity;
-
             $transaction->created_by = Auth::id();
 
-            DB::transaction(function () use ($transaction) {
+            // Hanya jalankan auto-update stock jika belum dihandle manual
+            if (is_null($transaction->stock_after)) {
+                DB::transaction(function () use ($transaction) {
+                    $productStock = ProductStock::firstOrCreate(
+                        ['product_id' => $transaction->product_id, 'warehouse_id' => $transaction->warehouse_id],
+                        ['qty' => 0, 'status' => 'out_of_stock']
+                    );
 
-                $productStock = ProductStock::firstOrCreate(
-                    [
-                        'product_id' => $transaction->product_id,
-                        'warehouse_id' => $transaction->warehouse_id,
-                    ],
-                    [
-                        'qty' => 0,
-                        'status' => 'out_of_stock',
-                    ]
-                );
+                    $transaction->stock_before = $productStock->qty;
+                    $transaction->stock_after = $productStock->qty + $transaction->quantity;
 
-                // Audit Stock
-                $transaction->stock_before = $productStock->qty;
-                $transaction->stock_after = $productStock->qty + $transaction->quantity;
-
-                // Update Stock
-                $productStock->qty = $transaction->stock_after;
-                $productStock->status = $productStock->qty > 0 ? 'available' : 'out_of_stock';
-                $productStock->save();
-            });
+                    $productStock->qty = $transaction->stock_after;
+                    $productStock->status = $productStock->qty > 0 ? 'available' : 'out_of_stock';
+                    $productStock->save();
+                });
+            }
         });
 
         static::updating(function () {
@@ -114,4 +112,3 @@ class StockTransaction extends Model
         });
     }
 }
-

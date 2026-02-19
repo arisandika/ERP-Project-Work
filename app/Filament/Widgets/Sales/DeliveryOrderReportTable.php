@@ -45,12 +45,15 @@ class DeliveryOrderReportTable extends BaseWidget
             Tables\Columns\TextColumn::make('status')
                 ->badge()
                 ->color(fn (string $state): string => match ($state) {
-                    'draft' => 'gray',
-                    'pending' => 'warning',
-                    'shipped' => 'info',
+                    'draft'     => 'gray',
+                    'ready'     => 'info',
+                    'pending'   => 'warning',
+                    'shipped'   => 'primary',
                     'delivered' => 'success',
-                    'returned' => 'danger',
+                    'returned'  => 'danger',
+                    default     => 'gray',
                 }),
+
         ];
     }
 }

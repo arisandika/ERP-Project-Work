@@ -48,7 +48,7 @@ class EditSalesOrder extends EditRecord
                 if (($item['item_type'] ?? 'product') === 'product') {
                     $productId = $item['item_id'] ?? null;
                     $qtyOrder = (int) ($item['qty'] ?? 0);
-                    $warehouseId = 1; // Default Gudang Utama
+                    $warehouseId = 1;
 
                     if (!$productId) continue;
 
@@ -84,36 +84,34 @@ class EditSalesOrder extends EditRecord
         return DB::transaction(function () use ($record, $data, $oldStatus, $newStatus) {
             $record->update($data);
 
-            // KASUS A: Barang Keluar (Draft -> Confirmed)
+            // KASUS A: Barang KELUAR (Draft → Confirmed)
             if ($newStatus === 'confirmed' && $oldStatus !== 'confirmed') {
 
-                // GENERATE KODE TRANSAKSI KELUAR (SATU KALI)
                 $transactionCode = $this->generateNoTransactionOut();
+
+                // Bypass auto-update stok (manual control)
+                StockTransaction::$autoUpdateStock = false;
 
                 foreach ($record->items as $item) {
                     if ($item->item_type === 'product') {
                         $warehouseId = 1;
 
-                        // Ambil Stok
                         $productStock = ProductStock::firstOrCreate(
                             ['product_id' => $item->item_id, 'warehouse_id' => $warehouseId],
                             ['qty' => 0]
                         );
 
                         $stockBefore = $productStock->qty;
-
-                        // Kurangi Stok
                         $productStock->decrement('qty', $item->qty);
-
                         $stockAfter = $stockBefore - $item->qty;
 
-                        // Catat Transaksi KELUAR
+                        // Catat Transaksi KELUAR (ST-OUT)
                         StockTransaction::create([
-                            'transaction_code' => $transactionCode, // Pakai kode yang sama
+                            'transaction_code' => $transactionCode,
                             'transaction_date' => now(),
                             'product_id'       => $item->item_id,
                             'warehouse_id'     => $warehouseId,
-                            'type'             => 'keluar',
+                            'type'             => 'keluar', // ✅ KELUAR
                             'quantity'         => $item->qty,
                             'stock_before'     => $stockBefore,
                             'stock_after'      => $stockAfter,
@@ -121,24 +119,32 @@ class EditSalesOrder extends EditRecord
                             'total_price'      => $item->line_total,
                             'reference_id'     => $record->id,
                             'reference_type'   => SalesOrder::class,
+                            'no_reference'     => $record->order_number,
                             'notes'            => 'Terjual via SO: ' . $record->order_number,
                             'created_by'       => auth()->id(),
                         ]);
                     }
                 }
 
+                StockTransaction::$autoUpdateStock = true;
+
                 if ($record->promo_code_id) {
                     PromoCode::find($record->promo_code_id)?->increment('times_used');
                 }
 
-                Notification::make()->title('Pesanan Confirmed & Stok Gudang Berkurang')->success()->send();
+                Notification::make()
+                    ->title('Pesanan Confirmed & Stok Berkurang')
+                    ->success()
+                    ->send();
             }
 
-            // KASUS B: Barang Balik/Retur (Confirmed -> Cancelled/Draft)
+            // KASUS B: Barang MASUK (Confirmed → Cancelled/Draft)
             elseif ($oldStatus === 'confirmed' && ($newStatus === 'cancelled' || $newStatus === 'draft')) {
 
-                // GENERATE KODE RETUR (SATU KALI)
-                $transactionCodeRetur = 'RET-' . now()->format('ymdHis') . '-' . $record->id;
+                $transactionCode = $this->generateNoTransactionIn();
+
+                // Bypass auto-update stok
+                StockTransaction::$autoUpdateStock = false;
 
                 foreach ($record->items as $item) {
                     if ($item->item_type === 'product') {
@@ -150,19 +156,16 @@ class EditSalesOrder extends EditRecord
 
                         if ($productStock) {
                             $stockBefore = $productStock->qty;
-
-                            // Balikin Stok (Increment)
                             $productStock->increment('qty', $item->qty);
-
                             $stockAfter = $stockBefore + $item->qty;
 
-                            // Catat Transaksi MASUK (Pengembalian)
+                            // Catat Transaksi MASUK (ST-IN)
                             StockTransaction::create([
-                                'transaction_code' => $transactionCodeRetur, // Pakai kode yang sama
+                                'transaction_code' => $transactionCode,
                                 'transaction_date' => now(),
                                 'product_id'       => $item->item_id,
                                 'warehouse_id'     => $warehouseId,
-                                'type'             => 'masuk', // Type Masuk
+                                'type'             => 'masuk', // ✅ MASUK
                                 'quantity'         => $item->qty,
                                 'stock_before'     => $stockBefore,
                                 'stock_after'      => $stockAfter,
@@ -171,24 +174,30 @@ class EditSalesOrder extends EditRecord
                                 'reference_id'     => $record->id,
                                 'reference_type'   => SalesOrder::class,
                                 'no_reference'     => $record->order_number,
-                                'notes'            => 'Restock (Batal SO): ' . $record->order_number,
+                                'notes'            => 'Restock (Cancel SO): ' . $record->order_number,
                                 'created_by'       => auth()->id(),
                             ]);
                         }
                     }
                 }
 
+                StockTransaction::$autoUpdateStock = true;
+
                 if ($record->promo_code_id) {
                     PromoCode::find($record->promo_code_id)?->decrement('times_used');
                 }
 
-                Notification::make()->title('Pesanan Dibatalkan: Stok Dikembalikan')->warning()->send();
+                Notification::make()
+                    ->title('Pesanan Dibatalkan: Stok Dikembalikan')
+                    ->warning()
+                    ->send();
             }
 
             return $record;
         });
     }
 
+    // Generate No Transaksi KELUAR (ST-OUT)
     private function generateNoTransactionOut(): string
     {
         $romanMonths = ['I','II','III','IV','V','VI','VII','VIII','IX','X','XI','XII'];
@@ -196,6 +205,32 @@ class EditSalesOrder extends EditRecord
         $year = now()->year;
         $company = 'NEX';
         $code = 'ST-OUT';
+        $prefixLike = "%/{$code}/{$company}/{$monthRoman}/{$year}";
+
+        $last = StockTransaction::where('transaction_code', 'like', $prefixLike)
+            ->orderByDesc('id')
+            ->value('transaction_code');
+
+        $seq = 1;
+
+        if ($last) {
+            $parts = explode('/', $last);
+            $seq = ((int) $parts[0]) + 1;
+        }
+
+        $seqStr = str_pad((string) $seq, 3, '0', STR_PAD_LEFT);
+
+        return "{$seqStr}/{$code}/{$company}/{$monthRoman}/{$year}";
+    }
+
+    // Generate No Transaksi MASUK (ST-IN)
+    private function generateNoTransactionIn(): string
+    {
+        $romanMonths = ['I','II','III','IV','V','VI','VII','VIII','IX','X','XI','XII'];
+        $monthRoman = $romanMonths[now()->month - 1];
+        $year = now()->year;
+        $company = 'NEX';
+        $code = 'ST-IN';
         $prefixLike = "%/{$code}/{$company}/{$monthRoman}/{$year}";
 
         $last = StockTransaction::where('transaction_code', 'like', $prefixLike)
