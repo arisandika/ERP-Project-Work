@@ -45,3 +45,7 @@ Route::get('/invoice/view/{number}', [InvoiceVerificationController::class, 'sho
     ->middleware('signed')
     ->name('invoice.view');
 
+Route::get('/invoice/download/{record}', [InvoiceVerificationController::class, 'download'])
+    ->name('invoice.download');
+
+

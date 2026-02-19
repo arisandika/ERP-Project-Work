@@ -20,30 +20,30 @@ class InvoiceVerificationController extends Controller
 
     public function submitVerify(Request $request, string $number)
     {
-        $validated = $request->validate([
-            'email' => ['required', 'email'],
-            'phone' => ['required', 'string'],
+        $request->validate([
+            'phone_last_4' => ['required', 'numeric', 'digits:4'],
         ]);
 
         $invoice = Invoice::with('customer')
             ->where('invoice_number', $number)
             ->firstOrFail();
 
-        $inputEmail = mb_strtolower(trim($validated['email']));
-        $inputPhone = preg_replace('/\D+/', '', $validated['phone']);
+        $dbPhone = (string) ($invoice->customer->phone ?? '');
 
-        $dbEmail = mb_strtolower(trim((string) ($invoice->customer->email ?? '')));
-        $dbPhone = preg_replace('/\D+/', '', (string) ($invoice->customer->phone ?? ''));
+        $cleanDbPhone = preg_replace('/\D+/', '', $dbPhone);
 
-        if ($inputEmail !== $dbEmail || $inputPhone !== $dbPhone) {
+        // Ambil 4 karakter dari belakang
+        $dbLast4 = substr($cleanDbPhone, -4);
+
+        if ($request->phone_last_4 !== $dbLast4) {
             return back()
-                ->withErrors(['email' => 'Email / No HP tidak cocok dengan data customer.'])
+                ->withErrors(['phone_last_4' => '4 digit terakhir tidak cocok dengan data kami.'])
                 ->withInput();
         }
 
         $signedUrl = URL::temporarySignedRoute(
             'invoice.view',
-            now()->addMinutes(15),
+            now()->addMinutes(30),
             ['number' => $invoice->invoice_number]
         );
 
@@ -52,7 +52,12 @@ class InvoiceVerificationController extends Controller
 
     public function showInvoice(Request $request, string $number)
     {
-        $invoice = Invoice::with('customer')
+        // Cek validitas URL
+        if (! $request->hasValidSignature()) {
+            abort(403, 'Link verifikasi kadaluarsa atau tidak valid.');
+        }
+
+        $invoice = Invoice::with(['customer', 'items'])
             ->where('invoice_number', $number)
             ->firstOrFail();
 

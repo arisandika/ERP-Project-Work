@@ -3,7 +3,6 @@
 namespace App\Filament\Resources\CRM;
 
 use App\Filament\Resources\CRM\CustomerResource\Pages;
-use App\Filament\Resources\CRM\CustomerResource\RelationManagers;
 use App\Models\CRM\Customer;
 use Filament\Forms;
 use Filament\Forms\Form;
@@ -12,7 +11,7 @@ use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
-use Illuminate\Support\Carbon; // Pastikan ini diimpor untuk filter tanggal
+use Illuminate\Support\Carbon;
 
 class CustomerResource extends Resource
 {
@@ -32,97 +31,152 @@ class CustomerResource extends Resource
     {
         return $form
             ->schema([
-                Forms\Components\Select::make('customer_type')
-                    ->label('Tipe Pelanggan')
-                    ->options([
-                        'individual' => 'Individu',
-                        'company' => 'Perusahaan',
+                // --- SECTION 1: INFORMASI DASAR ---
+                Forms\Components\Section::make('Informasi Pelanggan')
+                    ->description('Pilih tipe pelanggan untuk menampilkan form yang sesuai.')
+                    ->schema([
+                        Forms\Components\Select::make('customer_type')
+                            ->label('Tipe Pelanggan')
+                            ->options([
+                                'individual' => 'Perorangan (B2C)',
+                                'company'    => 'Perusahaan (B2B)',
+                            ])
+                            ->required()
+                            ->native(false)
+                            ->live()
+                            ->afterStateUpdated(fn (Forms\Set $set) => $set('name', null)),
+
+                        Forms\Components\TextInput::make('name')
+                            ->label(fn (Forms\Get $get) => $get('customer_type') === 'company' ? 'Nama Perusahaan (PT/CV)' : 'Nama Lengkap')
+                            ->required()
+                            ->maxLength(255)
+                            ->prefixIcon('heroicon-o-user')
+                            // Hanya muncul jika tipe sudah dipilih
+                            ->visible(fn (Forms\Get $get) => filled($get('customer_type'))),
+
+                        Forms\Components\TextInput::make('email')
+                            ->label('Email')
+                            ->email()
+                            ->required()
+                            ->maxLength(255)
+                            ->unique(ignoreRecord: true)
+                            ->prefixIcon('heroicon-o-envelope')
+                            ->visible(fn (Forms\Get $get) => filled($get('customer_type'))),
+
+                        Forms\Components\Textarea::make('address')
+                            ->label(fn (Forms\Get $get) => $get('customer_type') === 'company' ? 'Alamat Kantor' : 'Alamat Domisili')
+                            ->rows(3)
+                            ->maxLength(65535)
+                            ->columnSpanFull()
+                            ->visible(fn (Forms\Get $get) => filled($get('customer_type'))),
                     ])
-                    ->required()
-                    ->native(false)
-                    ->live()
-                    ->afterStateUpdated(fn (Forms\Set $set) => $set('name', null)),
+                    ->columns(2),
 
-                Forms\Components\TextInput::make('name')
-                    ->label(fn (Forms\Get $get) => $get('customer_type') === 'individual' ? 'Nama Lengkap' : 'Nama Perusahaan')
-                    ->required()
-                    ->maxLength(255)
-                    ->prefixIcon('heroicon-o-user')
-                    ->hidden(fn (Forms\Get $get) => is_null($get('customer_type'))), // Sembunyikan jika tipe belum dipilih
+                // --- SECTION 2: KHUSUS B2C (PERORANGAN) ---
+                Forms\Components\Section::make('Detail Perorangan')
+                    ->schema([
+                        Forms\Components\TextInput::make('nik')
+                            ->label('NIK (KTP)')
+                            ->numeric()
+                            ->minLength(16)
+                            ->maxLength(16)
+                            ->prefixIcon('heroicon-o-identification')
+                            ->required(),
 
-                Forms\Components\TextInput::make('email')
-                    ->label('Email')
-                    ->email()
-                    ->required()
-                    ->maxLength(255)
-                    ->unique(ignoreRecord: true) // Pastikan email unik, kecuali untuk record yang sedang diedit
-                    ->prefixIcon('heroicon-o-envelope')
-                    ->hidden(fn (Forms\Get $get) => is_null($get('customer_type'))),
+                        Forms\Components\TextInput::make('phone')
+                            ->label('No. HP (WhatsApp)')
+                            ->tel()
+                            ->maxLength(20)
+                            ->prefixIcon('heroicon-o-device-phone-mobile')
+                            ->required()
+                            ->helperText('Nomor ini wajib diisi untuk validasi QR Code.'),
+                    ])
+                    ->columns(2)
+                    ->visible(fn (Forms\Get $get) => $get('customer_type') === 'individual'),
 
-                Forms\Components\TextInput::make('phone')
-                    ->label('Telepon')
-                    ->tel()
-                    ->maxLength(20)
-                    ->prefixIcon('heroicon-o-phone')
-                    ->hidden(fn (Forms\Get $get) => is_null($get('customer_type'))),
+                // --- SECTION 3: KHUSUS B2B (PERUSAHAAN) ---
+                Forms\Components\Section::make('Detail Perusahaan & PIC')
+                    ->description('Lengkapi data NPWP dan Penanggung Jawab (PIC).')
+                    ->schema([
+                        Forms\Components\TextInput::make('npwp')
+                            ->label('NPWP Perusahaan')
+                            ->prefixIcon('heroicon-o-document-text')
+                            ->columnSpanFull(),
 
-                Forms\Components\Textarea::make('address')
-                    ->label('Alamat')
-                    ->rows(3)
-                    ->maxLength(65535)
-                    // ->prefixIcon('heroicon-o-home')
-                    ->hidden(fn (Forms\Get $get) => is_null($get('customer_type'))),
-            ])->columns(2); // Menjadikan layout form menjadi 2 kolom
+                        Forms\Components\Grid::make(3)
+                            ->schema([
+                                Forms\Components\TextInput::make('pic_name')
+                                    ->label('Nama PIC')
+                                    ->required()
+                                    ->prefixIcon('heroicon-o-user-circle'),
+
+                                Forms\Components\TextInput::make('pic_position')
+                                    ->label('Jabatan PIC')
+                                    ->prefixIcon('heroicon-o-briefcase'),
+
+                                Forms\Components\TextInput::make('pic_phone')
+                                    ->label('Kontak PIC')
+                                    ->tel()
+                                    ->required()
+                                    ->prefixIcon('heroicon-o-phone'),
+                            ]),
+                    ])
+                    ->visible(fn (Forms\Get $get) => $get('customer_type') === 'company'),
+            ]);
     }
 
     public static function table(Table $table): Table
     {
         return $table
             ->columns([
-                Tables\Columns\TextColumn::make('id_customer')
+                Tables\Columns\TextColumn::make('id')
                     ->label('ID')
-                    ->numeric()
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
 
                 Tables\Columns\TextColumn::make('name')
                     ->label('Nama')
-                    ->searchable(),
+                    ->searchable()
+                    ->description(fn (Customer $record) => $record->customer_type === 'company' ? 'PIC: ' . $record->pic_name : 'NIK: ' . $record->nik),
 
                 Tables\Columns\TextColumn::make('customer_type')
                     ->label('Tipe Pelanggan')
                     ->badge()
                     ->color(fn (string $state): string => match ($state) {
                         'individual' => 'info',
-                        'company' => 'success',
-                        default => 'gray',
+                        'company'    => 'success',
+                        default      => 'gray',
                     })
-                    ->formatStateUsing(fn (string $state): string => ucwords($state)) // Kapitalisasi huruf pertama
+                    ->formatStateUsing(fn (string $state): string => match ($state) {
+                        'individual' => 'Perorangan',
+                        'company'    => 'Perusahaan',
+                        default      => $state,
+                    })
                     ->sortable(),
+
 
                 Tables\Columns\TextColumn::make('email')
                     ->label('Email')
-                    ->searchable(),
+                    ->searchable()
+                    ->icon('heroicon-m-envelope'),
 
                 Tables\Columns\TextColumn::make('phone')
-                    ->label('Telepon')
+                    ->label('No. HP / PIC')
+                    ->getStateUsing(fn (Customer $record) => $record->customer_type === 'individual' ? $record->phone : $record->pic_phone)
                     ->searchable(),
 
+                // Kolom tambahan (hidden by default) biar admin bisa cek detail
+                Tables\Columns\TextColumn::make('nik')
+                    ->label('NIK')
+                    ->toggleable(isToggledHiddenByDefault: true),
+
+                Tables\Columns\TextColumn::make('npwp')
+                    ->label('NPWP')
+                    ->toggleable(isToggledHiddenByDefault: true),
+
                 Tables\Columns\TextColumn::make('created_at')
-                    ->label('Dibuat Pada')
-                    ->dateTime('d M Y H:i')
-                    ->sortable()
-                    ->toggleable(isToggledHiddenByDefault: true),
-
-                Tables\Columns\TextColumn::make('updated_at')
-                    ->label('Diperbarui Pada')
-                    ->dateTime('d M Y H:i')
-                    ->sortable()
-                    ->toggleable(isToggledHiddenByDefault: true),
-
-                Tables\Columns\TextColumn::make('deleted_at')
-                    ->label('Dihapus Pada')
-                    ->dateTime('d M Y H:i')
+                    ->label('Dibuat')
+                    ->dateTime('d M Y')
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
             ])
@@ -130,55 +184,22 @@ class CustomerResource extends Resource
                 Tables\Filters\SelectFilter::make('customer_type')
                     ->label('Tipe Pelanggan')
                     ->options([
-                        'individual' => 'Individu',
-                        'company' => 'Perusahaan',
-                    ])
-                    ->native(false),
+                        'individual' => 'Perorangan',
+                        'company'    => 'Perusahaan',
+                    ]),
+
+                Tables\Filters\TrashedFilter::make(),
 
                 Tables\Filters\Filter::make('created_at')
                     ->form([
-                        Forms\Components\DatePicker::make('created_from')
-                            ->label('Created From')
-                            ->required()
-                            ->displayFormat('d M Y')
-                            ->native(false)
-                            ->prefixIcon('heroicon-o-calendar-days'),
-
-                        Forms\Components\DatePicker::make('created_until')
-                            ->label('Created Until')
-                            ->required()
-                            ->displayFormat('d M Y')
-                            ->native(false)
-                            ->prefixIcon('heroicon-o-calendar-days'),
+                        Forms\Components\DatePicker::make('created_from')->label('Dari Tanggal'),
+                        Forms\Components\DatePicker::make('created_until')->label('Sampai Tanggal'),
                     ])
                     ->query(function (Builder $query, array $data): Builder {
                         return $query
-                            ->when(
-                                $data['created_from'],
-                                fn(Builder $query, $date): Builder => $query->whereDate('created_at', '>=', $date),
-                            )
-                            ->when(
-                                $data['created_until'],
-                                fn(Builder $query, $date): Builder => $query->whereDate('created_at', '<=', $date),
-                            );
-                    })
-                    ->indicateUsing(function (array $data): array {
-                        $indicators = [];
-
-                        if ($data['created_from'] ?? null) {
-                            $indicators[] = 'Dibuat dari ' . Carbon::parse($data['created_from'])->toFormattedDateString();
-                        }
-
-                        if ($data['created_until'] ?? null) {
-                            $indicators[] = 'Dibuat hingga ' . Carbon::parse($data['created_until'])->toFormattedDateString();
-                        }
-
-                        return $indicators;
+                            ->when($data['created_from'], fn ($q, $d) => $q->whereDate('created_at', '>=', $d))
+                            ->when($data['created_until'], fn ($q, $d) => $q->whereDate('created_at', '<=', $d));
                     }),
-
-                Tables\Filters\TrashedFilter::make()
-                    ->label('Status Dihapus')
-                    ->native(false),
             ])
             ->actions([
                 Tables\Actions\ViewAction::make(),

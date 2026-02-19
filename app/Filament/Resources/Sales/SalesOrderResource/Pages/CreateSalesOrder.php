@@ -5,7 +5,6 @@ namespace App\Filament\Resources\Sales\SalesOrderResource\Pages;
 use App\Filament\Resources\Sales\SalesOrderResource;
 use App\Models\Sales\SalesOrder;
 use App\Models\Sales\PromoCode;
-use App\Models\Inventory\Product;
 use App\Models\Inventory\ProductStock;
 use App\Models\Inventory\StockTransaction;
 use Filament\Notifications\Notification;
@@ -32,114 +31,106 @@ class CreateSalesOrder extends CreateRecord
         ]);
     }
 
-    // 1. VALIDASI STOK (Cek ke Gudang)
     protected function mutateFormDataBeforeCreate(array $data): array
     {
         $data['order_number'] = $this->generateOrderNumber();
-
-        // Jika user langsung pilih status Confirmed saat buat
-        if (($data['status'] ?? 'draft') === 'confirmed') {
-            $items = $data['items'] ?? [];
-
-            foreach ($items as $item) {
-                if (($item['item_type'] ?? 'product') === 'product') {
-                    $productId = $item['item_id'] ?? null;
-                    $qtyOrder = (int) ($item['qty'] ?? 0);
-
-                    // Default Gudang Utama (ID: 1)
-                    $warehouseId = 1;
-
-                    $stockGudang = ProductStock::where('product_id', $productId)
-                        ->where('warehouse_id', $warehouseId)
-                        ->value('qty') ?? 0;
-
-                    if ($stockGudang < $qtyOrder) {
-                        $productName = Product::find($productId)?->product_name ?? 'Produk';
-
-                        Notification::make()
-                            ->title('Gagal: Stok Gudang Tidak Cukup')
-                            ->body("Stok '{$productName}' di Gudang Utama sisa: {$stockGudang}, diminta: {$qtyOrder}")
-                            ->danger()
-                            ->persistent()
-                            ->send();
-
-                        $this->halt(); // Stop proses save
-                    }
-                }
-            }
-        }
-
         return $data;
     }
 
-    // 2. EKSEKUSI PENGURANGAN STOK & CATAT TRANSAKSI
     protected function afterCreate(): void
     {
         $record = $this->getRecord();
 
         if ($record->status === 'confirmed') {
-            DB::transaction(function () use ($record) {
+            try {
+                DB::transaction(function () use ($record) {
+                    $transactionCode = $this->generateNoTransactionOut();
+                    $warehouseId = 1;
 
-                // GENERATE KODE TRANSAKSI SATU KALI UNTUK SEMUA ITEM
-                $transactionCode = $this->generateNoTransactionOut();
+                    StockTransaction::$autoUpdateStock = false;
 
-                foreach ($record->items as $item) {
-                    // Pastikan item adalah produk fisik
-                    if ($item->item_type === 'product') {
+                    foreach ($record->items as $item) {
+                        if ($item->item_type === 'product') {
 
-                        $warehouseId = 1; // Default Gudang Utama
+                            // Lock stok untuk hindari race condition
+                            $productStock = ProductStock::where('product_id', $item->item_id)
+                                ->where('warehouse_id', $warehouseId)
+                                ->lockForUpdate()
+                                ->first();
 
-                        // A. Update Table ProductStock (Agar Laporan Stock Berkurang)
-                        $productStock = ProductStock::firstOrCreate(
-                            ['product_id' => $item->item_id, 'warehouse_id' => $warehouseId],
-                            ['qty' => 0]
-                        );
+                            if (!$productStock) {
+                                $productStock = ProductStock::create([
+                                    'product_id' => $item->item_id,
+                                    'warehouse_id' => $warehouseId,
+                                    'qty' => 0
+                                ]);
+                            }
 
-                        $stockBefore = $productStock->qty;
-                        $qtyKeluar = $item->qty;
+                            // Validasi stok dalam transaction
+                            if ($productStock->qty < $item->qty) {
+                                $productName = $item->product->product_name ?? 'Produk';
+                                throw new \Exception(
+                                    "Stok '{$productName}' tidak cukup. Sisa: {$productStock->qty}, diminta: {$item->qty}"
+                                );
+                            }
 
-                        $productStock->decrement('qty', $qtyKeluar);
+                            $stockBefore = $productStock->qty;
+                            $productStock->decrement('qty', $item->qty);
+                            $stockAfter = $stockBefore - $item->qty;
 
-                        $stockAfter = $stockBefore - $qtyKeluar;
-
-                        // B. Catat di StockTransaction
-                        StockTransaction::create([
-                            'transaction_code' => $transactionCode, // Pakai kode yang sama
-                            'transaction_date' => now(),
-                            'product_id'       => $item->item_id,
-                            'warehouse_id'     => $warehouseId,
-                            'type'             => 'keluar',
-                            'quantity'         => $qtyKeluar,
-                            'stock_before'     => $stockBefore,
-                            'stock_after'      => $stockAfter,
-                            'price'            => $item->unit_price,
-                            'total_price'      => $item->line_total,
-                            'reference_id'     => $record->id,
-                            'reference_type'   => SalesOrder::class,
-                            'no_reference'     => $record->order_number,
-                            'notes'            => 'Penjualan SO: ' . $record->order_number,
-                            'created_by'       => auth()->id(),
-                        ]);
+                            StockTransaction::create([
+                                'transaction_code' => $transactionCode,
+                                'transaction_date' => now(),
+                                'product_id'       => $item->item_id,
+                                'warehouse_id'     => $warehouseId,
+                                'type'             => 'keluar',
+                                'quantity'         => $item->qty,
+                                'stock_before'     => $stockBefore,
+                                'stock_after'      => $stockAfter,
+                                'price'            => $item->unit_price,
+                                'total_price'      => $item->line_total,
+                                'reference_id'     => $record->id,
+                                'reference_type'   => SalesOrder::class,
+                                'no_reference'     => $record->order_number,
+                                'notes'            => 'Penjualan SO: ' . $record->order_number,
+                                'created_by'       => auth()->id(),
+                            ]);
+                        }
                     }
-                }
 
-                // Update penggunaan Promo Code
-                if ($record->promo_code_id) {
-                    $promo = PromoCode::find($record->promo_code_id);
-                    if ($promo) {
-                        $promo->increment('times_used');
+                    StockTransaction::$autoUpdateStock = true;
+
+                    if ($record->promo_code_id) {
+                        PromoCode::find($record->promo_code_id)?->increment('times_used');
                     }
-                }
-            });
+                });
 
+                Notification::make()
+                    ->title('Pesanan Confirmed & Stok Berkurang')
+                    ->success()
+                    ->send();
+
+            } catch (\Exception $e) {
+                // Rollback otomatis oleh DB::transaction
+                Notification::make()
+                    ->title('Gagal: ' . $e->getMessage())
+                    ->danger()
+                    ->persistent()
+                    ->send();
+
+                // Hapus record yang gagal
+                $record->delete();
+                $this->halt();
+            }
+
+        } else {
             Notification::make()
-                ->title('Pesanan Dibuat & Stok Gudang Berkurang')
-                ->success()
+                ->title('Pesanan Draft Tersimpan')
+                ->body('Confirm pesanan untuk mengurangi stok.')
+                ->info()
                 ->send();
         }
     }
-
-    // --- Helper Functions ---
 
     private function generateOrderNumber(): string
     {
@@ -172,10 +163,8 @@ class CreateSalesOrder extends CreateRecord
         $romanMonths = ['I','II','III','IV','V','VI','VII','VIII','IX','X','XI','XII'];
         $monthRoman = $romanMonths[now()->month - 1];
         $year = now()->year;
-
         $company = 'NEX';
-        $code = 'ST-OUT'; // Kode Transaksi Keluar
-
+        $code = 'ST-OUT';
         $prefixLike = "%/{$code}/{$company}/{$monthRoman}/{$year}";
 
         $last = StockTransaction::where('transaction_code', 'like', $prefixLike)
@@ -196,10 +185,6 @@ class CreateSalesOrder extends CreateRecord
 
     protected function getCreatedNotification(): ?Notification
     {
-        // Disable default notification kalau confirmed, karena kita kirim custom
-        if ($this->getRecord()->status === 'confirmed') {
-            return null;
-        }
-        return parent::getCreatedNotification();
+        return null;
     }
 }

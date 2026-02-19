@@ -17,6 +17,12 @@ class Customer extends Model
         'phone',
         'address',
         'customer_type',
+        'nik',
+        'npwp',
+        'pic_name',
+        'pic_position',
+        'pic_phone',
+
     ];
 
 
