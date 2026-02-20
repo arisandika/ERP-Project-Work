@@ -9,10 +9,10 @@
             <x-filament::section>
                 <div class="mb-5">
                     <h2 class="text-lg font-semibold text-gray-900 dark:text-white">
-                        Select Project
+                        Pilih Project
                     </h2>
                     <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">
-                        Choose a project to view its epics
+                        Pilih project untuk melihat daftar epic yang ada di dalamnya
                     </p>
                 </div>
 
@@ -27,7 +27,7 @@
                         <input
                             type="text"
                             wire:model.live.debounce.300ms="searchProject"
-                            placeholder="Search projects by name or prefix..."
+                            placeholder="Cari project berdasarkan nama atau prefix..."
                             class="block w-full pl-10 pr-3 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:ring-2 focus:ring-primary-500 focus:border-transparent"
                         />
                         @if($searchProject)
@@ -45,16 +45,16 @@
 
                 @if($availableProjects->isEmpty())
                     <div class="flex flex-col items-center justify-center py-12 text-gray-500 dark:text-gray-400">
-                        <h3 class="mb-1 text-base font-medium text-gray-900 dark:text-white">No Projects Available</h3>
-                        <p class="text-sm text-gray-500 dark:text-gray-400">You don't have access to any projects yet.</p>
+                        <h3 class="mb-1 text-base font-medium text-gray-900 dark:text-white">Tidak ada project yang tersedia</h3>
+                        <p class="text-sm text-gray-500 dark:text-gray-400">Kamu belum memiliki akses ke project mana pun</p>
                     </div>
                 @elseif($this->filteredProjects->isEmpty())
                     <div class="flex flex-col items-center justify-center py-12 text-gray-500 dark:text-gray-400">
                         <svg class="w-12 h-12 mb-3 text-gray-400 dark:text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
                         </svg>
-                        <h3 class="mb-1 text-base font-medium text-gray-900 dark:text-white">No Projects Found</h3>
-                        <p class="text-sm text-gray-500 dark:text-gray-400">Try adjusting your search terms</p>
+                        <h3 class="mb-1 text-base font-medium text-gray-900 dark:text-white">Project tidak ditemukan</h3>
+                        <p class="text-sm text-gray-500 dark:text-gray-400">Coba ubah kata kunci pencarian</p>
                     </div>
                 @else
                     <div class="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
@@ -69,7 +69,7 @@
                                     <div class="absolute top-2 right-2">
                                         <div class="flex items-center justify-center w-6 h-6 rounded-full shadow-sm"
                                              style="background-color: {{ $project->color ?? '#6B7280' }};"
-                                             title="Pinned Project">
+                                             title="Project Disematkan">
                                             <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5 text-white" viewBox="0 0 24 24" fill="currentColor">
                                                 <path d="M16 9V4h1c.55 0 1-.45 1-1s-.45-1-1-1H7c-.55 0-1 .45-1 1s.45 1 1 1h1v5c0 1.66-1.34 3-3 3v2h5.97v7l1 1 1-1v-7H19v-2c-1.66 0-3-1.34-3-3z"/>
                                             </svg>
@@ -149,7 +149,7 @@
                 >
                     <div class="p-2">
                         <div class="p-3 text-sm font-semibold tracking-wider text-gray-500 uppercase dark:text-gray-400">
-                            Switch Project
+                            Ganti Project
                         </div>
                         @foreach($this->filteredProjects as $project)
                             <button
@@ -160,7 +160,7 @@
                                 @if($project->is_pinned)
                                     <div class="flex items-center justify-center w-5 h-5 rounded-full shrink-0"
                                          style="background-color: {{ $project->color ?? '#6B7280' }};"
-                                         title="Pinned">
+                                         title="Disematkan">
                                         <svg xmlns="http://www.w3.org/2000/svg" class="w-3 h-3 text-white" viewBox="0 0 24 24" fill="currentColor">
                                             <path d="M16 9V4h1c.55 0 1-.45 1-1s-.45-1-1-1H7c-.55 0-1 .45-1 1s.45 1 1 1h1v5c0 1.66-1.34 3-3 3v2h5.97v7l1 1 1-1v-7H19v-2c-1.66 0-3-1.34-3-3z"/>
                                         </svg>
@@ -205,7 +205,7 @@
     @if($selectedProjectId && $epics->isNotEmpty())
         <x-filament::section>
             <x-slot name="heading">
-                Epics Overview
+                Ringkasan Epic
             </x-slot>
 
             <div class="w-full space-y-3">
@@ -254,7 +254,7 @@
                                 <!-- Tickets -->
                                 <div class="w-full">
                                     <div class="flex items-center justify-between mb-2">
-                                        <h4 class="text-sm font-semibold text-gray-900 dark:text-gray-300">Tickets</h4>
+                                        <h4 class="text-sm font-semibold text-gray-900 dark:text-gray-300">Daftar Ticket</h4>
                                         <a href="{{ route('filament.admin.resources.pm.tickets.create', ['epic_id' => $epic->id]) }}" class="text-sm font-semibold text-primary-600 dark:text-primary-400 hover:text-primary-800 dark:hover:text-primary-300">
                                             <x-heroicon-s-plus class="inline-block w-4 h-4 mr-1" />
                                             Tambah Ticket
@@ -263,7 +263,7 @@
 
                                     @if($epic->tickets->isEmpty())
                                         <div class="w-full p-4 text-sm text-center text-gray-500 border border-gray-300 border-dashed rounded-md dark:text-gray-400 bg-gray-50 dark:bg-gray-700 dark:border-gray-600">
-                                            No tickets found for this epic.
+                                            Belum ada ticket untuk epic ini
                                         </div>
                                     @else
                                         <div class="w-full overflow-x-auto border border-gray-200 rounded-md dark:border-gray-700">
@@ -304,7 +304,7 @@
                                                             <td class="hidden p-3 text-sm text-gray-500 dark:text-gray-400 sm:table-cell">
                                                                 @if($ticket->assignees->isEmpty())
                                                                     <x-filament::badge color="gray" icon="heroicon-m-user-minus">
-                                                                        Unassigned
+                                                                        Belum Ditugaskan
                                                                     </x-filament::badge>
                                                                 @else
                                                                     <div class="flex flex-wrap gap-1">
@@ -358,9 +358,9 @@
             <div class="flex items-center justify-center p-6 bg-gray-100 rounded-full dark:bg-gray-800">
                 <x-heroicon-o-flag class="w-16 h-16 text-gray-400 dark:text-gray-500" />
             </div>
-            <h2 class="text-xl font-medium text-gray-600 dark:text-gray-300">No epics found in this project</h2>
+            <h2 class="text-xl font-medium text-gray-600 dark:text-gray-300">Belum ada epic di project ini</h2>
             <p class="text-sm text-gray-500 dark:text-gray-400">
-                This project doesn't have any epics yet. Create an epic to organize your tickets.
+                Project ini belum memiliki epic. Buat epic untuk mengelola ticket-nya
             </p>
         </div>
     @endif

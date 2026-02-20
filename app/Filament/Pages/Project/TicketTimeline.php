@@ -30,7 +30,7 @@ class TicketTimeline extends Page
 
     protected static ?string $title = 'Ticket Timeline';
 
-    protected ?string $subheading = 'View project tickets in Gantt chart timeline';
+    protected ?string $subheading = 'Lihat ticket project dalam tampilan timeline Gantt';
 
     protected static ?int $navigationSort = 6;
 
@@ -72,7 +72,7 @@ class TicketTimeline extends Page
             Log::error('Error in TicketTimeline mount: ' . $e->getMessage());
 
             Notification::make()
-                ->title('Error loading page')
+                ->title('Gagal memuat halaman')
                 ->danger()
                 ->send();
         }
@@ -117,7 +117,7 @@ class TicketTimeline extends Page
             $this->js("Livewire.navigate('{$url}')");
         } else {
             Notification::make()
-                ->title('Project Not Found')
+                ->title('Project tidak ditemukan')
                 ->danger()
                 ->send();
 
@@ -174,7 +174,7 @@ class TicketTimeline extends Page
 
                     $taskData = [
                         'id' => (string) $ticket->id,
-                        'text' => $this->truncateName($ticket->name ?? 'Untitled Ticket'),
+                        'text' => $this->truncateName($ticket->name ?? 'Tiket Tanpa Judul'),
                         'start_date' => $startDate->format('d-m-Y H:i'),
                         'end_date' => $endDate->format('d-m-Y H:i'),
                         'duration' => max(1, $startDate->diffInDays($endDate)),
@@ -183,7 +183,7 @@ class TicketTimeline extends Page
                         'readonly' => true,
                         'color' => $isOverdue ? '#ef4444' : ($ticket->status->color ?? '#3b82f6'),
                         'textColor' => '#ffffff',
-                        'status' => $ticket->status->name ?? 'Unknown',
+                        'status' => $ticket->status->name ?? 'Status Tidak Diketahui',
                         'is_overdue' => $isOverdue
                     ];
 

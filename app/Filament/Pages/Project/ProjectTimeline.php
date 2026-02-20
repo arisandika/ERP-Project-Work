@@ -25,7 +25,7 @@ class ProjectTimeline extends Page
 
     protected static ?string $title = 'Project Timeline';
 
-    protected ?string $subheading = 'View all projects in Gantt chart timeline';
+    protected ?string $subheading = 'Lihat semua project dalam tampilan timeline Gantt';
 
     protected static ?int $navigationSort = 2;
 

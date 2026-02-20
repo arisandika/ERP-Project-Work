@@ -22,8 +22,8 @@
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                 d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 002 2z" />
                         </svg>
-                        <h3 class="text-lg font-medium">No project data available</h3>
-                        <p class="text-sm">Add start and end dates to projects to view timeline</p>
+                        <h3 class="text-lg font-medium">Tidak ada project yang tersedia</h3>
+                        <p class="text-sm">Tambahkan tanggal mulai dan selesai pada project untuk melihat timeline</p>
                     </div>
                 @endif
             </div>
@@ -31,25 +31,25 @@
 
         <x-filament::section>
             <x-slot name="heading">
-                Status Hint
+                Keterangan Status
             </x-slot>
 
             <div class="grid grid-cols-2 gap-3 md:grid-cols-4">
                 <div class="flex items-center gap-2">
                     <div class="w-3 h-3 rounded" style="background-color: #3b82f6;"></div>
-                    <span class="text-sm text-gray-600 dark:text-gray-400">In Progress</span>
+                    <span class="text-sm text-gray-600 dark:text-gray-400">Sedang Dikerjakan</span>
                 </div>
                 <div class="flex items-center gap-2">
                     <div class="w-3 h-3 rounded" style="background-color: #10b981;"></div>
-                    <span class="text-sm text-gray-600 dark:text-gray-400">Nearly Complete</span>
+                    <span class="text-sm text-gray-600 dark:text-gray-400">Hampir Selesai</span>
                 </div>
                 <div class="flex items-center gap-2">
                     <div class="w-3 h-3 rounded" style="background-color: #f59e0b;"></div>
-                    <span class="text-sm text-gray-600 dark:text-gray-400">Approaching Deadline</span>
+                    <span class="text-sm text-gray-600 dark:text-gray-400">Mendekati Deadline</span>
                 </div>
                 <div class="flex items-center gap-2">
                     <div class="w-3 h-3 rounded" style="background-color: #ef4444;"></div>
-                    <span class="text-sm text-gray-600 dark:text-gray-400">Overdue</span>
+                    <span class="text-sm text-gray-600 dark:text-gray-400">Terlambat</span>
                 </div>
             </div>
         </x-filament::section>
@@ -206,7 +206,7 @@
                     gantt.addMarker({
                         start_date: today,
                         css: "today",
-                        text: "Today"
+                        text: "Hari Ini",
                     });
 
                     console.log('Page dhtmlxGantt initialized successfully with', ganttData.data.length,
@@ -222,8 +222,8 @@
                                     <svg class="w-16 h-16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                                     </svg>
-                                    <h3 class="text-lg font-medium">Error loading timeline</h3>
-                                    <p class="text-sm">Please refresh the page or contact support</p>
+                                    <h3 class="text-lg font-medium">Gagal memuat timeline</h3>
+                                    <p class="text-sm">Silakan refresh halaman atau hubungi tim IT</p>
                                     <p class="text-xs">Error: ${error.message}</p>
                                 </div>
                             `;

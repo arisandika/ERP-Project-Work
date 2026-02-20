@@ -6,10 +6,10 @@
                 <x-filament::section>
                     <div class="mb-5">
                         <h2 class="text-lg font-semibold text-gray-900 dark:text-white">
-                            Select Project
+                            Pilih Project
                         </h2>
                         <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">
-                            Choose a project to view its timeline
+                            Pilih project untuk melihat timeline
                         </p>
                     </div>
 
@@ -24,7 +24,7 @@
                                 </svg>
                             </div>
                             <input type="text" wire:model.live.debounce.300ms="searchProject"
-                                placeholder="Search projects by name or prefix..."
+                                placeholder="Cari project berdasarkan nama atau prefix..."
                                 class="block w-full pl-10 pr-3 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:ring-2 focus:ring-primary-500 focus:border-transparent" />
                             @if($searchProject)
                                 <button wire:click="$set('searchProject', '')"
@@ -40,18 +40,16 @@
 
                     @if($projects->isEmpty())
                         <div class="flex flex-col items-center justify-center py-12 text-gray-500 dark:text-gray-400">
-                            <h3 class="mb-1 text-base font-medium text-gray-900 dark:text-white">No Projects Available</h3>
-                            <p class="text-sm text-gray-500 dark:text-gray-400">You don't have access to any projects yet.</p>
+                            <h3 class="mb-1 text-base font-medium text-gray-900 dark:text-white">Tidak ada project yang tersedia</h3>
+                            <p class="text-sm text-gray-500 dark:text-gray-400">Kamu belum memiliki akses ke project mana pun</p>
                         </div>
                     @elseif($this->filteredProjects->isEmpty())
                         <div class="flex flex-col items-center justify-center py-12 text-gray-500 dark:text-gray-400">
-                            <svg class="w-12 h-12 mb-3 text-gray-400 dark:text-gray-500" fill="none" stroke="currentColor"
-                                viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                    d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+                            <svg class="w-12 h-12 mb-3 text-gray-400 dark:text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
                             </svg>
-                            <h3 class="mb-1 text-base font-medium text-gray-900 dark:text-white">No Projects Found</h3>
-                            <p class="text-sm text-gray-500 dark:text-gray-400">Try adjusting your search terms</p>
+                            <h3 class="mb-1 text-base font-medium text-gray-900 dark:text-white">Project tidak ditemukan</h3>
+                            <p class="text-sm text-gray-500 dark:text-gray-400">Coba ubah kata kunci pencarian</p>
                         </div>
                     @else
                         <div class="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
@@ -63,7 +61,7 @@
                                     @if($project->is_pinned)
                                         <div class="absolute top-2 right-2">
                                             <div class="flex items-center justify-center w-6 h-6 rounded-full shadow-sm"
-                                                style="background-color: {{ $project->color ?? '#6B7280' }};" title="Pinned Project">
+                                                style="background-color: {{ $project->color ?? '#6B7280' }};" title="Project Disematkan">
                                                 <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5 text-white"
                                                     viewBox="0 0 24 24" fill="currentColor">
                                                     <path
@@ -139,14 +137,14 @@
                         <div class="p-2">
                             <div
                                 class="px-3 py-2 text-xs font-semibold tracking-wider text-gray-500 uppercase dark:text-gray-400">
-                                Switch Project
+                                Ganti Project
                             </div>
                             @foreach($this->filteredProjects as $project)
                                 <button wire:click="selectProject({{ $project->id }})" @click="open = false"
                                     class="w-full flex items-center gap-3 px-3 py-2 rounded-md hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors text-left {{ $project->id === $selectedProject->id ? 'bg-gray-50 dark:bg-gray-700' : '' }}">
                                     @if($project->is_pinned)
                                         <div class="flex items-center justify-center w-5 h-5 rounded-full shrink-0"
-                                            style="background-color: {{ $project->color ?? '#6B7280' }};" title="Pinned">
+                                            style="background-color: {{ $project->color ?? '#6B7280' }};" title="Disematkan">
                                             <svg xmlns="http://www.w3.org/2000/svg" class="w-3 h-3 text-white" viewBox="0 0 24 24"
                                                 fill="currentColor">
                                                 <path
@@ -210,8 +208,8 @@
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                     d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 002 2z" />
                             </svg>
-                            <h3 class="text-lg font-medium">No tickets with due dates</h3>
-                            <p class="text-sm">Add due dates to tickets to see the timeline</p>
+                            <h3 class="text-lg font-medium">Belum ada ticket dengan tanggal jatuh tempo</h3>
+                            <p class="text-sm">Tambahkan tanggal jatuh tempo pada ticket untuk melihat timeline</p>
                         </div>
                     @endif
                 </div>
@@ -300,7 +298,7 @@
                                                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                                                             </svg>
                                                             <h3 class="text-lg font-medium">${message}</h3>
-                                                            <p class="text-sm">Please refresh the page or contact support</p>
+                                                            <p class="text-sm">Silakan refresh halaman atau hubungi tim IT</p>
                                                             <button onclick="location.reload()" class="px-4 py-2 text-white bg-blue-500 rounded hover:bg-blue-600">
                                                                 Refresh Page
                                                             </button>
@@ -511,7 +509,7 @@
                         gantt.addMarker({
                             start_date: today,
                             css: "today",
-                            text: "Today"
+                            text: "Hari Ini",
                         });
 
                         console.log('dhtmlxGantt initialized successfully with', processedData.data.length,

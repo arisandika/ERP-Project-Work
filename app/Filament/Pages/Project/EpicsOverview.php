@@ -28,7 +28,7 @@ class EpicsOverview extends Page
 
     protected static ?string $title = 'Epics Overview';
 
-    protected ?string $subheading = 'Manage and track project epics with their associated tickets and progress';
+    protected ?string $subheading = 'Kelola dan pantau epic project beserta ticket dan progresnya';
 
     protected static ?int $navigationSort = 7;
 
@@ -50,8 +50,8 @@ class EpicsOverview extends Page
             $this->selectedProjectId = (int) $project_id;
         } elseif ($project_id && !$this->availableProjects->contains('id', $project_id)) {
             Notification::make()
-                ->title('Project Not Found')
-                ->body('The selected project was not found or you do not have access to it.')
+                ->title('Project tidak ditemukan')
+                ->body('Project yang dipilih tidak ditemukan atau kamu tidak punya akses ke project ini')
                 ->danger()
                 ->send();
             $this->redirect(static::getUrl());
@@ -201,7 +201,7 @@ class EpicsOverview extends Page
         $this->expandedEpics = array_intersect($this->expandedEpics, $currentEpicIds);
 
         Notification::make()
-            ->title('Data refreshed')
+            ->title('Data berhasil diperbarui')
             ->success()
             ->send();
     }

@@ -1,3 +1,4 @@
+
 <x-filament-panels::page>
 
     {{-- Project Selector --}}
@@ -6,10 +7,10 @@
             <x-filament::section>
                 <div class="mb-5">
                     <h2 class="text-lg font-semibold text-gray-900 dark:text-white">
-                        Pilih Project
+                        Select Project
                     </h2>
                     <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">
-                        Pilih project untuk melihat board
+                        Choose a project to view its board
                     </p>
                 </div>
 
@@ -24,7 +25,7 @@
                         <input
                             type="text"
                             wire:model.live.debounce.300ms="searchProject"
-                            placeholder="Cari project berdasarkan nama atau prefix..."
+                            placeholder="Search projects by name or prefix..."
                             class="block w-full pl-10 pr-3 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:ring-2 focus:ring-primary-500 focus:border-transparent"
                         />
                         @if($searchProject)
@@ -42,16 +43,16 @@
 
                 @if($projects->isEmpty())
                     <div class="flex flex-col items-center justify-center py-12 text-gray-500 dark:text-gray-400">
-                        <h3 class="mb-1 text-base font-medium text-gray-900 dark:text-white">Tidak ada project yang tersedia</h3>
-                        <p class="text-sm text-gray-500 dark:text-gray-400">Kamu belum memiliki akses ke project mana pun</p>
+                        <h3 class="mb-1 text-base font-medium text-gray-900 dark:text-white">No Projects Available</h3>
+                        <p class="text-sm text-gray-500 dark:text-gray-400">You don't have access to any projects yet.</p>
                     </div>
                 @elseif($this->filteredProjects->isEmpty())
                     <div class="flex flex-col items-center justify-center py-12 text-gray-500 dark:text-gray-400">
                         <svg class="w-12 h-12 mb-3 text-gray-400 dark:text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
                         </svg>
-                        <h3 class="mb-1 text-base font-medium text-gray-900 dark:text-white">Project tidak ditemukan</h3>
-                        <p class="text-sm text-gray-500 dark:text-gray-400">Coba ubah kata kunci pencarian</p>
+                        <h3 class="mb-1 text-base font-medium text-gray-900 dark:text-white">No Projects Found</h3>
+                        <p class="text-sm text-gray-500 dark:text-gray-400">Try adjusting your search terms</p>
                     </div>
                 @else
                     <div class="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
@@ -66,7 +67,7 @@
                                     <div class="absolute top-2 right-2">
                                         <div class="flex items-center justify-center w-6 h-6 rounded-full shadow-sm"
                                              style="background-color: {{ $project->color ?? '#6B7280' }};"
-                                             title="Project Disematkan">
+                                             title="Pinned Project">
                                             <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5 text-white" viewBox="0 0 24 24" fill="currentColor">
                                                 <path d="M16 9V4h1c.55 0 1-.45 1-1s-.45-1-1-1H7c-.55 0-1 .45-1 1s.45 1 1 1h1v5c0 1.66-1.34 3-3 3v2h5.97v7l1 1 1-1v-7H19v-2c-1.66 0-3-1.34-3-3z"/>
                                             </svg>
@@ -149,7 +150,7 @@
                 >
                     <div class="p-2">
                         <div class="px-3 py-2 text-xs font-semibold tracking-wider text-gray-500 uppercase dark:text-gray-400">
-                            Ganti Project
+                            Switch Project
                         </div>
                         @foreach($this->filteredProjects as $project)
                             <button
@@ -190,316 +191,6 @@
 
     @if($selectedProject)
         <div
-            x-data="{
-                draggingTicket: null,
-                isTouchDevice: false,
-                touchStartX: 0,
-                touchStartY: 0,
-                scrollStartX: 0,
-                columnScrollPositions: {},
-
-                moveTicketToStatus(ticketId, statusId) {
-                    $wire.call('moveTicket', parseInt(ticketId), parseInt(statusId));
-                },
-
-                saveScrollPositions() {
-                    const columns = document.querySelectorAll('.status-column .overflow-y-auto');
-                    columns.forEach((column, index) => {
-                        this.columnScrollPositions[index] = column.scrollTop;
-                    });
-                },
-
-                restoreScrollPositions() {
-                    const columns = document.querySelectorAll('.status-column .overflow-y-auto');
-                    columns.forEach((column, index) => {
-                        if (this.columnScrollPositions[index] !== undefined) {
-                            column.scrollTop = this.columnScrollPositions[index];
-                        }
-                    });
-                },
-
-                init() {
-                    this.$nextTick(() => {
-                        this.removeAllEventListeners();
-                        this.attachAllEventListeners();
-                        this.setupTouchScrolling();
-                        this.isTouchDevice = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
-                        this.setupPageVisibilityListener();
-                    });
-                },
-
-                setupPageVisibilityListener() {
-                    document.addEventListener('visibilitychange', () => {
-                        if (!document.hidden) {
-                            this.saveScrollPositions();
-                            setTimeout(() => {
-                                this.removeAllEventListeners();
-                                this.attachAllEventListeners();
-                                this.restoreScrollPositions();
-                            }, 100);
-                        }
-                    });
-
-                    window.addEventListener('focus', () => {
-                        this.saveScrollPositions();
-                        setTimeout(() => {
-                            this.removeAllEventListeners();
-                            this.attachAllEventListeners();
-                            this.restoreScrollPositions();
-                        }, 100);
-                    });
-
-                    window.addEventListener('popstate', () => {
-                        this.saveScrollPositions();
-                        setTimeout(() => {
-                            this.removeAllEventListeners();
-                            this.attachAllEventListeners();
-                            this.restoreScrollPositions();
-                        }, 200);
-                    });
-
-                    document.addEventListener('livewire:navigated', () => {
-                        this.saveScrollPositions();
-                        setTimeout(() => {
-                            this.removeAllEventListeners();
-                            this.attachAllEventListeners();
-                            this.restoreScrollPositions();
-                        }, 300);
-                    });
-
-                    document.addEventListener('livewire:load', () => {
-                        this.saveScrollPositions();
-                        setTimeout(() => {
-                            this.removeAllEventListeners();
-                            this.attachAllEventListeners();
-                            this.restoreScrollPositions();
-                        }, 100);
-                    });
-
-                    document.addEventListener('livewire:updated', () => {
-                        this.saveScrollPositions();
-                        setTimeout(() => {
-                            this.removeAllEventListeners();
-                            this.attachAllEventListeners();
-                            this.restoreScrollPositions();
-                        }, 100);
-                    });
-
-                    window.addEventListener('ticket-updated', () => {
-                        this.saveScrollPositions();
-                        setTimeout(() => {
-                            this.removeAllEventListeners();
-                            this.attachAllEventListeners();
-                            this.restoreScrollPositions();
-                        }, 150);
-                    });
-
-                    setInterval(() => {
-                        if (document.visibilityState === 'visible') {
-                            this.saveScrollPositions();
-                            this.ensureDragDropInitialized();
-                            this.restoreScrollPositions();
-                        }
-                    }, 2000);
-                },
-
-                ensureDragDropInitialized() {
-                    const tickets = document.querySelectorAll('.ticket-card');
-                    let needsReinitialization = false;
-
-                    tickets.forEach(ticket => {
-                        if (!ticket.getAttribute('draggable') || ticket.getAttribute('draggable') !== 'true') {
-                            needsReinitialization = true;
-                        }
-                    });
-
-                    if (needsReinitialization && tickets.length > 0) {
-                        this.removeAllEventListeners();
-                        this.attachAllEventListeners();
-                    }
-                },
-
-                setupTouchScrolling() {
-                    const container = document.getElementById('board-container');
-
-                    container.addEventListener('touchstart', (e) => {
-                        this.touchStartX = e.touches[0].clientX;
-                        this.touchStartY = e.touches[0].clientY;
-                        this.scrollStartX = container.scrollLeft;
-                    }, { passive: true });
-
-                    container.addEventListener('touchmove', (e) => {
-                        if (e.touches.length !== 1) return;
-
-                        const touchX = e.touches[0].clientX;
-                        const touchY = e.touches[0].clientY;
-                        const moveX = this.touchStartX - touchX;
-                        const moveY = this.touchStartY - touchY;
-
-                        if (Math.abs(moveX) > Math.abs(moveY)) {
-                            e.preventDefault();
-                            container.scrollLeft = this.scrollStartX + moveX;
-                        }
-                    }, { passive: false });
-                },
-
-                removeAllEventListeners() {
-                    const tickets = document.querySelectorAll('.ticket-card');
-                    tickets.forEach(ticket => {
-                        ticket.removeAttribute('draggable');
-                        const newTicket = ticket.cloneNode(true);
-                        ticket.parentNode.replaceChild(newTicket, ticket);
-                    });
-
-                    const columns = document.querySelectorAll('.status-column');
-                    columns.forEach(column => {
-                        const newColumn = column.cloneNode(false);
-                        while (column.firstChild) {
-                            newColumn.appendChild(column.firstChild);
-                        }
-                        if (column.parentNode) {
-                            column.parentNode.replaceChild(newColumn, column);
-                        }
-                    });
-                },
-
-                attachAllEventListeners() {
-                    @if(!$this->canMoveTickets())
-                        return;
-                    @endif
-
-                    const tickets = document.querySelectorAll('.ticket-card');
-                    tickets.forEach(ticket => {
-                        ticket.setAttribute('draggable', true);
-
-                        ticket.addEventListener('dragstart', (e) => {
-                            this.draggingTicket = ticket.getAttribute('data-ticket-id');
-                            ticket.classList.add('opacity-50');
-                            e.dataTransfer.effectAllowed = 'move';
-                        });
-
-                        ticket.addEventListener('dragend', () => {
-                            ticket.classList.remove('opacity-50');
-                            this.draggingTicket = null;
-                        });
-
-                        let longPressTimer;
-                        let isDragging = false;
-                        let originalColumn;
-
-                        ticket.addEventListener('touchstart', (e) => {
-                            if (isDragging) return;
-
-                            longPressTimer = setTimeout(() => {
-                                originalColumn = ticket.closest('.status-column');
-                                this.draggingTicket = ticket.getAttribute('data-ticket-id');
-                                ticket.classList.add('opacity-50', 'relative', 'z-30');
-                                isDragging = true;
-                                ticket.style.boxShadow = '0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05)';
-                            }, 500);
-                        }, { passive: true });
-
-                        ticket.addEventListener('touchmove', (e) => {
-                            if (!isDragging) {
-                                clearTimeout(longPressTimer);
-                                return;
-                            }
-
-                            const touch = e.touches[0];
-                            const columns = document.querySelectorAll('.status-column');
-
-                            columns.forEach(column => {
-                                const rect = column.getBoundingClientRect();
-                                if (touch.clientX >= rect.left &&
-                                    touch.clientX <= rect.right &&
-                                    touch.clientY >= rect.top &&
-                                    touch.clientY <= rect.bottom) {
-                                    column.classList.add('bg-primary-50', 'dark:bg-primary-950');
-                                } else {
-                                    column.classList.remove('bg-primary-50', 'dark:bg-primary-950');
-                                }
-                            });
-                        });
-
-                        ticket.addEventListener('touchend', (e) => {
-                            clearTimeout(longPressTimer);
-
-                            if (!isDragging) return;
-
-                            isDragging = false;
-                            ticket.classList.remove('opacity-50', 'relative', 'z-30');
-                            ticket.style.boxShadow = '';
-
-                            const touch = e.changedTouches[0];
-                            const columns = document.querySelectorAll('.status-column');
-
-                            let targetColumn = null;
-                            columns.forEach(column => {
-                                const rect = column.getBoundingClientRect();
-                                if (touch.clientX >= rect.left &&
-                                    touch.clientX <= rect.right &&
-                                    touch.clientY >= rect.top &&
-                                    touch.clientY <= rect.bottom) {
-                                    targetColumn = column;
-                                }
-                                column.classList.remove('bg-primary-50', 'dark:bg-primary-950');
-                            });
-
-                            if (targetColumn && targetColumn !== originalColumn) {
-                                const statusId = targetColumn.getAttribute('data-status-id');
-                                const ticketId = this.draggingTicket;
-
-                                this.moveTicketToStatus(ticketId, statusId);
-                            }
-
-                            this.draggingTicket = null;
-                        });
-
-                        ticket.addEventListener('touchcancel', () => {
-                            clearTimeout(longPressTimer);
-                            if (!isDragging) return;
-
-                            isDragging = false;
-                            ticket.classList.remove('opacity-50', 'relative', 'z-30');
-                            ticket.style.boxShadow = '';
-                            this.draggingTicket = null;
-
-                            document.querySelectorAll('.status-column').forEach(column => {
-                                column.classList.remove('bg-primary-50', 'dark:bg-primary-950');
-                            });
-                        });
-                    });
-
-                    const columns = document.querySelectorAll('.status-column');
-                    columns.forEach(column => {
-                        column.addEventListener('dragover', (e) => {
-                            e.preventDefault();
-                            e.dataTransfer.dropEffect = 'move';
-                            column.classList.add('bg-primary-50', 'dark:bg-primary-950');
-                        });
-
-                        column.addEventListener('dragleave', () => {
-                            column.classList.remove('bg-primary-50', 'dark:bg-primary-950');
-                        });
-
-                        column.addEventListener('drop', (e) => {
-                            e.preventDefault();
-                            column.classList.remove('bg-primary-50', 'dark:bg-primary-950');
-
-                            if (this.draggingTicket) {
-                                const statusId = column.getAttribute('data-status-id');
-                                const ticketId = this.draggingTicket;
-                                this.draggingTicket = null;
-                                this.moveTicketToStatus(ticketId, statusId);
-                            }
-                        });
-                    });
-                }
-            }"
-            x-init="init()"
-            @ticket-moved.window="init()"
-            @ticket-updated.window="init()"
-            @refresh-board.window="init()"
             wire:key="board-container-{{ $selectedProject->id }}"
             class="no-scrollbar relative overflow-x-auto pb-6 {{ !$this->canMoveTickets() ? 'view-only-mode' : '' }}"
             id="board-container"
@@ -509,7 +200,7 @@
                 <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
                 </svg>
-                <span>Geser ke samping untuk melihat semua kolom</span>
+                <span>Swipe horizontally to view all columns</span>
                 <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3" />
                 </svg>
@@ -524,7 +215,7 @@
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
                         </svg>
                         <span class="text-sm font-medium">View Only Mode</span>
-                        <span class="text-xs opacity-75">Kamu bisa melihat ticket tapi tidak bisa memindahkannya</span>
+                        <span class="text-xs opacity-75">You can view tickets but cannot move them</span>
                     </div>
                 </div>
             @endif
@@ -532,7 +223,7 @@
             <div class="inline-flex min-w-full gap-4 pb-2">
                 @foreach ($this->ticketStatuses as $status)
                     <div
-                        wire:key="status-column-{{ $status->id }}"
+                        wire:key="status-{{ $status->id }}"
                         class="status-column rounded-xl border border-gray-200 dark:border-gray-700 flex flex-col bg-gray-50 dark:bg-gray-900 w-[calc(85vw-2rem)] min-w-[280px] max-w-[350px] h-[700px] sm:w-[calc((100vw-6rem)/2)] sm:h-[750px] lg:w-[calc((100vw-8rem)/3)] lg:h-[800px] xl:w-[calc((100vw-10rem)/4)] xl:h-[850px]"
                         data-status-id="{{ $status->id }}"
                     >
@@ -579,7 +270,7 @@
                                     >
                                         <div class="p-2">
                                             <div class="flex items-center justify-between px-3 py-2 border-b border-gray-200 dark:border-gray-700">
-                                                <span class="text-sm font-medium text-gray-900 dark:text-white">Urutkan list</span>
+                                                <span class="text-sm font-medium text-gray-900 dark:text-white">Sort list</span>
                                                 <button @click="open = false" class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300">
                                                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
@@ -593,35 +284,35 @@
                                                     @click="open = false"
                                                     class="w-full px-3 py-2 text-sm text-left text-gray-700 rounded dark:text-white"
                                                 >
-                                                    Tanggal dibuat (terbaru dulu)
+                                                    Date created (newest first)
                                                 </button>
                                                 <button
                                                     wire:click="setSortOrder({{ $status->id }}, 'date_created_oldest')"
                                                     @click="open = false"
                                                     class="w-full px-3 py-2 text-sm text-left text-gray-700 rounded dark:text-white"
                                                 >
-                                                    Tanggal dibuat (terlama dulu)
+                                                    Date created (oldest first)
                                                 </button>
                                                 <button
                                                     wire:click="setSortOrder({{ $status->id }}, 'card_name_alphabetical')"
                                                     @click="open = false"
                                                     class="w-full px-3 py-2 text-sm text-left text-gray-700 rounded dark:text-white"
                                                 >
-                                                    Nama kartu (A–Z)
+                                                    Card name (alphabetically)
                                                 </button>
                                                 <button
                                                     wire:click="setSortOrder({{ $status->id }}, 'due_date')"
                                                     @click="open = false"
                                                     class="w-full px-3 py-2 text-sm text-left text-gray-700 rounded dark:text-white"
                                                 >
-                                                    Jatuh tempo
+                                                    Due date
                                                 </button>
                                                 <button
                                                     wire:click="setSortOrder({{ $status->id }}, 'priority')"
                                                     @click="open = false"
                                                     class="w-full px-3 py-2 text-sm text-left text-gray-700 rounded dark:text-white"
                                                 >
-                                                    Prioritas
+                                                    Priority
                                                 </button>
                                             </div>
                                         </div>
@@ -630,20 +321,19 @@
                             </div>
                         </div>
 
-                        <div class="flex flex-col flex-1 gap-3 p-3 overflow-y-auto no-scrollbar" style="max-height: calc(100% - 60px);" x-data="{ visibleTickets: 10, totalTickets: {{ $status->tickets->count() }}, scrollPos: 0 }" x-init="$nextTick(() => { $el.addEventListener('scroll', () => { scrollPos = $el.scrollTop; if ($el.scrollTop + $el.clientHeight >= $el.scrollHeight - 100 && visibleTickets < totalTickets) { visibleTickets = Math.min(visibleTickets + 10, totalTickets); } }); })" x-ref="ticketContainer{{ $status->id }}">
+                        <div class="flex flex-col flex-1 gap-4 p-3 overflow-y-auto no-scrollbar" style="max-height: calc(100% - 60px);" x-data="{ visibleTickets: 10, totalTickets: {{ $status->tickets->count() }}, scrollPos: 0 }" x-init="$nextTick(() => { $el.addEventListener('scroll', () => { scrollPos = $el.scrollTop; if ($el.scrollTop + $el.clientHeight >= $el.scrollHeight - 100 && visibleTickets < totalTickets) { visibleTickets = Math.min(visibleTickets + 10, totalTickets); } }); })" x-ref="ticketContainer{{ $status->id }}">
                             @foreach ($status->tickets as $index => $ticket)
                                 <div
-                                    wire:key="ticket-{{ $status->id }}-{{ $ticket->id }}"
-                                    class="relative p-3 bg-white border border-gray-200 rounded-lg shadow-sm cursor-move ticket-card dark:bg-gray-800 dark:border-gray-700"
-                                    data-ticket-id="{{ $ticket->id }}"
-                                    style="border-left: 4px solid {{ $ticket->priority->color }};"
+                                    wire:key="ticket-{{ $ticket->id }}-status-{{ $status->id }}"
+                                    class="relative p-3 bg-white border border-gray-200 rounded-lg shadow-sm ticket-card dark:bg-gray-800 dark:border-gray-700"
                                     x-show="{{ $index }} < visibleTickets"
+                                    style="border-left: 4px solid {{ $ticket->priority->color }};"
                                     x-transition:enter="transition ease-out duration-200"
                                     x-transition:enter-start="opacity-0 transform scale-95"
                                     x-transition:enter-end="opacity-100 transform scale-100"
                                 >
                                     <div class="flex items-center justify-between mb-3">
-                                        <span class="text-xs font-mono text-gray-500 dark:text-gray-400 px-1.5 py-0.5 bg-gray-100 dark:bg-gray-700 rounded truncate">
+                                        <span class="text-xs font-mono text-gray-500 dark:text-gray-400 px-1.5 py-0.5 bg-gray-100 dark:bg-gray-700 rounded truncate max-w- sm:max-w-none">
                                             {{ $ticket->uuid }}
                                         </span>
                                         @if ($ticket->due_date)
@@ -668,6 +358,17 @@
                                         @if($this->canMoveTickets())
                                             <div class="relative flex-1 min-w-0" x-data="{ open: false }">
                                                 
+                                                <div 
+                                                    wire:loading 
+                                                    wire:target="moveTicket"
+                                                    class="absolute inset-0 z-20 flex items-center justify-center rounded-lg bg-white/80 dark:bg-gray-800/80 backdrop-blur-[1px]"
+                                                >
+                                                    <svg class="w-4 h-4 text-primary-500 animate-spin" fill="none" viewBox="0 0 24 24">
+                                                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                                    </svg>
+                                                </div>
+
                                                 <button
                                                     @click="open = !open"
                                                     @click.away="open = false"
@@ -727,7 +428,7 @@
                                                         @click="open = !open"
                                                         @click.away="open = false"
                                                         class="flex items-center justify-center w-8 h-8 transition-colors bg-white border border-gray-200 rounded-full shadow-sm hover:bg-gray-50 dark:bg-gray-800 dark:border-gray-700 dark:hover:bg-gray-700 text-primary-600 dark:text-primary-500"
-                                                        title="Lihat semua {{ $ticket->assignees->count() }} assignees"
+                                                        title="View all {{ $ticket->assignees->count() }} assignees"
                                                     >
                                                         <x-heroicon-o-user class="w-4 h-4" />
                                                     </button>
@@ -737,11 +438,11 @@
                                                         x-transition:enter="transition ease-out duration-100"
                                                         x-transition:enter-start="opacity-0 scale-95"
                                                         x-transition:enter-end="opacity-100 scale-100"
-                                                        class="absolute right-0 z-40 w-64 p-2 mt-2 origin-top-right bg-white border border-gray-200 rounded-lg shadow-xl md:w-56 dark:bg-gray-800 dark:border-gray-700"
+                                                        class="absolute right-0 z-40 w-56 p-2 mt-2 origin-top-right bg-white border border-gray-200 rounded-lg shadow-xl dark:bg-gray-800 dark:border-gray-700"
                                                         style="display: none;"
                                                     >
                                                         <div class="px-2 py-1.5 mb-2 text-xs font-semibold tracking-wider text-gray-500 uppercase border-b dark:text-gray-400 dark:border-gray-700">
-                                                            {{ $ticket->assignees->count() }} Ditugaskan
+                                                            {{ $ticket->assignees->count() }} Assignees
                                                         </div>
                                                         
                                                         <div class="flex flex-col gap-1 overflow-y-auto max-h-48 custom-scrollbar">
@@ -761,7 +462,7 @@
                                                             <div class="my-2 border-t border-gray-200 dark:border-gray-700"></div>
 
                                                             <div class="px-2 py-1 text-xs font-semibold tracking-wider text-gray-500 uppercase dark:text-gray-400">
-                                                                Dibuat oleh
+                                                                Created By
                                                             </div>
 
                                                             <div class="flex items-center gap-2 px-2 py-1.5 rounded-md hover:bg-gray-50 dark:hover:bg-gray-700">
@@ -776,7 +477,7 @@
                                                     </div>
                                                 </div>
                                             @else
-                                                <div class="inline-flex items-center px-2 py-1 text-gray-700 bg-gray-100 rounded-full dark:bg-gray-800 dark:text-gray-400" title="Belum ditugaskan">
+                                                <div class="inline-flex items-center px-2 py-1 text-gray-700 bg-gray-100 rounded-full dark:bg-gray-800 dark:text-gray-400" title="Unassigned">
                                                     <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 text-gray-400 dark:text-gray-500" viewBox="0 0 20 20" fill="currentColor">
                                                         <path fill-rule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clip-rule="evenodd" />
                                                     </svg>
@@ -784,7 +485,7 @@
                                             @endif
 
                                             <a
-                                                href="{{ \App\Filament\Resources\Project\TicketResource::getUrl('view', ['record' => $ticket->id]) }}"
+                                                href="{{ \App\Filament\Resources\Project\TicketResource::getUrl('edit', ['record' => $ticket->id]) }}"
                                                 target="_blank"
                                                 rel="noopener noreferrer"
                                                 onclick="
@@ -798,9 +499,9 @@
                                                     return false;
                                                 "
                                                 class="flex items-center justify-center w-8 h-8 transition-colors bg-white border border-gray-200 rounded-full shadow-sm hover:bg-gray-50 dark:bg-gray-800 dark:border-gray-700 dark:hover:bg-gray-700 text-primary-600 dark:text-primary-500"
-                                                title="Lihat detail ticket"
+                                                title="Edit Ticket"
                                             >
-                                                <x-heroicon-o-eye class="w-4 h-4" />
+                                                <x-heroicon-o-pencil class="w-4 h-4" />
                                             </a>
                                         </div>
 
@@ -810,7 +511,7 @@
 
                             @if ($status->tickets->isEmpty())
                                 <div class="flex items-center justify-center h-24 text-sm italic text-gray-500 border border-gray-300 border-dashed rounded-lg dark:text-gray-400 dark:border-gray-700">
-                                    Belum ada ticket
+                                    No tickets
                                 </div>
                             @else
                                 <!-- Loading indicator for more tickets -->
@@ -820,7 +521,7 @@
                                             <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
                                             <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                                         </svg>
-                                        <span>Sedang memuat lebih banyak ticket...</span>
+                                        <span>Loading more tickets...</span>
                                     </div>
                                 </div>
                             @endif
@@ -830,7 +531,7 @@
 
                 @if ($this->ticketStatuses->isEmpty())
                     <div class="flex items-center justify-center w-full h-40 text-gray-500 dark:text-gray-400">
-                        Belum ada kolom status untuk project ini
+                        No status columns found for this project
                     </div>
                 @endif
             </div>

@@ -23,7 +23,7 @@ use Maatwebsite\Excel\Facades\Excel;
 class ProjectBoard extends Page
 {
     use HasPageShield;
-    
+
     protected static ?string $navigationIcon = 'heroicon-o-view-columns';
 
     protected static string $view = 'filament.pages.project.project-board';
@@ -38,7 +38,7 @@ class ProjectBoard extends Page
 
     protected static ?string $title = 'Project Board';
 
-    protected ?string $subheading = 'Kanban board for ticket management';
+    protected ?string $subheading = 'Board Kanban untuk manajemen dan kelola ticket';
 
     protected static ?int $navigationSort = 3;
 
@@ -236,35 +236,21 @@ class ProjectBoard extends Page
         }
     }
 
-    #[On('ticket-moved')]
     public function moveTicket($ticketId, $newStatusId): void
     {
-        $ticket = Ticket::find($ticketId);
+        $ticket = Ticket::findOrFail($ticketId);
 
-        if ($ticket && $ticket->project_id === $this->selectedProject?->id) {
-            if (!$this->canManageTicket($ticket)) {
-                Notification::make()
-                    ->title('Permission Denied')
-                    ->body('You do not have permission to move this ticket.')
-                    ->danger()
-                    ->send();
+        $ticket->ticket_status_id = $newStatusId;
+        $ticket->save();
 
-                return;
-            }
+        unset($this->ticketStatuses);
 
-            $ticket->update([
-                'ticket_status_id' => $newStatusId,
-            ]);
+        $this->dispatch('$refresh');
 
-            $this->loadTicketStatuses();
-
-            $this->dispatch('ticket-updated');
-
-            Notification::make()
-                ->title('Ticket Updated')
-                ->success()
-                ->send();
-        }
+        Notification::make()
+            ->title('Ticket berhasil diperbarui')
+            ->success()
+            ->send();
     }
 
     #[On('refresh-board')]
@@ -280,7 +266,7 @@ class ProjectBoard extends Page
 
         if (!$ticket) {
             Notification::make()
-                ->title('Ticket Not Found')
+                ->title('Ticket tidak ditemukan')
                 ->danger()
                 ->send();
 
@@ -302,8 +288,8 @@ class ProjectBoard extends Page
 
         if (!$this->canEditTicket($ticket)) {
             Notification::make()
-                ->title('Permission Denied')
-                ->body('You do not have permission to edit this ticket.')
+                ->title('Akses Ditolak')
+                ->body('Kamu tidak punya izin untuk mengedit ticket ini')
                 ->danger()
                 ->send();
 
@@ -344,7 +330,7 @@ class ProjectBoard extends Page
                 ->visible(fn() => $this->selectedProject !== null && $this->projectUsers->isNotEmpty())
                 ->form([
                     CheckboxList::make('selectedUserIds')
-                        ->label('Select Users to Filter')
+                        ->label('Pilih user untuk difilter')
                         ->options(fn() => $this->projectUsers->pluck('full_name', 'id')->toArray())
                         ->columns(2)
                         ->searchable()
@@ -357,14 +343,14 @@ class ProjectBoard extends Page
                     $userCount = count($this->selectedUserIds);
                     if ($userCount > 0) {
                         Notification::make()
-                            ->title('Filter Applied')
-                            ->body("Showing tickets for {$userCount} selected user(s)")
+                            ->title('Filter Diterapkan')
+                            ->body("Menampilkan ticket untuk {$userCount} user yang dipilih")
                             ->success()
                             ->send();
                     } else {
                         Notification::make()
-                            ->title('Filter Cleared')
-                            ->body('Showing all tickets')
+                            ->title('Filter Dibersihkan')
+                            ->body('Menampilkan semua ticket')
                             ->info()
                             ->send();
                     }
@@ -451,8 +437,8 @@ class ProjectBoard extends Page
     {
         if (empty($selectedColumns)) {
             Notification::make()
-                ->title('Export Failed')
-                ->body('Please select at least one column to export.')
+                ->title('Export Gagal')
+                ->body('Pilih minimal satu kolom untuk diekspor')
                 ->danger()
                 ->send();
 
@@ -479,8 +465,8 @@ class ProjectBoard extends Page
 
         if ($tickets->isEmpty()) {
             Notification::make()
-                ->title('Export Failed')
-                ->body('No tickets found to export.')
+                ->title('Export Gagal')
+                ->body('Tidak ada ticket untuk diekspor')
                 ->warning()
                 ->send();
 
@@ -510,15 +496,15 @@ class ProjectBoard extends Page
             ");
 
             Notification::make()
-                ->title('Export Successful')
-                ->body('Your Excel file is being downloaded.')
+                ->title('Export Berhasil')
+                ->body('File Excel sedang diunduh')
                 ->success()
                 ->send();
 
         } catch (Exception $e) {
             Notification::make()
-                ->title('Export Failed')
-                ->body('An error occurred while exporting: ' . $e->getMessage())
+                ->title('Export Gagal')
+                ->body('Terjadi kesalahan saat export: ' . $e->getMessage())
                 ->danger()
                 ->send();
         }
