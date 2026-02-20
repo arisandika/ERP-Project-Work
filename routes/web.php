@@ -3,15 +3,13 @@
 use App\Http\Controllers\API\HR\AttendanceController;
 use App\Http\Controllers\Inventory\StockReportController;
 use App\Http\Controllers\Inventory\TransactionReportController;
+use App\Livewire\ExternalDashboard;
+use App\Livewire\ExternalLogin;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Sales\PrintController;
 use App\Http\Controllers\Sales\InvoiceVerificationController;
 
-
-// Route::get('/', function () {
-//     return view('welcome');
-// });
-
+// Auth
 Route::middleware(['auth'])->group(function () {
     // Attendance Routes - HR MODULE
     Route::post('/attendance/clockin', [AttendanceController::class, 'clockIn'])->name('attendance.clockin');
@@ -27,10 +25,10 @@ Route::middleware(['auth'])->group(function () {
     // Sales Print Routes - SALES MODULE
     Route::get('/print/delivery-order/{record}', [PrintController::class, 'deliveryOrder'])
         ->name('print.delivery-order');
-
 });
 
 
+// Invoice Verification Routes - SALES MODULE
 Route::get('/invoice/verify/{number}', [InvoiceVerificationController::class, 'showVerifyForm'])
     ->where('number', '.*')
     ->name('invoice.verify.form');
@@ -49,3 +47,9 @@ Route::get('/invoice/download/{record}', [InvoiceVerificationController::class, 
     ->name('invoice.download');
 
 
+// External Dashboard Routes - PROJECT MODULE
+Route::get('external/{token}', ExternalLogin::class)
+    ->name('external.login');
+
+Route::get('external/{token}/dashboard', ExternalDashboard::class)
+    ->name('external.dashboard');

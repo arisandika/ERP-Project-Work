@@ -39,20 +39,20 @@ class CustomerResource extends Resource
                             ->label('Tipe Pelanggan')
                             ->options([
                                 'individual' => 'Perorangan (B2C)',
-                                'company'    => 'Perusahaan (B2B)',
+                                'company' => 'Perusahaan (B2B)',
                             ])
                             ->required()
                             ->native(false)
                             ->live()
-                            ->afterStateUpdated(fn (Forms\Set $set) => $set('name', null)),
+                            ->afterStateUpdated(fn(Forms\Set $set) => $set('name', null)),
 
                         Forms\Components\TextInput::make('name')
-                            ->label(fn (Forms\Get $get) => $get('customer_type') === 'company' ? 'Nama Perusahaan (PT/CV)' : 'Nama Lengkap')
+                            ->label(fn(Forms\Get $get) => $get('customer_type') === 'company' ? 'Nama Perusahaan (PT/CV)' : 'Nama Lengkap')
                             ->required()
                             ->maxLength(255)
                             ->prefixIcon('heroicon-o-user')
                             // Hanya muncul jika tipe sudah dipilih
-                            ->visible(fn (Forms\Get $get) => filled($get('customer_type'))),
+                            ->visible(fn(Forms\Get $get) => filled($get('customer_type'))),
 
                         Forms\Components\TextInput::make('email')
                             ->label('Email')
@@ -61,14 +61,22 @@ class CustomerResource extends Resource
                             ->maxLength(255)
                             ->unique(ignoreRecord: true)
                             ->prefixIcon('heroicon-o-envelope')
-                            ->visible(fn (Forms\Get $get) => filled($get('customer_type'))),
+                            ->visible(fn(Forms\Get $get) => filled($get('customer_type'))),
+
+                        Forms\Components\TextInput::make('phone')
+                            ->label('No. HP (WhatsApp)')
+                            ->tel()
+                            ->maxLength(20)
+                            ->prefixIcon('heroicon-o-device-phone-mobile')
+                            ->required()
+                            ->helperText('Nomor ini wajib diisi untuk validasi QR Code.'),
 
                         Forms\Components\Textarea::make('address')
-                            ->label(fn (Forms\Get $get) => $get('customer_type') === 'company' ? 'Alamat Kantor' : 'Alamat Domisili')
+                            ->label(fn(Forms\Get $get) => $get('customer_type') === 'company' ? 'Alamat Kantor' : 'Alamat Domisili')
                             ->rows(3)
                             ->maxLength(65535)
                             ->columnSpanFull()
-                            ->visible(fn (Forms\Get $get) => filled($get('customer_type'))),
+                            ->visible(fn(Forms\Get $get) => filled($get('customer_type'))),
                     ])
                     ->columns(2),
 
@@ -92,7 +100,7 @@ class CustomerResource extends Resource
                             ->helperText('Nomor ini wajib diisi untuk validasi QR Code.'),
                     ])
                     ->columns(2)
-                    ->visible(fn (Forms\Get $get) => $get('customer_type') === 'individual'),
+                    ->visible(fn(Forms\Get $get) => $get('customer_type') === 'individual'),
 
                 // --- SECTION 3: KHUSUS B2B (PERUSAHAAN) ---
                 Forms\Components\Section::make('Detail Perusahaan & PIC')
@@ -121,7 +129,7 @@ class CustomerResource extends Resource
                                     ->prefixIcon('heroicon-o-phone'),
                             ]),
                     ])
-                    ->visible(fn (Forms\Get $get) => $get('customer_type') === 'company'),
+                    ->visible(fn(Forms\Get $get) => $get('customer_type') === 'company'),
             ]);
     }
 
@@ -137,23 +145,22 @@ class CustomerResource extends Resource
                 Tables\Columns\TextColumn::make('name')
                     ->label('Nama')
                     ->searchable()
-                    ->description(fn (Customer $record) => $record->customer_type === 'company' ? 'PIC: ' . $record->pic_name : 'NIK: ' . $record->nik),
+                    ->description(fn(Customer $record) => $record->customer_type === 'company' ? 'PIC: ' . $record->pic_name : 'NIK: ' . $record->nik),
 
                 Tables\Columns\TextColumn::make('customer_type')
                     ->label('Tipe Client')
                     ->badge()
-                    ->color(fn (string $state): string => match ($state) {
+                    ->color(fn(string $state): string => match ($state) {
                         'individual' => 'info',
-                        'company'    => 'success',
-                        default      => 'gray',
+                        'company' => 'success',
+                        default => 'gray',
                     })
-                    ->formatStateUsing(fn (string $state): string => match ($state) {
+                    ->formatStateUsing(fn(string $state): string => match ($state) {
                         'individual' => 'Perorangan',
-                        'company'    => 'Perusahaan',
-                        default      => $state,
+                        'company' => 'Perusahaan',
+                        default => $state,
                     })
                     ->sortable(),
-
 
                 Tables\Columns\TextColumn::make('email')
                     ->label('Email')
@@ -161,8 +168,12 @@ class CustomerResource extends Resource
                     ->icon('heroicon-m-envelope'),
 
                 Tables\Columns\TextColumn::make('phone')
+                    ->label('No. HP Perusahaan')
+                    ->searchable(),
+
+                Tables\Columns\TextColumn::make('phone_pic')
                     ->label('No. HP / PIC')
-                    ->getStateUsing(fn (Customer $record) => $record->customer_type === 'individual' ? $record->phone : $record->pic_phone)
+                    ->getStateUsing(fn(Customer $record) => $record->customer_type === 'individual' ? $record->phone : $record->pic_phone)
                     ->searchable(),
 
                 // Kolom tambahan (hidden by default) biar admin bisa cek detail
@@ -185,7 +196,7 @@ class CustomerResource extends Resource
                     ->label('Tipe Client')
                     ->options([
                         'individual' => 'Perorangan',
-                        'company'    => 'Perusahaan',
+                        'company' => 'Perusahaan',
                     ]),
 
                 Tables\Filters\TrashedFilter::make(),
@@ -197,8 +208,8 @@ class CustomerResource extends Resource
                     ])
                     ->query(function (Builder $query, array $data): Builder {
                         return $query
-                            ->when($data['created_from'], fn ($q, $d) => $q->whereDate('created_at', '>=', $d))
-                            ->when($data['created_until'], fn ($q, $d) => $q->whereDate('created_at', '<=', $d));
+                            ->when($data['created_from'], fn($q, $d) => $q->whereDate('created_at', '>=', $d))
+                            ->when($data['created_until'], fn($q, $d) => $q->whereDate('created_at', '<=', $d));
                     }),
             ])
             ->actions([

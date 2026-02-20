@@ -34,8 +34,8 @@ class ViewProject extends ViewRecord
                 ->icon('heroicon-o-globe-alt')
                 ->color('success')
                 ->visible(fn() => auth()->user()->hasRole('super_admin'))
-                ->modalHeading('External Dashboard Access')
-                ->modalDescription('Share these credentials with external users to access the project dashboard.')
+                ->modalHeading('Akses External Dashboard')
+                ->modalDescription('Bagikan kredensial ini ke user eksternal atau client untuk mengakses dashboard project ini')
                 ->modalContent(function () {
                     $record = $this->record;
                     $externalAccess = $record->externalAccess;
