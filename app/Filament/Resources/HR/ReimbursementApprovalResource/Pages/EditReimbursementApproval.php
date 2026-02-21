@@ -2,7 +2,6 @@
 
 namespace App\Filament\Resources\HR\ReimbursementApprovalResource\Pages;
 
-use App\Filament\Resources\Finance\FinancialRecordResource;
 use App\Filament\Resources\HR\ReimbursementApprovalResource;
 use App\Models\Finance\FinancialRecord;
 use Filament\Actions;
@@ -91,6 +90,6 @@ class EditReimbursementApproval extends EditRecord
 
     protected function getRedirectUrl(): string
     {
-        return FinancialRecordResource::getUrl('index');
+        return static::getResource()::getUrl('index');
     }
 }

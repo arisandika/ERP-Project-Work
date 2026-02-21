@@ -52,7 +52,7 @@ class PromoCodeResource extends Resource
                                 ->placeholder('Contoh: LEBARAN2025')
                                 ->maxLength(255)
                                 ->extraInputAttributes(['style' => 'text-transform: uppercase'])
-                                ->dehydrateStateUsing(fn (string $state): string => strtoupper($state)),
+                                ->dehydrateStateUsing(fn(string $state): string => strtoupper($state)),
 
 
                             Select::make('type')
@@ -69,8 +69,8 @@ class PromoCodeResource extends Resource
                                 ->label('Nilai Potongan')
                                 ->numeric()
                                 ->required()
-                                ->prefix(fn (Get $get) => $get('type') === 'percentage' ? '' : 'Rp')
-                                ->suffix(fn (Get $get) => $get('type') === 'percentage' ? '%' : ''),
+                                ->prefix(fn(Get $get) => $get('type') === 'percentage' ? '' : 'Rp')
+                                ->suffix(fn(Get $get) => $get('type') === 'percentage' ? '%' : ''),
                         ]),
                     ]),
 
@@ -86,11 +86,19 @@ class PromoCodeResource extends Resource
 
                             DatePicker::make('start_date')
                                 ->label('Mulai Berlaku')
-                                ->placeholder('Sekarang'),
+                                ->required()
+                                ->default(now())
+                                ->displayFormat('d M Y')
+                                ->native(false)
+                                ->prefixIcon('heroicon-o-calendar-days'),
 
                             DatePicker::make('end_date')
                                 ->label('Berakhir Pada')
-                                ->afterOrEqual('start_date'),
+                                ->afterOrEqual('start_date')
+                                ->required()
+                                ->displayFormat('d M Y')
+                                ->native(false)
+                                ->prefixIcon('heroicon-o-calendar-days'),
 
                             TextInput::make('usage_limit')
                                 ->label('Batas Kuota (Total)')
@@ -121,12 +129,13 @@ class PromoCodeResource extends Resource
 
                 TextColumn::make('value')
                     ->label('Nilai')
-                    ->formatStateUsing(fn ($state, PromoCode $record) =>
+                    ->formatStateUsing(
+                        fn($state, PromoCode $record) =>
                         $record->type === 'fixed'
-                            ? 'IDR ' . number_format($state, 0, ',', '.')
-                            : number_format($state, 0) . '%'
+                        ? 'IDR ' . number_format($state, 0, ',', '.')
+                        : number_format($state, 0) . '%'
                     )
-                    ->color(fn (PromoCode $record) => $record->type === 'fixed' ? 'success' : 'info')
+                    ->color(fn(PromoCode $record) => $record->type === 'fixed' ? 'success' : 'info')
                     ->badge(),
 
                 ToggleColumn::make('is_active')
@@ -134,14 +143,15 @@ class PromoCodeResource extends Resource
 
                 TextColumn::make('usage_summary')
                     ->label('Terpakai / Kuota')
-                    ->state(fn (PromoCode $record) =>
+                    ->state(
+                        fn(PromoCode $record) =>
                         $record->times_used . ' / ' . ($record->usage_limit ?? '∞')
                     ),
 
                 TextColumn::make('start_date')
                     ->label('Periode')
                     ->date('d M Y')
-                    ->description(fn (PromoCode $record) => $record->end_date ? 's/d ' . $record->end_date->format('d M Y') : 'Selamanya')
+                    ->description(fn(PromoCode $record) => $record->end_date ? 's/d ' . $record->end_date->format('d M Y') : 'Selamanya')
                     ->sortable(),
             ])
             ->filters([
@@ -185,7 +195,7 @@ class PromoCodeResource extends Resource
 
                         return $indicators;
                     }),
-                    
+
                 Tables\Filters\TrashedFilter::make()
                     ->label('Deleted Status')
                     ->native(false),

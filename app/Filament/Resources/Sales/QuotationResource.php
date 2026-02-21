@@ -176,7 +176,7 @@ class QuotationResource extends Resource
                             TextInput::make('tax')
                                 ->label('Pajak (%)')
                                 ->numeric()
-                                ->default(0)
+                                ->default(11)
                                 ->minValue(0)
                                 ->live(debounce: 500)
                                 ->afterStateUpdated(fn($state, Set $set, Get $get) => self::updateTotals($get, $set))
