@@ -22,86 +22,94 @@ class ListAttendanceHistories extends ListRecords
     {
         $employee = auth()->user()->employee;
 
-        if (! $employee) {
+        if (!$employee) {
             return [];
         }
 
-        $baseQuery = Attendance::where('employee_id', $employee->id);
+        $now = now();
+
+        $start3Months = $now->copy()->subMonths(3)->startOfDay();
+        $startLastMonth = $now->copy()->subMonth()->startOfMonth();
+        $endLastMonth = $now->copy()->subMonth()->endOfMonth();
+        $startThisMonth = $now->copy()->startOfMonth();
+        $endThisMonth = $now->copy()->endOfMonth();
+        $startWeek = $now->copy()->startOfWeek();
+        $endWeek = $now->copy()->endOfWeek();
+        $today = $now->toDateString();
+
+        $counts = Attendance::query()
+            ->where('employee_id', $employee->id)
+            ->selectRaw("
+            COUNT(*) as all_count,
+            COALESCE(SUM(date >= ?),0) as last_3_month,
+            COALESCE(SUM(date BETWEEN ? AND ?),0) as last_month,
+            COALESCE(SUM(date BETWEEN ? AND ?),0) as this_month,
+            COALESCE(SUM(date BETWEEN ? AND ?),0) as last_week,
+            COALESCE(SUM(DATE(date) = ?),0) as today
+        ", [
+                $start3Months,
+                $startLastMonth,
+                $endLastMonth,
+                $startThisMonth,
+                $endThisMonth,
+                $startWeek,
+                $endWeek,
+                $today
+            ])
+            ->first();
 
         return [
+
             'all' => Tab::make('Semua')
-                ->modifyQueryUsing(fn (Builder $query) =>
+                ->modifyQueryUsing(
+                    fn($query) =>
                     $query->where('employee_id', $employee->id)
-                ),
+                )
+                ->badge((int) $counts->all_count),
 
             'last_3_month' => Tab::make('3 Bulan Terakhir')
-                ->modifyQueryUsing(fn (Builder $query) =>
+                ->modifyQueryUsing(
+                    fn($query) =>
                     $query->where('employee_id', $employee->id)
-                        ->where('date', '>=', now()->subMonths(3)->startOfDay())
+                        ->where('date', '>=', $start3Months)
                 )
-                ->badge(
-                    (clone $baseQuery)
-                        ->where('date', '>=', now()->subMonths(3)->startOfDay())
-                        ->count()
-                ),
+                ->badge((int) $counts->last_3_month),
 
             'last_month' => Tab::make('Bulan Lalu')
-                ->modifyQueryUsing(fn (Builder $query) =>
+                ->modifyQueryUsing(
+                    fn($query) =>
                     $query->where('employee_id', $employee->id)
-                        ->whereMonth('date', now()->subMonth()->month)
-                        ->whereYear('date', now()->subMonth()->year)
+                        ->whereBetween('date', [$startLastMonth, $endLastMonth])
                 )
-                ->badge(
-                    (clone $baseQuery)
-                        ->whereMonth('date', now()->subMonth()->month)
-                        ->whereYear('date', now()->subMonth()->year)
-                        ->count()
-                ),
+                ->badge((int) $counts->last_month),
 
             'this_month' => Tab::make('Bulan Ini')
-                ->modifyQueryUsing(fn (Builder $query) =>
+                ->modifyQueryUsing(
+                    fn($query) =>
                     $query->where('employee_id', $employee->id)
-                        ->whereMonth('date', now()->month)
-                        ->whereYear('date', now()->year)
+                        ->whereBetween('date', [$startThisMonth, $endThisMonth])
                 )
-                ->badge(
-                    (clone $baseQuery)
-                        ->whereMonth('date', now()->month)
-                        ->whereYear('date', now()->year)
-                        ->count()
-                ),
+                ->badge((int) $counts->this_month),
 
             'last_week' => Tab::make('Minggu Ini')
-                ->modifyQueryUsing(fn (Builder $query) =>
+                ->modifyQueryUsing(
+                    fn($query) =>
                     $query->where('employee_id', $employee->id)
-                        ->whereBetween('date', [
-                            now()->startOfWeek(),
-                            now()->endOfWeek()
-                        ])
+                        ->whereBetween('date', [$startWeek, $endWeek])
                 )
-                ->badge(
-                    (clone $baseQuery)
-                        ->whereBetween('date', [
-                            now()->startOfWeek(),
-                            now()->endOfWeek()
-                        ])
-                        ->count()
-                ),
+                ->badge((int) $counts->last_week),
 
             'today' => Tab::make('Hari Ini')
-                ->modifyQueryUsing(fn (Builder $query) =>
+                ->modifyQueryUsing(
+                    fn($query) =>
                     $query->where('employee_id', $employee->id)
-                        ->whereDate('date', now())
+                        ->whereDate('date', $today)
                 )
-                ->badge(
-                    (clone $baseQuery)
-                        ->whereDate('date', now())
-                        ->count()
-                ),
+                ->badge((int) $counts->today),
         ];
     }
 
-    public function getDefaultActiveTab(): string | int | null
+    public function getDefaultActiveTab(): string|int|null
     {
         return 'this_month';
     }

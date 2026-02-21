@@ -24,6 +24,6 @@ class ViewLeaveApproval extends ViewRecord
 
     public function getTitle(): string
     {
-        return 'Lihat Persetujuan Cuti';
+        return 'Lihat Pengajuan Cuti';
     }
 }

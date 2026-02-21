@@ -41,36 +41,55 @@ class ListLeaveRequests extends ListRecords
     {
         $employee = auth()->user()->employee;
 
-        if (! $employee) {
+        if (!$employee) {
             return [];
         }
 
-        $baseQuery = LeaveRequest::where('employee_id', $employee->id);
+        // Hitung semua badge dalam satu query
+        $counts = LeaveRequest::query()
+            ->where('employee_id', $employee->id)
+            ->selectRaw("
+            COUNT(*) as semua,
+            SUM(status = 'pending') as pending,
+            SUM(status = 'approved') as approved,
+            SUM(status = 'rejected') as rejected
+        ")
+            ->first();
 
         return [
-            'semua'    => Tab::make('Semua')
-                ->modifyQueryUsing(fn(Builder $query) =>
+            'semua' => Tab::make('Semua')
+                ->modifyQueryUsing(
+                    fn(Builder $query) =>
                     $query->where('employee_id', $employee->id)
                 )
-                ->badge($baseQuery->count()),
+                ->badge($counts->semua),
 
-            'pending'  => Tab::make('Menunggu')
-                ->modifyQueryUsing(fn(Builder $query) =>
-                    $query->where('employee_id', $employee->id)->where('status', 'pending')
+            'pending' => Tab::make('Menunggu')
+                ->modifyQueryUsing(
+                    fn(Builder $query) =>
+                    $query->where('employee_id', $employee->id)
+                        ->where('status', 'pending')
                 )
-                ->badge($baseQuery->where('status', 'pending')->count()),
+                ->badge($counts->pending)
+                ->icon('heroicon-o-clock'),
 
             'approved' => Tab::make('Disetujui')
-                ->modifyQueryUsing(fn(Builder $query) =>
-                    $query->where('employee_id', $employee->id)->where('status', 'approved')
+                ->modifyQueryUsing(
+                    fn(Builder $query) =>
+                    $query->where('employee_id', $employee->id)
+                        ->where('status', 'approved')
                 )
-                ->badge($baseQuery->where('status', 'approved')->count()),
+                ->badge($counts->approved)
+                ->icon('heroicon-o-check-badge'),
 
             'rejected' => Tab::make('Ditolak')
-                ->modifyQueryUsing(fn(Builder $query) =>
-                    $query->where('employee_id', $employee->id)->where('status', 'rejected')
+                ->modifyQueryUsing(
+                    fn(Builder $query) =>
+                    $query->where('employee_id', $employee->id)
+                        ->where('status', 'rejected')
                 )
-                ->badge($baseQuery->where('status', 'rejected')->count()),
+                ->badge($counts->rejected)
+                ->icon('heroicon-o-x-circle'),
         ];
     }
 }
