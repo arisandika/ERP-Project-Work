@@ -56,8 +56,9 @@ class UserResource extends Resource
                                     ->label('Kata Sandi')
                                     ->password()
                                     ->revealable()
-                                    ->dehydrateStateUsing(fn($state) => filled($state) ? bcrypt($state) : null)
-                                    ->required(fn(string $context): bool => $context === 'create')
+                                    ->dehydrated(fn($state) => filled($state))
+                                    ->dehydrateStateUsing(fn($state) => bcrypt($state))
+                                    ->required(fn(string $context) => $context === 'create')
                                     ->maxLength(255),
                             ]),
                     ]),

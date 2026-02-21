@@ -6,6 +6,7 @@ use App\Filament\Resources\HR\AttendanceResource;
 use App\Filament\Widgets\HR\AttendanceLeaveListWidget;
 use App\Filament\Widgets\HR\AttendanceMapOverview;
 use App\Filament\Widgets\HR\AttendanceSummaryOverview;
+use App\Models\HR\Attendance;
 use Carbon\Carbon;
 use Filament\Actions\ExportAction;
 use Filament\Resources\Components\Tab;
@@ -18,53 +19,80 @@ class ListAttendances extends ListRecords
 
     public function getTabs(): array
     {
+        $now = now();
+
+        $start3Months = $now->copy()->subMonths(3)->startOfDay();
+        $startLastMonth = $now->copy()->subMonth()->startOfMonth();
+        $endLastMonth = $now->copy()->subMonth()->endOfMonth();
+        $startThisMonth = $now->copy()->startOfMonth();
+        $endThisMonth = $now->copy()->endOfMonth();
+        $startWeek = $now->copy()->startOfWeek();
+        $endWeek = $now->copy()->endOfWeek();
+        $today = $now->toDateString();
+
+        $counts = Attendance::query()
+            ->selectRaw("
+            COUNT(*) as all_count,
+            COALESCE(SUM(date >= ?),0) as last_3_month,
+            COALESCE(SUM(date BETWEEN ? AND ?),0) as last_month,
+            COALESCE(SUM(date BETWEEN ? AND ?),0) as this_month,
+            COALESCE(SUM(date BETWEEN ? AND ?),0) as last_week,
+            COALESCE(SUM(DATE(date) = ?),0) as today
+        ", [
+                $start3Months,
+                $startLastMonth,
+                $endLastMonth,
+                $startThisMonth,
+                $endThisMonth,
+                $startWeek,
+                $endWeek,
+                $today
+            ])
+            ->first();
+
         return [
-            'all'              => Tab::make('Semua'),
+
+            'all' => Tab::make('Semua')
+                ->badge((int) $counts->all_count),
 
             'last_3_month' => Tab::make('3 Bulan Terakhir')
-                ->modifyQueryUsing(fn(Builder $query) =>
-                    $query->where('date', '>=', Carbon::now()->subMonths(3)->startOfDay())
+                ->modifyQueryUsing(
+                    fn($query) =>
+                    $query->where('date', '>=', $start3Months)
                 )
-                ->badge(
-                    $this->getRecordCount(Carbon::now()->subMonths(3)->startOfDay())
-                ),
+                ->badge((int) $counts->last_3_month),
 
-            'last_month'       => Tab::make('Bulan Lalu')
-                ->modifyQueryUsing(fn(Builder $query) =>
-                    $query->where('date', '>=', Carbon::now()->subMonth()->startOfDay())
+            'last_month' => Tab::make('Bulan Lalu')
+                ->modifyQueryUsing(
+                    fn($query) =>
+                    $query->whereBetween('date', [$startLastMonth, $endLastMonth])
                 )
-                ->badge(
-                    $this->getRecordCount(Carbon::now()->subMonth()->startOfDay())
-                ),
+                ->badge((int) $counts->last_month),
 
-            'this_month'       => Tab::make('Bulan Ini')
-                ->modifyQueryUsing(fn(Builder $query) =>
-                    $query->where('date', '>=', Carbon::now()->startOfMonth())
+            'this_month' => Tab::make('Bulan Ini')
+                ->modifyQueryUsing(
+                    fn($query) =>
+                    $query->whereBetween('date', [$startThisMonth, $endThisMonth])
                 )
-                ->badge(
-                    $this->getRecordCount(Carbon::now()->startOfMonth())
-                ),
+                ->badge((int) $counts->this_month),
 
-            'last_week'        => Tab::make('Minggu Ini')
-                ->modifyQueryUsing(fn(Builder $query) =>
-                    $query->where('date', '>=', Carbon::now()->subWeek()->startOfDay())
+            'last_week' => Tab::make('Minggu Ini')
+                ->modifyQueryUsing(
+                    fn($query) =>
+                    $query->whereBetween('date', [$startWeek, $endWeek])
                 )
-                ->badge(
-                    $this->getRecordCount(Carbon::now()->subWeek()->startOfDay())
-                ),
+                ->badge((int) $counts->last_week),
 
-            'today'            => Tab::make('Hari Ini')
-                ->icon('heroicon-o-clock')
-                ->modifyQueryUsing(fn(Builder $query) =>
-                    $query->whereDate('date', Carbon::today())
+            'today' => Tab::make('Hari Ini')
+                ->modifyQueryUsing(
+                    fn($query) =>
+                    $query->whereDate('date', $today)
                 )
-                ->badge(
-                    $this->getRecordCount(Carbon::today())
-                ),
+                ->badge((int) $counts->today),
         ];
     }
 
-    public function getDefaultActiveTab(): string | int | null
+    public function getDefaultActiveTab(): string|int|null
     {
         return 'today';
     }
@@ -92,7 +120,7 @@ class ListAttendances extends ListRecords
         return [
             AttendanceSummaryOverview::class,
             AttendanceLeaveListWidget::class,
-            // AttendanceStatusChart::class,
+                // AttendanceStatusChart::class,
             AttendanceMapOverview::class,
         ];
     }

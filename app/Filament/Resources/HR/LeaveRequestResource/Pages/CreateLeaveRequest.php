@@ -5,7 +5,6 @@ namespace App\Filament\Resources\HR\LeaveRequestResource\Pages;
 use App\Filament\Resources\HR\LeaveRequestResource;
 use App\Models\HR\Leave;
 use App\Models\HR\LeaveRequest;
-use Filament\Actions;
 use Filament\Facades\Filament;
 use Filament\Notifications\Notification;
 use Filament\Resources\Pages\CreateRecord;
@@ -17,6 +16,8 @@ class CreateLeaveRequest extends CreateRecord
 
     public function mount(): void
     {
+        parent::mount();
+
         if (auth()->user()->hasRole('super_admin')) {
             abort(403, 'Super Admin tidak memiliki akses pengajuan cuti');
         }
@@ -31,98 +32,163 @@ class CreateLeaveRequest extends CreateRecord
     {
         $user = Filament::auth()->user();
 
-        if (! $user?->employee) {
-            abort(403, 'Super Admin tidak terhubung dengan data karyawan.');
+        if (!$user?->employee) {
+            abort(403, 'User tidak terhubung dengan data karyawan.');
         }
 
         $employee = $user->employee;
 
-        $start = Carbon::parse($data['start_date']);
-        $end   = Carbon::parse($data['end_date']);
+        /**
+         * SAFE PARSE DATE
+         */
+        if (empty($data['start_date']) || empty($data['end_date'])) {
+            Notification::make()
+                ->title('Tanggal wajib diisi')
+                ->danger()
+                ->send();
+
+            $this->halt();
+        }
+
+        $start = Carbon::parse($data['start_date'])->startOfDay();
+        $end = Carbon::parse($data['end_date'])->startOfDay();
         $today = Carbon::today();
 
-        // CEGAH CUTI DI TANGGAL YANG SUDAH LEWAT
+        /**
+         * TIDAK BOLEH TANGGAL LAMPAU
+         */
         if ($start->lt($today)) {
             Notification::make()
                 ->title('Tanggal tidak valid')
                 ->body('Tidak boleh mengajukan cuti pada tanggal yang sudah lewat.')
                 ->danger()
                 ->send();
+
             $this->halt();
         }
 
-        // CEGAH START > END
+        /**
+         * START > END
+         */
         if ($start->gt($end)) {
             Notification::make()
                 ->title("Tanggal tidak valid")
                 ->body("Tanggal mulai tidak boleh lebih besar dari tanggal selesai.")
                 ->danger()
                 ->send();
+
             $this->halt();
         }
 
-        // CEGAH PENGAJUAN CUTI DI WEEKEND (Sabtu & Minggu)
+        /**
+         * WEEKEND
+         */
         if ($start->isWeekend() || $end->isWeekend()) {
             Notification::make()
                 ->title('Tanggal tidak valid')
-                ->body("Tanggal mulai dan tanggal selesai tidak boleh jatuh pada hari Sabtu atau Minggu.")
+                ->body("Tanggal tidak boleh jatuh pada Sabtu atau Minggu.")
                 ->danger()
                 ->send();
+
             $this->halt();
         }
 
-        // CEGAH CUTI BENTROK (OVERLAP)
-        $overlap = LeaveRequest::where('employee_id', $employee->id)
+        /**
+         * OVERLAP CUTI
+         */
+        $overlap = LeaveRequest::query()
+            ->where('employee_id', $employee->id)
             ->whereIn('status', ['pending', 'approved'])
             ->where(function ($q) use ($start, $end) {
+
                 $q->whereBetween('start_date', [$start, $end])
-                ->orWhereBetween('end_date', [$start, $end])
-                ->orWhere(function ($sub) use ($start, $end) {
-                    $sub->where('start_date', '<=', $start)
-                        ->where('end_date', '>=', $end);
-                });
+                    ->orWhereBetween('end_date', [$start, $end])
+                    ->orWhere(function ($sub) use ($start, $end) {
+
+                        $sub->where('start_date', '<=', $start)
+                            ->where('end_date', '>=', $end);
+
+                    });
+
             })
             ->exists();
 
         if ($overlap) {
+
             Notification::make()
                 ->title('Tanggal bertabrakan')
-                ->body('Anda sudah pernah mengajukan cuti pada rentang tanggal tersebut.')
+                ->body('Anda sudah memiliki pengajuan cuti pada rentang tanggal tersebut.')
                 ->danger()
                 ->send();
+
             $this->halt();
         }
 
-        // HITUNG TOTAL HARI KERJA (tanpa weekend)
+        /**
+         * HITUNG HARI KERJA
+         */
         $workingDays = $start->diffInDaysFiltered(
-            fn (Carbon $date) => !$date->isWeekend(),
+            fn(Carbon $date) => !$date->isWeekend(),
             $end
         );
 
         $data['total_days'] = $workingDays + 1;
 
-        // VALIDASI KUOTA CUTI
-        $leave = Leave::find($data['leave_id']);
 
-        $used = LeaveRequest::where('employee_id', $employee->id)
-            ->where('leave_id', $data['leave_id'])
-            ->where('status', 'approved')
-            ->sum('total_days');
+        /**
+         * VALIDASI JENIS CUTI
+         */
+        if (empty($data['leave_id'])) {
 
-        $quota     = $leave->days_count;
-        $remaining = $quota - $used;
-
-        if ($data['total_days'] > $remaining) {
             Notification::make()
-                ->title('Jatah cuti tidak mencukupi!')
-                ->body("Sisa cuti Anda hanya {$remaining} hari.")
+                ->title('Jenis cuti wajib dipilih')
                 ->danger()
                 ->send();
 
             $this->halt();
         }
 
-        // SET DEFAULT DATA REQUEST
+        $leave = Leave::find($data['leave_id']);
+
+        if (!$leave) {
+
+            Notification::make()
+                ->title('Jenis cuti tidak ditemukan')
+                ->danger()
+                ->send();
+
+            $this->halt();
+        }
+
+        /**
+         * HITUNG PEMAKAIAN CUTI
+         */
+        $used = LeaveRequest::query()
+            ->where('employee_id', $employee->id)
+            ->where('leave_id', $leave->id)
+            ->where('status', 'approved')
+            ->sum('total_days');
+
+
+        $remaining = $leave->days_count - $used;
+
+        /**
+         * VALIDASI KUOTA
+         */
+        if ($data['total_days'] > $remaining) {
+
+            Notification::make()
+                ->title('Jatah cuti tidak mencukupi')
+                ->body("Sisa cuti Anda {$remaining} hari.")
+                ->danger()
+                ->send();
+
+            $this->halt();
+        }
+
+        /**
+         * DEFAULT VALUE
+         */
         $data['employee_id'] = $employee->id;
         $data['status'] = 'pending';
 

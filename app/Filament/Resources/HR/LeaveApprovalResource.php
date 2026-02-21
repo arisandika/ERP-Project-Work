@@ -25,7 +25,7 @@ class LeaveApprovalResource extends Resource
 
     protected static ?int $navigationSort = 7;
 
-    protected static ?string $slug = 'leave-approvals';
+    protected static ?string $slug = 'hr/leave-approvals';
 
     protected static ?string $pluralModelLabel = 'Persetujuan Cuti';
 
@@ -97,7 +97,7 @@ class LeaveApprovalResource extends Resource
                         ->label('Catatan Admin')
                         ->nullable(),
                 ])
-                ->columns(1),
+                ->columns(2),
         ]);
     }
 
