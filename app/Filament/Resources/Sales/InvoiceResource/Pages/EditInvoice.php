@@ -55,7 +55,7 @@ class EditInvoice extends EditRecord
                         ->prefix('IDR')
                         ->required()
                         // Menampilkan sisa tagihan sebagai petunjuk
-                        ->helperText(fn(Invoice $record) => 'Sisa Tagihan: Rp ' . number_format($record->remaining_balance ?? 0, 0, ',', '.'))
+                        ->helperText(fn(Invoice $record) => 'Sisa Tagihan: IDR ' . number_format($record->remaining_balance ?? 0, 0, ',', '.'))
                         // Validasi: Tidak boleh bayar lebih dari sisa tagihan
                         ->maxValue(fn(Invoice $record) => $record->remaining_balance ?? 0),
 

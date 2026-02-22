@@ -41,22 +41,18 @@ class AttendanceSummaryOverview extends BaseWidget
         return [
             Stat::make('Total Karyawan', $totalEmployees)
                 ->description('Semua karyawan aktif')
-                ->icon('heroicon-o-user-group')
                 ->color('gray'),
 
             Stat::make('Hadir', $attendanceStats->present_count)
-                ->description('Presensi tepat waktu hari ini')
-                ->icon('heroicon-o-check-circle')
+                ->description('Karyawan hadir hari ini')
                 ->color('success'),
 
             Stat::make('Terlambat', $attendanceStats->late_count)
-                ->description('Presensi setelah jam kerja')
-                ->icon('heroicon-o-clock')
+                ->description('Karyawan terlambat hari ini')
                 ->color('warning'),
 
             Stat::make('Belum Presensi', $absentCount)
-                ->description('Belum melakukan presensi hari ini')
-                ->icon('heroicon-o-x-circle')
+                ->description('Belum presensi hari ini')
                 ->color('danger'),
         ];
     }

@@ -258,8 +258,8 @@
                         </span>
                     </td>
                     <td class="text-center">{{ number_format($trx->quantity) }}</td>
-                    <td class="text-right">Rp {{ number_format($trx->price, 0, ',', '.') }}</td>
-                    <td class="text-right">Rp {{ number_format($trx->total_price, 0, ',', '.') }}</td>
+                    <td class="text-right">IDR {{ number_format($trx->price, 0, ',', '.') }}</td>
+                    <td class="text-right">IDR {{ number_format($trx->total_price, 0, ',', '.') }}</td>
                 </tr>
             @empty
                 <tr>

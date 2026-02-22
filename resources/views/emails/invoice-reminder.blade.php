@@ -7,7 +7,7 @@
     <ul>
         <li><strong>No. Invoice:</strong> {{ $invoice->invoice_number }}</li>
         <li><strong>Tanggal Jatuh Tempo:</strong> {{ $invoice->due_date->format('d M Y') }}</li>
-        <li><strong>Total Tagihan:</strong> Rp {{ number_format($invoice->grand_total, 0, ',', '.') }}</li>
+        <li><strong>Total Tagihan:</strong> IDR {{ number_format($invoice->grand_total, 0, ',', '.') }}</li>
     </ul>
 
     <p>Mohon segera melakukan pembayaran.</p>

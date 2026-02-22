@@ -23,7 +23,7 @@ class SalesSummaryStats extends BaseWidget
         $end = $endDate ? Carbon::parse($endDate) : now();
 
         return [
-            Stat::make('Total Revenue', 'Rp ' . number_format(
+            Stat::make('Total Revenue', 'IDR ' . number_format(
                 Invoice::where('status', 'paid')
                     ->whereBetween('invoice_date', [$start, $end])
                     ->sum('grand_total'),
@@ -32,19 +32,16 @@ class SalesSummaryStats extends BaseWidget
                 '.'
             ))
                 ->description('Dari Invoice Lunas')
-                ->descriptionIcon('heroicon-m-banknotes')
-                ->color('success')
-                ->chart([7, 2, 10, 3, 15, 4, 17]),
+                ->color('success'),
 
             Stat::make(
                 'Total Sales Orders',
                 SalesOrder::whereBetween('created_at', [$start, $end])->count()
             )
                 ->description('SO periode ini')
-                ->descriptionIcon('heroicon-m-shopping-cart')
                 ->color('primary'),
 
-            Stat::make('Pending Payment', 'Rp ' . number_format(
+            Stat::make('Pending Payment', 'IDR ' . number_format(
                 Invoice::whereIn('status', ['unpaid', 'partial'])
                     ->whereBetween('invoice_date', [$start, $end])
                     ->sum('grand_total'),
@@ -53,10 +50,9 @@ class SalesSummaryStats extends BaseWidget
                 '.'
             ))
                 ->description('Total Belum Dibayar')
-                ->descriptionIcon('heroicon-m-exclamation-circle')
                 ->color('danger'),
 
-            Stat::make('Total Diskon', 'Rp ' . number_format(
+            Stat::make('Total Diskon', 'IDR ' . number_format(
                 SalesOrder::whereBetween('created_at', [$start, $end])
                     ->sum('discount_amount'),
                 0,
@@ -64,7 +60,6 @@ class SalesSummaryStats extends BaseWidget
                 '.'
             ))
                 ->description('Potongan harga diberikan')
-                ->descriptionIcon('heroicon-m-tag')
                 ->color('warning'),
 
             Stat::make(

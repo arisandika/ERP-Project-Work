@@ -96,8 +96,8 @@
                         @if($item->item_code)<small>Kode: {{ $item->item_code }}</small>@endif
                     </td>
                     <td class="text-right">{{ $item->quantity }}</td>
-                    <td class="text-right">Rp {{ number_format($item->unit_price, 0, ',', '.') }}</td>
-                    <td class="text-right">Rp {{ number_format($item->line_total, 0, ',', '.') }}</td>
+                    <td class="text-right">IDR {{ number_format($item->unit_price, 0, ',', '.') }}</td>
+                    <td class="text-right">IDR {{ number_format($item->line_total, 0, ',', '.') }}</td>
                 </tr>
             @endforeach
         </tbody>
@@ -107,19 +107,19 @@
     <table class="totals-table">
         <tr>
             <td class="label">Subtotal:</td>
-            <td class="text-right">Rp {{ number_format($quotation->subtotal, 0, ',', '.') }}</td>
+            <td class="text-right">IDR {{ number_format($quotation->subtotal, 0, ',', '.') }}</td>
         </tr>
         <tr>
             <td class="label">Diskon ({{ $quotation->discount }}%):</td>
-            <td class="text-right">- Rp {{ number_format($quotation->subtotal * ($quotation->discount / 100), 0, ',', '.') }}</td>
+            <td class="text-right">- IDR {{ number_format($quotation->subtotal * ($quotation->discount / 100), 0, ',', '.') }}</td>
         </tr>
         <tr>
             <td class="label">Pajak ({{ $quotation->tax }}%):</td>
-            <td class="text-right">Rp {{ number_format(($quotation->subtotal - ($quotation->subtotal * ($quotation->discount / 100))) * ($quotation->tax / 100), 0, ',', '.') }}</td>
+            <td class="text-right">IDR {{ number_format(($quotation->subtotal - ($quotation->subtotal * ($quotation->discount / 100))) * ($quotation->tax / 100), 0, ',', '.') }}</td>
         </tr>
         <tr class="grand-total">
             <td class="label">Grand Total:</td>
-            <td class="text-right">Rp {{ number_format($quotation->grand_total, 0, ',', '.') }}</td>
+            <td class="text-right">IDR {{ number_format($quotation->grand_total, 0, ',', '.') }}</td>
         </tr>
     </table>
 
