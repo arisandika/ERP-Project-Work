@@ -1,1 +1,0 @@
-<x-heroicon-o-clock class="w-6 h-6" />

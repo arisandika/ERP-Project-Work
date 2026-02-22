@@ -31,7 +31,6 @@ class ReimbursementRequest extends Model
         'amount' => 'decimal:2',
     ];
 
-
     // Pengaju Reimburse
     public function employee()
     {
