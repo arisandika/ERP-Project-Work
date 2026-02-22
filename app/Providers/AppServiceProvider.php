@@ -3,9 +3,11 @@
 namespace App\Providers;
 
 use App\Models\HR\LeaveRequest;
+use App\Models\HR\ReimbursementRequest;
 use App\Models\Sales\Invoice;
 use App\Observers\InvoiceObserver;
 use App\Observers\LeaveRequestObserver;
+use App\Observers\ReimbursementRequestObserver;
 use Illuminate\Support\ServiceProvider;
 use App\Models\Inventory\ProductStock;
 use App\Observers\ProductStockObserver;
@@ -37,5 +39,6 @@ class AppServiceProvider extends ServiceProvider
         // Register Observer untuk DeliveryOrder
         DeliveryOrder::observe(DeliveryOrderObserver::class);
 
+        ReimbursementRequest::observe(ReimbursementRequestObserver::class);
     }
 }
