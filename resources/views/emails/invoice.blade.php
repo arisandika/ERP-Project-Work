@@ -10,7 +10,7 @@
 
     <p>Berikut kami lampirkan Invoice <strong>#{{ $invoice->invoice_number }}</strong> untuk pesanan Anda.</p>
 
-    <p>Total Tagihan: <strong>Rp {{ number_format($invoice->grand_total, 0, ',', '.') }}</strong></p>
+    <p>Total Tagihan: <strong>IDR {{ number_format($invoice->grand_total, 0, ',', '.') }}</strong></p>
 
     <p>Silakan lakukan pembayaran sebelum tanggal jatuh tempo: {{ \Carbon\Carbon::parse($invoice->due_date)->format('d M Y') }}.</p>
 

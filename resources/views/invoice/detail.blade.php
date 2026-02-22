@@ -157,7 +157,7 @@
                                 <div class="flex items-center justify-between pt-1">
                                     <span class="text-gray-500 dark:text-gray-400">Total Tagihan</span>
                                     <span class="text-lg font-bold text-blue-600 dark:text-blue-400">
-                                        Rp {{ number_format((float) $invoice->grand_total, 0, ',', '.') }}
+                                        IDR {{ number_format((float) $invoice->grand_total, 0, ',', '.') }}
                                     </span>
                                 </div>
                             </div>

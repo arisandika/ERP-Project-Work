@@ -351,8 +351,8 @@
                     </td>
                     {{-- Menggunakan logic fallback Qty --}}
                     <td class="text-center">{{ $item->qty ?? $item->quantity ?? 0 }}</td>
-                    <td class="text-right">Rp {{ number_format($item->unit_price, 0, ',', '.') }}</td>
-                    <td class="text-right">Rp {{ number_format($item->line_total, 0, ',', '.') }}</td>
+                    <td class="text-right">IDR {{ number_format($item->unit_price, 0, ',', '.') }}</td>
+                    <td class="text-right">IDR {{ number_format($item->line_total, 0, ',', '.') }}</td>
                 </tr>
             @endforeach
         </tbody>
@@ -379,7 +379,7 @@
         <table class="totals-table">
             <tr>
                 <td class="label">Subtotal:</td>
-                <td class="amount">Rp {{ number_format($invoice->subtotal, 0, ',', '.') }}</td>
+                <td class="amount">IDR {{ number_format($invoice->subtotal, 0, ',', '.') }}</td>
             </tr>
 
             @if($invoice->discount > 0)
@@ -387,7 +387,7 @@
                     <td class="label" style="color: #c00;">Diskon ({{ $invoice->discount }}%):</td>
                     <td class="amount" style="color: #c00;">
                         @php $discAmount = $invoice->subtotal * ($invoice->discount / 100); @endphp
-                        - Rp {{ number_format($discAmount, 0, ',', '.') }}
+                        - IDR {{ number_format($discAmount, 0, ',', '.') }}
                     </td>
                 </tr>
             @endif
@@ -400,14 +400,14 @@
                             $afterDisc = $invoice->subtotal * (1 - ($invoice->discount / 100));
                             $taxAmount = $afterDisc * ($invoice->tax / 100);
                         @endphp
-                        Rp {{ number_format($taxAmount, 0, ',', '.') }}
+                        IDR {{ number_format($taxAmount, 0, ',', '.') }}
                     </td>
                 </tr>
             @endif
 
             <tr class="grand-total-row">
                 <td class="label">TOTAL:</td>
-                <td class="amount">Rp {{ number_format($invoice->grand_total, 0, ',', '.') }}</td>
+                <td class="amount">IDR {{ number_format($invoice->grand_total, 0, ',', '.') }}</td>
             </tr>
         </table>
     </div>

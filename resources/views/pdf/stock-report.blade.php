@@ -227,10 +227,10 @@
                         {{ $product->unit->symbol ?? $product->unit->name ?? '-' }}
                     </td>
                     <td class="text-right">
-                        Rp {{ number_format($price, 0, ',', '.') }}
+                        IDR {{ number_format($price, 0, ',', '.') }}
                     </td>
                     <td class="text-right">
-                        Rp {{ number_format($totalHarga, 0, ',', '.') }}
+                        IDR {{ number_format($totalHarga, 0, ',', '.') }}
                     </td>
                 </tr>
             @endforeach

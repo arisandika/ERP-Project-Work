@@ -277,12 +277,12 @@ class InvoiceResource extends Resource
                 Grid::make(2)->schema([
                     Forms\Components\Placeholder::make('total_paid_view')
                         ->label('Sudah Dibayar')
-                        ->content(fn($record) => 'Rp ' . number_format($record?->total_paid ?? 0, 0, ',', '.'))
+                        ->content(fn($record) => 'IDR ' . number_format($record?->total_paid ?? 0, 0, ',', '.'))
                         ->extraAttributes(['class' => 'text-success-600 font-bold text-lg']),
 
                     Forms\Components\Placeholder::make('remaining_balance_view')
                         ->label('Sisa Tagihan')
-                        ->content(fn($record) => 'Rp ' . number_format($record?->remaining_balance ?? 0, 0, ',', '.'))
+                        ->content(fn($record) => 'IDR ' . number_format($record?->remaining_balance ?? 0, 0, ',', '.'))
                         ->extraAttributes(fn($record) => [
                             'class' => ($record?->remaining_balance > 0)
                                 ? 'text-danger-600 font-bold text-lg'
