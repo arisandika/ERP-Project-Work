@@ -16,6 +16,11 @@ class Leave extends Model
     protected $fillable = [
         'leave_type',
         'days_count',
+        'is_female_only',
+    ];
+
+    protected $casts = [
+        'is_female_only' => 'boolean',
     ];
 
     // Relationships

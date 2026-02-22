@@ -18,3 +18,15 @@ nav.fi-sidebar-nav.flex-grow.flex.flex-col.gap-y-7.overflow-y-auto.overflow-x-hi
 .no-scrollbar::-webkit-scrollbar {
     display: none;
 }
+
+.btn-wrapper .fi-btn {
+    @apply w-full;
+}
+
+.fi-simple-main-ctn {
+    @apply px-4 md:px-0;
+}
+
+.fi-simple-main {
+    @apply rounded-xl;
+}

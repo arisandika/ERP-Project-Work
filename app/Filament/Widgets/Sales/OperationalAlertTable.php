@@ -3,7 +3,6 @@
 namespace App\Filament\Widgets\Sales;
 
 use App\Models\Sales\Invoice;
-use BezhanSalleh\FilamentShield\Traits\HasPageShield;
 use Filament\Tables;
 use Filament\Tables\Table;
 use Filament\Widgets\TableWidget as BaseWidget;
@@ -23,8 +22,6 @@ class OperationalAlertTable extends BaseWidget
         return $table
             ->query(
                 Invoice::query()
-                    // [PENTING] Select semua kolom agar 'id' terbawa.
-                    // Ini kunci agar Filament tidak error "null returned".
                     ->select('*')
 
                     ->whereDate('due_date', '<', now())
@@ -35,7 +32,6 @@ class OperationalAlertTable extends BaseWidget
                     ->orderBy('due_date', 'asc')
                     ->limit(5)
             )
-            // [HAPUS BARIS INI] ->recordKey('id') // Method ini tidak valid di sini.
 
             ->columns([
                 Tables\Columns\TextColumn::make('invoice_number')
@@ -85,7 +81,6 @@ class OperationalAlertTable extends BaseWidget
                             return;
                         }
 
-                        // Kirim Email
                         try {
                             Mail::to($email)->send(new InvoiceReminderMail($record));
 

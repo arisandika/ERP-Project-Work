@@ -5,20 +5,32 @@ namespace App\Filament\Widgets\HR;
 use App\Models\HR\Attendance;
 use App\Models\HR\Employee;
 use App\Models\HR\LeaveRequest;
-use BezhanSalleh\FilamentShield\Traits\HasPageShield;
-use Filament\Widgets\ChartWidget;
 use Illuminate\Support\Carbon;
 use Leandrocfe\FilamentApexCharts\Widgets\ApexChartWidget;
 
 class AttendanceStatusChart extends ApexChartWidget
 {
     protected static ?string $chartId = 'attendanceStatusChart';
-    protected static ?string $heading = 'Status Presensi Karyawan Hari Ini';
-    protected static ?string $subheading = 'Data kehadiran harian berdasarkan status absensi';
-    protected static ?string $pollingInterval = null; // disable auto refresh
+
+    protected static ?string $heading = null;
+
+    protected function getHeading(): string
+    {
+        return 'Status Presensi ' . Carbon::today()->locale('id')->translatedFormat('l, d F Y');
+    }
+
+    protected int|string|array $columnSpan = [
+        'default' => 2,
+        'md' => 1,
+    ];
+
+    protected static ?string $pollingInterval = null;
+
     protected static bool $darkMode = true;
+
     protected static bool $isCollapsible = true;
-    protected static ?int $contentHeight = 350;
+
+    protected static ?int $contentHeight = 200;
 
     protected function getOptions(): array
     {
@@ -26,9 +38,7 @@ class AttendanceStatusChart extends ApexChartWidget
 
         $totalEmployees = Employee::count();
 
-        $attendances = Attendance::with('employee')
-            ->whereDate('date', $today)
-            ->get();
+        $attendances = Attendance::whereDate('date', $today)->get();
 
         $present = $attendances->where('status', 'Hadir Tepat Waktu')->count();
         $late = $attendances->where('status', 'Terlambat')->count();
@@ -38,57 +48,94 @@ class AttendanceStatusChart extends ApexChartWidget
             ->where('status', 'approved')
             ->count();
 
-        $absent = $totalEmployees - ($present + $late + $leaveToday);
+        $absent = max($totalEmployees - ($present + $late + $leaveToday), 0);
 
         return [
+
             'chart' => [
                 'type' => 'bar',
-                'height' => 350,
+                'height' => 200,
                 'toolbar' => [
-                    'show' => true,
+                    'show' => false,
                 ],
+                'fontFamily' => 'inherit',
             ],
+
             'series' => [
                 [
-                    'name' => 'Jumlah Karyawan',
-                    'data' => [$present, $late, $absent, $leaveToday],
-                ],
-            ],
-            'xaxis' => [
-                'categories' => ['Hadir Tepat Waktu', 'Terlambat', 'Belum Presensi', 'Cuti / Izin'],
-                'labels' => [
-                    'style' => [
-                        'fontFamily' => 'inherit',
-                        'fontWeight' => 600,
-                        'colors' => ['#10b981', '#f59e0b', '#ef4444', '#6366f1'],
+                    'name' => 'Jumlah',
+                    'data' => [
+                        $present,
+                        $late,
+                        $absent,
+                        $leaveToday
                     ],
                 ],
             ],
-            'colors' => ['#3b82f6'],
-            'dataLabels' => [
-                'enabled' => true,
-                'style' => [
-                    'colors' => ['#fff'],
+
+            'xaxis' => [
+                'categories' => [
+                    'Hadir',
+                    'Terlambat',
+                    'Belum',
+                    'Cuti/Izin'
+                ],
+                'labels' => [
+                    'style' => [
+                        'fontSize' => '13px',
+                        'fontWeight' => 500,
+                    ],
                 ],
             ],
+
+            'yaxis' => [
+                'labels' => [
+                    'style' => [
+                        'fontSize' => '12px',
+                    ],
+                ],
+            ],
+
             'plotOptions' => [
                 'bar' => [
-                    'borderRadius' => 6,
-                    'horizontal' => false,
+                    'borderRadius' => 1,
+                    'columnWidth' => '45%',
                 ],
             ],
-            'theme' => [
-                'mode' => 'dark',
-            ],
-            'title' => [
-                'text' => 'Rekapitulasi Presensi Karyawan — ' . $today->translatedFormat('d M Y'),
-                'align' => 'center',
+
+            'dataLabels' => [
+                'enabled' => true,
+                'offsetY' => -6,
                 'style' => [
-                    'fontFamily' => 'inherit',
+                    'fontSize' => '12px',
                     'fontWeight' => 600,
-                    'color' => '#374151',
                 ],
             ],
+
+            'grid' => [
+                'borderColor' => '#374151',
+                'strokeDashArray' => 4,
+            ],
+
+            'colors' => [
+                '#10b981', // hadir
+                '#f59e0b', // terlambat
+                '#ef4444', // absen
+                '#6366f1', // cuti
+            ],
+
+            'legend' => [
+                'show' => false,
+            ],
+
+            'title' => [
+                'align' => 'left',
+                'style' => [
+                    'fontSize' => '14px',
+                    'fontWeight' => 600,
+                ],
+            ],
+
         ];
     }
 }

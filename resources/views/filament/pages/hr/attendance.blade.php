@@ -155,11 +155,6 @@
                                 <div id="camera-preview" class="hidden">
                                     <img id="photo-preview" class="object-cover w-full rounded-lg" alt="Preview photo">
                                     <div class="flex justify-center gap-3 my-4">
-                                        <x-filament::button type="button" id="confirmBtn" aria-label="Presensi sekarang"
-                                            color="primary">
-                                            <span>Gunakan</span>
-                                        </x-filament::button>
-
                                         <x-filament::button type="button" id="retakeBtn" color="gray"> Ambil Ulang
                                         </x-filament::button>
                                     </div>
@@ -273,10 +268,6 @@
                                     <img id="photo-preview-out" class="object-cover w-full rounded-lg" alt="Preview photo">
 
                                     <div class="flex justify-center gap-3 my-4">
-                                        <x-filament::button type="button" id="confirmBtnOut" color="danger">
-                                            <span>Gunakan</span>
-                                        </x-filament::button>
-
                                         <x-filament::button type="button" id="retakeBtnOut" color="gray">
                                             Ambil Ulang
                                         </x-filament::button>

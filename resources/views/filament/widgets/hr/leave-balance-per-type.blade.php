@@ -6,23 +6,32 @@
     $rows = [];
 
     if ($employee) {
-        foreach (Leave::all() as $leave) {
+
+        // Query leave berdasarkan gender
+        $leaves = Leave::query()
+            ->when($employee->gender !== 'Perempuan', function ($query) {
+                $query->where('is_female_only', false);
+            })
+            ->get();
+
+        foreach ($leaves as $leave) {
+
             $used = LeaveRequest::where('employee_id', $employee->id)
                 ->where('leave_id', $leave->id)
                 ->where('status', 'approved')
                 ->sum('total_days');
 
             $remaining = max($leave->days_count - $used, 0);
-            $percentage = $leave->days_count > 0 ? round(($used / $leave->days_count) * 100) : 0;
+            $percentage = $leave->days_count > 0
+                ? round(($used / $leave->days_count) * 100)
+                : 0;
 
-            // Warna badge
             $badgeColor = $percentage < 40
                 ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-700 dark:text-emerald-100'
                 : ($percentage < 70
                     ? 'bg-amber-100 text-amber-700 dark:bg-amber-700 dark:text-amber-100'
                     : 'bg-red-100 text-red-700 dark:bg-red-700 dark:text-red-100');
 
-            // Ikon berdasarkan jenis cuti
             $icons = [
                 'Cuti Tahunan' => 'heroicon-o-sun',
                 'Cuti Sakit' => 'heroicon-o-heart',
@@ -48,7 +57,9 @@
 @endphp
 
 <x-filament::widget>
-    <x-filament::section heading="Sisa Cuti per Jenis" description="Berikut adalah rincian sisa cuti Anda berdasarkan jenis cuti.">
+    <x-filament::section heading="Sisa Cuti per Jenis"
+        description="Berikut adalah rincian sisa cuti Anda berdasarkan jenis cuti." collapsible="true" collapsed="true">
+
         <div class="grid w-full grid-cols-1 gap-6 md:grid-cols-3 lg:grid-cols-3">
 
             @foreach($rows as $row)
@@ -95,5 +106,6 @@
             @endforeach
 
         </div>
+        
     </x-filament::section>
 </x-filament::widget>

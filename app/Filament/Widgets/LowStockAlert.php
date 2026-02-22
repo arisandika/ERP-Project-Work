@@ -2,13 +2,10 @@
 
 namespace App\Filament\Widgets;
 
-use App\Models\Inventory\Product;
 use App\Models\Inventory\ProductStock;
-use BezhanSalleh\FilamentShield\Traits\HasPageShield;
 use Filament\Tables;
 use Filament\Tables\Table;
 use Filament\Widgets\TableWidget as BaseWidget;
-use Filament\Support\Colors\Color;
 
 class LowStockAlert extends BaseWidget
 {
@@ -20,7 +17,7 @@ class LowStockAlert extends BaseWidget
     {
         return $table
             ->query(
-                ProductStock::query()
+                fn() => ProductStock::query()
                     ->where('qty', '<=', 10)
                     ->with(['product.unit', 'product.category', 'warehouse'])
                     ->orderBy('qty', 'asc')
@@ -113,7 +110,6 @@ class LowStockAlert extends BaseWidget
 
     public static function canView(): bool
     {
-        // Tampilkan widget hanya jika ada low stock
         return ProductStock::where('qty', '<=', 10)->exists();
     }
 }

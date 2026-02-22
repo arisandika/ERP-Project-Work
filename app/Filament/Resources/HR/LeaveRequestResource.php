@@ -37,7 +37,20 @@ class LeaveRequestResource extends Resource
                 ->schema([
                     Forms\Components\Select::make('leave_id')
                         ->label('Jenis Cuti')
-                        ->relationship('leave', 'leave_type')
+                        ->relationship(
+                            'leave',
+                            'leave_type',
+                            modifyQueryUsing: function ($query) {
+                                $employee = auth()->user()?->employee;
+
+                                // Jika bukan perempuan, sembunyikan cuti khusus wanita
+                                if ($employee && $employee->gender !== 'Perempuan') {
+                                    $query->where('is_female_only', false);
+                                }
+
+                                return $query;
+                            }
+                        )
                         ->required()
                         ->searchable()
                         ->preload()

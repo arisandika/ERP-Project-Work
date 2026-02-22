@@ -41,9 +41,13 @@
                 </div>
 
                 @if($projects->isEmpty())
-                    <div class="flex flex-col items-center justify-center py-12 text-gray-500 dark:text-gray-400">
-                        <h3 class="mb-1 text-base font-medium text-gray-900 dark:text-white">Tidak ada project yang tersedia</h3>
-                        <p class="text-sm text-gray-500 dark:text-gray-400">Kamu belum memiliki akses ke project mana pun</p>
+                    <div class="flex flex-col items-center justify-center h-64 text-center text-gray-500">
+                        <svg class="w-16 h-16 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 002 2z" />
+                        </svg>
+                        <h3 class="mb-2 text-lg font-medium text-white">Tidak ada project yang tersedia</h3>
+                        <p class="text-sm">Kamu belum memiliki akses ke project mana pun</p>
                     </div>
                 @elseif($this->filteredProjects->isEmpty())
                     <div class="flex flex-col items-center justify-center py-12 text-gray-500 dark:text-gray-400">
@@ -836,4 +840,5 @@
             </div>
         </div>
     @endif
+    
 </x-filament-panels::page>

@@ -3,6 +3,7 @@
 namespace App\Filament\Resources\HR\LeaveApprovalResource\Pages;
 
 use App\Filament\Resources\HR\LeaveApprovalResource;
+use App\Filament\Widgets\HR\LeaveApprovalOverview;
 use App\Models\HR\LeaveRequest;
 use Filament\Actions;
 use Filament\Resources\Components\Tab;
@@ -68,6 +69,13 @@ class ListLeaveApprovals extends ListRecords
                 )
                 ->badge($counts->rejected)
                 ->icon('heroicon-o-x-circle'),
+        ];
+    }
+
+    protected function getHeaderWidgets(): array
+    {
+        return [
+            LeaveApprovalOverview::class,
         ];
     }
 }

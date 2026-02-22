@@ -26,7 +26,7 @@ class AttendanceResource extends Resource
 
     protected static ?int $navigationSort = 6;
 
-    protected static ?string $slug = 'hr/attendances';
+    protected static ?string $slug = 'hr/attendance-monitoring';
 
     protected static ?string $pluralModelLabel = 'Monitoring Presensi';
 

@@ -2,7 +2,6 @@
 
 namespace App\Filament\Widgets\Sales;
 
-use BezhanSalleh\FilamentShield\Traits\HasPageShield;
 use Filament\Widgets\ChartWidget;
 use Filament\Widgets\Concerns\InteractsWithPageFilters;
 use App\Models\Sales\Quotation;

@@ -1,4 +1,4 @@
-<div class="min-h-screen transition-colors duration-300 bg-gray-50 dark:bg-gray-950">
+<div class="min-h-screen py-10 transition-colors duration-300 bg-gray-50 dark:bg-gray-950">
 
     <!-- Flash Messages -->
     @if (session('message'))
@@ -24,10 +24,10 @@
         </div>
     @endif
 
-    <div class="px-4 mx-auto max-w-7xl sm:px-6 lg:px-8">
+    <div class="mx-auto max-w-7xl lg:px-8">
         <div class="flex flex-col gap-4 py-4 sm:flex-row sm:justify-between sm:items-center sm:py-6">
             <div class="flex-1 min-w-0">
-                <h1 class="text-2xl font-bold text-gray-900 truncate sm:text-3xl dark:text-white">{{ $project->name }}
+                <h1 class="text-2xl font-bold text-gray-900 sm:text-3xl dark:text-white">{{ $project->name }}
                 </h1>
                 <p class="mt-1 text-sm text-gray-600 sm:text-base dark:text-gray-400">Nexicon - External Dashboard</p>
             </div>
@@ -80,7 +80,8 @@
             </div>
         </div>
     </div>
-    <div class="px-4 py-8 mx-auto space-y-8 max-w-7xl sm:px-6 lg:px-8">
+
+    <div class="py-8 mx-auto space-y-8 max-w-7xl sm:px-6 lg:px-8">
         <!-- Project Stats Overview (Always visible) -->
         <div class="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-4">
 
@@ -599,6 +600,7 @@
 
         </div>
     </div>
+    
 </div>
 
 @push('scripts')

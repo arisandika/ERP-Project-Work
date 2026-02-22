@@ -3,7 +3,7 @@ namespace App\Filament\Resources\HR\LeaveRequestResource\Pages;
 
 use App\Filament\Resources\HR\LeaveRequestResource;
 use App\Filament\Widgets\HR\LeaveBalancePerType;
-use App\Filament\Widgets\HR\LeaveOverview;
+use App\Filament\Widgets\HR\LeaveRequestOverview;
 use App\Models\HR\LeaveRequest;
 use Filament\Actions;
 use Filament\Resources\Components\Tab;
@@ -32,7 +32,7 @@ class ListLeaveRequests extends ListRecords
     protected function getHeaderWidgets(): array
     {
         return [
-            LeaveOverview::class,
+            LeaveRequestOverview::class,
             LeaveBalancePerType::class,
         ];
     }

@@ -6,23 +6,32 @@
     $rows = [];
 
     if ($employee) {
-        foreach (Leave::all() as $leave) {
+
+        // Query leave berdasarkan gender
+        $leaves = Leave::query()
+            ->when($employee->gender !== 'Perempuan', function ($query) {
+                $query->where('is_female_only', false);
+            })
+            ->get();
+
+        foreach ($leaves as $leave) {
+
             $used = LeaveRequest::where('employee_id', $employee->id)
                 ->where('leave_id', $leave->id)
                 ->where('status', 'approved')
                 ->sum('total_days');
 
             $remaining = max($leave->days_count - $used, 0);
-            $percentage = $leave->days_count > 0 ? round(($used / $leave->days_count) * 100) : 0;
+            $percentage = $leave->days_count > 0
+                ? round(($used / $leave->days_count) * 100)
+                : 0;
 
-            // Warna badge
             $badgeColor = $percentage < 40
                 ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-700 dark:text-emerald-100'
                 : ($percentage < 70
                     ? 'bg-amber-100 text-amber-700 dark:bg-amber-700 dark:text-amber-100'
                     : 'bg-red-100 text-red-700 dark:bg-red-700 dark:text-red-100');
 
-            // Ikon berdasarkan jenis cuti
             $icons = [
                 'Cuti Tahunan' => 'heroicon-o-sun',
                 'Cuti Sakit' => 'heroicon-o-heart',
@@ -59,14 +68,14 @@
 <?php $component->withAttributes([]); ?>
     <?php if (isset($component)) { $__componentOriginalee08b1367eba38734199cf7829b1d1e9 = $component; } ?>
 <?php if (isset($attributes)) { $__attributesOriginalee08b1367eba38734199cf7829b1d1e9 = $attributes; } ?>
-<?php $component = Illuminate\View\AnonymousComponent::resolve(['view' => 'filament::components.section.index','data' => ['heading' => 'Sisa Cuti per Jenis','description' => 'Berikut adalah rincian sisa cuti Anda berdasarkan jenis cuti.']] + (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag ? $attributes->all() : [])); ?>
+<?php $component = Illuminate\View\AnonymousComponent::resolve(['view' => 'filament::components.section.index','data' => ['heading' => 'Sisa Cuti per Jenis','description' => 'Berikut adalah rincian sisa cuti Anda berdasarkan jenis cuti.','collapsible' => 'true','collapsed' => 'true']] + (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag ? $attributes->all() : [])); ?>
 <?php $component->withName('filament::section'); ?>
 <?php if ($component->shouldRender()): ?>
 <?php $__env->startComponent($component->resolveView(), $component->data()); ?>
 <?php if (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag): ?>
 <?php $attributes = $attributes->except(\Illuminate\View\AnonymousComponent::ignoredParameterNames()); ?>
 <?php endif; ?>
-<?php $component->withAttributes(['heading' => 'Sisa Cuti per Jenis','description' => 'Berikut adalah rincian sisa cuti Anda berdasarkan jenis cuti.']); ?>
+<?php $component->withAttributes(['heading' => 'Sisa Cuti per Jenis','description' => 'Berikut adalah rincian sisa cuti Anda berdasarkan jenis cuti.','collapsible' => 'true','collapsed' => 'true']); ?>
         <div class="grid w-full grid-cols-1 gap-6 md:grid-cols-3 lg:grid-cols-3">
 
             <?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if BLOCK]><![endif]--><?php endif; ?><?php $__currentLoopData = $rows; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $row): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
@@ -152,5 +161,4 @@
 <?php if (isset($__componentOriginald489e48d6214ecaf87e4b6a8ce684ad1)): ?>
 <?php $component = $__componentOriginald489e48d6214ecaf87e4b6a8ce684ad1; ?>
 <?php unset($__componentOriginald489e48d6214ecaf87e4b6a8ce684ad1); ?>
-<?php endif; ?>
-<?php /**PATH C:\laragon\www\erp-app\resources\views/filament/widgets/hr/leave-balance-per-type.blade.php ENDPATH**/ ?>
+<?php endif; ?><?php /**PATH C:\laragon\www\erp-app\resources\views/filament/widgets/hr/leave-balance-per-type.blade.php ENDPATH**/ ?>

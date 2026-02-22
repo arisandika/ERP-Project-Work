@@ -3,7 +3,6 @@
 namespace App\Filament\Widgets\Sales;
 
 use App\Models\Sales\Quotation;
-use BezhanSalleh\FilamentShield\Traits\HasPageShield;
 use Filament\Tables;
 use Filament\Tables\Table;
 use Filament\Widgets\TableWidget as BaseWidget;

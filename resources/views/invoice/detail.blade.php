@@ -39,7 +39,7 @@
     </style>
 </head>
 
-<body class="antialiased transition-colors duration-300 bg-gray-50 text-gray-950 dark:bg-gray-950 dark:text-white">
+<body class="px-4 antialiased transition-colors duration-300 bg-gray-50 text-gray-950 dark:bg-gray-950 dark:text-white md:px-0">
 
     <div x-data="{
         darkMode: localStorage.getItem('theme') === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches),
@@ -76,7 +76,7 @@
         </div>
 
         <main
-            class="w-full max-w-lg px-6 py-12 mx-auto my-16 bg-white shadow-sm ring-1 ring-gray-950/5 dark:bg-gray-900 dark:ring-white/10 sm:rounded-xl sm:px-12">
+            class="w-full max-w-lg px-6 py-12 mx-auto my-16 bg-white shadow-sm ring-1 ring-gray-950/5 dark:bg-gray-900 dark:ring-white/10 rounded-xl sm:px-12">
 
             <div class="fi-simple-page">
                 <!-- Logic Status PHP -->
