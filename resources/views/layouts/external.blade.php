@@ -37,7 +37,7 @@
     </style>
 </head>
 
-<body class="antialiased transition-colors duration-300 bg-gray-50 text-gray-950 dark:bg-gray-950 dark:text-white"
+<body class="px-4 antialiased transition-colors duration-300 bg-gray-50 text-gray-950 dark:bg-gray-950 dark:text-white md:px-0"
     x-data="{
         darkMode: localStorage.getItem('theme') === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches),
         toggleTheme() {
@@ -54,7 +54,6 @@
         }
     }">
 
-    <!-- KOMPONEN NOTIFIKASI ALPINE.JS -->
     <div x-data="{
         notifications:[],
         add(e) {
@@ -64,13 +63,13 @@
                 message: e.detail.message,
                 type: e.detail.type || 'info'
             });
-            // Hapus otomatis setelah 4 detik
+
             setTimeout(() => { this.remove(id) }, 4000);
         },
         remove(id) {
             this.notifications = this.notifications.filter(n => n.id !== id);
         }
-    }" @notify.window="add($event)" class="fixed flex flex-col items-end gap-3 pointer-events-none top-4 right-4 z-">
+    }" @notify.window="add($event)" class="fixed z-10 flex flex-col items-end gap-3 pointer-events-none top-4 right-4">
 
         <template x-for="notif in notifications" :key="notif.id">
             <div x-transition:enter="transition ease-out duration-300 transform"
@@ -83,14 +82,11 @@
                     'text-blue-600 bg-blue-100': notif.type === 'info'
                 }"
                 class="flex items-center justify-between max-w-sm gap-4 px-4 py-3 font-medium rounded-lg shadow-lg pointer-events-auto min-w-">
-                <!-- Ikon & Pesan -->
                 <div class="flex items-center gap-2">
-                    <!-- Icon Success -->
                     <svg x-show="notif.type === 'success'" class="w-5 h-5" fill="none" stroke="currentColor"
                         viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
                     </svg>
-                    <!-- Icon Error -->
                     <svg x-show="notif.type === 'error'" class="w-5 h-5" fill="none" stroke="currentColor"
                         viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12">
@@ -100,7 +96,6 @@
                     <span class="text-sm break-words" x-text="notif.message"></span>
                 </div>
 
-                <!-- Tombol Close (X) -->
                 <button @click="remove(notif.id)" type="button"
                     class="flex-shrink-0 transition-opacity text-black/80 opacity-80 hover:opacity-100 focus:outline-none"
                     title="Tutup">

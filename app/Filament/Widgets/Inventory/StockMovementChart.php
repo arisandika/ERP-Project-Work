@@ -3,7 +3,6 @@
 namespace App\Filament\Widgets\Inventory;
 
 use App\Models\Inventory\StockTransaction;
-use BezhanSalleh\FilamentShield\Traits\HasPageShield;
 use Illuminate\Support\Carbon;
 use Leandrocfe\FilamentApexCharts\Widgets\ApexChartWidget;
 

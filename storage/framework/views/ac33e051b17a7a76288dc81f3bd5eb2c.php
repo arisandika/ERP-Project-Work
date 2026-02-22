@@ -25,7 +25,8 @@
 <?php $attributes = $attributes->except(\Illuminate\View\AnonymousComponent::ignoredParameterNames()); ?>
 <?php endif; ?>
 <?php $component->withAttributes(['heading' => 'Tracking Presensi Karyawan']); ?>
-        <div class="grid grid-cols-2 gap-3 mb-6">
+
+        <div class="grid grid-cols-1 gap-4 mb-6 md:gap-3 md:grid-cols-2">
             <div class="grid gap-y-2">
                 <label for="filter-date" class="text-sm font-medium leading-6 text-gray-950 dark:text-white">
                     Tanggal <sup class="text-danger-600 dark:text-danger-400">*</sup>
@@ -124,6 +125,7 @@
                     class="w-full max-h-[80vh] object-contain rounded-lg shadow-xl bg-white" />
             </div>
         </div>
+        
      <?php echo $__env->renderComponent(); ?>
 <?php endif; ?>
 <?php if (isset($__attributesOriginalee08b1367eba38734199cf7829b1d1e9)): ?>

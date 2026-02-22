@@ -3,7 +3,9 @@
         {{-- Project Selector --}}
         @if(!$selectedProject)
             <div class="mb-6">
+
                 <x-filament::section>
+                    
                     <div class="mb-5">
                         <h2 class="text-lg font-semibold text-gray-900 dark:text-white">
                             Pilih Project
@@ -39,14 +41,20 @@
                     </div>
 
                     @if($projects->isEmpty())
-                        <div class="flex flex-col items-center justify-center py-12 text-gray-500 dark:text-gray-400">
-                            <h3 class="mb-1 text-base font-medium text-gray-900 dark:text-white">Tidak ada project yang tersedia</h3>
-                            <p class="text-sm text-gray-500 dark:text-gray-400">Kamu belum memiliki akses ke project mana pun</p>
+                        <div class="flex flex-col items-center justify-center h-64 text-center text-gray-500">
+                            <svg class="w-16 h-16 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 002 2z" />
+                            </svg>
+                            <h3 class="mb-2 text-lg font-medium text-white">Tidak ada project yang tersedia</h3>
+                            <p class="text-sm">Kamu belum memiliki akses ke project mana pun</p>
                         </div>
                     @elseif($this->filteredProjects->isEmpty())
                         <div class="flex flex-col items-center justify-center py-12 text-gray-500 dark:text-gray-400">
-                            <svg class="w-12 h-12 mb-3 text-gray-400 dark:text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+                            <svg class="w-12 h-12 mb-3 text-gray-400 dark:text-gray-500" fill="none" stroke="currentColor"
+                                viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
                             </svg>
                             <h3 class="mb-1 text-base font-medium text-gray-900 dark:text-white">Project tidak ditemukan</h3>
                             <p class="text-sm text-gray-500 dark:text-gray-400">Coba ubah kata kunci pencarian</p>
@@ -61,7 +69,8 @@
                                     @if($project->is_pinned)
                                         <div class="absolute top-2 right-2">
                                             <div class="flex items-center justify-center w-6 h-6 rounded-full shadow-sm"
-                                                style="background-color: {{ $project->color ?? '#6B7280' }};" title="Project Disematkan">
+                                                style="background-color: {{ $project->color ?? '#6B7280' }};"
+                                                title="Project Disematkan">
                                                 <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5 text-white"
                                                     viewBox="0 0 24 24" fill="currentColor">
                                                     <path
@@ -96,7 +105,9 @@
                             @endforeach
                         </div>
                     @endif
+
                 </x-filament::section>
+
             </div>
         @else
             {{-- Project Switcher --}}
@@ -221,7 +232,6 @@
         <link rel="stylesheet" href="https://cdn.dhtmlx.com/gantt/edge/dhtmlxgantt.css" type="text/css">
         <link rel="stylesheet" href="{{ asset('css/gantt-timeline.css') }}" type="text/css">
         <style>
-
             /* Today marker line styling */
             .gantt_marker.today {
                 background-color: #EF4444 !important;
@@ -293,17 +303,17 @@
                 const container = document.getElementById('gantt_here');
                 if (container) {
                     container.innerHTML = `
-                                                        <div class="flex flex-col items-center justify-center h-64 gap-4 text-gray-500">
-                                                            <svg class="w-16 h-16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                                                            </svg>
-                                                            <h3 class="text-lg font-medium">${message}</h3>
-                                                            <p class="text-sm">Silakan refresh halaman atau hubungi tim IT</p>
-                                                            <button onclick="location.reload()" class="px-4 py-2 text-white bg-blue-500 rounded hover:bg-blue-600">
-                                                                Refresh Page
-                                                            </button>
-                                                        </div>
-                                                    `;
+                                                            <div class="flex flex-col items-center justify-center h-64 gap-4 text-gray-500">
+                                                                <svg class="w-16 h-16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                                                </svg>
+                                                                <h3 class="text-lg font-medium">${message}</h3>
+                                                                <p class="text-sm">Silakan refresh halaman atau hubungi tim IT</p>
+                                                                <button onclick="location.reload()" class="px-4 py-2 text-white bg-blue-500 rounded hover:bg-blue-600">
+                                                                    Refresh Page
+                                                                </button>
+                                                            </div>
+                                                        `;
                 }
             }
 
@@ -438,12 +448,12 @@
 
                         gantt.templates.tooltip_text = function (start, end, task) {
                             return `<b>Task:</b> ${task.text}<br/>
-                                                                    <b>Status:</b> ${task.status}<br/>
-                                                                    <b>Duration:</b> ${task.duration} day(s)<br/>
-                                                                    <b>Progress:</b> ${Math.round(task.progress * 100)}%<br/>
-                                                                    <b>Start:</b> ${gantt.templates.tooltip_date_format(start)}<br/>
-                                                                    <b>End:</b> ${gantt.templates.tooltip_date_format(end)}
-                                                                    ${task.is_overdue ? '<br/><b style="color: #ef4444;">⚠️ OVERDUE</b>' : ''}`;
+                                                                        <b>Status:</b> ${task.status}<br/>
+                                                                        <b>Duration:</b> ${task.duration} day(s)<br/>
+                                                                        <b>Progress:</b> ${Math.round(task.progress * 100)}%<br/>
+                                                                        <b>Start:</b> ${gantt.templates.tooltip_date_format(start)}<br/>
+                                                                        <b>End:</b> ${gantt.templates.tooltip_date_format(end)}
+                                                                        ${task.is_overdue ? '<br/><b style="color: #ef4444;">⚠️ OVERDUE</b>' : ''}`;
                         };
                     } catch (configError) {
                         console.error('Error configuring gantt:', configError);
@@ -527,4 +537,5 @@
             }
         </script>
     @endpush
+    
 </x-filament-panels::page>

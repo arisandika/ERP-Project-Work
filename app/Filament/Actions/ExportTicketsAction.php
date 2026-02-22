@@ -2,25 +2,21 @@
 
 namespace App\Filament\Actions;
 
-use App\Exports\TicketsExport;
 use Filament\Actions\Action;
 use Filament\Forms\Components\CheckboxList;
 use Filament\Forms\Components\Section;
-use Filament\Notifications\Notification;
-use Maatwebsite\Excel\Facades\Excel;
-use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class ExportTicketsAction
 {
     public static function make(): Action
     {
         return Action::make('export_tickets')
-            ->label('Export to Excel')
+            ->label('Export Tickets')
             ->icon('heroicon-m-arrow-down-tray')
             ->color('success')
             ->form([
-                Section::make('Select Columns to Export')
-                    ->description('Choose which columns you want to include in the Excel export')
+                Section::make('Pilih Kolom Ekspor')
+                    ->description('Tentukan kolom apa saja yang akan dimasukkan ke dalam file Excel')
                     ->schema([
                         CheckboxList::make('columns')
                             ->label('Columns')

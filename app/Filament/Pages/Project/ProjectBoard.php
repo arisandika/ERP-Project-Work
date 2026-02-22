@@ -321,8 +321,7 @@ class ProjectBoard extends Page
                 ->action('refreshBoard')
                 ->color('warning'),
 
-            ExportTicketsAction::make()
-                ->visible(fn() => $this->selectedProject !== null && auth()->user()->hasRole(['super_admin'])),
+            ExportTicketsAction::make(),
 
             Action::make('filter_users')
                 ->label('Filter by User')

@@ -94,4 +94,5 @@
 
         <span class="text-sm font-medium" x-text="notification.message"></span>
     </div>
+    
 </div>

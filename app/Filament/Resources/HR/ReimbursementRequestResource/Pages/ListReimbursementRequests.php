@@ -3,6 +3,7 @@
 namespace App\Filament\Resources\HR\ReimbursementRequestResource\Pages;
 
 use App\Filament\Resources\HR\ReimbursementRequestResource;
+use App\Filament\Widgets\HR\ReimburseRequestOverview;
 use App\Models\HR\ReimbursementRequest;
 use Filament\Actions;
 use Filament\Resources\Components\Tab;
@@ -80,6 +81,13 @@ class ListReimbursementRequests extends ListRecords
                 )
                 ->badge($counts->rejected)
                 ->icon('heroicon-o-x-circle'),
+        ];
+    }
+
+    protected function getHeaderWidgets(): array
+    {
+        return [
+            ReimburseRequestOverview::class,
         ];
     }
 }

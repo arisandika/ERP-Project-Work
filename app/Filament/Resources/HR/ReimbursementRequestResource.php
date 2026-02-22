@@ -37,41 +37,69 @@ class ReimbursementRequestResource extends Resource
             Forms\Components\Section::make('Data Pengajuan Reimburse')
                 ->description('Isi data berikut untuk mengajukan reimburse.')
                 ->schema([
+
                     Forms\Components\DatePicker::make('date')
                         ->label('Tanggal Transaksi')
                         ->required()
                         ->default(now())
                         ->displayFormat('d M Y')
                         ->native(false)
+                        ->closeOnDateSelection()
                         ->prefixIcon('heroicon-o-calendar-days'),
 
-                    Forms\Components\TextInput::make('type')
+                    Forms\Components\Select::make('type')
                         ->label('Jenis Reimburse')
                         ->required()
-                        ->placeholder('Contoh: Bensin, Makan, Transport, Parkir')
+                        ->options([
+                            'Bensin' => 'Bensin',
+                            'Makan' => 'Makan',
+                            'Transport' => 'Transport',
+                            'Parkir' => 'Parkir',
+                            'Hotel' => 'Hotel',
+                            'Lainnya' => 'Lainnya (Tulis di keterangan)',
+                            // 'Kirim Barang' => 'Kirim Barang',
+                            // 'Akomodasi' => 'Akomodasi',
+                            // 'Peralatan Kantor' => 'Peralatan Kantor',
+                            // 'Kesehatan' => 'Kesehatan',
+                            // 'Pelatihan' => 'Pelatihan',
+                            // 'Internet' => 'Internet',
+                            // 'Pulsa/Telepon' => 'Pulsa/Telepon',
+                            // 'Representasi' => 'Representasi',
+                            // 'Perbaikan Kendaraan' => 'Perbaikan Kendaraan',
+                            // 'Lainnya' => 'Lainnya (Tulis di keterangan)',
+                        ])
+                        ->searchable()
                         ->prefixIcon('heroicon-o-tag'),
 
                     Forms\Components\TextInput::make('amount')
                         ->label('Nominal')
                         ->numeric()
                         ->required()
-                        ->prefix('IDR'),
+                        ->prefix('IDR')
+                        ->minValue(0)
+                        ->step(1000)
+                        ->placeholder('Contoh: 50000')
+                        ->prefixIcon('heroicon-o-banknotes'),
 
                     Forms\Components\Textarea::make('description')
                         ->label('Keterangan')
                         ->placeholder('Tuliskan keterangan reimburse...')
                         ->rows(3)
-                        ->maxLength(500),
+                        ->maxLength(500)
+                        ->columnSpanFull(),
 
                     Forms\Components\FileUpload::make('receipt')
                         ->label('Upload Bukti')
                         ->required()
                         ->image()
                         ->directory('reimbursements')
-                        ->imageEditor(),
+                        ->imageEditor()
+                        ->maxSize(2048)
+                        ->helperText('Upload foto struk maksimal 2MB')
+                        ->columnSpanFull(),
+
                 ])
                 ->columns(2)
-
         ]);
     }
 

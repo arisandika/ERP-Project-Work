@@ -1,21 +1,23 @@
 <div class="space-y-6" x-data @comment-added.window="$wire.$refresh()">
+
     {{-- Add Comment Form --}}
     @php
         $ticket = $getRecord();
         $project = $ticket->project;
         $canComment = $project->members()->where('nx_employees.id', auth()->user()->employee->id)->exists();
-        
+
         // Helper function to convert video img tags to video tags
-        function convertVideoImgsToVideoTags($html) {
+        function convertVideoImgsToVideoTags($html)
+        {
             // Pattern to match img tags with video file extensions
             $pattern = '/<img\s+[^>]*src=["\']([^"\']*\.(mp4|webm|mov|avi|mkv))["\'][^>]*\/?>/i';
-            
-            return preg_replace_callback($pattern, function($matches) {
+
+            return preg_replace_callback($pattern, function ($matches) {
                 $videoUrl = $matches[1];
                 return '<video controls class="max-w-full my-2 rounded-lg" style="max-height: 400px;">
-                    <source src="' . $videoUrl . '" type="video/' . pathinfo($videoUrl, PATHINFO_EXTENSION) . '">
-                    Your browser does not support the video tag.
-                </video>';
+                            <source src="' . $videoUrl . '" type="video/' . pathinfo($videoUrl, PATHINFO_EXTENSION) . '">
+                            Your browser does not support the video tag.
+                        </video>';
             }, $html);
         }
     @endphp
@@ -29,8 +31,7 @@
                         <div class="shrink-0">
                             @if($comment->employee && $comment->employee->photo)
                                 <img src="{{ asset('storage/' . $comment->employee->photo) }}"
-                                    alt="{{ $comment->employee->full_name }}"
-                                    class="object-cover w-8 h-8 rounded-full" />
+                                    alt="{{ $comment->employee->full_name }}" class="object-cover w-8 h-8 rounded-full" />
                             @else
                                 <div
                                     class="flex items-center justify-center w-8 h-8 text-sm font-medium text-white rounded-full bg-primary-500">
@@ -100,8 +101,9 @@
             <p class="text-sm">No comments yet. Be the first to comment!</p>
         </div>
     @endif
-    
+
     @if($canComment)
         @livewire('ticket-comment-form', ['ticket' => $ticket])
     @endif
+
 </div>

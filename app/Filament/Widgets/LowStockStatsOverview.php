@@ -2,9 +2,7 @@
 
 namespace App\Filament\Widgets;
 
-use App\Models\Inventory\Product;
 use App\Models\Inventory\ProductStock;
-use BezhanSalleh\FilamentShield\Traits\HasPageShield;
 use Filament\Widgets\StatsOverviewWidget as BaseWidget;
 use Filament\Widgets\StatsOverviewWidget\Stat;
 
@@ -15,13 +13,10 @@ class LowStockStatsOverview extends BaseWidget
 
     protected function getStats(): array
     {
-        // Hitung Product dengan stock kritis (qty < threshold)
         $lowStockCount = ProductStock::where('qty', '<=', 10)->count();
 
-        // Hitung Product yang benar-benar habis (qty = 0)
         $outOfStockCount = ProductStock::where('qty', '<=', 0)->count();
 
-        // Total unique products dengan low stock
         $lowStockProducts = ProductStock::where('qty', '<=', 10)
             ->distinct('product_id')
             ->count('id');
@@ -49,7 +44,6 @@ class LowStockStatsOverview extends BaseWidget
 
     public static function canView(): bool
     {
-        // Tampilkan stats hanya jika ada low stock
         return ProductStock::where('qty', '<=', 10)->exists();
     }
 

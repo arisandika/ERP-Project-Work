@@ -1,17 +1,20 @@
 <?php
 namespace App\Filament\Resources\HR\AttendanceResource\Pages;
 
-use App\Filament\Exports\AttendanceExporter;
 use App\Filament\Resources\HR\AttendanceResource;
+use App\Filament\Actions\ExportAttendancesAction;
+use App\Exports\AttendancesExport;
 use App\Filament\Widgets\HR\AttendanceLeaveListWidget;
 use App\Filament\Widgets\HR\AttendanceMapOverview;
+use App\Filament\Widgets\HR\AttendanceStatusChart;
 use App\Filament\Widgets\HR\AttendanceSummaryOverview;
-use App\Models\HR\Attendance;
-use Carbon\Carbon;
-use Filament\Actions\ExportAction;
-use Filament\Resources\Components\Tab;
+use Exception;
+use Filament\Notifications\Notification;
+use Maatwebsite\Excel\Facades\Excel;
 use Filament\Resources\Pages\ListRecords;
-use Illuminate\Database\Eloquent\Builder;
+use Carbon\Carbon;
+use App\Models\HR\Attendance;
+use Filament\Resources\Components\Tab;
 
 class ListAttendances extends ListRecords
 {
@@ -107,12 +110,88 @@ class ListAttendances extends ListRecords
     protected function getHeaderActions(): array
     {
         return [
-            ExportAction::make()
-                ->exporter(AttendanceExporter::class)
-                ->label('Export Presensi')
-                ->icon('heroicon-o-arrow-down-tray')
-                ->color('success'),
+            ExportAttendancesAction::make(),
         ];
+    }
+
+    public function exportAttendances(array $data): void
+    {
+        $selectedColumns = $data['columns'] ?? [];
+        $startDate = $data['start_date'] ?? null;
+        $endDate = $data['end_date'] ?? null;
+
+        if (empty($selectedColumns)) {
+            Notification::make()
+                ->title('Export Gagal')
+                ->body('Pilih minimal satu kolom untuk diekspor')
+                ->danger()
+                ->send();
+            return;
+        }
+
+        $query = Attendance::with(['employee', 'shift'])
+            ->orderBy('date', 'desc');
+
+        if ($startDate) {
+            $query->whereDate('date', '>=', $startDate);
+        }
+
+        if ($endDate) {
+            $query->whereDate('date', '<=', $endDate);
+        }
+
+        $attendances = $query->get();
+
+        if ($attendances->isEmpty()) {
+            Notification::make()
+                ->title('Export Gagal')
+                ->body('Tidak ada data presensi pada rentang tanggal tersebut')
+                ->warning()
+                ->send();
+            return;
+        }
+
+        try {
+            // Generate nama file
+            $fileName = 'presensi_' . now()->format('Y-m-d_H-i-s') . '.xlsx';
+
+            // Proses Export menggunakan Maatwebsite Excel
+            $export = new AttendancesExport($attendances, $selectedColumns);
+            Excel::store($export, 'exports/' . $fileName, 'public');
+
+            // Dapatkan URL Download
+            $downloadUrl = asset('storage/exports/' . $fileName);
+
+            // Trigger download via JavaScript
+            $this->js("
+                fetch('{$downloadUrl}')
+                    .then(response => response.blob())
+                    .then(blob => {
+                        const url = window.URL.createObjectURL(blob);
+                        const a = document.createElement('a');
+                        a.style.display = 'none';
+                        a.href = url;
+                        a.download = '{$fileName}';
+                        document.body.appendChild(a);
+                        a.click();
+                        window.URL.revokeObjectURL(url);
+                        document.body.removeChild(a);
+                    });
+            ");
+
+            Notification::make()
+                ->title('Export Berhasil')
+                ->body('File Excel presensi sedang diunduh')
+                ->success()
+                ->send();
+
+        } catch (Exception $e) {
+            Notification::make()
+                ->title('Export Gagal')
+                ->body('Terjadi kesalahan saat export: ' . $e->getMessage())
+                ->danger()
+                ->send();
+        }
     }
 
     protected function getHeaderWidgets(): array
@@ -120,7 +199,7 @@ class ListAttendances extends ListRecords
         return [
             AttendanceSummaryOverview::class,
             AttendanceLeaveListWidget::class,
-                // AttendanceStatusChart::class,
+            AttendanceStatusChart::class,
             AttendanceMapOverview::class,
         ];
     }

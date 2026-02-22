@@ -3,6 +3,7 @@
 namespace App\Filament\Resources\HR\ReimbursementApprovalResource\Pages;
 
 use App\Filament\Resources\HR\ReimbursementApprovalResource;
+use App\Filament\Widgets\HR\ReimburseApprovalOverview;
 use App\Models\HR\ReimbursementRequest;
 use Filament\Actions;
 use Filament\Resources\Components\Tab;
@@ -60,6 +61,13 @@ class ListReimbursementApprovals extends ListRecords
                 ->modifyQueryUsing(fn(Builder $query) => $query->where('status', 'rejected'))
                 ->badge($counts->rejected)
                 ->icon('heroicon-o-x-circle'),
+        ];
+    }
+
+    protected function getHeaderWidgets(): array
+    {
+        return [
+            ReimburseApprovalOverview::class,
         ];
     }
 }

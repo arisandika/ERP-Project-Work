@@ -41,6 +41,13 @@ class LeaveResource extends Resource
                     ->required()
                     ->numeric()
                     ->prefixIcon('heroicon-o-calendar-days'),
+
+                Forms\Components\Toggle::make('is_female_only')
+                    ->label('Khusus Wanita')
+                    ->default(false)
+                    ->onIcon('heroicon-s-check-circle')
+                    ->offIcon('heroicon-s-x-circle')
+                    ->inline(false)
             ]);
     }
 
@@ -56,6 +63,9 @@ class LeaveResource extends Resource
                     ->label('Jumlah Hari')
                     ->numeric()
                     ->sortable(),
+
+                Tables\Columns\ToggleColumn::make('is_female_only')
+                    ->label('Khusus Wanita'),
 
                 Tables\Columns\TextColumn::make('created_at')
                     ->label('Dibuat Pada')
@@ -116,7 +126,7 @@ class LeaveResource extends Resource
 
                         return $indicators;
                     }),
-                    
+
                 Tables\Filters\TrashedFilter::make()
                     ->label('Deleted Status')
                     ->native(false),
