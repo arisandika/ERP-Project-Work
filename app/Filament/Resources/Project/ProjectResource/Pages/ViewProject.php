@@ -186,7 +186,7 @@ class ViewProject extends ViewRecord
                                 ->placeholder('—'),
 
                             TextEntry::make('invoice.customer.name')
-                                ->label('Client')
+                                ->label('Customer')
                                 ->placeholder('—'),
 
                             TextEntry::make('invoice.employee.full_name')

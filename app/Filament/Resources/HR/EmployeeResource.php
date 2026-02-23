@@ -425,7 +425,6 @@ class EmployeeResource extends Resource
     {
         return $infolist
             ->schema([
-
                 Section::make('Informasi Pribadi')
                     ->columns(2)
                     ->schema([

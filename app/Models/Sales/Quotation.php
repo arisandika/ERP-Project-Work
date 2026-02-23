@@ -3,6 +3,8 @@
 namespace App\Models\Sales;
 
 use App\Models\CRM\Customer;
+use App\Models\CRM\Deal;
+use App\Models\CRM\Lead;
 use App\Models\HR\Employee;
 use App\Models\PromoCode;
 use App\Models\Sales\QuotationItem;
@@ -18,17 +20,13 @@ use Illuminate\Support\Carbon;
 
 class Quotation extends Model
 {
-    use SoftDeletes;
-
     protected $table = 'nx_quotations';
 
     protected $fillable = [
-        'nx_deal_id',
-        'nx_customer_id',
+        // 'nx_customer_id',
+        'nx_lead_id',
         'nx_employee_id',
-        'created_by_user_id',
         'created_by_employee_id',
-        'approved_by_user_id',
         'approved_by_employee_id',
         'approved_at',
         'quotation_number',
@@ -54,9 +52,18 @@ class Quotation extends Model
         return $this->hasMany(QuotationItem::class, 'nx_quotation_id');
     }
 
-    public function customer(): BelongsTo
+    // public function customer(): BelongsTo
+    // {
+    //     return $this->belongsTo(Customer::class, 'nx_customer_id')->withDefault();
+    // }
+    public function lead(): BelongsTo
     {
-        return $this->belongsTo(Customer::class, 'nx_customer_id')->withDefault();
+        return $this->belongsTo(Lead::class, 'nx_lead_id');
+    }
+
+    public function deal(): HasOne
+    {
+        return $this->hasOne(Deal::class, 'nx_quotation_id');
     }
 
     public function employee(): BelongsTo
@@ -64,19 +71,9 @@ class Quotation extends Model
         return $this->belongsTo(Employee::class, 'nx_employee_id')->withDefault();
     }
 
-    public function createdByUser(): BelongsTo
-    {
-        return $this->belongsTo(User::class, 'created_by_user_id')->withDefault();
-    }
-
     public function createdByEmployee(): BelongsTo
     {
         return $this->belongsTo(Employee::class, 'created_by_employee_id')->withDefault();
-    }
-
-    public function approvedByUser(): BelongsTo
-    {
-        return $this->belongsTo(User::class, 'approved_by_user_id')->withDefault();
     }
 
     public function approvedByEmployee(): BelongsTo
@@ -97,7 +94,7 @@ class Quotation extends Model
     protected static function booted(): void
     {
         static::creating(function (Quotation $quotation) {
-
+            // Set waktu saat ini
             if ($quotation->quotation_date) {
                 $quotation->quotation_date = Carbon::parse($quotation->quotation_date)
                     ->setTimeFromTimeString(now()->format('H:i:s'));
@@ -106,6 +103,11 @@ class Quotation extends Model
             if ($quotation->valid_until) {
                 $quotation->valid_until = Carbon::parse($quotation->valid_until)
                     ->setTimeFromTimeString(now()->format('H:i:s'));
+            }
+
+            $user = auth()->user();
+            if (empty($quotation->created_by_employee_id) && $user?->employee) {
+                $quotation->created_by_employee_id = $user->employee->id;
             }
         });
     }

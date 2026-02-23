@@ -26,25 +26,27 @@ class CreateQuotation extends CreateRecord
             'nx_customer_id'   => request()->query('nx_customer_id'),
 
             'quotation_number' => $this->generateQuotationNumber(),
-            'nx_employee_id'   => auth()->user()?->employee?->id,
-            'quotation_date'   => now()->toDateString(),
-            'valid_until'      => now()->addDays(7)->toDateString(),
+            'nx_employee_id' => auth()->user()?->employee?->id,
+
+            'quotation_date' => now()->toDateString(),
+            'valid_until' => now()->addDays(7)->toDateString(),
+            'created_by_employee_id' => auth()->user()?->employee?->id,
+
+            'nx_lead_id' => (int) request('nx_lead_id') ?? null,
         ]);
     }
 
     protected function mutateFormDataBeforeCreate(array $data): array
     {
-        // Pastikan nomor selalu benar & konsisten saat disubmit
         $data['quotation_number'] = $this->generateQuotationNumber();
-
-        $data['created_by_user_id'] = auth()->id();
-        $data['created_by_employee_id'] = auth()->user()?->employee?->id;
 
         $data['quotation_date'] =
             Carbon::parse($data['quotation_date'])->setTimeFrom(now());
 
         $data['valid_until'] =
             Carbon::parse($data['valid_until'])->endOfDay();
+
+        $data['created_by_employee_id'] = auth()->user()->employee->id;
 
         return $data;
     }

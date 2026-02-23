@@ -48,6 +48,7 @@ class InvoiceReportTable extends BaseWidget
                 ->color(fn ($record) => $record->due_date < now() && $record->status !== 'paid' ? 'danger' : 'gray'),
 
             Tables\Columns\TextColumn::make('status')
+                ->label('Status')
                 ->badge()
                 ->color(fn (string $state): string => match ($state) {
                     'draft' => 'gray',
@@ -55,7 +56,8 @@ class InvoiceReportTable extends BaseWidget
                     'partial' => 'warning',
                     'paid' => 'success',
                     default => 'gray',
-                }),
+                })
+                ->formatStateUsing(fn(string $state): string => ucwords(str_replace('_', ' ', $state))),
         ];
     }
 }

@@ -75,15 +75,17 @@ class ViewTicket extends ViewRecord
                             ->schema([
                                 TextEntry::make('status.name')
                                     ->label('Status')
-                                    ->formatStateUsing(function ($record) {
+                                    ->formatStateUsing(function ($state, $record) {
                                         $color = e($record->status?->color ?? '#6B7280');
-                                        $name = e($record->status?->name ?? 'Unknown');
+                                        $name = $record->status?->name
+                                            ? e($record->status->name)
+                                            : ($state ? e(ucwords($state)) : 'Unknown');
 
-                                        return new HtmlString(<<<HTML
-                                        <span class="px-2 py-1 text-xs rounded-md" style="color: #fff; background-color: {$color};">
-                                            {$name}
-                                        </span>
-                                    HTML);
+                                        return new HtmlString(sprintf(
+                                            '<span class="px-2 py-1 text-xs rounded-md" style="color: #fff; background-color: %s;">%s</span>',
+                                            $color,
+                                            $name,
+                                        ));
                                     }),
 
                                 TextEntry::make('assignees.full_name')

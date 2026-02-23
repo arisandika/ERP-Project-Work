@@ -26,7 +26,7 @@ class AttendanceResource extends Resource
 
     protected static ?int $navigationSort = 6;
 
-    protected static ?string $slug = 'hr/attendance-monitoring';
+    protected static ?string $slug = 'hr/monitoring-attendances';
 
     protected static ?string $pluralModelLabel = 'Monitoring Presensi';
 
@@ -190,7 +190,8 @@ class AttendanceResource extends Resource
                                 'info' => 'Cuti',
                                 'yellow' => 'Izin',
                                 'danger' => 'Absen',
-                            ]),
+                            ])
+                            ->formatStateUsing(fn(string $state): string => ucwords(str_replace('_', ' ', $state))),
 
                         TextEntry::make('note')
                             ->label('Catatan')
@@ -211,7 +212,7 @@ class AttendanceResource extends Resource
                         TextEntry::make('created_at')
                             ->label('Dibuat Pada')
                             ->dateTime('d M Y H:i'),
-                            
+
                         TextEntry::make('updated_at')
                             ->label('Diperbarui Pada')
                             ->dateTime('d M Y H:i'),
@@ -229,10 +230,10 @@ class AttendanceResource extends Resource
     public static function getPages(): array
     {
         return [
-            'index'  => Pages\ListAttendances::route('/'),
+            'index' => Pages\ListAttendances::route('/'),
             'create' => Pages\CreateAttendance::route('/create'),
-            'view'   => Pages\ViewAttendance::route('/{record}'),
-            'edit'   => Pages\EditAttendance::route('/{record}/edit'),
+            'view' => Pages\ViewAttendance::route('/{record}'),
+            'edit' => Pages\EditAttendance::route('/{record}/edit'),
         ];
     }
 

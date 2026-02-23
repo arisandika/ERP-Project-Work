@@ -20,7 +20,7 @@ class StockReportResource extends Resource
 
     protected static ?int $navigationSort = 9;
 
-    protected static ?string $slug = 'inventory/stock-report';
+    protected static ?string $slug = 'inventory/stock-reports';
 
     protected static ?string $pluralModelLabel = 'Laporan Stock Product';
 

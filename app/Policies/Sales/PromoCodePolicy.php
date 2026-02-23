@@ -15,7 +15,7 @@ class PromoCodePolicy
      */
     public function viewAny(User $user): bool
     {
-        return $user->can('view_any_sales::promo::code');
+        return $user->can('view_any_marketing::promo::code');
     }
 
     /**
@@ -23,7 +23,7 @@ class PromoCodePolicy
      */
     public function view(User $user, PromoCode $promoCode): bool
     {
-        return $user->can('view_sales::promo::code');
+        return $user->can('view_marketing::promo::code');
     }
 
     /**
@@ -31,7 +31,7 @@ class PromoCodePolicy
      */
     public function create(User $user): bool
     {
-        return $user->can('create_sales::promo::code');
+        return $user->can('create_marketing::promo::code');
     }
 
     /**
@@ -39,7 +39,7 @@ class PromoCodePolicy
      */
     public function update(User $user, PromoCode $promoCode): bool
     {
-        return $user->can('update_sales::promo::code');
+        return $user->can('update_marketing::promo::code');
     }
 
     /**
@@ -47,7 +47,7 @@ class PromoCodePolicy
      */
     public function delete(User $user, PromoCode $promoCode): bool
     {
-        return $user->can('delete_sales::promo::code');
+        return $user->can('delete_marketing::promo::code');
     }
 
     /**
@@ -55,7 +55,7 @@ class PromoCodePolicy
      */
     public function deleteAny(User $user): bool
     {
-        return $user->can('delete_any_sales::promo::code');
+        return $user->can('delete_any_marketing::promo::code');
     }
 
     /**
@@ -63,7 +63,7 @@ class PromoCodePolicy
      */
     public function forceDelete(User $user, PromoCode $promoCode): bool
     {
-        return $user->can('force_delete_sales::promo::code');
+        return $user->can('force_delete_marketing::promo::code');
     }
 
     /**
@@ -71,7 +71,7 @@ class PromoCodePolicy
      */
     public function forceDeleteAny(User $user): bool
     {
-        return $user->can('force_delete_any_sales::promo::code');
+        return $user->can('force_delete_any_marketing::promo::code');
     }
 
     /**
@@ -79,7 +79,7 @@ class PromoCodePolicy
      */
     public function restore(User $user, PromoCode $promoCode): bool
     {
-        return $user->can('restore_sales::promo::code');
+        return $user->can('restore_marketing::promo::code');
     }
 
     /**
@@ -87,7 +87,7 @@ class PromoCodePolicy
      */
     public function restoreAny(User $user): bool
     {
-        return $user->can('restore_any_sales::promo::code');
+        return $user->can('restore_any_marketing::promo::code');
     }
 
     /**
@@ -95,7 +95,7 @@ class PromoCodePolicy
      */
     public function replicate(User $user, PromoCode $promoCode): bool
     {
-        return $user->can('replicate_sales::promo::code');
+        return $user->can('replicate_marketing::promo::code');
     }
 
     /**
@@ -103,6 +103,6 @@ class PromoCodePolicy
      */
     public function reorder(User $user): bool
     {
-        return $user->can('reorder_sales::promo::code');
+        return $user->can('reorder_marketing::promo::code');
     }
 }

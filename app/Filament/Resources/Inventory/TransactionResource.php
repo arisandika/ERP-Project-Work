@@ -131,7 +131,7 @@ class TransactionResource extends Resource
                             ),
 
                         Forms\Components\TextInput::make('price')
-                            ->label('Harga Beli / Unit')
+                            ->label('Harga Beli per Unit')
                             ->prefix('IDR')
                             ->disabled()
                             ->dehydrated(true),

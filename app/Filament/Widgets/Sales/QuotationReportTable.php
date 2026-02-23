@@ -44,13 +44,15 @@ class QuotationReportTable extends BaseWidget
                 ->sortable(),
 
             Tables\Columns\TextColumn::make('status')
+                ->label('Status')
                 ->badge()
                 ->color(fn (string $state): string => match ($state) {
                     'draft' => 'gray',
                     'sent' => 'warning',
                     'accepted' => 'success',
                     'rejected' => 'danger',
-                }),
+                })
+                ->formatStateUsing(fn(string $state): string => ucwords(str_replace('_', ' ', $state))),
 
             Tables\Columns\TextColumn::make('valid_until')
                 ->label('Berlaku Sampai')

@@ -20,19 +20,22 @@ class CustomerResource extends Resource
 
     protected static ?string $navigationGroup = 'Manajemen CRM';
 
-    protected static ?int $navigationSort = 5;
+    protected static ?int $navigationSort = 3;
 
-    protected static ?string $slug = 'crm/clients';
+    protected static ?string $slug = 'crm/customers';
 
-    protected static ?string $pluralModelLabel = 'Client';
+    protected static ?string $pluralModelLabel = 'Customer';
 
-    protected static ?string $modelLabel = 'Client';
+    public static function getNavigationBadge(): ?string
+    {
+        return static::getModel()::count();
+    }
 
     public static function form(Form $form): Form
     {
         return $form
             ->schema([
-                // --- SECTION 1: INFORMASI DASAR ---
+                // SECTION 1: INFORMASI DASAR
                 Forms\Components\Section::make('Informasi Pelanggan')
                     ->description('Pilih tipe pelanggan untuk menampilkan form yang sesuai.')
                     ->schema([
@@ -52,7 +55,6 @@ class CustomerResource extends Resource
                             ->required()
                             ->maxLength(255)
                             ->prefixIcon('heroicon-o-user')
-                            // Hanya muncul jika tipe sudah dipilih
                             ->visible(fn(Forms\Get $get) => filled($get('customer_type'))),
 
                         Forms\Components\TextInput::make('email')
@@ -65,23 +67,33 @@ class CustomerResource extends Resource
                             ->visible(fn(Forms\Get $get) => filled($get('customer_type'))),
 
                         Forms\Components\TextInput::make('phone')
-                            ->label('No. HP (WhatsApp)')
+                            ->label('No. WhatsApp')
                             ->tel()
                             ->maxLength(20)
                             ->prefixIcon('heroicon-o-device-phone-mobile')
                             ->required()
                             ->helperText('Nomor ini wajib diisi untuk validasi QR Code.'),
 
+                        Forms\Components\Select::make('status')
+                            ->label('Status Customer')
+                            ->options([
+                                'active' => 'Active',
+                                'inactive' => 'Inactive',
+                                'lost' => 'Lost',
+                            ])
+                            ->default('active')
+                            ->required()
+                            ->native(false),
+
                         Forms\Components\Textarea::make('address')
                             ->label(fn(Forms\Get $get) => $get('customer_type') === 'company' ? 'Alamat Kantor' : 'Alamat Domisili')
                             ->rows(3)
-                            ->maxLength(65535)
-                            ->columnSpanFull()
+                            ->maxLength(255)
                             ->visible(fn(Forms\Get $get) => filled($get('customer_type'))),
                     ])
                     ->columns(2),
 
-                // --- SECTION 2: KHUSUS B2C (PERORANGAN) ---
+                // SECTION 2: KHUSUS B2C (PERORANGAN)
                 Forms\Components\Section::make('Detail Perorangan')
                     ->schema([
                         Forms\Components\TextInput::make('nik')
@@ -93,7 +105,7 @@ class CustomerResource extends Resource
                             ->required(),
 
                         Forms\Components\TextInput::make('phone')
-                            ->label('No. HP (WhatsApp)')
+                            ->label('No. WhatsApp')
                             ->tel()
                             ->maxLength(20)
                             ->prefixIcon('heroicon-o-device-phone-mobile')
@@ -103,7 +115,7 @@ class CustomerResource extends Resource
                     ->columns(2)
                     ->visible(fn(Forms\Get $get) => $get('customer_type') === 'individual'),
 
-                // --- SECTION 3: KHUSUS B2B (PERUSAHAAN) ---
+                // SECTION 3: KHUSUS B2B (PERUSAHAAN)
                 Forms\Components\Section::make('Detail Perusahaan & PIC')
                     ->description('Lengkapi data NPWP dan Penanggung Jawab (PIC).')
                     ->schema([
@@ -124,10 +136,12 @@ class CustomerResource extends Resource
                                     ->prefixIcon('heroicon-o-briefcase'),
 
                                 Forms\Components\TextInput::make('pic_phone')
-                                    ->label('Kontak PIC')
+                                    ->label('No. WhatsApp PIC')
                                     ->tel()
+                                    ->maxLength(20)
+                                    ->prefixIcon('heroicon-o-device-phone-mobile')
                                     ->required()
-                                    ->prefixIcon('heroicon-o-phone'),
+                                    ->helperText('Nomor ini wajib diisi untuk validasi QR Code.'),
                             ]),
                     ])
                     ->visible(fn(Forms\Get $get) => $get('customer_type') === 'company'),
@@ -144,40 +158,40 @@ class CustomerResource extends Resource
                     ->toggleable(isToggledHiddenByDefault: true),
 
                 Tables\Columns\TextColumn::make('name')
-                    ->label('Nama')
+                    ->label('Nama Customer')
                     ->searchable()
-                    ->description(fn(Customer $record) => $record->customer_type === 'company' ? 'PIC: ' . $record->pic_name : 'NIK: ' . $record->nik),
+                    ->sortable()
+                    ->weight('bold')
+                    ->description(fn(Customer $record) => $record->customer_type === 'company' ? 'PIC: ' . $record->pic_name : null),
+
+                Tables\Columns\TextColumn::make('phone')
+                    ->label('Kontak')
+                    ->icon('heroicon-o-phone')
+                    ->searchable(['phone', 'email'])
+                    ->getStateUsing(fn(Customer $record) => $record->customer_type === 'individual' ? $record->phone : $record->pic_phone)
+                    ->description(fn(Customer $record) => $record->email),
 
                 Tables\Columns\TextColumn::make('customer_type')
-                    ->label('Tipe Client')
+                    ->label('Tipe Customer')
                     ->badge()
                     ->color(fn(string $state): string => match ($state) {
                         'individual' => 'info',
                         'company' => 'success',
                         default => 'gray',
                     })
-                    ->formatStateUsing(fn(string $state): string => match ($state) {
-                        'individual' => 'Perorangan',
-                        'company' => 'Perusahaan',
-                        default => $state,
-                    })
-                    ->sortable(),
+                    ->sortable()
+                    ->formatStateUsing(fn(string $state): string => ucwords(str_replace('_', ' ', $state))),
 
-                Tables\Columns\TextColumn::make('email')
-                    ->label('Email')
-                    ->searchable()
-                    ->icon('heroicon-m-envelope'),
+                Tables\Columns\TextColumn::make('status')
+                    ->label('Status')
+                    ->badge()
+                    ->colors([
+                        'success' => 'active',
+                        'warning' => 'inactive',
+                        'danger' => 'lost',
+                    ])
+                    ->formatStateUsing(fn(string $state): string => ucwords(str_replace('_', ' ', $state))),
 
-                Tables\Columns\TextColumn::make('phone')
-                    ->label('No. HP Perusahaan')
-                    ->searchable(),
-
-                Tables\Columns\TextColumn::make('phone_pic')
-                    ->label('No. HP / PIC')
-                    ->getStateUsing(fn(Customer $record) => $record->customer_type === 'individual' ? $record->phone : $record->pic_phone)
-                    ->searchable(),
-
-                // Kolom tambahan (hidden by default) biar admin bisa cek detail
                 Tables\Columns\TextColumn::make('nik')
                     ->label('NIK')
                     ->toggleable(isToggledHiddenByDefault: true),
@@ -194,7 +208,7 @@ class CustomerResource extends Resource
             ])
             ->filters([
                 Tables\Filters\SelectFilter::make('customer_type')
-                    ->label('Tipe Client')
+                    ->label('Tipe Customer')
                     ->options([
                         'individual' => 'Perorangan',
                         'company' => 'Perusahaan',

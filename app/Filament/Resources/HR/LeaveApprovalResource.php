@@ -202,7 +202,7 @@ class LeaveApprovalResource extends Resource
 
                         return $indicators;
                     }),
-                    
+
                 Tables\Filters\TrashedFilter::make()
                     ->label('Deleted Status')
                     ->native(false),
@@ -258,7 +258,8 @@ class LeaveApprovalResource extends Resource
                                 'approved' => 'success',
                                 'rejected' => 'danger',
                                 default => 'secondary',
-                            }),
+                            })
+                            ->formatStateUsing(fn(string $state): string => ucwords(str_replace('_', ' ', $state))),
 
                         TextEntry::make('approver.full_name')
                             ->label('Disetujui Oleh')

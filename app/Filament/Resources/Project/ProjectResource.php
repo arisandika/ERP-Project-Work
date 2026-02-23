@@ -158,8 +158,8 @@ class ProjectResource extends Resource
                                 ->disabled()
                                 ->dehydrated(),
 
-                            Forms\Components\TextInput::make('client')
-                                ->label('Client')
+                            Forms\Components\TextInput::make('customer')
+                                ->label('Customer')
                                 ->disabled()
                                 ->reactive()
                                 ->prefixIcon('heroicon-o-user-circle'),
@@ -376,7 +376,7 @@ class ProjectResource extends Resource
     ): void {
         if (!$invoiceId) {
             $set('sales_invoice_number', null);
-            $set('client', null);
+            $set('customer', null);
             $set('billing_status', null);
             $set('due_date', null);
             $set('grand_total', null);
@@ -395,7 +395,7 @@ class ProjectResource extends Resource
         $set('due_date', $invoice->due_date);
         $set('grand_total', $invoice->grand_total);
         $set('sales_pic', $invoice->employee?->full_name);
-        $set('client', $invoice->customer?->name);
+        $set('customer', $invoice->customer?->name);
     }
 
 }

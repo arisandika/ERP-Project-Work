@@ -230,7 +230,8 @@ class TicketResource extends Resource
                         'Done' => 'success',
                         default => 'gray',
                     })
-                    ->sortable(),
+                    ->sortable()
+                    ->formatStateUsing(fn(string $state): string => ucwords(str_replace('_', ' ', $state))),
 
                 Tables\Columns\TextColumn::make('priority.name')
                     ->label('Priority')

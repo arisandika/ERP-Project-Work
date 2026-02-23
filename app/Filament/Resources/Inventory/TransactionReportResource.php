@@ -20,7 +20,7 @@ class TransactionReportResource extends Resource
 
     protected static ?int $navigationSort = 10;
 
-    protected static ?string $slug = 'inventory/transaction-report';
+    protected static ?string $slug = 'inventory/transaction-reports';
 
     protected static ?string $pluralModelLabel = 'Laporan Transaksi';
 

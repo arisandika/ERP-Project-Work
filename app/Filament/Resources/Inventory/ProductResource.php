@@ -71,10 +71,11 @@ class ProductResource extends Resource
                                     ->required()
                                     ->maxLength(20)
                                     ->prefixIcon('heroicon-o-scale'),
+
                                 Forms\Components\TextInput::make('symbol')
                                     ->label('Simbol')
-                                    ->maxLength(10)
-                                    ->prefixIcon('heroicon-o-pencil'),
+                                    ->maxLength(10),
+
                                 Forms\Components\Textarea::make('description')
                                     ->label('Deskripsi')
                                     ->rows(2),
@@ -306,13 +307,13 @@ class ProductResource extends Resource
                     ->preload(),
             ])
             ->actions([
-                Tables\Actions\ViewAction::make()->icon('heroicon-o-eye'),
-                Tables\Actions\EditAction::make()->icon('heroicon-o-pencil-square'),
-                Tables\Actions\DeleteAction::make()->icon('heroicon-o-trash'),
+                Tables\Actions\ViewAction::make(),
+                Tables\Actions\EditAction::make(),
+                Tables\Actions\DeleteAction::make(),
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([
-                    Tables\Actions\DeleteBulkAction::make()->icon('heroicon-o-trash'),
+                    Tables\Actions\DeleteBulkAction::make(),
                 ]),
             ])
             ->defaultSort('created_at', 'desc');

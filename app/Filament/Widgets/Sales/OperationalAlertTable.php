@@ -52,13 +52,15 @@ class OperationalAlertTable extends BaseWidget
                     ->label('Total Tagihan'),
 
                 Tables\Columns\TextColumn::make('status')
+                    ->label('Status')
                     ->badge()
                     ->color(fn (string $state): string => match ($state) {
                         'unpaid' => 'danger',
                         'partial' => 'warning',
                         'paid' => 'success',
                         default => 'gray',
-                    }),
+                    })
+                    ->formatStateUsing(fn(string $state): string => ucwords(str_replace('_', ' ', $state))),
             ])
             ->actions([
                 Action::make('sendReminder')

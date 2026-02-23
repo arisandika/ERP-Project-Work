@@ -67,7 +67,7 @@ class WarehouseResource extends Resource
                             ]),
 
                         Forms\Components\Textarea::make('location')
-                            ->label('Alamat / Lokasi')
+                            ->label('Lokasi')
                             ->required()
                             ->maxLength(255)
                             ->rows(3)
@@ -246,7 +246,7 @@ class WarehouseResource extends Resource
                         TextEntry::make('warehouse_name')->label('Nama Gudang'),
                         TextEntry::make('manager_name')->label('Penanggung Jawab'),
                         TextEntry::make('phone')->label('No. Telepon')->badge()->color('info'),
-                        TextEntry::make('location')->label('Alamat / Lokasi'),
+                        TextEntry::make('location')->label('Lokasi'),
                         TextEntry::make('maps_url')
                             ->label('Tautan Maps')
                             ->formatStateUsing(fn($state) => $state ? 'Buka Google Maps' : '-')

@@ -32,10 +32,15 @@ use Illuminate\Support\Facades\Mail;
 class QuotationResource extends Resource
 {
     protected static ?string $model = Quotation::class;
+
     protected static ?string $navigationIcon = 'heroicon-o-document-text';
+
     protected static ?string $navigationGroup = 'Manajemen Sales';
-    protected static ?int $navigationSort = 5;
-    protected static ?string $slug = 'sales/quotation';
+
+    protected static ?int $navigationSort = 2;
+
+    protected static ?string $slug = 'sales/quotations';
+
     protected static ?string $pluralModelLabel = 'Penawaran';
 
     public static function getNavigationBadge(): ?string
@@ -79,23 +84,30 @@ class QuotationResource extends Resource
 
                     Grid::make(2)
                         ->schema([
-                            Select::make('nx_customer_id')
-                                ->label('Client')
+                            Select::make('nx_lead_id')
+                                ->label('Lead')
                                 ->searchable()
                                 ->preload()
-                                ->relationship('customer', 'name')
+                                ->relationship('lead', 'name')
                                 ->required()
-                                ->prefixIcon('heroicon-o-user-circle')
-                                // Info opsional jika data otomatis terisi dari CRM
-                                ->helperText(fn (Get $get) => $get('nx_deal_id') ? 'Client otomatis terpilih dari Deal Pipeline.' : ''),
+                                ->default(fn() => request()->query('nx_lead_id'))
+                                ->disabled(fn() => request()->has('nx_lead_id'))
+                                ->dehydrated()
+                                ->prefixIcon('heroicon-o-user-circle'),
 
                             Select::make('nx_employee_id')
                                 ->label('Ditugaskan Kepada')
                                 ->relationship('employee', 'full_name')
-                                ->default(fn() => auth()->user()?->employee?->id)
-                                ->disabled()
-                                ->dehydrated()
+                                ->searchable()
+                                ->preload()
+                                ->default(fn() => auth()->user()?->employee?->id ?? null)
                                 ->required()
+                                ->prefixIcon('heroicon-o-user'),
+
+                            Select::make('created_by_employee_id')
+                                ->label('Dibuat Oleh')
+                                ->relationship('createdByEmployee', 'full_name')
+                                ->disabled()
                                 ->prefixIcon('heroicon-o-user'),
 
                             Select::make('status')
@@ -210,10 +222,11 @@ class QuotationResource extends Resource
                     ->searchable()
                     ->weight('bold'),
 
-                Tables\Columns\TextColumn::make('customer.name')
-                    ->label('Client')
+                Tables\Columns\TextColumn::make('lead.name')
+                    ->label('Lead')
                     ->sortable()
-                    ->searchable(),
+                    ->searchable()
+                    ->description(fn(Quotation $record) => $record->lead?->email),
 
                 Tables\Columns\TextColumn::make('quotation_date')
                     ->label('Tanggal')
@@ -243,6 +256,15 @@ class QuotationResource extends Resource
                     }),
             ])
             ->filters([
+                Tables\Filters\SelectFilter::make('status')
+                    ->label('Status')
+                    ->options([
+                        'draft' => 'Draft',
+                        'sent' => 'Terkirim',
+                        'accepted' => 'Diterima',
+                        'rejected' => 'Ditolak',
+                    ]),
+
                 Tables\Filters\Filter::make('created_at')
                     ->form([
                         DatePicker::make('created_from')
@@ -283,10 +305,6 @@ class QuotationResource extends Resource
 
                         return $indicators;
                     }),
-
-                Tables\Filters\TrashedFilter::make()
-                    ->label('Deleted Status')
-                    ->native(false),
             ])
             ->actions([
                 Tables\Actions\Action::make('send')
@@ -295,31 +313,28 @@ class QuotationResource extends Resource
                     ->color('warning')
                     ->requiresConfirmation()
                     ->action(function (Quotation $record) {
-                        if (!$record->customer || !$record->customer->email) {
+                        if (!$record->lead || !$record->lead->email) {
                             Notification::make()
-                                ->title('Email customer tidak tersedia!')
+                                ->title('Email lead tidak tersedia!')
                                 ->danger()
                                 ->send();
                             return;
                         }
-                        Mail::to($record->customer->email)
+                        Mail::to($record->lead->email)
                             ->send(new QuotationSent($record));
                         $record->update(['status' => 'sent']);
                         Notification::make()
-                            ->title('Penawaran berhasil dikirim')
+                            ->title('Penawaran berhasil dikirim ke Lead')
                             ->success()
                             ->send();
                     }),
                 Tables\Actions\EditAction::make(),
                 Tables\Actions\DeleteAction::make(),
-                Tables\Actions\ForceDeleteAction::make(),
-                Tables\Actions\RestoreAction::make(),
+
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([
                     Tables\Actions\DeleteBulkAction::make(),
-                    Tables\Actions\ForceDeleteBulkAction::make(),
-                    Tables\Actions\RestoreBulkAction::make(),
                 ]),
             ])
             ->defaultSort('created_at', 'desc');
@@ -360,9 +375,12 @@ class QuotationResource extends Resource
                 ->options(function (Get $get) {
                     $type = $get('item_type');
 
-                    if ($type === 'App\\Models\\Inventory\\Product' || $type === Product::class) $type = 'product';
-                    if ($type === 'App\\Models\\Inventory\\Service' || $type === Service::class) $type = 'service';
-                    if ($type === 'App\\Models\\Inventory\\Package' || $type === Package::class) $type = 'package';
+                    if ($type === 'App\\Models\\Inventory\\Product' || $type === Product::class)
+                        $type = 'product';
+                    if ($type === 'App\\Models\\Inventory\\Service' || $type === Service::class)
+                        $type = 'service';
+                    if ($type === 'App\\Models\\Inventory\\Package' || $type === Package::class)
+                        $type = 'package';
 
                     return match ($type) {
                         'product' => Product::query()->pluck('product_name', 'id'),
@@ -374,9 +392,12 @@ class QuotationResource extends Resource
                 ->getOptionLabelUsing(function ($value, Get $get) {
                     $type = $get('item_type');
 
-                    if ($type === 'App\\Models\\Inventory\\Product' || $type === Product::class) $type = 'product';
-                    if ($type === 'App\\Models\\Inventory\\Service' || $type === Service::class) $type = 'service';
-                    if ($type === 'App\\Models\\Inventory\\Package' || $type === Package::class) $type = 'package';
+                    if ($type === 'App\\Models\\Inventory\\Product' || $type === Product::class)
+                        $type = 'product';
+                    if ($type === 'App\\Models\\Inventory\\Service' || $type === Service::class)
+                        $type = 'service';
+                    if ($type === 'App\\Models\\Inventory\\Package' || $type === Package::class)
+                        $type = 'package';
 
                     $modelClass = match ($type) {
                         'product' => Product::class,
@@ -385,7 +406,8 @@ class QuotationResource extends Resource
                         default   => null
                     };
 
-                    if (!$modelClass || !$value) return null;
+                    if (!$modelClass || !$value)
+                        return null;
 
                     $record = $modelClass::find($value);
 
@@ -405,9 +427,12 @@ class QuotationResource extends Resource
 
                     $type = $get('item_type');
 
-                    if ($type === 'App\\Models\\Inventory\\Product' || $type === Product::class) $type = 'product';
-                    if ($type === 'App\\Models\\Inventory\\Service' || $type === Service::class) $type = 'service';
-                    if ($type === 'App\\Models\\Inventory\\Package' || $type === Package::class) $type = 'package';
+                    if ($type === 'App\\Models\\Inventory\\Product' || $type === Product::class)
+                        $type = 'product';
+                    if ($type === 'App\\Models\\Inventory\\Service' || $type === Service::class)
+                        $type = 'service';
+                    if ($type === 'App\\Models\\Inventory\\Package' || $type === Package::class)
+                        $type = 'package';
 
                     $model = match ($type) {
                         'product' => Product::find($state),
