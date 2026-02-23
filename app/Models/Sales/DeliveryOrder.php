@@ -9,6 +9,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Str;
 
 class DeliveryOrder extends Model
 {
@@ -59,6 +60,9 @@ class DeliveryOrder extends Model
     protected static function booted(): void
     {
         static::creating(function (DeliveryOrder $deliveryOrder) {
+            if (blank($deliveryOrder->do_number)) {
+                $deliveryOrder->do_number = 'DO-' . now()->format('YmdHis') . '-' . Str::upper(Str::random(4));
+            }
 
             if ($deliveryOrder->do_date) {
                 $deliveryOrder->do_date = Carbon::parse($deliveryOrder->do_date)
@@ -66,4 +70,5 @@ class DeliveryOrder extends Model
             }
         });
     }
+
 }

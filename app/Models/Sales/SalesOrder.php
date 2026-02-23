@@ -65,6 +65,13 @@ class SalesOrder extends Model
         return $this->belongsTo(\App\Models\Sales\PromoCode::class, 'promo_code_id');
     }
 
+    // Relasi ke DeliveryOrder
+    public function deliveryOrders()
+    {
+        return $this->hasMany(\App\Models\Sales\DeliveryOrder::class, 'nx_sales_order_id');
+    }
+
+
     protected static function booted(): void
     {
         static::creating(function (SalesOrder $salesOrder) {

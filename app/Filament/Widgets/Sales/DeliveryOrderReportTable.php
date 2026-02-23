@@ -4,7 +4,6 @@ namespace App\Filament\Widgets\Sales;
 
 use App\Models\Sales\DeliveryOrder;
 use Filament\Tables;
-use Filament\Tables\Table;
 use Filament\Widgets\TableWidget as BaseWidget;
 use Illuminate\Database\Eloquent\Builder;
 
