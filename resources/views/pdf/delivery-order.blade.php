@@ -145,14 +145,23 @@
 
         .signature-header {
             font-weight: bold;
-            margin-bottom: 40px;
+            margin-bottom: 10px;
             display: block;
         }
 
         .signature-line {
             border-top: 1px solid #333;
-            width: 80%;
-            margin: 60px auto 5px auto;
+            width: 60%;
+            margin: 95px auto 5px auto; /* Jarak untuk TTD basah penerima */
+        }
+
+        /* Style QR Code persis Invoice */
+        .qr-container {
+            margin: 10px auto;
+            padding: 5px;
+            background: #fff;
+            display: inline-block;
+            border: 1px solid #eee;
         }
 
         .footer-note {
@@ -189,7 +198,7 @@
     <!-- 2. JUDUL DOKUMEN -->
     <div class="document-title">
         <h1>SURAT JALAN</h1>
-        <p>No: {{ $do->do_number }}</p>
+        <p>No: {{ $record->do_number }}</p>
     </div>
 
     <!-- 3. INFO PENGIRIMAN -->
@@ -199,8 +208,7 @@
             <td style="width: 55%; padding-right: 20px;">
                 <strong>Dikirim Kepada:</strong>
                 <div class="client-box">
-                    <strong
-                        style="font-size: 13px; text-transform: uppercase;">{{ $record->customer->name ?? 'UMUM' }}</strong><br>
+                    <strong style="font-size: 13px; text-transform: uppercase;">{{ $record->customer->name ?? 'UMUM' }}</strong><br>
                     <div style="margin-top: 5px; color: #444;">
                         {{ $record->customer->address ?? 'Alamat tidak tersedia' }}<br>
                         Telp: {{ $record->customer->phone ?? '-' }}
@@ -221,10 +229,6 @@
                     <tr>
                         <td>No. PO Customer</td>
                         <td>: {{ $record->salesOrder->customer_po_number ?? '-' }}</td>
-                    </tr>
-                    <tr>
-                        <td>Pengirim / Admin</td>
-                        <td>: {{ $record->employee->full_name ?? '-' }}</td>
                     </tr>
                 </table>
             </td>
@@ -255,7 +259,8 @@
                     <td class="text-center">{{ $item->uom ?? 'Pcs' }}</td>
                     <td class="text-center">{{ number_format($item->qty_ordered, 0, ',', '.') }}</td>
                     <td class="text-center" style="font-weight: bold;">
-                        {{ number_format($item->qty_delivered, 0, ',', '.') }}</td>
+                        {{ number_format($item->qty, 0, ',', '.') }}
+                    </td>
                 </tr>
             @empty
                 <tr>
@@ -272,44 +277,51 @@
         </div>
     @endif
 
-    <!-- 6. TANDA TANGAN & BARCODE -->
+    <!-- 6. TANDA TANGAN (Hanya 2 Kolom: Pengirim dgn QR & Penerima) -->
     <table class="signature-table">
         <tr>
-            <td style="width: 25%;">
+            <!-- Kiri: Pengirim / Admin (Pakai QR Code sebagai TTD Digital) -->
+            <td style="width: 50%;">
                 <span class="signature-header">Hormat Kami,</span>
-                <div class="signature-line"></div>
-                ( Gudang / Admin )
-            </td>
-            <td style="width: 25%;">
-                <span class="signature-header">Pengemudi / Ekspedisi</span>
-                <div class="signature-line"></div>
-                ( ................................. )
-            </td>
-            <td style="width: 25%;">
-                <span class="signature-header">Penerima Barang</span>
-                <div class="signature-line"></div>
-                ( Nama Jelas & Stempel )
+
+                @if(isset($qrCode))
+                    <div class="qr-container">
+                        <img src="data:image/png;base64,{{ $qrCode }}" alt="QR Validasi" style="width: 80px; height: 80px;">
+                    </div>
+                @else
+                    <div class="signature-line" style="margin-top: 80px; margin-bottom: 14px;"></div>
+                @endif
+
+                <p style="font-weight: bold; text-decoration: underline; margin-bottom: 0; margin-top: 5px;">
+                    PT. NEXT GENERATION SOLUTIONS
+                </p>
+                <span style="font-size: 10px; display:block; margin-top:2px;">
+                    PIC: {{ $record->employee->full_name ?? 'Gudang / Admin' }}
+                </span>
             </td>
 
-            <!-- === BAGIAN BARCODE YANG DIPERBAIKI === -->
-            <td style="width: 25%; vertical-align: middle;">
-                @if(isset($barcode))
-                    <div style="padding: 5px;">
-                        <!-- PERBAIKAN: width: 100%, max-width: 160px agar pas di kolom, height: auto agar proporsional -->
-                        <img src="data:image/png;base64,{{ $barcode }}" alt="barcode"
-                            style="width: 100%; max-width: 160px; height: auto;">
-                        <br>
-                        <span
-                            style="font-size: 8px; letter-spacing: 1px; display: block; margin-top: 3px;">{{ $record->do_number }}</span>
-                    </div>
-                @endif
+            <!-- Kanan: Penerima Barang (TTD Basah) -->
+            <td style="width: 50%;">
+                <span class="signature-header">
+                    Penerima Barang<br>
+                    <span style="font-size: 10px; font-weight: normal; color: #555;">
+                        ({{ $record->customer->name ?? 'UMUM' }})
+                    </span>
+                </span>
+
+                <div class="signature-line"></div>
+
+                <p style="margin-bottom: 0; margin-top: 5px;">
+                    ( Nama Jelas & Stempel )
+                </p>
             </td>
+
         </tr>
     </table>
 
     <p class="footer-note">
         * Barang yang sudah diterima dalam kondisi baik tidak dapat ditukar atau dikembalikan.<br>
-        * Surat Jalan ini merupakan bukti sah penerimaan barang.
+        * Scan QR Code di atas untuk memvalidasi Surat Jalan & melacak status pengiriman.
     </p>
 
 </body>

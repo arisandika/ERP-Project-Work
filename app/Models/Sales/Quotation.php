@@ -4,6 +4,10 @@ namespace App\Models\Sales;
 
 use App\Models\CRM\Customer;
 use App\Models\HR\Employee;
+use App\Models\PromoCode;
+use App\Models\Sales\QuotationItem;
+use App\Models\Sales\SalesOrder;
+use App\Models\CRM\Deal;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
@@ -19,6 +23,7 @@ class Quotation extends Model
     protected $table = 'nx_quotations';
 
     protected $fillable = [
+        'nx_deal_id',
         'nx_customer_id',
         'nx_employee_id',
         'created_by_user_id',
@@ -103,5 +108,10 @@ class Quotation extends Model
                     ->setTimeFromTimeString(now()->format('H:i:s'));
             }
         });
+    }
+
+    public function deal(): BelongsTo
+    {
+        return $this->belongsTo(\App\Models\CRM\Deal::class, 'nx_deal_id')->withDefault();
     }
 }

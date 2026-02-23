@@ -19,18 +19,22 @@ class CreateQuotation extends CreateRecord
     {
         parent::mount();
 
+        // form->fill() digunakan untuk mengisi nilai default saat halaman dimuat
         $this->form->fill([
-            'quotation_number' => $this->generateQuotationNumber(),
-            'nx_employee_id' => auth()->user()?->employee?->id,
+            // [TAMBAHAN] Tangkap parameter dari URL jika ada
+            'nx_deal_id'       => request()->query('nx_deal_id'),
+            'nx_customer_id'   => request()->query('nx_customer_id'),
 
-            'quotation_date' => now()->toDateString(),
-            'valid_until' => now()->addDays(7)->toDateString(),
+            'quotation_number' => $this->generateQuotationNumber(),
+            'nx_employee_id'   => auth()->user()?->employee?->id,
+            'quotation_date'   => now()->toDateString(),
+            'valid_until'      => now()->addDays(7)->toDateString(),
         ]);
     }
 
     protected function mutateFormDataBeforeCreate(array $data): array
     {
-        // Pastikan nomor selalu benar & konsisten
+        // Pastikan nomor selalu benar & konsisten saat disubmit
         $data['quotation_number'] = $this->generateQuotationNumber();
 
         $data['created_by_user_id'] = auth()->id();

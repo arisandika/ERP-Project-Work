@@ -46,6 +46,9 @@ class QuotationResource extends Resource
     public static function form(Form $form): Form
     {
         return $form->schema([
+            
+            Hidden::make('nx_deal_id'),
+
             Section::make('Informasi Penawaran')
                 ->schema([
                     Grid::make(3)
@@ -67,8 +70,7 @@ class QuotationResource extends Resource
 
                             DatePicker::make('valid_until')
                                 ->label('Berlaku Hingga')
-                                ->default(now()
-                                    ->addDays(7))
+                                ->default(now()->addDays(7))
                                 ->prefixIcon('heroicon-o-calendar-days')
                                 ->required()
                                 ->displayFormat('d M Y')
@@ -83,13 +85,14 @@ class QuotationResource extends Resource
                                 ->preload()
                                 ->relationship('customer', 'name')
                                 ->required()
-                                ->prefixIcon('heroicon-o-user-circle'),
+                                ->prefixIcon('heroicon-o-user-circle')
+                                // Info opsional jika data otomatis terisi dari CRM
+                                ->helperText(fn (Get $get) => $get('nx_deal_id') ? 'Client otomatis terpilih dari Deal Pipeline.' : ''),
 
                             Select::make('nx_employee_id')
                                 ->label('Ditugaskan Kepada')
                                 ->relationship('employee', 'full_name')
-                                ->default(fn() => auth()
-                                    ->user()?->employee?->id)
+                                ->default(fn() => auth()->user()?->employee?->id)
                                 ->disabled()
                                 ->dehydrated()
                                 ->required()
@@ -225,18 +228,18 @@ class QuotationResource extends Resource
                 Tables\Columns\TextColumn::make('status')
                     ->badge()
                     ->color(fn(string $state): string => match ($state) {
-                        'draft' => 'gray',
-                        'sent' => 'warning',
+                        'draft'    => 'gray',
+                        'sent'     => 'warning',
                         'accepted' => 'success',
                         'rejected' => 'danger',
-                        default => 'gray'
+                        default    => 'gray'
                     })
                     ->formatStateUsing(fn(string $state): string => match ($state) {
-                        'draft' => 'Draft',
-                        'sent' => 'Terkirim',
+                        'draft'    => 'Draft',
+                        'sent'     => 'Terkirim',
                         'accepted' => 'Diterima',
                         'rejected' => 'Ditolak',
-                        default => $state,
+                        default    => $state,
                     }),
             ])
             ->filters([
@@ -325,9 +328,9 @@ class QuotationResource extends Resource
     public static function getPages(): array
     {
         return [
-            'index' => Pages\ListQuotations::route('/'),
+            'index'  => Pages\ListQuotations::route('/'),
             'create' => Pages\CreateQuotation::route('/create'),
-            'edit' => Pages\EditQuotation::route('/{record}/edit'),
+            'edit'   => Pages\EditQuotation::route('/{record}/edit'),
         ];
     }
 
@@ -365,7 +368,7 @@ class QuotationResource extends Resource
                         'product' => Product::query()->pluck('product_name', 'id'),
                         'service' => Service::query()->pluck('service_name', 'id'),
                         'package' => Package::query()->pluck('package_name', 'id'),
-                        default => [],
+                        default   => [],
                     };
                 })
                 ->getOptionLabelUsing(function ($value, Get $get) {
@@ -379,7 +382,7 @@ class QuotationResource extends Resource
                         'product' => Product::class,
                         'service' => Service::class,
                         'package' => Package::class,
-                        default => null
+                        default   => null
                     };
 
                     if (!$modelClass || !$value) return null;
@@ -410,7 +413,7 @@ class QuotationResource extends Resource
                         'product' => Product::find($state),
                         'service' => Service::find($state),
                         'package' => Package::find($state),
-                        default => null
+                        default   => null
                     };
 
                     if ($model) {
@@ -421,11 +424,11 @@ class QuotationResource extends Resource
                             'product' => (float) ($model->selling_price ?? $model->price ?? 0),
                             'service' => (float) ($model->price ?? 0),
                             'package' => (float) ($model->total_price ?? 0),
-                            default => 0
+                            default   => 0
                         };
                         $buyPrice = match ($type) {
                             'product' => (float) ($model->purchase_price ?? 0),
-                            default => 0
+                            default   => 0
                         };
 
                         $set('item_name', $name);
@@ -477,6 +480,7 @@ class QuotationResource extends Resource
                 ->reactive()
                 ->afterStateUpdated(fn(Set $set, Get $get) => self::updateItemTotal($get, $set)),
 
+            // [FIX] Memindahkan line_total ke akhir array schema items
             TextInput::make('line_total')
                 ->label('Subtotal')
                 ->disabled()
