@@ -11,7 +11,6 @@ use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
-use Illuminate\Support\Carbon;
 
 class CustomerResource extends Resource
 {
@@ -23,9 +22,11 @@ class CustomerResource extends Resource
 
     protected static ?int $navigationSort = 5;
 
-    protected static ?string $slug = 'crm/customer';
+    protected static ?string $slug = 'crm/clients';
 
     protected static ?string $pluralModelLabel = 'Client';
+
+    protected static ?string $modelLabel = 'Client';
 
     public static function form(Form $form): Form
     {

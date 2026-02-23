@@ -13,3 +13,5 @@ Schedule::command('stock:check-low --notify')
     ->twiceDaily(9, 15)
     ->timezone('Asia/Jakarta')
     ->emailOutputOnFailure(env('ADMIN_EMAIL', 'admin@example.com'));
+
+Schedule::command('do:auto-complete')->dailyAt('00:00');
