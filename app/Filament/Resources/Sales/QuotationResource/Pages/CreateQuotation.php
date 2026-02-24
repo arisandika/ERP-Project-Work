@@ -3,6 +3,8 @@
 namespace App\Filament\Resources\Sales\QuotationResource\Pages;
 
 use App\Filament\Resources\Sales\QuotationResource;
+use App\Models\CRM\Deal;
+use App\Models\CRM\DealStage;
 use Filament\Resources\Pages\CreateRecord;
 use Illuminate\Support\Carbon;
 
@@ -19,20 +21,16 @@ class CreateQuotation extends CreateRecord
     {
         parent::mount();
 
-        // form->fill() digunakan untuk mengisi nilai default saat halaman dimuat
         $this->form->fill([
-            // [TAMBAHAN] Tangkap parameter dari URL jika ada
+            'created_by' => auth()->user()?->employee?->id,
+
             'nx_deal_id'       => request()->query('nx_deal_id'),
-            'nx_customer_id'   => request()->query('nx_customer_id'),
-
             'quotation_number' => $this->generateQuotationNumber(),
-            'nx_employee_id' => auth()->user()?->employee?->id,
-
-            'quotation_date' => now()->toDateString(),
-            'valid_until' => now()->addDays(7)->toDateString(),
-            'created_by_employee_id' => auth()->user()?->employee?->id,
-
-            'nx_lead_id' => (int) request('nx_lead_id') ?? null,
+            'nx_employee_id'   => auth()->user()?->employee?->id,
+            'quotation_date'   => now()->toDateString(),
+            'valid_until'      => now()->addDays(7)->toDateString(),
+            'status'           => 'draft',
+            'tax'              => 11,
         ]);
     }
 
@@ -46,9 +44,26 @@ class CreateQuotation extends CreateRecord
         $data['valid_until'] =
             Carbon::parse($data['valid_until'])->endOfDay();
 
-        $data['created_by_employee_id'] = auth()->user()->employee->id;
+        if (auth()->user()?->employee) {
+            $data['created_by'] = auth()->user()->employee->id;
+        }
 
         return $data;
+    }
+
+    protected function afterCreate(): void
+    {
+        $quotation = $this->record;
+
+        if ($quotation && $quotation->nx_deal_id) {
+            $penawaranStage = DealStage::where('name', 'Penawaran')->first();
+
+            if ($penawaranStage) {
+                Deal::where('id', $quotation->nx_deal_id)->update([
+                    'nx_deal_stage_id' => $penawaranStage->id
+                ]);
+            }
+        }
     }
 
     private function generateQuotationNumber(): string

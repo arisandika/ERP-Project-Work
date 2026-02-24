@@ -34,13 +34,13 @@ class InventoryMonitoringResource extends Resource
         return $table
             ->columns([
                 Tables\Columns\TextColumn::make('product.product_code')
-                    ->label('Kode Produk')
+                    ->label('Kode Product')
                     ->searchable()
                     ->sortable()
                     ->weight('bold'),
 
                 Tables\Columns\TextColumn::make('product.product_name')
-                    ->label('Nama Produk')
+                    ->label('Nama Product')
                     ->searchable()
                     ->sortable()
                     ->limit(30),

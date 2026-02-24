@@ -3,47 +3,42 @@
 namespace App\Models\CRM;
 
 use App\Models\Sales\Quotation;
-use App\Models\Sales\SalesOrder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use Illuminate\Database\Eloquent\Relations\HasOne;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Deal extends Model
 {
     protected $table = 'nx_deals';
 
     protected $fillable = [
+        'nx_customer_id',
         'nx_lead_id',
-        'nx_quotation_id',
+        'nx_deal_stage_id',
         'deal_number',
         'deal_date',
-        'amount',
-        'status', // open, won, lost, converted
+        'estimated_value',
+        'status',
+        'close_date'
     ];
 
-    protected $casts = [
-        'deal_date' => 'datetime',
-        'amount' => 'decimal:2',
-    ];
-
-    /*
-    |--------------------------------------------------------------------------
-    | RELATIONS
-    |--------------------------------------------------------------------------
-    */
+    public function customer(): BelongsTo
+    {
+        return $this->belongsTo(Customer::class, 'nx_customer_id');
+    }
 
     public function lead(): BelongsTo
     {
         return $this->belongsTo(Lead::class, 'nx_lead_id');
     }
 
-    public function quotation(): BelongsTo
+    public function stage(): BelongsTo
     {
-        return $this->belongsTo(Quotation::class, 'nx_quotation_id');
+        return $this->belongsTo(DealStage::class, 'nx_deal_stage_id');
     }
 
-    public function salesOrder(): HasOne
+    public function quotations(): HasMany
     {
-        return $this->hasOne(SalesOrder::class, 'nx_deal_id');
+        return $this->hasMany(Quotation::class, 'nx_deal_id');
     }
 }

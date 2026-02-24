@@ -29,13 +29,13 @@ class StockReportResource extends Resource
         return $table
             ->columns([
                 Tables\Columns\TextColumn::make('product_code')
-                    ->label('Kode Produk')
+                    ->label('Kode Product')
                     ->searchable()
                     ->sortable()
                     ->weight('bold'),
 
                 Tables\Columns\TextColumn::make('product_name')
-                    ->label('Nama Produk')
+                    ->label('Nama Product')
                     ->searchable()
                     ->sortable()
                     ->limit(30),
@@ -85,13 +85,17 @@ class StockReportResource extends Resource
 
                 Tables\Columns\TextColumn::make('purchase_price')
                     ->label('Harga Beli')
-                    ->money('idr')
-                    ->sortable(),
+                    ->money('IDR')
+                    ->color(fn($state) => $state < 0 ? 'danger' : 'success')
+                    ->sortable()
+                    ->weight('semibold'),
 
                 Tables\Columns\TextColumn::make('selling_price')
                     ->label('Harga Jual')
-                    ->money('idr')
-                    ->sortable(),
+                    ->money('IDR')
+                    ->color(fn($state) => $state < 0 ? 'danger' : 'success')
+                    ->sortable()
+                    ->weight('semibold'),
             ])
             ->filters([
                 Tables\Filters\Filter::make('stock')

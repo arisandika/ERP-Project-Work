@@ -18,13 +18,13 @@ class StocksRelationManager extends RelationManager
             ->recordTitleAttribute('product.product_name')
             ->columns([
                 Tables\Columns\TextColumn::make('product.product_code')
-                    ->label('Kode Produk')
+                    ->label('Kode Product')
                     ->searchable()
                     ->sortable()
                     ->weight('bold'),
 
                 Tables\Columns\TextColumn::make('product.product_name')
-                    ->label('Nama Produk')
+                    ->label('Nama Product')
                     ->searchable()
                     ->sortable()
                     ->weight('bold'),

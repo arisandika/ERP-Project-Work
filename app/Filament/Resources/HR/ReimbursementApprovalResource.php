@@ -132,7 +132,9 @@ class ReimbursementApprovalResource extends Resource
                 Tables\Columns\TextColumn::make('amount')
                     ->label('Nominal')
                     ->money('IDR')
-                    ->sortable(),
+                    ->color(fn($state) => $state < 0 ? 'success' : 'danger')
+                    ->sortable()
+                    ->weight('semibold'),
 
                 Tables\Columns\BadgeColumn::make('status')
                     ->label('Status')

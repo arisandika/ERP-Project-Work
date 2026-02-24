@@ -2,17 +2,11 @@
 
 namespace App\Filament\Resources\Project\ProjectResource\RelationManagers;
 
-use App\Exports\TicketTemplateExport;
-use App\Imports\TicketsImport;
 use App\Models\Project\Epic;
 use App\Models\Project\TicketPriority;
 use App\Models\Project\TicketStatus;
-use Exception;
-use Filament\Actions\Action;
 use Filament\Forms;
-use Filament\Forms\Components\FileUpload;
 use Filament\Forms\Components\Radio;
-use Filament\Forms\Components\Section;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Form;
 use Filament\Notifications\Notification;
@@ -20,14 +14,8 @@ use Filament\Resources\RelationManagers\RelationManager;
 use Filament\Tables;
 use Filament\Tables\Actions\BulkAction;
 use Filament\Tables\Table;
-use Filament\Tables\Filters\SelectFilter;
-use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\SoftDeletingScope;
-use Illuminate\Support\Facades\Storage;
-use Maatwebsite\Excel\Facades\Excel;
-use Livewire\Features\SupportFileUploads\TemporaryUploadedFile;
 
 class TicketsRelationManager extends RelationManager
 {

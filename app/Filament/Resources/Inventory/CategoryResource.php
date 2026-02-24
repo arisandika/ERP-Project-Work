@@ -67,10 +67,12 @@ class CategoryResource extends Resource
                     ->toggleable(isToggledHiddenByDefault: true),
 
                 Tables\Columns\BadgeColumn::make('products_count')
-                    ->label('Jumlah Produk')
+                    ->label('Jumlah Product')
                     ->counts('products')
+                    ->badge()
+                    ->color(fn(int $state): string => $state > 0 ? 'info' : 'gray')
                     ->sortable()
-                    ->colors(['primary']),
+                    ->formatStateUsing(fn($state) => $state . ' Kategori'),
 
                 Tables\Columns\TextColumn::make('created_at')
                     ->label('Dibuat Pada')
@@ -153,7 +155,7 @@ class CategoryResource extends Resource
                             ->label('Deskripsi'),
 
                         TextEntry::make('products_count')
-                            ->label('Jumlah Produk')
+                            ->label('Jumlah Product')
                             ->badge()
                             ->color('primary')
                             ->state(fn(Category $category) => $category->products()->count()),

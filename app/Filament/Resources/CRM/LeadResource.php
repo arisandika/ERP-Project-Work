@@ -4,16 +4,18 @@ namespace App\Filament\Resources\CRM;
 
 use App\Filament\Resources\CRM\LeadResource\Pages;
 use App\Filament\Resources\CRM\LeadResource\RelationManagers;
-use App\Filament\Resources\CRM\LeadResource\RelationManagers\QuotationsRelationManager;
+use App\Filament\Resources\CRM\LeadResource\RelationManagers\DealsRelationManager;
 use App\Filament\Resources\Sales\QuotationResource;
 use App\Models\CRM\Lead;
 use Filament\Forms;
+use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Form;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
+use Illuminate\Support\Carbon;
 
 class LeadResource extends Resource
 {
@@ -33,37 +35,47 @@ class LeadResource extends Resource
     {
         return static::getModel()::count();
     }
-
     public static function form(Form $form): Form
     {
         return $form
             ->schema([
-                Forms\Components\Section::make('Informasi Calon Customer')
+                Forms\Components\Section::make('Informasi Lead')
                     ->description('Lengkapi data untuk lead baru')
                     ->schema([
                         Forms\Components\Grid::make(2)
                             ->schema([
                                 Forms\Components\TextInput::make('name')
-                                    ->label('Nama Calon Customer/Perusahaan')
+                                    ->label('Nama Individu/Perusahaan')
                                     ->required()
-                                    ->maxLength(255)
+                                    ->maxLength(150)
                                     ->prefixIcon('heroicon-o-user'),
+
                                 Forms\Components\TextInput::make('email')
                                     ->label('Email')
                                     ->email()
-                                    ->maxLength(255)
+                                    ->maxLength(150)
                                     ->prefixIcon('heroicon-o-envelope'),
 
                                 Forms\Components\TextInput::make('phone')
-                                    ->label('No. HP (WhatsApp)')
+                                    ->label('No. WhatsApp')
                                     ->tel()
-                                    ->maxLength(20)
+                                    ->maxLength(30)
                                     ->prefixIcon('heroicon-o-device-phone-mobile'),
+
+                                Forms\Components\Select::make('customer_type')
+                                    ->label('Tipe')
+                                    ->options([
+                                        'individual' => 'Individual (Perorangan)',
+                                        'company' => 'Company (Perusahaan)',
+                                    ])
+                                    ->required()
+                                    ->native(false)
+                                    ->prefixIcon('heroicon-o-identification'),
 
                                 Forms\Components\Textarea::make('address')
                                     ->label('Alamat Domisili/Kantor')
                                     ->rows(3)
-                                    ->maxLength(255),
+                                    ->columnSpanFull(), // Disesuaikan tipe Text (hapus maxLength)
                             ]),
                     ]),
 
@@ -82,6 +94,7 @@ class LeadResource extends Resource
                                     ])
                                     ->default('new')
                                     ->required()
+                                    ->live()
                                     ->native(false),
 
                                 Forms\Components\Select::make('source')
@@ -97,6 +110,15 @@ class LeadResource extends Resource
                                     ])
                                     ->searchable()
                                     ->native(false),
+
+                                // Field ini muncul jika statusnya 'converted'
+                                Forms\Components\Select::make('converted_customer_id')
+                                    ->label('Pilih Customer Terkonversi')
+                                    ->relationship('convertedCustomer', 'name')
+                                    ->searchable()
+                                    ->preload()
+                                    ->visible(fn(Forms\Get $get) => $get('status') === 'converted')
+                                    ->columnSpanFull(),
                             ]),
 
                         Forms\Components\RichEditor::make('notes')
@@ -113,16 +135,31 @@ class LeadResource extends Resource
         return $table
             ->columns([
                 Tables\Columns\TextColumn::make('name')
-                    ->label('Nama Calon Customer')
+                    ->label('Nama Lead')
                     ->searchable()
                     ->sortable()
-                    ->weight('bold'),
+                    ->weight('semibold')
+                    ->icon('heroicon-o-user')
+                    ->color('primary'),
 
                 Tables\Columns\TextColumn::make('phone')
                     ->label('Kontak')
                     ->description(fn(Lead $record) => $record->email)
+                    ->searchable(['phone', 'email'])
+                    ->sortable()
                     ->icon('heroicon-o-phone')
-                    ->searchable(['phone', 'email']),
+                    ->searchable(['lead.phone', 'lead.email'])
+                    ->color('success'),
+
+                Tables\Columns\TextColumn::make('customer_type')
+                    ->label('Tipe')
+                    ->badge()
+                    ->color(fn(string $state): string => match ($state) {
+                        'company' => 'primary',
+                        'individual' => 'success',
+                        default => 'gray',
+                    })
+                    ->formatStateUsing(fn(string $state): string => ucfirst($state)),
 
                 Tables\Columns\TextColumn::make('source')
                     ->label('Sumber')
@@ -133,21 +170,22 @@ class LeadResource extends Resource
                 Tables\Columns\TextColumn::make('status')
                     ->label('Status')
                     ->badge()
-                    ->colors([
-                        'info' => 'new',
-                        'warning' => 'contacted',
-                        'success' => ['qualified', 'converted'],
-                        'danger' => 'lost',
-                    ])
+                    ->color(fn(string $state): string => match ($state) {
+                        'new' => 'warning',
+                        'contacted' => 'warning',
+                        'qualified', 'converted' => 'success',
+                        'lost' => 'danger',
+                        default => 'gray',
+                    })
                     ->formatStateUsing(fn(string $state): string => ucwords(str_replace('_', ' ', $state))),
 
-                Tables\Columns\TextColumn::make('quotations_count')
-                    ->label('Jumlah Penawaran')
-                    ->counts('quotations')
+                Tables\Columns\TextColumn::make('deals_count')
+                    ->label('Jumlah Deal')
+                    ->counts('deals')
                     ->badge()
-                    ->color('success')
-                    ->formatStateUsing(fn(?int $state): string => ($state ?? 0) . ' Penawaran')
-                    ->sortable(),
+                    ->color(fn(int $state): string => $state > 0 ? 'info' : 'gray')
+                    ->sortable()
+                    ->formatStateUsing(fn($state) => $state . ' Deal'),
 
                 Tables\Columns\TextColumn::make('created_at')
                     ->label('Masuk Pada')
@@ -156,6 +194,13 @@ class LeadResource extends Resource
                     ->toggleable(isToggledHiddenByDefault: true),
             ])
             ->filters([
+                Tables\Filters\SelectFilter::make('customer_type')
+                    ->label('Tipe')
+                    ->options([
+                        'individual' => 'Individual',
+                        'company' => 'Company',
+                    ]),
+
                 Tables\Filters\SelectFilter::make('status')
                     ->options([
                         'new' => 'New',
@@ -174,14 +219,49 @@ class LeadResource extends Resource
                         'referral' => 'Referral',
                         'ads' => 'Iklan',
                     ]),
+
+                Tables\Filters\Filter::make('created_at')
+                    ->form([
+                        DatePicker::make('created_from')
+                            ->label('Dibuat Dari')
+                            ->required()
+                            ->displayFormat('d M Y')
+                            ->native(false)
+                            ->prefixIcon('heroicon-o-calendar-days'),
+
+                        DatePicker::make('created_until')
+                            ->label('Dibuat Hingga')
+                            ->required()
+                            ->displayFormat('d M Y')
+                            ->native(false)
+                            ->prefixIcon('heroicon-o-calendar-days'),
+                    ])
+                    ->query(function (Builder $query, array $data): Builder {
+                        return $query
+                            ->when(
+                                $data['created_from'],
+                                fn(Builder $query, $date): Builder => $query->whereDate('created_at', '>=', $date),
+                            )
+                            ->when(
+                                $data['created_until'],
+                                fn(Builder $query, $date): Builder => $query->whereDate('created_at', '<=', $date),
+                            );
+                    })
+                    ->indicateUsing(function (array $data): array {
+                        $indicators = [];
+
+                        if ($data['created_from'] ?? null) {
+                            $indicators[] = 'Created from ' . Carbon::parse($data['created_from'])->toFormattedDateString();
+                        }
+
+                        if ($data['created_until'] ?? null) {
+                            $indicators[] = 'Created until ' . Carbon::parse($data['created_until'])->toFormattedDateString();
+                        }
+
+                        return $indicators;
+                    }),
             ])
             ->actions([
-                Tables\Actions\Action::make('create_quotation')
-                    ->label('Buat Penawaran')
-                    ->icon('heroicon-o-document-text')
-                    ->color('success')
-                    ->url(fn(Lead $record): string => QuotationResource::getUrl('create', ['nx_lead_id' => $record->id]))
-                    ->openUrlInNewTab(),
                 Tables\Actions\ViewAction::make(),
                 Tables\Actions\EditAction::make(),
                 Tables\Actions\DeleteAction::make(),
@@ -197,7 +277,7 @@ class LeadResource extends Resource
     public static function getRelations(): array
     {
         return [
-            QuotationsRelationManager::class,
+            DealsRelationManager::class,
         ];
     }
 

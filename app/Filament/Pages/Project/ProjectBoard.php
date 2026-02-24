@@ -38,7 +38,7 @@ class ProjectBoard extends Page
 
     protected static ?string $title = 'Project Board';
 
-    protected ?string $subheading = 'Board Kanban untuk manajemen dan kelola ticket';
+    protected ?string $subheading = 'Board Kanban untuk kelola ticket';
 
     protected static ?int $navigationSort = 3;
 

@@ -15,7 +15,7 @@ class ListProducts extends ListRecords
     {
         return [
             Actions\CreateAction::make()
-                ->label('Tambah Produk'),
+                ->label('Tambah Product'),
         ];
     }
 

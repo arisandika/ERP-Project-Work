@@ -111,8 +111,9 @@ class FinancialRecordResource extends Resource
                 Tables\Columns\TextColumn::make('amount')
                     ->label('Nominal')
                     ->money('IDR')
+                    ->color(fn($state) => $state < 0 ? 'danger' : 'success')
                     ->sortable()
-                    ->weight('bold'),
+                    ->weight('semibold'),
             ])
             ->defaultSort('transaction_date', 'desc')
             ->filters([

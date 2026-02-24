@@ -40,7 +40,9 @@ class InvoiceReportTable extends BaseWidget
             Tables\Columns\TextColumn::make('grand_total')
                 ->label('Total Tagihan')
                 ->money('IDR')
-                ->weight('bold'),
+                    ->color(fn($state) => $state < 0 ? 'danger' : 'success')
+                    ->sortable()
+                    ->weight('semibold'),
 
             Tables\Columns\TextColumn::make('due_date')
                 ->label('Jatuh Tempo')

@@ -193,8 +193,8 @@
         <thead>
             <tr>
                 <th style="width:5%;" class="text-center">No</th>
-                <th style="width: 13%;">Kode Produk</th>
-                <th style="width: 22%;">Nama Produk</th>
+                <th style="width: 13%;">Kode Product</th>
+                <th style="width: 22%;">Nama Product</th>
                 <th style="width: 12%;">Kategori</th>
                 <th style="width: 10%;" class="text-center">Stok</th>
                 <th style="width: 8%;" class="text-center">Satuan</th>

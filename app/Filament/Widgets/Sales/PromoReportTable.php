@@ -44,7 +44,7 @@ class PromoReportTable extends BaseWidget
 
             ->columns([
                 Tables\Columns\TextColumn::make('promoCode.code')
-                    ->label('Kode Produk')
+                    ->label('Kode Product')
                     ->badge()
                     ->color('info')
                     ->description(fn ($record) => $record->promoCode->type ?? '-'),
@@ -58,7 +58,9 @@ class PromoReportTable extends BaseWidget
                 Tables\Columns\TextColumn::make('revenue_generated')
                     ->label('Sales')
                     ->money('IDR')
-                    ->size(Tables\Columns\TextColumn\TextColumnSize::ExtraSmall),
+                    ->color(fn($state) => $state < 0 ? 'danger' : 'success')
+                    ->sortable()
+                    ->weight('semibold'),
             ])
             ->paginated(false)
             // Nonaktifkan klik baris karena ini data agregat

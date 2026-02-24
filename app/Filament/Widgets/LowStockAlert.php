@@ -11,7 +11,7 @@ class LowStockAlert extends BaseWidget
 {
     protected static ?int $sort = 1;
     protected int|string|array $columnSpan = 'full';
-    protected static ?string $heading = 'Produk dengan Stock Rendah';
+    protected static ?string $heading = 'Product dengan Stock Rendah';
 
     public function table(Table $table): Table
     {
@@ -24,13 +24,13 @@ class LowStockAlert extends BaseWidget
             )
             ->columns([
                 Tables\Columns\TextColumn::make('product.product_code')
-                    ->label('Kode Produk')
+                    ->label('Kode Product')
                     ->searchable()
                     ->sortable()
                     ->weight('bold'),
 
                 Tables\Columns\TextColumn::make('product.product_name')
-                    ->label('Produk')
+                    ->label('Product')
                     ->searchable()
                     ->sortable()
                     ->limit(30),
@@ -103,7 +103,7 @@ class LowStockAlert extends BaseWidget
                     ),
             ])
             ->emptyStateHeading('Semua Stock Aman')
-            ->emptyStateDescription('Tidak ada produk dengan stock rendah saat ini.')
+            ->emptyStateDescription('Tidak ada Product dengan stock rendah saat ini.')
             ->emptyStateIcon('heroicon-o-check-circle')
             ->poll('30s'); // Auto refresh setiap 30 detik
     }

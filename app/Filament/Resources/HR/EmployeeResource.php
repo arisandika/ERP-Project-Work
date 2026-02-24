@@ -55,7 +55,7 @@ class EmployeeResource extends Resource
                             ->prefixIcon('heroicon-o-identification'),
 
                         Forms\Components\TextInput::make('identity_number')
-                            ->label('Nomor KTP')
+                            ->label('No. KTP')
                             ->required()
                             ->numeric()
                             ->maxLength(20)
@@ -98,7 +98,7 @@ class EmployeeResource extends Resource
                             ->required(fn(string $operation): bool => $operation === 'create'),
 
                         Forms\Components\TextInput::make('phone_number')
-                            ->label('Nomor HP')
+                            ->label('No. WhatsApp')
                             ->required()
                             ->numeric()
                             ->unique(ignoreRecord: true)
@@ -288,7 +288,7 @@ class EmployeeResource extends Resource
                     ->searchable(),
 
                 Tables\Columns\TextColumn::make('phone_number')
-                    ->label('No. HP'),
+                    ->label('No. WhatsApp'),
 
                 Tables\Columns\TextColumn::make('department.name')
                     ->label('Departemen')
@@ -334,7 +334,7 @@ class EmployeeResource extends Resource
                     ->toggleable(isToggledHiddenByDefault: true),
 
                 Tables\Columns\TextColumn::make('deleted_at')
-                    ->label('Deleted At')
+                    ->label('Dihapus Pada')
                     ->dateTime('d M Y')
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
@@ -441,7 +441,7 @@ class EmployeeResource extends Resource
                             ->state(fn(Employee $employee) => optional($employee->user)->email),
 
                         TextEntry::make('phone_number')
-                            ->label('Nomor HP'),
+                            ->label('No. HP'),
 
                         TextEntry::make('address')
                             ->label('Alamat'),
@@ -509,7 +509,7 @@ class EmployeeResource extends Resource
                             ->label('NIK'),
 
                         TextEntry::make('identity_number')
-                            ->label('Nomor KTP'),
+                            ->label('No. KTP'),
 
                         TextEntry::make('birth_place')
                             ->label('Tempat Lahir'),

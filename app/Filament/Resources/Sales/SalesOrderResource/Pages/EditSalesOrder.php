@@ -58,7 +58,7 @@ class EditSalesOrder extends EditRecord
                         ->value('qty') ?? 0;
 
                     if ($stockGudang < $qtyOrder) {
-                        $productName = Product::find($productId)?->product_name ?? 'Produk';
+                        $productName = Product::find($productId)?->product_name ?? 'Product';
 
                         Notification::make()
                             ->title('Validasi Gagal')

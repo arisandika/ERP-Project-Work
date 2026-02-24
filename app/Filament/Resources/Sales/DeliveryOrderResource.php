@@ -173,12 +173,12 @@ class DeliveryOrderResource extends Resource
 
                         Grid::make(2)->schema([
                             TextInput::make('item_code')
-                                ->label('Kode Produk')
+                                ->label('Kode Product')
                                 ->disabled()
                                 ->dehydrated(false),
 
                             TextInput::make('item_name')
-                                ->label('Nama Produk')
+                                ->label('Nama Product')
                                 ->disabled()
                                 ->dehydrated(true),
 

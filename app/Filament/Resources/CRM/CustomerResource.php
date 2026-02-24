@@ -72,7 +72,7 @@ class CustomerResource extends Resource
                             ->maxLength(20)
                             ->prefixIcon('heroicon-o-device-phone-mobile')
                             ->required()
-                            ->helperText('Nomor ini wajib diisi untuk validasi QR Code.'),
+                            ->helperText('No. ini wajib diisi untuk validasi QR Code.'),
 
                         Forms\Components\Select::make('status')
                             ->label('Status Customer')
@@ -110,7 +110,7 @@ class CustomerResource extends Resource
                             ->maxLength(20)
                             ->prefixIcon('heroicon-o-device-phone-mobile')
                             ->required()
-                            ->helperText('Nomor ini wajib diisi untuk validasi QR Code.'),
+                            ->helperText('No. ini wajib diisi untuk validasi QR Code.'),
                     ])
                     ->columns(2)
                     ->visible(fn(Forms\Get $get) => $get('customer_type') === 'individual'),
@@ -141,7 +141,7 @@ class CustomerResource extends Resource
                                     ->maxLength(20)
                                     ->prefixIcon('heroicon-o-device-phone-mobile')
                                     ->required()
-                                    ->helperText('Nomor ini wajib diisi untuk validasi QR Code.'),
+                                    ->helperText('No. ini wajib diisi untuk validasi QR Code.'),
                             ]),
                     ])
                     ->visible(fn(Forms\Get $get) => $get('customer_type') === 'company'),

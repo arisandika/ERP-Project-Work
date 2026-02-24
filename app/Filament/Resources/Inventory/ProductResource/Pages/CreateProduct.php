@@ -76,7 +76,7 @@ class CreateProduct extends CreateRecord
                 'transaction_date' => now(),
                 'type' => 'masuk',
                 'quantity' => $qty,
-                'notes' => 'Stok awal saat produk dibuat',
+                'notes' => 'Stok awal saat Product dibuat',
             ]);
         }
     }
@@ -86,6 +86,6 @@ class CreateProduct extends CreateRecord
      */
     protected function getCreatedNotificationTitle(): ?string
     {
-        return 'Produk berhasil ditambahkan!';
+        return 'Product berhasil ditambahkan!';
     }
 }

@@ -102,7 +102,11 @@ class EpicsRelationManager extends RelationManager
 
                 Tables\Columns\TextColumn::make('tickets_count')
                     ->counts('tickets')
-                    ->label('Tickets'),
+                    ->label('Tickets')
+                    ->badge()
+                    ->color(fn(int $state): string => $state > 0 ? 'info' : 'gray')
+                    ->sortable()
+                    ->formatStateUsing(fn($state) => $state . ' Ticket'),
 
                 Tables\Columns\TextColumn::make('created_at')
                     ->label('Dibuat Pada')

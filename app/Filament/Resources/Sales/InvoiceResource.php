@@ -188,7 +188,7 @@ class InvoiceResource extends Resource
                         Grid::make(2)->schema([
 
                             TextInput::make('item_code')
-                                ->label('Kode Produk')
+                                ->label('Kode Product')
                                 ->readOnly()
                                 ->dehydrated(),
 
@@ -321,15 +321,16 @@ class InvoiceResource extends Resource
                 Tables\Columns\TextColumn::make('grand_total')
                     ->label('Total Tagihan')
                     ->money('IDR', true)
+                    ->color(fn($state) => $state < 0 ? 'danger' : 'success')
                     ->sortable()
-                    ->weight('bold'),
+                    ->weight('semibold'),
 
                 Tables\Columns\TextColumn::make('remaining_balance')
                     ->label('Sisa')
                     ->money('IDR', true)
                     ->color(fn($state) => $state > 0 ? 'danger' : 'success')
                     ->sortable()
-                    ->weight('bold'),
+                    ->weight('semibold'),
 
                 Tables\Columns\TextColumn::make('status')
                     ->badge()

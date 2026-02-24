@@ -122,7 +122,7 @@ class WarehouseResource extends Resource
                     ->color(fn($state) => $state ? 'primary' : 'gray'),
 
                 Tables\Columns\TextColumn::make('total_products')
-                    ->label('Jumlah Produk')
+                    ->label('Jumlah Product')
                     ->badge()
                     ->color('info')
                     ->suffix(' Items'),
@@ -259,7 +259,7 @@ class WarehouseResource extends Resource
                     ->columns(2)
                     ->schema([
                         TextEntry::make('total_products')
-                            ->label('Jumlah Produk')
+                            ->label('Jumlah Product')
                             ->badge()
                             ->color('info')
                             ->state(fn(Warehouse $record) => $record->stocks()->distinct('product_id')->count('id'))

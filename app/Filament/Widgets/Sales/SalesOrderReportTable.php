@@ -42,7 +42,10 @@ class SalesOrderReportTable extends BaseWidget
 
             Tables\Columns\TextColumn::make('grand_total')
                 ->label('Total')
-                ->money('IDR'),
+                ->money('IDR')
+                    ->color(fn($state) => $state < 0 ? 'danger' : 'success')
+                    ->sortable()
+                    ->weight('semibold'),
 
             Tables\Columns\TextColumn::make('status')
                 ->label('Status')

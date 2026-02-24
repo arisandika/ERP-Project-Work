@@ -40,7 +40,9 @@ class PaymentsRelationManager extends RelationManager
                 Tables\Columns\TextColumn::make('amount')
                     ->label('Jumlah Pembayaran')
                     ->money('IDR', true)
-                    ->sortable(),
+                    ->color(fn($state) => $state < 0 ? 'danger' : 'success')
+                    ->sortable()
+                    ->weight('semibold'),
                 Tables\Columns\TextColumn::make('payment_method')
                     ->label('Metode Pembayaran')
                     ->badge()

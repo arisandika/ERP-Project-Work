@@ -3,7 +3,7 @@
 namespace App\Filament\Resources\Marketing;
 
 use App\Filament\Resources\Marketing\PromoCodeResource\Pages;
-use App\Models\Sales\PromoCode;
+use App\Models\Marketing\PromoCode;
 use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Forms\Components\Grid;
@@ -53,7 +53,7 @@ class PromoCodeResource extends Resource
                                 ->label('Kode Promo')
                                 ->required()
                                 ->unique(ignoreRecord: true)
-                                ->placeholder('Contoh: LEBARAN2025')
+                                ->placeholder('Contoh: LEBARAN2026')
                                 ->maxLength(255)
                                 ->extraInputAttributes(['style' => 'text-transform: uppercase'])
                                 ->dehydrateStateUsing(fn(string $state): string => strtoupper($state)),
@@ -73,7 +73,7 @@ class PromoCodeResource extends Resource
                                 ->label('Nilai Potongan')
                                 ->numeric()
                                 ->required()
-                                ->prefix(fn(Get $get) => $get('type') === 'percentage' ? '' : 'Rp')
+                                ->prefix(fn(Get $get) => $get('type') === 'percentage' ? '' : 'IDR')
                                 ->suffix(fn(Get $get) => $get('type') === 'percentage' ? '%' : ''),
                         ]),
                     ]),
@@ -125,7 +125,7 @@ class PromoCodeResource extends Resource
         return $table
             ->columns([
                 TextColumn::make('code')
-                    ->label('Kode Produk')
+                    ->label('Kode Promo')
                     ->weight('bold')
                     ->copyable()
                     ->searchable()

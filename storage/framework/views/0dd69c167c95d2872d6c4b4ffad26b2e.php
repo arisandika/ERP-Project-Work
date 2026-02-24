@@ -269,7 +269,7 @@
                                             FontWeight::Thin, 'thin' => 'font-thin',
                                             FontWeight::ExtraLight, 'extralight' => 'font-extralight',
                                             FontWeight::Light, 'light' => 'font-light',
-                                            FontWeight::Medium, 'medium' => 'font-medium',
+                                            'medium', 'medium' => 'font-medium',
                                             FontWeight::SemiBold, 'semibold' => 'font-semibold',
                                             FontWeight::Bold, 'bold' => 'font-bold',
                                             FontWeight::ExtraBold, 'extrabold' => 'font-extrabold',

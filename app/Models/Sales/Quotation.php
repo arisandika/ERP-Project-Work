@@ -2,68 +2,48 @@
 
 namespace App\Models\Sales;
 
-use App\Models\CRM\Customer;
 use App\Models\CRM\Deal;
-use App\Models\CRM\Lead;
 use App\Models\HR\Employee;
-use App\Models\PromoCode;
-use App\Models\Sales\QuotationItem;
-use App\Models\Sales\SalesOrder;
-use App\Models\CRM\Deal;
-use App\Models\User;
+use App\Models\Marketing\PromoCode;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Support\Carbon;
 
 class Quotation extends Model
 {
+    use SoftDeletes;
+
     protected $table = 'nx_quotations';
 
     protected $fillable = [
-        // 'nx_customer_id',
-        'nx_lead_id',
-        'nx_employee_id',
-        'created_by_employee_id',
-        'approved_by_employee_id',
-        'approved_at',
+        'nx_deal_id',
         'quotation_number',
         'quotation_date',
         'valid_until',
         'status',
-        'notes',
         'subtotal',
         'tax',
+        'discount_amount',
         'grand_total',
         'promo_code_id',
-        'discount_amount',
+        'notes',
+        'nx_employee_id',
+        'created_by',
+        'approved_by',
+        'approved_at'
     ];
 
     protected $casts = [
         'quotation_date' => 'datetime',
         'valid_until' => 'datetime',
-        'approved_at' => 'datetime',
+        'approved_at' => 'datetime'
     ];
 
-    public function items(): HasMany
+    public function deal(): BelongsTo
     {
-        return $this->hasMany(QuotationItem::class, 'nx_quotation_id');
-    }
-
-    // public function customer(): BelongsTo
-    // {
-    //     return $this->belongsTo(Customer::class, 'nx_customer_id')->withDefault();
-    // }
-    public function lead(): BelongsTo
-    {
-        return $this->belongsTo(Lead::class, 'nx_lead_id');
-    }
-
-    public function deal(): HasOne
-    {
-        return $this->hasOne(Deal::class, 'nx_quotation_id');
+        return $this->belongsTo(Deal::class, 'nx_deal_id')->withDefault();
     }
 
     public function employee(): BelongsTo
@@ -71,19 +51,14 @@ class Quotation extends Model
         return $this->belongsTo(Employee::class, 'nx_employee_id')->withDefault();
     }
 
-    public function createdByEmployee(): BelongsTo
+    public function createdBy(): BelongsTo
     {
-        return $this->belongsTo(Employee::class, 'created_by_employee_id')->withDefault();
+        return $this->belongsTo(Employee::class, 'created_by')->withDefault();
     }
 
-    public function approvedByEmployee(): BelongsTo
+    public function approvedBy(): BelongsTo
     {
-        return $this->belongsTo(Employee::class, 'approved_by_employee_id')->withDefault();
-    }
-
-    public function salesOrder(): HasOne
-    {
-        return $this->hasOne(SalesOrder::class, 'nx_quotation_id', 'id');
+        return $this->belongsTo(Employee::class, 'approved_by')->withDefault();
     }
 
     public function promoCode(): BelongsTo
@@ -91,29 +66,28 @@ class Quotation extends Model
         return $this->belongsTo(PromoCode::class, 'promo_code_id');
     }
 
-    protected static function booted(): void
+    public function items(): HasMany
     {
-        static::creating(function (Quotation $quotation) {
-            // Set waktu saat ini
-            if ($quotation->quotation_date) {
-                $quotation->quotation_date = Carbon::parse($quotation->quotation_date)
-                    ->setTimeFromTimeString(now()->format('H:i:s'));
-            }
-
-            if ($quotation->valid_until) {
-                $quotation->valid_until = Carbon::parse($quotation->valid_until)
-                    ->setTimeFromTimeString(now()->format('H:i:s'));
-            }
-
-            $user = auth()->user();
-            if (empty($quotation->created_by_employee_id) && $user?->employee) {
-                $quotation->created_by_employee_id = $user->employee->id;
-            }
-        });
+        return $this->hasMany(QuotationItem::class, 'nx_quotation_id');
     }
 
-    public function deal(): BelongsTo
+    protected static function booted(): void
     {
-        return $this->belongsTo(\App\Models\CRM\Deal::class, 'nx_deal_id')->withDefault();
+        static::creating(function (Quotation $q) {
+
+            if ($q->quotation_date)
+                $q->quotation_date = Carbon::parse($q->quotation_date)
+                    ->setTimeFromTimeString(now()->format('H:i:s'));
+
+            if ($q->valid_until)
+                $q->valid_until = Carbon::parse($q->valid_until)
+                    ->setTimeFromTimeString(now()->format('H:i:s'));
+
+            $user = auth()->user();
+
+            if (empty($q->created_by) && $user?->employee)
+                $q->created_by = $user->employee->id;
+
+        });
     }
 }

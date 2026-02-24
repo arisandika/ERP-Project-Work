@@ -235,8 +235,8 @@
             <tr>
                 <th style="width:5%;" class="text-center">No</th>
                 <th style="width:14%;">Tanggal</th>
-                <th style="width:10%;">Kode Produk</th>
-                <th style="width:18%;">Nama Produk</th>
+                <th style="width:10%;">Kode Product</th>
+                <th style="width:18%;">Nama Product</th>
                 <th style="width:13%;">Gudang</th>
                 <th style="width:9%;" class="text-center">Jenis</th>
                 <th style="width:9%;" class="text-center">Qty</th>

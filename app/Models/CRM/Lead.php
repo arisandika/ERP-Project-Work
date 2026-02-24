@@ -2,9 +2,9 @@
 
 namespace App\Models\CRM;
 
-use App\Models\Sales\Quotation;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class Lead extends Model
 {
@@ -16,25 +16,19 @@ class Lead extends Model
         'phone',
         'address',
         'customer_type',
-
-        'nik',
-        'npwp',
-        'pic_name',
-        'pic_position',
-        'pic_phone',
-        
         'source',
-        'status', // new, contacted, qualified, converted, lost
+        'status',
         'notes',
+        'converted_customer_id'
     ];
-
-    public function quotations(): HasMany
-    {
-        return $this->hasMany(Quotation::class, 'nx_lead_id');
-    }
 
     public function deals(): HasMany
     {
         return $this->hasMany(Deal::class, 'nx_lead_id');
+    }
+
+    public function convertedCustomer(): BelongsTo
+    {
+        return $this->belongsTo(Customer::class, 'converted_customer_id');
     }
 }

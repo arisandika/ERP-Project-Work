@@ -2,119 +2,281 @@
 
 namespace App\Filament\Pages\CRM;
 
-use App\Enums\CRM\DealStatus;
+use App\Filament\Resources\CRM\DealResource;
 use App\Models\CRM\Deal;
-use App\Filament\Resources\Sales\QuotationResource; // Pastikan namespace ini sesuai dengan project lu
-use Mokhosh\FilamentKanban\Pages\KanbanBoard;
+use App\Models\CRM\DealStage;
+use BezhanSalleh\FilamentShield\Traits\HasPageShield;
+use Exception;
+use Filament\Actions\Action;
+use Filament\Notifications\Notification;
+use Filament\Pages\Page;
 use Illuminate\Support\Collection;
-use Filament\Forms\Components\Select;
-use Filament\Forms\Components\TextInput;
-use Filament\Forms\Components\Textarea;
-use Filament\Forms\Components\DateTimePicker;
-use Filament\Forms\Components\Actions;
-use Filament\Forms\Components\Actions\Action;
-use Filament\Actions\CreateAction;
-use Filament\Forms\Components\FileUpload;
-use Filament\Forms\Get;
+use Livewire\Attributes\Computed;
+use Livewire\Attributes\On;
 
-class DealPipeline extends KanbanBoard
+class DealPipeline extends Page
 {
-    protected static string $model = Deal::class;
-    protected static string $statusEnum = DealStatus::class;
+    use HasPageShield;
 
-    protected static ?string $navigationIcon = 'heroicon-o-funnel';
-    protected static ?string $navigationGroup = 'Manajemen CRM';
-    protected static ?string $navigationLabel = 'Deal Pipeline';
-    protected static ?string $title = 'Deal Pipeline';
+    protected static ?string $navigationIcon = 'heroicon-o-view-columns';
+
+    protected static string $view = 'filament.pages.crm.deal-pipeline';
+
     protected static ?string $slug = 'crm/deal-pipeline';
 
-    protected static string $recordTitleAttribute = 'title';
+    protected static string $routePath = 'crm/deal-pipeline';
 
-    protected function statuses(): Collection
+    protected static ?string $navigationGroup = 'Manajemen CRM';
+
+    protected static ?string $navigationLabel = 'Deal Pipeline';
+
+    protected static ?string $title = 'Deal Pipeline';
+
+    protected ?string $subheading = 'Board Kanban untuk kelola stage deal';
+
+    protected static ?int $navigationSort = 3;
+
+    public array $sortOrders = [];
+
+    public function mount(): void
     {
-        return collect(DealStatus::cases())->map(fn ($status) => [
-            'id'    => $status->value,
-            'title' => $status->getLabel(),
-        ]);
+        // Inisialisasi
     }
 
-    protected function getEditModalFormSchema(null|int|string $recordId): array
+    #[Computed()]
+    public function dealStages(): Collection
     {
-        return [
-            // Tambahkan Tombol Action di atas form
-            Actions::make([
-                Action::make('convert_to_quotation')
-                    ->label('Convert to Quotation')
-                    ->icon('heroicon-o-document-plus')
-                    ->color('success')
-                    // Arahkan ke halaman Create Quotation bawa parameter
-                    ->url(fn ($record) => QuotationResource::getUrl('create', [
-                        'nx_deal_id'     => $record?->id,
-                        'nx_customer_id' => $record?->customer_id,
-                    ]))
-                    // Buka di tab baru biar kanban gak hilang
-                    ->openUrlInNewTab()
-                    // Sembunyikan jika lagi mode Create (record belum ada) atau sudah punya quotation
-                    ->hidden(fn ($record) => !$record || $record->quotation()->exists()),
-            ]),
+        // Mengambil semua Deal Stage beserta Deal di dalamnya
+        $stages = DealStage::with([
+            'deals' => function ($query) {
+                // Eager load customer dan lead untuk menampilkan nama di card
+                $query->with(['customer', 'lead', 'quotations'])
+                    ->select(
+                        'id',
+                        'nx_customer_id',
+                        'nx_lead_id',
+                        'nx_deal_stage_id',
+                        'deal_number',
+                        'deal_date',
+                        'estimated_value',
+                        'status',
+                        'close_date',
+                        'created_at',
+                        'updated_at'
+                    )
+                    ->orderByDesc('created_at')
+                    ->orderByDesc('id');
+            },
+        ])
+            ->orderBy('order')
+            ->get();
 
-            Select::make('customer_id')
-                ->label('Pelanggan')
-                ->relationship('customer', 'name')
-                ->searchable()
-                ->preload()
-                ->required(),
+        // Terapkan sorting dinamis untuk setiap kolom (jika user memilih opsi urutkan)
+        $stages->each(function ($stage) {
+            $sortOrder = $this->sortOrders[$stage->id] ?? 'date_created_newest';
+            $stage->deals = $this->applySorting($stage->deals, $sortOrder);
+        });
 
-            TextInput::make('title')
-                ->label('Judul Penawaran')
-                ->required(),
+        return $stages;
+    }
 
-            TextInput::make('value')
-                ->label('Nilai Penawaran')
-                ->numeric()
-                ->prefix('Rp'),
+    public function loadDealStages(): void
+    {
+        // Hapus cache property agar #[Computed] dijalankan ulang pada request berikutnya
+        unset($this->dealStages);
+    }
 
-            Textarea::make('notes')
-                ->label('Catatan Nego')
-                ->rows(3),
+    public function setSortOrder($stageId, $sortOrder)
+    {
+        $this->sortOrders[$stageId] = $sortOrder;
+        $this->loadDealStages();
+    }
 
-            DateTimePicker::make('next_follow_up_at')
-                ->label('Jadwal Follow Up Selanjutnya')
-                ->native(false),
+    private function applySorting($deals, $sortOrder)
+    {
+        switch ($sortOrder) {
+            case 'date_created_newest':
+                return $deals->values(); // Default sudah urut dari query
+            case 'date_created_oldest':
+                return $deals->sortBy('created_at')->values();
+            case 'value_highest':
+                return $deals->sortByDesc('estimated_value')->values();
+            case 'value_lowest':
+                return $deals->sortBy('estimated_value')->values();
+            case 'close_date':
+                return $deals->sortBy(function ($deal) {
+                    return $deal->close_date ?? '9999-12-31';
+                })->values();
+            case 'name_alphabetical':
+                return $deals->sortBy(function ($deal) {
+                    // Mengurutkan berdasarkan nama Customer atau Lead
+                    return $deal->customer?->name ?? $deal->lead?->name ?? 'Z';
+                })->values();
+            default:
+                return $deals->values();
+        }
+    }
 
-            FileUpload::make('attachments')
-                ->label('Dokumen Terkait (Proposal, NDA, dll)')
-                ->directory('crm-deals')
-                ->multiple()
-                ->acceptedFileTypes(['application/pdf', 'image/*'])
-                ->maxSize(5120),
+    public function moveDeal($dealId, $newStageId): void
+    {
+        // Pastikan user punya akses pindahkan deal
+        if (!$this->canMoveDeals()) {
+            Notification::make()
+                ->title('Akses Ditolak')
+                ->body('Anda tidak memiliki izin untuk memindahkan deal ini.')
+                ->danger()
+                ->send();
+            return;
+        }
 
-            Select::make('lost_reason')
-                ->label('Alasan Gagal')
-                ->options([
-                    'price'      => 'Harga Terlalu Tinggi',
-                    'competitor' => 'Kalah oleh Kompetitor',
-                    'budget'     => 'Budget Klien Tidak Cukup',
-                    'ghosting'   => 'Klien Hilang / Tidak Merespon',
-                    'other'      => 'Lainnya',
-                ])
+        // Ambil deal (eager load stage) & target stage
+        $deal = Deal::with('stage', 'quotations')->findOrFail($dealId);
+        $targetStage = DealStage::findOrFail($newStageId);
 
-            ->visible(fn (Get $get) => $get('status') === DealStatus::Closed->value)
-            ->required(fn (Get $get) => $get('status') === DealStatus::Closed->value),
-        ];
+        $stageName = strtolower($targetStage->name);
+        $hasQuotation = $deal->quotations()->exists();
+
+        $isWon = str_contains($stageName, 'won');
+        $isLost = str_contains($stageName, 'lost');
+
+        // Cari stage patokan (Penawaran)
+        $penawaranStage = DealStage::whereRaw(
+            'LOWER(name) LIKE ?',
+            ['%penawaran%']
+        )->first();
+
+        $penawaranProbability = $penawaranStage?->probability ?? 0;
+
+        // VALIDASI 1: TIDAK PUNYA PENAWARAN
+        if (!$hasQuotation) {
+            
+            // Tidak boleh ke Penawaran atau di atasnya (Kecuali LOST)
+            if ($targetStage->probability >= $penawaranProbability && !$isLost) {
+                Notification::make()
+                    ->title('Gagal Memperbarui Deal')
+                    ->body('Deal tanpa Penawaran tidak bisa ke stage Penawaran atau di atasnya.')
+                    ->danger()
+                    ->send();
+
+                // Refresh UI agar kartu kembali ke kolom asal
+                $this->loadDealStages();
+                $this->dispatch('deal-updated');
+                return;
+            }
+
+            // Tidak boleh ke WON
+            if ($isWon) {
+                Notification::make()
+                    ->title('Gagal Memperbarui Deal')
+                    ->body('Deal tanpa Penawaran tidak bisa Closed Won.')
+                    ->danger()
+                    ->send();
+
+                // Refresh UI agar kartu kembali ke kolom asal
+                $this->loadDealStages();
+                $this->dispatch('deal-updated');
+                return;
+            }
+        }
+
+        // VALIDASI 2: PUNYA PENAWARAN
+        if ($hasQuotation) {
+            
+            // Jika turun ke bawah Penawaran tapi bukan LOST -> Tolak
+            if ($targetStage->probability < $penawaranProbability && !$isLost) {
+                Notification::make()
+                    ->title('Gagal Memperbarui Deal')
+                    ->body('Deal tidak bisa kembali ke bawah stage Penawaran kecuali Closed Lost.')
+                    ->warning()
+                    ->send();
+
+                // Refresh UI agar kartu kembali ke kolom asal
+                $this->loadDealStages();
+                $this->dispatch('deal-updated');
+                return;
+            }
+        }
+
+        // LOGIKA OTOMATISASI UPDATE STATUS DEAL
+        $oldStatus = $deal->status;
+        $newStatus = 'open'; // Default
+
+        if ($isWon) {
+            $newStatus = 'won';
+        } elseif ($isLost) {
+            $newStatus = 'lost';
+        }
+
+        // Jika dari WON turun -> kembali OPEN
+        if ($oldStatus === 'won' && !$isWon) {
+            $newStatus = 'open';
+        }
+
+        $statusChanged = ($oldStatus !== $newStatus);
+
+        // Jika lolos semua validasi, simpan perubahan stage, status, dan close_date
+        $deal->nx_deal_stage_id = $newStageId;
+        $deal->status = $newStatus;
+        $deal->close_date = in_array($newStatus, ['won', 'lost']) ? now() : null;
+        $deal->save();
+
+        // Refresh state board untuk menyimpan urutan baru
+        $this->loadDealStages();
+
+        // Memicu re-render UI penuh agar data di DOM sinkron
+        $this->dispatch('$refresh');
+
+        // NOTIFIKASI DINAMIS BERHASIL
+        if ($statusChanged) {
+            $statusLabel = strtoupper($newStatus);
+            $color = match ($newStatus) {
+                'won' => 'success',
+                'lost' => 'danger',
+                default => 'info',
+            };
+
+            Notification::make()
+                ->title('Berhasil Memperbarui Deal')
+                ->body("Status Deal otomatis diperbarui menjadi {$statusLabel}.")
+                ->$color()
+                ->send();
+        } else {
+            Notification::make()
+                ->title('Berhasil Memperbarui Deal')
+                ->body("Stage berhasil diperbarui menjadi {$targetStage->name}.")
+                ->success()
+                ->send();
+        }
+    }
+
+    #[On('refresh-board')]
+    public function refreshBoard(): void
+    {
+        $this->loadDealStages();
+        $this->dispatch('deal-updated'); // trigger event ke Alpine JS di blade
     }
 
     protected function getHeaderActions(): array
     {
         return [
-            CreateAction::make()
-                ->model(Deal::class)
+            Action::make('new_deal')
                 ->label('New Deal')
-                ->mutateFormDataUsing(function (array $data): array {
-                    $data['status'] = DealStatus::Proposal->value;
-                    return $data;
-                })
-                ->form($this->getEditModalFormSchema(null)),
+                ->icon('heroicon-m-plus')
+                ->color('primary')
+                ->visible(fn() => auth()->user()->can('create_c::r::m::deal'))
+                ->url(fn() => DealResource::getUrl('create'))
+                ->openUrlInNewTab(),
+
+            Action::make('refresh_board')
+                ->label('Refresh Board')
+                ->icon('heroicon-m-arrow-path')
+                ->action('refreshBoard')
+                ->color('warning'),
         ];
+    }
+
+    public function canMoveDeals(): bool
+    {
+        return auth()->user()->can('update_c::r::m::deal');
     }
 }

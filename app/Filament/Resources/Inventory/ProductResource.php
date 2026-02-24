@@ -31,10 +31,10 @@ class ProductResource extends Resource
     {
         return $form
             ->schema([
-                Forms\Components\Section::make('Informasi Produk')
+                Forms\Components\Section::make('Informasi Product')
                     ->schema([
                         Forms\Components\TextInput::make('product_name')
-                            ->label('Nama Produk')
+                            ->label('Nama Product')
                             ->required()
                             ->maxLength(100)
                             ->placeholder('Contoh: Laptop Lenovo ThinkPad')
@@ -96,7 +96,7 @@ class ProductResource extends Resource
                             ->step(0.01),
 
                         Forms\Components\FileUpload::make('image_path')
-                            ->label('Foto Produk')
+                            ->label('Foto Product')
                             ->directory('products')
                             ->disk('public')
                             ->image()
@@ -170,13 +170,13 @@ class ProductResource extends Resource
                     ->circular(),
 
                 Tables\Columns\TextColumn::make('product_code')
-                    ->label('Kode Produk')
+                    ->label('Kode Product')
                     ->searchable()
                     ->sortable()
                     ->weight('bold'),
 
                 Tables\Columns\TextColumn::make('product_name')
-                    ->label('Nama Produk')
+                    ->label('Nama Product')
                     ->searchable()
                     ->sortable()
                     ->limit(30),
@@ -226,13 +226,17 @@ class ProductResource extends Resource
 
                 Tables\Columns\TextColumn::make('purchase_price')
                     ->label('Harga Beli')
-                    ->money('idr')
-                    ->sortable(),
+                    ->money('IDR')
+                    ->color(fn($state) => $state < 0 ? 'danger' : 'success')
+                    ->sortable()
+                    ->weight('semibold'),
 
                 Tables\Columns\TextColumn::make('selling_price')
                     ->label('Harga Jual')
-                    ->money('idr')
-                    ->sortable(),
+                    ->money('IDR')
+                    ->color(fn($state) => $state < 0 ? 'danger' : 'success')
+                    ->sortable()
+                    ->weight('semibold'),
             ])
             ->filters([
                 Tables\Filters\Filter::make('stock')

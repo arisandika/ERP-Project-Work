@@ -229,12 +229,12 @@ class SalesOrderResource extends Resource
 
                         Grid::make(2)->schema([
                             TextInput::make('item_code')
-                                ->label('Kode Produk')
+                                ->label('Kode Product')
                                 ->disabled()
                                 ->dehydrated(false),
 
                             TextInput::make('item_name')
-                                ->label('Nama Produk')
+                                ->label('Nama Product')
                                 ->disabled()
                                 ->dehydrated(true),
 
@@ -420,7 +420,9 @@ class SalesOrderResource extends Resource
                 Tables\Columns\TextColumn::make('grand_total')
                     ->label('Total')
                     ->money('IDR', true)
-                    ->weight('bold'),
+                    ->color(fn($state) => $state < 0 ? 'danger' : 'success')
+                    ->sortable()
+                    ->weight('semibold'),
 
                 Tables\Columns\TextColumn::make('status')
                     ->badge()
