@@ -18,18 +18,18 @@ class FollowUpReminder extends Page implements HasTable
 {
     use InteractsWithTable;
 
-    protected static ?string $navigationIcon  = 'heroicon-o-bell-alert';
+    protected static ?string $navigationIcon = 'heroicon-o-bell-alert';
     protected static ?string $navigationGroup = 'Manajemen CRM';
-    protected static ?int    $navigationSort  = 7;
+    protected static ?int $navigationSort = 7;
     protected static ?string $navigationLabel = 'Follow Up & Reminder';
-    protected static ?string $slug            = 'crm/follow-up';
-    protected static string  $view            = 'filament.pages.crm.follow-up-reminder';
+    protected static ?string $slug = 'crm/follow-up';
+    protected static string $view = 'filament.pages.crm.follow-up-reminder';
 
     public function table(Table $table): Table
     {
         return $table
             ->query(
-                fn () => Deal::query()
+                fn() => Deal::query()
                     ->with('customer')
                     ->whereNotIn('status', [
                         DealStatus::Deal->value,
@@ -53,13 +53,15 @@ class FollowUpReminder extends Page implements HasTable
                 Tables\Columns\TextColumn::make('value')
                     ->label('Nilai')
                     ->money('IDR')
-                    ->sortable(),
+                    ->color(fn($state) => $state < 0 ? 'danger' : 'success')
+                    ->sortable()
+                    ->weight('semibold'),
 
                 Tables\Columns\TextColumn::make('next_follow_up_at')
                     ->label('Jadwal Follow Up')
                     ->dateTime('d M Y, H:i')
                     ->sortable()
-                    ->color(fn ($record) => $record->next_follow_up_at?->isPast() ? 'danger' : 'success'),
+                    ->color(fn($record) => $record->next_follow_up_at?->isPast() ? 'danger' : 'success'),
             ])
             ->filters([
                 Tables\Filters\SelectFilter::make('status')
@@ -75,7 +77,7 @@ class FollowUpReminder extends Page implements HasTable
                         TextInput::make('subject')
                             ->label('Subjek Email')
                             ->required()
-                            ->default(fn ($record) => 'Follow Up: ' . $record->title),
+                            ->default(fn($record) => 'Follow Up: ' . $record->title),
 
                         RichEditor::make('body')
                             ->label('Isi Email')
@@ -85,7 +87,7 @@ class FollowUpReminder extends Page implements HasTable
                     ->action(function (Deal $record, array $data) {
                         Mail::html($data['body'], function ($message) use ($record, $data) {
                             $message->to($record->customer->email, $record->customer->name)
-                                    ->subject($data['subject']);
+                                ->subject($data['subject']);
                         });
 
                         Notification::make()
@@ -97,7 +99,7 @@ class FollowUpReminder extends Page implements HasTable
                 Tables\Actions\Action::make('lihat_pipeline')
                     ->label('Lihat di Pipeline')
                     ->icon('heroicon-o-funnel')
-                    ->url(fn () => DealPipeline::getUrl())
+                    ->url(fn() => DealPipeline::getUrl())
                     ->openUrlInNewTab(),
             ]);
     }

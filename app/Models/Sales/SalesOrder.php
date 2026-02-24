@@ -3,6 +3,7 @@
 namespace App\Models\Sales;
 
 use App\Models\CRM\Customer;
+use App\Models\CRM\Deal;
 use App\Models\HR\Employee;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -17,8 +18,8 @@ class SalesOrder extends Model
     protected $table = 'nx_sales_orders';
 
     protected $fillable = [
+        'nx_deal_id',
         'nx_quotation_id',
-        'nx_customer_id',
         'nx_employee_id',
         'order_number',
         'order_date',
@@ -42,9 +43,14 @@ class SalesOrder extends Model
     }
 
     // Relasi ke Customer
-    public function customer(): BelongsTo
+    // public function customer(): BelongsTo
+    // {
+    //     return $this->belongsTo(Customer::class, 'nx_customer_id')->withDefault();
+    // }
+
+    public function deal(): BelongsTo
     {
-        return $this->belongsTo(Customer::class, 'nx_customer_id')->withDefault();
+        return $this->belongsTo(Deal::class, 'nx_deal_id');
     }
 
     // Relasi ke Employee/Sales

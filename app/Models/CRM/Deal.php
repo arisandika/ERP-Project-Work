@@ -2,67 +2,43 @@
 
 namespace App\Models\CRM;
 
-use App\Enums\CRM\DealStatus;
-use App\Models\CRM\Customer;
+use App\Models\Sales\Quotation;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Builder;
-use Illuminate\Database\Eloquent\SoftDeletes;
-use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use Illuminate\Database\Eloquent\Relations\HasOne;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Deal extends Model
 {
-    use HasFactory, SoftDeletes;
-
     protected $table = 'nx_deals';
+
     protected $fillable = [
-        'customer_id',
-        'title',
+        'nx_customer_id',
+        'nx_lead_id',
+        'nx_deal_stage_id',
+        'deal_number',
+        'deal_date',
+        'estimated_value',
         'status',
-        'value',
-        'notes',
-        'next_follow_up_at',
-        'attachments',
-        'lost_reason',
+        'close_date'
     ];
 
-    protected $casts = [
-        'status'            => DealStatus::class,
-        'next_follow_up_at' => 'datetime',
-        'value'             => 'decimal:2',
-        'attachments'       => 'array',
-    ];
-
-    /**
-     * Relasi ke data Pelanggan.
-     */
     public function customer(): BelongsTo
     {
-        return $this->belongsTo(Customer::class, 'customer_id');
+        return $this->belongsTo(Customer::class, 'nx_customer_id');
     }
 
-    /**
-     * Filter penawaran yang statusnya masih berjalan (belum deal/ditutup).
-     */
-    public function scopePending(Builder $query): Builder
+    public function lead(): BelongsTo
     {
-        return $query->whereNotIn('status', [
-            DealStatus::Deal->value,
-            DealStatus::Closed->value
-        ]);
+        return $this->belongsTo(Lead::class, 'nx_lead_id');
     }
 
-    /**
-     * Filter penawaran yang melewati jadwal follow-up.
-     */
-    public function scopeOverdue(Builder $query): Builder
+    public function stage(): BelongsTo
     {
-        return $query->where('next_follow_up_at', '<', now());
+        return $this->belongsTo(DealStage::class, 'nx_deal_stage_id');
     }
 
-    public function quotation(): HasOne
+    public function quotations(): HasMany
     {
-        return $this->hasOne(\App\Models\Sales\Quotation::class, 'nx_deal_id', 'id');
+        return $this->hasMany(Quotation::class, 'nx_deal_id');
     }
-    }
+}

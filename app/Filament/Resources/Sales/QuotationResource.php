@@ -7,7 +7,7 @@ use App\Mail\QuotationSent;
 use App\Models\Inventory\Package;
 use App\Models\Inventory\Product;
 use App\Models\Inventory\Service;
-use App\Models\Sales\PromoCode;
+use App\Models\Marketing\PromoCode;
 use App\Models\Sales\Quotation;
 use Filament\Forms\Components\Actions\Action as FormAction;
 use Filament\Forms\Components\DatePicker;
@@ -26,29 +26,32 @@ use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\SoftDeletingScope;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Mail;
 
 class QuotationResource extends Resource
 {
     protected static ?string $model = Quotation::class;
+
     protected static ?string $navigationIcon = 'heroicon-o-document-text';
+
     protected static ?string $navigationGroup = 'Manajemen Sales';
-    protected static ?int $navigationSort = 5;
-    protected static ?string $slug = 'sales/quotation';
+
+    protected static ?int $navigationSort = 2;
+
+    protected static ?string $slug = 'sales/quotations';
+
     protected static ?string $pluralModelLabel = 'Penawaran';
 
     public static function getNavigationBadge(): ?string
     {
-        return static::getModel()::count();
+        return static::getModel()::where('status', 'draft')->count();
     }
 
     public static function form(Form $form): Form
     {
         return $form->schema([
-            
-            Hidden::make('nx_deal_id'),
-
             Section::make('Informasi Penawaran')
                 ->schema([
                     Grid::make(3)
@@ -79,24 +82,33 @@ class QuotationResource extends Resource
 
                     Grid::make(2)
                         ->schema([
-                            Select::make('nx_customer_id')
-                                ->label('Client')
+                            Select::make('nx_deal_id')
+                                ->label('No. Deal (Ref)')
+                                ->relationship('deal', 'deal_number')
                                 ->searchable()
                                 ->preload()
-                                ->relationship('customer', 'name')
                                 ->required()
-                                ->prefixIcon('heroicon-o-user-circle')
-                                // Info opsional jika data otomatis terisi dari CRM
-                                ->helperText(fn (Get $get) => $get('nx_deal_id') ? 'Client otomatis terpilih dari Deal Pipeline.' : ''),
+                                ->default(fn() => request()->query('nx_deal_id'))
+                                ->disabled(fn($record) => $record !== null || request()->has('nx_deal_id'))
+                                ->dehydrated()
+                                ->getOptionLabelFromRecordUsing(function ($record) {
+                                    $client = $record->customer?->name ?? $record->lead?->name ?? 'Tanpa Klien';
+                                    return "{$record->deal_number} - {$client}";
+                                })
+                                ->prefixIcon('heroicon-o-briefcase'),
 
                             Select::make('nx_employee_id')
-                                ->label('Ditugaskan Kepada')
+                                ->label('PIC (Sales)')
                                 ->relationship('employee', 'full_name')
-                                ->default(fn() => auth()->user()?->employee?->id)
-                                ->disabled()
-                                ->dehydrated()
-                                ->required()
+                                ->searchable()
+                                ->preload()
+                                ->default(fn() => auth()->user()?->employee?->id ?? null)
                                 ->prefixIcon('heroicon-o-user'),
+
+                            Select::make('created_by')
+                                ->label('Dibuat Oleh')
+                                ->relationship('createdBy', 'full_name')
+                                ->disabled(),
 
                             Select::make('status')
                                 ->options([
@@ -111,7 +123,7 @@ class QuotationResource extends Resource
 
                             Textarea::make('notes')
                                 ->label('Catatan Tambahan')
-                                ->rows(3),
+                                ->rows(2),
                         ]),
                 ]),
 
@@ -156,7 +168,11 @@ class QuotationResource extends Resource
                                         ->color('success')
                                         ->label('Apply')
                                         ->action(fn($state, Set $set, Get $get) => self::applyPromo($state, $set, $get))
-                                ),
+                                )
+                                ->formatStateUsing(function ($state) {
+                                    return strtoupper($state ?? '');
+                                })
+                                ->afterStateUpdated(fn(Set $set, $state) => $set('promo_code_input', strtoupper($state ?? ''))),
 
                             Hidden::make('promo_code_id'),
 
@@ -210,39 +226,148 @@ class QuotationResource extends Resource
                     ->searchable()
                     ->weight('bold'),
 
-                Tables\Columns\TextColumn::make('customer.name')
-                    ->label('Client')
+                Tables\Columns\TextColumn::make('client_name')
+                    ->label('Lead')
+                    ->state(function (Quotation $record) {
+                        $deal = $record->deal;
+                        if (!$deal)
+                            return '-';
+                        if ($deal->customer)
+                            return $deal->customer->name . ' (Customer)';
+                        if ($deal->lead)
+                            return $deal->lead->name . ' (Lead)';
+                        return '-';
+                    })
+                    ->description(fn(Quotation $record) => $record->deal?->deal_number)
+                    ->searchable(['deal.customer.name', 'deal.lead.name'])
                     ->sortable()
-                    ->searchable(),
+                    ->weight('semibold')
+                    ->icon('heroicon-o-user')
+                    ->color('primary'),
+
+                Tables\Columns\TextColumn::make('employee.full_name')
+                    ->label('PIC (Sales)')
+                    ->searchable()
+                    ->sortable()
+                    ->toggleable(isToggledHiddenByDefault: true),
 
                 Tables\Columns\TextColumn::make('quotation_date')
-                    ->label('Tanggal')
-                    ->dateTime('d M Y H:i')
+                    ->label('Tanggal Penawaran')
+                    ->date('d M Y H:i')
                     ->sortable(),
 
-                Tables\Columns\TextColumn::make('grand_total')
-                    ->label('Total')
-                    ->money('IDR', true)
-                    ->weight('bold'),
+                Tables\Columns\TextColumn::make('valid_until')
+                    ->label('Berlaku Hingga')
+                    ->date('d M Y')
+                    ->sortable()
+                    ->color(function (Quotation $record) {
+                        if (in_array($record->status, ['accepted', 'rejected'])) {
+                            return 'gray';
+                        }
+                        if (\Carbon\Carbon::parse($record->valid_until)->isPast()) {
+                            return 'danger';
+                        }
+                        if (\Carbon\Carbon::parse($record->valid_until)->diffInDays(now()) <= 3) {
+                            return 'warning';
+                        }
+                        return 'success';
+                    })
+                    ->description(function (Quotation $record) {
+                        if (in_array($record->status, ['accepted', 'rejected']))
+                            return null;
+
+                        $days = now()->diffInDays(\Carbon\Carbon::parse($record->valid_until), false);
+                        if ($days < 0)
+                            return 'Expired ' . abs(intval($days)) . ' hari lalu';
+                        if ($days == 0)
+                            return 'Hari ini terakhir';
+                        return 'Sisa ' . intval($days) . ' hari';
+                    }),
 
                 Tables\Columns\TextColumn::make('status')
                     ->badge()
                     ->color(fn(string $state): string => match ($state) {
-                        'draft'    => 'gray',
-                        'sent'     => 'warning',
+                        'draft' => 'gray',
+                        'sent' => 'warning',
                         'accepted' => 'success',
                         'rejected' => 'danger',
-                        default    => 'gray'
+                        default => 'gray'
                     })
                     ->formatStateUsing(fn(string $state): string => match ($state) {
-                        'draft'    => 'Draft',
-                        'sent'     => 'Terkirim',
+                        'draft' => 'Draft',
+                        'sent' => 'Terkirim',
                         'accepted' => 'Diterima',
                         'rejected' => 'Ditolak',
-                        default    => $state,
+                        default => ucfirst($state),
                     }),
+
+                Tables\Columns\TextColumn::make('grand_total')
+                    ->label('Total')
+                    ->money('IDR')
+                    ->color(fn($state) => $state < 0 ? 'danger' : 'success')
+                    ->sortable()
+                    ->weight('semibold'),
+
+                Tables\Columns\TextColumn::make('subtotal')
+                    ->label('Subtotal')
+                    ->money('IDR')
+                    ->color(fn($state) => $state < 0 ? 'danger' : 'success')
+                    ->sortable()
+                    ->weight('semibold')
+                    ->toggleable(isToggledHiddenByDefault: true),
+
+                Tables\Columns\TextColumn::make('discount_amount')
+                    ->money('IDR')
+                    ->color(fn($state) => $state < 0 ? 'success' : 'warning')
+                    ->sortable()
+                    ->weight('semibold')
+                    ->toggleable(isToggledHiddenByDefault: true),
+
+                Tables\Columns\TextColumn::make('created_at')
+                    ->label('Dibuat Pada')
+                    ->dateTime('d M Y H:i')
+                    ->sortable()
+                    ->toggleable(isToggledHiddenByDefault: true),
+
+                Tables\Columns\TextColumn::make('updated_at')
+                    ->label('Diperbarui Pada')
+                    ->dateTime('d M Y H:i')
+                    ->sortable()
+                    ->toggleable(isToggledHiddenByDefault: true),
+
+                Tables\Columns\TextColumn::make('deleted_at')
+                    ->label('Dihapus Pada')
+                    ->dateTime('d M Y')
+                    ->sortable()
+                    ->toggleable(isToggledHiddenByDefault: true),
             ])
             ->filters([
+                Tables\Filters\SelectFilter::make('status')
+                    ->label('Status')
+                    ->options([
+                        'draft' => 'Draft',
+                        'sent' => 'Terkirim',
+                        'accepted' => 'Diterima',
+                        'rejected' => 'Ditolak',
+                    ]),
+
+                Tables\Filters\SelectFilter::make('nx_employee_id')
+                    ->label('PIC (Sales)')
+                    ->relationship('employee', 'full_name')
+                    ->searchable()
+                    ->preload()
+                    ->multiple(),
+
+                Tables\Filters\TernaryFilter::make('is_expired')
+                    ->label('Status Kedaluwarsa')
+                    ->placeholder('Semua Penawaran')
+                    ->trueLabel('Sudah Expired')
+                    ->falseLabel('Masih Berlaku')
+                    ->queries(
+                        true: fn(Builder $query) => $query->whereDate('valid_until', '<', now())->whereIn('status', ['draft', 'sent']),
+                        false: fn(Builder $query) => $query->whereDate('valid_until', '>=', now())->orWhereNotIn('status', ['draft', 'sent']),
+                    ),
+
                 Tables\Filters\Filter::make('created_at')
                     ->form([
                         DatePicker::make('created_from')
@@ -295,18 +420,23 @@ class QuotationResource extends Resource
                     ->color('warning')
                     ->requiresConfirmation()
                     ->action(function (Quotation $record) {
-                        if (!$record->customer || !$record->customer->email) {
+                        $emailTarget = $record->deal?->customer?->email ?? $record->deal?->lead?->email;
+
+                        if (!$emailTarget) {
                             Notification::make()
-                                ->title('Email customer tidak tersedia!')
+                                ->title('Email Klien tidak tersedia!')
                                 ->danger()
                                 ->send();
                             return;
                         }
-                        Mail::to($record->customer->email)
-                            ->send(new QuotationSent($record));
+
+                        Mail::to($emailTarget)->send(new QuotationSent($record));
+
                         $record->update(['status' => 'sent']);
+
                         Notification::make()
-                            ->title('Penawaran berhasil dikirim')
+                            ->title('Penawaran berhasil dikirim!')
+                            ->body("Terkirim ke: {$emailTarget}")
                             ->success()
                             ->send();
                     }),
@@ -328,10 +458,15 @@ class QuotationResource extends Resource
     public static function getPages(): array
     {
         return [
-            'index'  => Pages\ListQuotations::route('/'),
+            'index' => Pages\ListQuotations::route('/'),
             'create' => Pages\CreateQuotation::route('/create'),
-            'edit'   => Pages\EditQuotation::route('/{record}/edit'),
+            'edit' => Pages\EditQuotation::route('/{record}/edit'),
         ];
+    }
+
+    public static function getEloquentQuery(): Builder
+    {
+        return parent::getEloquentQuery()->withoutGlobalScopes([SoftDeletingScope::class]);
     }
 
     public static function getQuotationItemsSchema(): array
@@ -360,32 +495,39 @@ class QuotationResource extends Resource
                 ->options(function (Get $get) {
                     $type = $get('item_type');
 
-                    if ($type === 'App\\Models\\Inventory\\Product' || $type === Product::class) $type = 'product';
-                    if ($type === 'App\\Models\\Inventory\\Service' || $type === Service::class) $type = 'service';
-                    if ($type === 'App\\Models\\Inventory\\Package' || $type === Package::class) $type = 'package';
+                    if ($type === 'App\\Models\\Inventory\\Product' || $type === Product::class)
+                        $type = 'product';
+                    if ($type === 'App\\Models\\Inventory\\Service' || $type === Service::class)
+                        $type = 'service';
+                    if ($type === 'App\\Models\\Inventory\\Package' || $type === Package::class)
+                        $type = 'package';
 
                     return match ($type) {
                         'product' => Product::query()->pluck('product_name', 'id'),
                         'service' => Service::query()->pluck('service_name', 'id'),
                         'package' => Package::query()->pluck('package_name', 'id'),
-                        default   => [],
+                        default => [],
                     };
                 })
                 ->getOptionLabelUsing(function ($value, Get $get) {
                     $type = $get('item_type');
 
-                    if ($type === 'App\\Models\\Inventory\\Product' || $type === Product::class) $type = 'product';
-                    if ($type === 'App\\Models\\Inventory\\Service' || $type === Service::class) $type = 'service';
-                    if ($type === 'App\\Models\\Inventory\\Package' || $type === Package::class) $type = 'package';
+                    if ($type === 'App\\Models\\Inventory\\Product' || $type === Product::class)
+                        $type = 'product';
+                    if ($type === 'App\\Models\\Inventory\\Service' || $type === Service::class)
+                        $type = 'service';
+                    if ($type === 'App\\Models\\Inventory\\Package' || $type === Package::class)
+                        $type = 'package';
 
                     $modelClass = match ($type) {
                         'product' => Product::class,
                         'service' => Service::class,
                         'package' => Package::class,
-                        default   => null
+                        default => null
                     };
 
-                    if (!$modelClass || !$value) return null;
+                    if (!$modelClass || !$value)
+                        return null;
 
                     $record = $modelClass::find($value);
 
@@ -405,15 +547,18 @@ class QuotationResource extends Resource
 
                     $type = $get('item_type');
 
-                    if ($type === 'App\\Models\\Inventory\\Product' || $type === Product::class) $type = 'product';
-                    if ($type === 'App\\Models\\Inventory\\Service' || $type === Service::class) $type = 'service';
-                    if ($type === 'App\\Models\\Inventory\\Package' || $type === Package::class) $type = 'package';
+                    if ($type === 'App\\Models\\Inventory\\Product' || $type === Product::class)
+                        $type = 'product';
+                    if ($type === 'App\\Models\\Inventory\\Service' || $type === Service::class)
+                        $type = 'service';
+                    if ($type === 'App\\Models\\Inventory\\Package' || $type === Package::class)
+                        $type = 'package';
 
                     $model = match ($type) {
                         'product' => Product::find($state),
                         'service' => Service::find($state),
                         'package' => Package::find($state),
-                        default   => null
+                        default => null
                     };
 
                     if ($model) {
@@ -424,11 +569,11 @@ class QuotationResource extends Resource
                             'product' => (float) ($model->selling_price ?? $model->price ?? 0),
                             'service' => (float) ($model->price ?? 0),
                             'package' => (float) ($model->total_price ?? 0),
-                            default   => 0
+                            default => 0
                         };
                         $buyPrice = match ($type) {
                             'product' => (float) ($model->purchase_price ?? 0),
-                            default   => 0
+                            default => 0
                         };
 
                         $set('item_name', $name);
@@ -445,13 +590,13 @@ class QuotationResource extends Resource
                 ->dehydrated(true),
 
             TextInput::make('item_code')
-                ->label('Kode Produk')
+                ->label('Kode Product')
                 ->disabled()
                 ->dehydrated()
                 ->required(),
 
             TextInput::make('item_name')
-                ->label('Nama Produk')
+                ->label('Nama Product')
                 ->disabled()
                 ->dehydrated(true),
 

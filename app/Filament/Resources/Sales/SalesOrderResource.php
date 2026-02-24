@@ -28,10 +28,15 @@ use Illuminate\Support\Carbon;
 class SalesOrderResource extends Resource
 {
     protected static ?string $model = SalesOrder::class;
+
     protected static ?string $navigationIcon = 'heroicon-o-shopping-bag';
+
     protected static ?string $navigationGroup = 'Manajemen Sales';
-    protected static ?int $navigationSort = 6;
-    protected static ?string $slug = 'sales/sales-order';
+
+    protected static ?int $navigationSort = 3;
+
+    protected static ?string $slug = 'sales/sales-orders';
+
     protected static ?string $pluralModelLabel = 'Pesanan';
 
     public static function getNavigationBadge(): ?string
@@ -176,7 +181,7 @@ class SalesOrderResource extends Resource
                         ->prefixIcon('heroicon-o-hashtag'),
 
                     Select::make('nx_customer_id')
-                        ->label('Client')
+                        ->label('Customer')
                         ->relationship('customer', 'name')
                         ->searchable()
                         ->required()
@@ -224,12 +229,12 @@ class SalesOrderResource extends Resource
 
                         Grid::make(2)->schema([
                             TextInput::make('item_code')
-                                ->label('Kode Produk')
+                                ->label('Kode Product')
                                 ->disabled()
                                 ->dehydrated(false),
 
                             TextInput::make('item_name')
-                                ->label('Nama Produk')
+                                ->label('Nama Product')
                                 ->disabled()
                                 ->dehydrated(true),
 
@@ -396,7 +401,7 @@ class SalesOrderResource extends Resource
                     ->searchable(),
 
                 Tables\Columns\TextColumn::make('customer.name')
-                    ->label('Client')
+                    ->label('Customer')
                     ->sortable()
                     ->searchable(),
 
@@ -415,7 +420,9 @@ class SalesOrderResource extends Resource
                 Tables\Columns\TextColumn::make('grand_total')
                     ->label('Total')
                     ->money('IDR', true)
-                    ->weight('bold'),
+                    ->color(fn($state) => $state < 0 ? 'danger' : 'success')
+                    ->sortable()
+                    ->weight('semibold'),
 
                 Tables\Columns\TextColumn::make('status')
                     ->badge()

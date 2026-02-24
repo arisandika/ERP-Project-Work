@@ -132,7 +132,9 @@ class ReimbursementApprovalResource extends Resource
                 Tables\Columns\TextColumn::make('amount')
                     ->label('Nominal')
                     ->money('IDR')
-                    ->sortable(),
+                    ->color(fn($state) => $state < 0 ? 'success' : 'danger')
+                    ->sortable()
+                    ->weight('semibold'),
 
                 Tables\Columns\BadgeColumn::make('status')
                     ->label('Status')
@@ -263,7 +265,8 @@ class ReimbursementApprovalResource extends Resource
                                 'approved' => 'success',
                                 'rejected' => 'danger',
                                 default => 'secondary',
-                            }),
+                            })
+                            ->formatStateUsing(fn(string $state): string => ucwords(str_replace('_', ' ', $state))),
 
                         TextEntry::make('approver.full_name')
                             ->label('Disetujui Oleh')

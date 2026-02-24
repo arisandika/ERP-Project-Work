@@ -14,5 +14,4 @@ class CreateShift extends CreateRecord
     {
         return 'Tambah Jam Kerja';
     }
-
 }

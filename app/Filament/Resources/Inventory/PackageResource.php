@@ -216,7 +216,9 @@ class PackageResource extends Resource
                 Tables\Columns\TextColumn::make('total_price')
                     ->label('Harga')
                     ->money('IDR', true)
-                    ->sortable(),
+                    ->color(fn($state) => $state < 0 ? 'danger' : 'success')
+                    ->sortable()
+                    ->weight('semibold'),
 
                 Tables\Columns\ToggleColumn::make('is_active')
                     ->label('Aktif')

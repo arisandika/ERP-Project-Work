@@ -3,12 +3,10 @@
 namespace App\Models\CRM;
 
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Customer extends Model
 {
-    use SoftDeletes;
-
     protected $table = 'nx_customers';
 
     protected $fillable = [
@@ -22,9 +20,12 @@ class Customer extends Model
         'pic_name',
         'pic_position',
         'pic_phone',
-
+        'source',
+        'status'
     ];
 
-
-
+    public function deals(): HasMany
+    {
+        return $this->hasMany(Deal::class, 'nx_customer_id');
+    }
 }

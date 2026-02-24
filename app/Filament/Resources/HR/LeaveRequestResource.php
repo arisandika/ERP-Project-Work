@@ -296,7 +296,8 @@ class LeaveRequestResource extends Resource
                                 'approved' => 'success',
                                 'rejected' => 'danger',
                                 default => 'secondary',
-                            }),
+                            })
+                            ->formatStateUsing(fn(string $state): string => ucwords(str_replace('_', ' ', $state))),
 
                         TextEntry::make('approver.full_name')
                             ->label('Disetujui Oleh')

@@ -181,7 +181,8 @@ class AttendanceHistoryResource extends Resource
                                 'info' => 'Cuti',
                                 'yellow' => 'Izin',
                                 'danger' => 'Absen',
-                            ]),
+                            ])
+                            ->formatStateUsing(fn(string $state): string => ucwords(str_replace('_', ' ', $state))),
 
                         TextEntry::make('note')
                             ->label('Catatan')

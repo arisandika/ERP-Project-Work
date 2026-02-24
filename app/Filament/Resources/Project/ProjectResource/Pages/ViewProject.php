@@ -4,7 +4,6 @@ namespace App\Filament\Resources\Project\ProjectResource\Pages;
 
 use App\Filament\Pages\Project\ProjectBoard;
 use App\Filament\Resources\Project\ProjectResource;
-use App\Models\Project\Project;
 use Filament\Actions;
 use Filament\Actions\Action;
 use Filament\Infolists\Components\Grid;
@@ -12,7 +11,7 @@ use Filament\Infolists\Components\Section;
 use Filament\Infolists\Components\TextEntry;
 use Filament\Infolists\Infolist;
 use Filament\Resources\Pages\ViewRecord;
-use Filament\Support\Enums\FontWeight;
+
 
 class ViewProject extends ViewRecord
 {
@@ -78,7 +77,7 @@ class ViewProject extends ViewRecord
                             ->schema([
                                 TextEntry::make('name')
                                     ->label('Nama Project')
-                                    ->weight(FontWeight::Bold)
+                                    ->weight('bold')
                                     ->size('lg'),
                                 TextEntry::make('ticket_prefix')
                                     ->label('Prefix Ticket')
@@ -162,7 +161,7 @@ class ViewProject extends ViewRecord
 
                             TextEntry::make('invoice.invoice_number')
                                 ->label('No. Sales Invoice')
-                                ->weight(FontWeight::Bold)
+                                ->weight('bold')
                                 ->placeholder('Belum ditautkan'),
 
                             TextEntry::make('invoice.status')
@@ -186,7 +185,7 @@ class ViewProject extends ViewRecord
                                 ->placeholder('—'),
 
                             TextEntry::make('invoice.customer.name')
-                                ->label('Client')
+                                ->label('Customer')
                                 ->placeholder('—'),
 
                             TextEntry::make('invoice.employee.full_name')

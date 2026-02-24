@@ -19,4 +19,9 @@ class EditCustomer extends EditRecord
             Actions\RestoreAction::make(),
         ];
     }
+
+    public function getTitle(): string
+    {
+        return 'Edit Customer';
+    }
 }

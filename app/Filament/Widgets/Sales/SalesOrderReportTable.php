@@ -32,26 +32,35 @@ class SalesOrderReportTable extends BaseWidget
                 ->label('Tanggal Order')
                 ->date()
                 ->sortable(),
+
             Tables\Columns\TextColumn::make('order_number')
                 ->label('No. SO')
                 ->searchable(),
+
             Tables\Columns\TextColumn::make('customer.name')
-                ->label('Client'),
+                ->label('Customer'),
+
             Tables\Columns\TextColumn::make('grand_total')
                 ->label('Total')
-                ->money('IDR'),
+                ->money('IDR')
+                    ->color(fn($state) => $state < 0 ? 'danger' : 'success')
+                    ->sortable()
+                    ->weight('semibold'),
+
             Tables\Columns\TextColumn::make('status')
-                ->badge(),
+                ->label('Status')
+                ->badge()
+                ->formatStateUsing(fn(string $state): string => ucwords(str_replace('_', ' ', $state))),
         ];
     }
 
     // Fitur Export ke Excel
-    protected function getTableHeaderActions(): array
-    {
-        return [
-            ExportAction::make()
-                ->exporter(SalesOrderExporter::class) // Pastikan lo udah run: php artisan make:filament-exporter SalesOrderExporter
-                ->label('Export Excel'),
-        ];
-    }
+    // protected function getTableHeaderActions(): array
+    // {
+    //     return [
+    //         ExportAction::make()
+    //             ->exporter(SalesOrderExporter::class) // Pastikan lo udah run: php artisan make:filament-exporter SalesOrderExporter
+    //             ->label('Export Excel'),
+    //     ];
+    // }
 }

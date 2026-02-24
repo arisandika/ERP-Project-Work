@@ -5,7 +5,6 @@ namespace App\Filament\Resources\Project\ProjectResource\RelationManagers;
 use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Resources\RelationManagers\RelationManager;
-use Filament\Support\Enums\FontWeight;
 use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
@@ -77,7 +76,7 @@ class NotesRelationManager extends RelationManager
                     ->label('Title')
                     ->searchable()
                     ->sortable()
-                    ->weight(FontWeight::Medium),
+                    ->weight('medium'),
 
                 Tables\Columns\TextColumn::make('note_date')
                     ->label('Tanggal Catatan')

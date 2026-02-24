@@ -70,9 +70,10 @@ class DepartmentResource extends Resource
 
                 Tables\Columns\BadgeColumn::make('employees_count')
                     ->label('Jumlah Karyawan')
-                    ->counts('employees')
+                    ->badge()
+                    ->color(fn(int $state): string => $state > 0 ? 'info' : 'gray')
                     ->sortable()
-                    ->colors(['primary']),
+                    ->formatStateUsing(fn($state) => $state . ' Karyawan'),
 
                 Tables\Columns\TextColumn::make('created_at')
                     ->label('Dibuat Pada')
@@ -87,7 +88,7 @@ class DepartmentResource extends Resource
                     ->toggleable(isToggledHiddenByDefault: true),
 
                 Tables\Columns\TextColumn::make('deleted_at')
-                    ->label('Deleted At')
+                    ->label('Dihapus Pada')
                     ->dateTime('d M Y')
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
@@ -133,7 +134,7 @@ class DepartmentResource extends Resource
 
                         return $indicators;
                     }),
-                    
+
                 Tables\Filters\TrashedFilter::make()
                     ->label('Deleted Status')
                     ->native(false),
@@ -199,10 +200,10 @@ class DepartmentResource extends Resource
     public static function getPages(): array
     {
         return [
-            'index'  => Pages\ListDepartments::route('/'),
+            'index' => Pages\ListDepartments::route('/'),
             'create' => Pages\CreateDepartment::route('/create'),
-            'view'   => Pages\ViewDepartment::route('/{record}'),
-            'edit'   => Pages\EditDepartment::route('/{record}/edit'),
+            'view' => Pages\ViewDepartment::route('/{record}'),
+            'edit' => Pages\EditDepartment::route('/{record}/edit'),
         ];
     }
 

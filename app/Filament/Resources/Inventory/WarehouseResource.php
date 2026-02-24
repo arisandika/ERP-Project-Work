@@ -67,7 +67,7 @@ class WarehouseResource extends Resource
                             ]),
 
                         Forms\Components\Textarea::make('location')
-                            ->label('Alamat / Lokasi')
+                            ->label('Lokasi')
                             ->required()
                             ->maxLength(255)
                             ->rows(3)
@@ -122,7 +122,7 @@ class WarehouseResource extends Resource
                     ->color(fn($state) => $state ? 'primary' : 'gray'),
 
                 Tables\Columns\TextColumn::make('total_products')
-                    ->label('Jumlah Produk')
+                    ->label('Jumlah Product')
                     ->badge()
                     ->color('info')
                     ->suffix(' Items'),
@@ -246,7 +246,7 @@ class WarehouseResource extends Resource
                         TextEntry::make('warehouse_name')->label('Nama Gudang'),
                         TextEntry::make('manager_name')->label('Penanggung Jawab'),
                         TextEntry::make('phone')->label('No. Telepon')->badge()->color('info'),
-                        TextEntry::make('location')->label('Alamat / Lokasi'),
+                        TextEntry::make('location')->label('Lokasi'),
                         TextEntry::make('maps_url')
                             ->label('Tautan Maps')
                             ->formatStateUsing(fn($state) => $state ? 'Buka Google Maps' : '-')
@@ -259,7 +259,7 @@ class WarehouseResource extends Resource
                     ->columns(2)
                     ->schema([
                         TextEntry::make('total_products')
-                            ->label('Jumlah Produk')
+                            ->label('Jumlah Product')
                             ->badge()
                             ->color('info')
                             ->state(fn(Warehouse $record) => $record->stocks()->distinct('product_id')->count('id'))

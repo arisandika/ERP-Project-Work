@@ -15,7 +15,7 @@ use Filament\Notifications\Notification;
 class OperationalAlertTable extends BaseWidget
 {
     protected static ?string $heading = 'Jatuh Tempo (Perlu Penagihan)';
-    protected int | string | array $columnSpan = 'full';
+    protected int|string|array $columnSpan = 'full';
 
     public function table(Table $table): Table
     {
@@ -27,7 +27,7 @@ class OperationalAlertTable extends BaseWidget
                     ->whereDate('due_date', '<', now())
                     ->where(function (Builder $query) {
                         $query->where('status', 'unpaid')
-                              ->orWhere('status', 'partial');
+                            ->orWhere('status', 'partial');
                     })
                     ->orderBy('due_date', 'asc')
                     ->limit(5)
@@ -45,20 +45,25 @@ class OperationalAlertTable extends BaseWidget
                     ->date('d M Y')
                     ->label('Jatuh Tempo')
                     ->color('danger')
-                    ->description(fn (Invoice $record) => $record->due_date->diffForHumans()),
+                    ->description(fn(Invoice $record) => $record->due_date->diffForHumans()),
 
                 Tables\Columns\TextColumn::make('grand_total')
+                    ->label('Total Tagihan')
                     ->money('IDR')
-                    ->label('Total Tagihan'),
+                    ->color(fn($state) => $state < 0 ? 'danger' : 'success')
+                    ->sortable()
+                    ->weight('semibold'),
 
                 Tables\Columns\TextColumn::make('status')
+                    ->label('Status')
                     ->badge()
-                    ->color(fn (string $state): string => match ($state) {
+                    ->color(fn(string $state): string => match ($state) {
                         'unpaid' => 'danger',
                         'partial' => 'warning',
                         'paid' => 'success',
                         default => 'gray',
-                    }),
+                    })
+                    ->formatStateUsing(fn(string $state): string => ucwords(str_replace('_', ' ', $state))),
             ])
             ->actions([
                 Action::make('sendReminder')
@@ -72,7 +77,7 @@ class OperationalAlertTable extends BaseWidget
                     ->action(function (Invoice $record) {
                         $email = $record->customer->email;
 
-                        if (! $email) {
+                        if (!$email) {
                             Notification::make()
                                 ->title('Gagal')
                                 ->body('Customer ini tidak memiliki alamat email.')

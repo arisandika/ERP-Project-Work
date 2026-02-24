@@ -68,7 +68,7 @@ class CreateSalesOrder extends CreateRecord
 
                             // Validasi stok dalam transaction
                             if ($productStock->qty < $item->qty) {
-                                $productName = $item->product->product_name ?? 'Produk';
+                                $productName = $item->product->product_name ?? 'Product';
                                 throw new \Exception(
                                     "Stok '{$productName}' tidak cukup. Sisa: {$productStock->qty}, diminta: {$item->qty}"
                                 );

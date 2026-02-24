@@ -31,10 +31,10 @@ class ProductResource extends Resource
     {
         return $form
             ->schema([
-                Forms\Components\Section::make('Informasi Produk')
+                Forms\Components\Section::make('Informasi Product')
                     ->schema([
                         Forms\Components\TextInput::make('product_name')
-                            ->label('Nama Produk')
+                            ->label('Nama Product')
                             ->required()
                             ->maxLength(100)
                             ->placeholder('Contoh: Laptop Lenovo ThinkPad')
@@ -71,10 +71,11 @@ class ProductResource extends Resource
                                     ->required()
                                     ->maxLength(20)
                                     ->prefixIcon('heroicon-o-scale'),
+
                                 Forms\Components\TextInput::make('symbol')
                                     ->label('Simbol')
-                                    ->maxLength(10)
-                                    ->prefixIcon('heroicon-o-pencil'),
+                                    ->maxLength(10),
+
                                 Forms\Components\Textarea::make('description')
                                     ->label('Deskripsi')
                                     ->rows(2),
@@ -95,7 +96,7 @@ class ProductResource extends Resource
                             ->step(0.01),
 
                         Forms\Components\FileUpload::make('image_path')
-                            ->label('Foto Produk')
+                            ->label('Foto Product')
                             ->directory('products')
                             ->disk('public')
                             ->image()
@@ -169,13 +170,13 @@ class ProductResource extends Resource
                     ->circular(),
 
                 Tables\Columns\TextColumn::make('product_code')
-                    ->label('Kode Produk')
+                    ->label('Kode Product')
                     ->searchable()
                     ->sortable()
                     ->weight('bold'),
 
                 Tables\Columns\TextColumn::make('product_name')
-                    ->label('Nama Produk')
+                    ->label('Nama Product')
                     ->searchable()
                     ->sortable()
                     ->limit(30),
@@ -225,13 +226,17 @@ class ProductResource extends Resource
 
                 Tables\Columns\TextColumn::make('purchase_price')
                     ->label('Harga Beli')
-                    ->money('idr')
-                    ->sortable(),
+                    ->money('IDR')
+                    ->color(fn($state) => $state < 0 ? 'danger' : 'success')
+                    ->sortable()
+                    ->weight('semibold'),
 
                 Tables\Columns\TextColumn::make('selling_price')
                     ->label('Harga Jual')
-                    ->money('idr')
-                    ->sortable(),
+                    ->money('IDR')
+                    ->color(fn($state) => $state < 0 ? 'danger' : 'success')
+                    ->sortable()
+                    ->weight('semibold'),
             ])
             ->filters([
                 Tables\Filters\Filter::make('stock')
@@ -306,13 +311,13 @@ class ProductResource extends Resource
                     ->preload(),
             ])
             ->actions([
-                Tables\Actions\ViewAction::make()->icon('heroicon-o-eye'),
-                Tables\Actions\EditAction::make()->icon('heroicon-o-pencil-square'),
-                Tables\Actions\DeleteAction::make()->icon('heroicon-o-trash'),
+                Tables\Actions\ViewAction::make(),
+                Tables\Actions\EditAction::make(),
+                Tables\Actions\DeleteAction::make(),
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([
-                    Tables\Actions\DeleteBulkAction::make()->icon('heroicon-o-trash'),
+                    Tables\Actions\DeleteBulkAction::make(),
                 ]),
             ])
             ->defaultSort('created_at', 'desc');

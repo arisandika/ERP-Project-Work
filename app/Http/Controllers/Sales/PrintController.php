@@ -69,7 +69,7 @@ class PrintController extends Controller
 
         if ($inputEmail !== $dbEmail || $inputPhone !== $dbPhone) {
             return back()
-                ->withErrors(['email' => 'Email / No HP tidak cocok dengan data customer.'])
+                ->withErrors(['email' => 'Email atau No HP tidak cocok dengan data customer.'])
                 ->withInput();
         }
 

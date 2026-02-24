@@ -74,10 +74,11 @@ class UnitResource extends Resource
                     ->searchable(),
 
                 Tables\Columns\BadgeColumn::make('products_count')
-                    ->label('Jumlah Produk')
-                    ->counts('products')
+                    ->label('Jumlah Product')
+                    ->badge()
+                    ->color(fn(int $state): string => $state > 0 ? 'info' : 'gray')
                     ->sortable()
-                    ->colors(['primary']),
+                    ->formatStateUsing(fn($state) => $state . ' Product'),
 
                 Tables\Columns\TextColumn::make('created_at')
                     ->label('Dibuat Pada')
@@ -165,7 +166,7 @@ class UnitResource extends Resource
                             ->label('Deskripsi'),
 
                         TextEntry::make('products_count')
-                            ->label('Jumlah Produk')
+                            ->label('Jumlah Product')
                             ->badge()
                             ->color('primary')
                             ->state(fn(Unit $unit) => $unit->products()->count()),

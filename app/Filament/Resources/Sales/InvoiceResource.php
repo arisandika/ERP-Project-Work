@@ -35,10 +35,15 @@ use Illuminate\Support\Str;
 class InvoiceResource extends Resource
 {
     protected static ?string $model = Invoice::class;
+
     protected static ?string $navigationIcon = 'heroicon-o-banknotes';
+
     protected static ?string $navigationGroup = 'Manajemen Sales';
-    protected static ?int $navigationSort = 8;
+
+    protected static ?int $navigationSort = 5;
+
     protected static ?string $slug = 'sales/invoices';
+
     protected static ?string $pluralModelLabel = 'Invoice';
 
     public static function getNavigationBadge(): ?string
@@ -136,7 +141,7 @@ class InvoiceResource extends Resource
                         ->maxLength(50),
 
                     Select::make('nx_customer_id')
-                        ->label('Client')
+                        ->label('Customer')
                         ->relationship('customer', 'name')
                         ->searchable()
                         ->required()
@@ -183,7 +188,7 @@ class InvoiceResource extends Resource
                         Grid::make(2)->schema([
 
                             TextInput::make('item_code')
-                                ->label('Kode Produk')
+                                ->label('Kode Product')
                                 ->readOnly()
                                 ->dehydrated(),
 
@@ -304,7 +309,7 @@ class InvoiceResource extends Resource
                     ->weight('bold'),
 
                 Tables\Columns\TextColumn::make('customer.name')
-                    ->label('Client')
+                    ->label('Customer')
                     ->sortable()
                     ->searchable(),
 
@@ -316,15 +321,16 @@ class InvoiceResource extends Resource
                 Tables\Columns\TextColumn::make('grand_total')
                     ->label('Total Tagihan')
                     ->money('IDR', true)
+                    ->color(fn($state) => $state < 0 ? 'danger' : 'success')
                     ->sortable()
-                    ->weight('bold'),
+                    ->weight('semibold'),
 
                 Tables\Columns\TextColumn::make('remaining_balance')
                     ->label('Sisa')
                     ->money('IDR', true)
                     ->color(fn($state) => $state > 0 ? 'danger' : 'success')
                     ->sortable()
-                    ->weight('bold'),
+                    ->weight('semibold'),
 
                 Tables\Columns\TextColumn::make('status')
                     ->badge()

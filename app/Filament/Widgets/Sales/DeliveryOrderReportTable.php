@@ -41,6 +41,7 @@ class DeliveryOrderReportTable extends BaseWidget
                 ->label('Penerima'),
 
             Tables\Columns\TextColumn::make('status')
+                ->labe('Status')
                 ->badge()
                 ->color(fn (string $state): string => match ($state) {
                     'draft'     => 'gray',
@@ -50,7 +51,8 @@ class DeliveryOrderReportTable extends BaseWidget
                     'delivered' => 'success',
                     'returned'  => 'danger',
                     default     => 'gray',
-                }),
+                })
+                ->formatStateUsing(fn(string $state): string => ucwords(str_replace('_', ' ', $state))),
 
         ];
     }

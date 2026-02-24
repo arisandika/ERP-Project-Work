@@ -41,16 +41,20 @@ class QuotationReportTable extends BaseWidget
             Tables\Columns\TextColumn::make('grand_total')
                 ->label('Nilai')
                 ->money('IDR')
-                ->sortable(),
+                    ->color(fn($state) => $state < 0 ? 'danger' : 'success')
+                    ->sortable()
+                    ->weight('semibold'),
 
             Tables\Columns\TextColumn::make('status')
+                ->label('Status')
                 ->badge()
                 ->color(fn (string $state): string => match ($state) {
                     'draft' => 'gray',
                     'sent' => 'warning',
                     'accepted' => 'success',
                     'rejected' => 'danger',
-                }),
+                })
+                ->formatStateUsing(fn(string $state): string => ucwords(str_replace('_', ' ', $state))),
 
             Tables\Columns\TextColumn::make('valid_until')
                 ->label('Berlaku Sampai')

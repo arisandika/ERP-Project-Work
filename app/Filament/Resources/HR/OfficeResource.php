@@ -50,7 +50,7 @@ class OfficeResource extends Resource
                             ->prefixIcon('heroicon-o-map-pin'),
 
                         Forms\Components\TextInput::make('phone_number')
-                            ->label('Nomor HP Kantor')
+                            ->label('No. HP Kantor')
                             ->required()
                             ->numeric()
                             ->unique(ignoreRecord: true)
@@ -116,7 +116,7 @@ class OfficeResource extends Resource
                     ->label('Radius (m)'),
 
                 TextColumn::make('phone_number')
-                    ->label('Nomor HP Kantor')
+                    ->label('No. HP Kantor')
                     ->searchable()
                     ->sortable(),
 
@@ -138,7 +138,7 @@ class OfficeResource extends Resource
                     ->toggleable(isToggledHiddenByDefault: true),
 
                 Tables\Columns\TextColumn::make('deleted_at')
-                    ->label('Deleted At')
+                    ->label('Dihapus Pada')
                     ->dateTime('d M Y')
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),

@@ -29,10 +29,15 @@ use Illuminate\Support\Carbon;
 class DeliveryOrderResource extends Resource
 {
     protected static ?string $model = DeliveryOrder::class;
+    
     protected static ?string $navigationIcon = 'heroicon-o-truck';
+
     protected static ?string $navigationGroup = 'Manajemen Sales';
-    protected static ?int $navigationSort = 7;
-    protected static ?string $slug = 'sales/delivery-order';
+
+    protected static ?int $navigationSort = 4;
+
+    protected static ?string $slug = 'sales/delivery-orders';
+
     protected static ?string $pluralModelLabel = 'Surat Jalan';
 
     public static function getNavigationBadge(): ?string
@@ -122,7 +127,7 @@ class DeliveryOrderResource extends Resource
 
                 Grid::make(2)->schema([
                     Select::make('nx_customer_id')
-                        ->label('Client')
+                        ->label('Customer')
                         ->relationship('customer', 'name')
                         ->searchable()
                         ->disabled()
@@ -165,15 +170,15 @@ class DeliveryOrderResource extends Resource
                         Hidden::make('item_type')->default('product'),
                         Hidden::make('item_id'),
                         Hidden::make('item_code'),
-                        
+
                         Grid::make(2)->schema([
                             TextInput::make('item_code')
-                                ->label('Kode Produk')
+                                ->label('Kode Product')
                                 ->disabled()
                                 ->dehydrated(false),
-    
+
                             TextInput::make('item_name')
-                                ->label('Nama Produk')
+                                ->label('Nama Product')
                                 ->disabled()
                                 ->dehydrated(true),
 
@@ -230,7 +235,7 @@ class DeliveryOrderResource extends Resource
                     ->searchable(),
 
                 Tables\Columns\TextColumn::make('customer.name')
-                    ->label('Client')
+                    ->label('Customer')
                     ->sortable()
                     ->searchable(),
 

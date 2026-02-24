@@ -22,10 +22,15 @@ class SalesPersonResource extends Resource
     protected static ?string $model = SalesPerson::class;
 
     protected static ?string $navigationIcon = 'heroicon-o-user-group';
+
     protected static ?string $navigationGroup = 'Manajemen Sales';
-    protected static ?string $navigationLabel = 'PIC Sales';
+
+    protected static ?int $navigationSort = 1;
+
+    protected static ?string $slug = 'sales/pic-sales';
+
     protected static ?string $pluralModelLabel = 'PIC Sales';
-    protected static ?string $modelLabel = 'PIC Sales';
+
     public static function getNavigationBadge(): ?string
     {
         return static::getModel()::count();
@@ -132,11 +137,7 @@ class SalesPersonResource extends Resource
                         'external' => 'warning',
                         default => 'gray'
                     })
-                    ->formatStateUsing(fn(string $state): string => match ($state) {
-                        'internal' => 'Internal',
-                        'external' => 'Eksternal',
-                        default => $state,
-                    }),
+                    ->formatStateUsing(fn(string $state): string => ucwords(str_replace('_', ' ', $state))),
 
                 Tables\Columns\BadgeColumn::make('status')
                     ->label('Status')

@@ -50,7 +50,7 @@ class TransactionResource extends Resource
                         ->prefixIcon('heroicon-o-hashtag'),
 
                         Forms\Components\Select::make('product_id')
-                            ->label('Nama Produk')
+                            ->label('Nama Product')
                             ->relationship('product', 'product_name')
                             ->required()
                             ->searchable()
@@ -131,7 +131,7 @@ class TransactionResource extends Resource
                             ),
 
                         Forms\Components\TextInput::make('price')
-                            ->label('Harga Beli / Unit')
+                            ->label('Harga Beli per Unit')
                             ->prefix('IDR')
                             ->disabled()
                             ->dehydrated(true),
@@ -236,13 +236,13 @@ class TransactionResource extends Resource
                     ->sortable(),
 
                 Tables\Columns\TextColumn::make('product.product_code')
-                    ->label('Kode Produk')
+                    ->label('Kode Product')
                     ->searchable()
                     ->sortable()
                     ->weight('bold'),
 
                 Tables\Columns\TextColumn::make('product.product_name')
-                    ->label('Nama Produk')
+                    ->label('Nama Product')
                     ->searchable()
                     ->sortable()
                     ->limit(30),
@@ -272,14 +272,16 @@ class TransactionResource extends Resource
                 Tables\Columns\TextColumn::make('price')
                     ->label('Harga Satuan')
                     ->money('IDR')
+                    ->color(fn($state) => $state < 0 ? 'danger' : 'success')
                     ->sortable()
-                    ->toggleable(),
+                    ->weight('semibold'),
 
                 Tables\Columns\TextColumn::make('total_price')
                     ->label('Total')
                     ->money('IDR')
-                    ->weight('bold')
-                    ->sortable(),
+                    ->color(fn($state) => $state < 0 ? 'danger' : 'success')
+                    ->sortable()
+                    ->weight('semibold'),
 
                 Tables\Columns\TextColumn::make('creator.name')
                     ->label('Input Oleh')
@@ -336,7 +338,7 @@ class TransactionResource extends Resource
                     }),
 
                 Tables\Filters\SelectFilter::make('product_id')
-                    ->label('Nama Produk')
+                    ->label('Nama Product')
                     ->relationship('product', 'product_name')
                     ->searchable()
                     ->preload(),

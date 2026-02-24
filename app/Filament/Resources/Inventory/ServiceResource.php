@@ -83,7 +83,9 @@ class ServiceResource extends Resource
                 Tables\Columns\TextColumn::make('price')
                     ->label('Harga')
                     ->money('IDR', true)
-                    ->sortable(),
+                    ->color(fn($state) => $state < 0 ? 'danger' : 'success')
+                    ->sortable()
+                    ->weight('semibold'),
 
                 Tables\Columns\TextColumn::make('created_at')
                     ->label('Dibuat Pada')
@@ -159,15 +161,26 @@ class ServiceResource extends Resource
                 Section::make('Detail Layanan')
                     ->columns(2)
                     ->schema([
-                        TextEntry::make('service_name')->label('Nama Layanan'),
-                        TextEntry::make('category.name')->label('Kategori'),
-                        TextEntry::make('price')->label('Harga')->money('IDR', true),
+                        TextEntry::make('service_name')
+                            ->label('Nama Layanan'),
+
+                        TextEntry::make('category.name')
+                            ->label('Kategori'),
+
+                        TextEntry::make('price')
+                            ->label('Harga')
+                            ->money('IDR', true),
                     ]),
                 Section::make('Waktu Pengelolaan')
                     ->columns(2)
                     ->schema([
-                        TextEntry::make('created_at')->label('Dibuat Pada')->dateTime('d M Y H:i'),
-                        TextEntry::make('updated_at')->label('Diperbarui Pada')->dateTime('d M Y H:i'),
+                        TextEntry::make('created_at')
+                            ->label('Dibuat Pada')
+                            ->dateTime('d M Y H:i'),
+
+                        TextEntry::make('updated_at')
+                            ->label('Diperbarui Pada')
+                            ->dateTime('d M Y H:i'),
                     ]),
             ]);
     }
