@@ -29,6 +29,7 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\HtmlString;
 
 class QuotationResource extends Resource
 {
@@ -114,6 +115,7 @@ class QuotationResource extends Resource
                                 ->options([
                                     'draft' => 'Draft',
                                     'sent' => 'Terkirim',
+                                    'negotiation' => 'Negosiasi',
                                     'accepted' => 'Diterima',
                                     'rejected' => 'Ditolak',
                                 ])
@@ -232,24 +234,60 @@ class QuotationResource extends Resource
                         $deal = $record->deal;
                         if (!$deal)
                             return '-';
+
                         if ($deal->customer)
                             return $deal->customer->name . ' (Customer)';
                         if ($deal->lead)
                             return $deal->lead->name . ' (Lead)';
+
                         return '-';
                     })
-                    ->description(fn(Quotation $record) => $record->deal?->deal_number)
+                    ->description(function (Quotation $record) {
+                        $deal = $record->deal;
+                        if (!$deal)
+                            return '-';
+
+                        $desc = $deal->deal_number;
+
+                        if ($record->trashed() || $deal->trashed() || $deal->status === 'lost') {
+                            $desc .= '<div class="relative fi-color-danger bg-danger-50 text-danger-600 ring-danger-600/10 dark:bg-danger-400/10 dark:text-danger-400 dark:ring-danger-400/30 rounded-md text-xs font-medium ring-1 ring-inset px-2 py-1 capitalize w-fit">Deal Lost</div>';
+                        } elseif ($deal->status === 'won') {
+                            $desc .= '<div class="relative fi-color-success bg-success-50 text-success-600 ring-success-600/10 dark:bg-success-400/10 dark:text-success-400 dark:ring-success-400/30 rounded-md text-xs font-medium ring-1 ring-inset px-2 py-1 capitalize w-fit">Deal Won</div>';
+                        }
+
+                        return new HtmlString($desc);
+                    })
                     ->searchable(['deal.customer.name', 'deal.lead.name'])
                     ->sortable()
                     ->weight('semibold')
                     ->icon('heroicon-o-user')
                     ->color('primary'),
 
+                Tables\Columns\TextColumn::make('status')
+                    ->badge()
+                    ->color(fn(string $state): string => match ($state) {
+                        'draft' => 'gray',
+                        'sent' => 'warning',
+                        'negotiation' => 'info',
+                        'accepted' => 'success',
+                        'rejected' => 'danger',
+                        default => 'gray'
+                    })
+                    ->formatStateUsing(fn(string $state): string => match ($state) {
+                        'draft' => 'Draft',
+                        'sent' => 'Terkirim',
+                        'negotiation' => 'Negosiasi',
+                        'accepted' => 'Diterima',
+                        'rejected' => 'Ditolak',
+                        default => ucfirst($state),
+                    }),
+
                 Tables\Columns\TextColumn::make('employee.full_name')
                     ->label('PIC (Sales)')
                     ->searchable()
                     ->sortable()
-                    ->toggleable(isToggledHiddenByDefault: true),
+                    ->badge()
+                    ->color('gray'),
 
                 Tables\Columns\TextColumn::make('quotation_date')
                     ->label('Tanggal Penawaran')
@@ -289,6 +327,7 @@ class QuotationResource extends Resource
                     ->color(fn(string $state): string => match ($state) {
                         'draft' => 'gray',
                         'sent' => 'warning',
+                        'negotiation' => 'warning',
                         'accepted' => 'success',
                         'rejected' => 'danger',
                         default => 'gray'
@@ -296,6 +335,7 @@ class QuotationResource extends Resource
                     ->formatStateUsing(fn(string $state): string => match ($state) {
                         'draft' => 'Draft',
                         'sent' => 'Terkirim',
+                        'negotiation' => 'Negosiasi',
                         'accepted' => 'Diterima',
                         'rejected' => 'Ditolak',
                         default => ucfirst($state),
@@ -333,11 +373,11 @@ class QuotationResource extends Resource
                     ->label('Diperbarui Pada')
                     ->dateTime('d M Y H:i')
                     ->sortable()
-                    ->toggleable(isToggledHiddenByDefault: true),
+                    ->toggleable(isToggledHiddenByDefault: false),
 
                 Tables\Columns\TextColumn::make('deleted_at')
                     ->label('Dihapus Pada')
-                    ->dateTime('d M Y')
+                    ->dateTime('d M Y H:i')
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
             ])
@@ -347,6 +387,7 @@ class QuotationResource extends Resource
                     ->options([
                         'draft' => 'Draft',
                         'sent' => 'Terkirim',
+                        'negotiation' => 'Negosiasi',
                         'accepted' => 'Diterima',
                         'rejected' => 'Ditolak',
                     ]),
@@ -442,13 +483,13 @@ class QuotationResource extends Resource
                     }),
                 Tables\Actions\EditAction::make(),
                 Tables\Actions\DeleteAction::make(),
-                Tables\Actions\ForceDeleteAction::make(),
+                // Tables\Actions\ForceDeleteAction::make(),
                 Tables\Actions\RestoreAction::make(),
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([
                     Tables\Actions\DeleteBulkAction::make(),
-                    Tables\Actions\ForceDeleteBulkAction::make(),
+                    // Tables\Actions\ForceDeleteBulkAction::make(),
                     Tables\Actions\RestoreBulkAction::make(),
                 ]),
             ])
@@ -466,7 +507,10 @@ class QuotationResource extends Resource
 
     public static function getEloquentQuery(): Builder
     {
-        return parent::getEloquentQuery()->withoutGlobalScopes([SoftDeletingScope::class]);
+        return parent::getEloquentQuery()
+            ->withoutGlobalScopes([
+                SoftDeletingScope::class,
+            ]);
     }
 
     public static function getQuotationItemsSchema(): array

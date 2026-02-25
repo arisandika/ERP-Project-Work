@@ -43,7 +43,7 @@ class Quotation extends Model
 
     public function deal(): BelongsTo
     {
-        return $this->belongsTo(Deal::class, 'nx_deal_id')->withDefault();
+        return $this->belongsTo(Deal::class, 'nx_deal_id')->withTrashed()->withDefault();
     }
 
     public function employee(): BelongsTo
@@ -74,7 +74,6 @@ class Quotation extends Model
     protected static function booted(): void
     {
         static::creating(function (Quotation $q) {
-
             if ($q->quotation_date)
                 $q->quotation_date = Carbon::parse($q->quotation_date)
                     ->setTimeFromTimeString(now()->format('H:i:s'));
@@ -87,7 +86,18 @@ class Quotation extends Model
 
             if (empty($q->created_by) && $user?->employee)
                 $q->created_by = $user->employee->id;
+        });
 
+        static::updating(function (Quotation $q) {
+            if ($q->isDirty('status')) {
+                if ($q->status === 'accepted') {
+                    $q->approved_by = auth()->user()?->employee?->id;
+                    $q->approved_at = now();
+                } else {
+                    $q->approved_by = null;
+                    $q->approved_at = null;
+                }
+            }
         });
     }
 }

@@ -20,7 +20,7 @@ class CustomerResource extends Resource
 
     protected static ?string $navigationGroup = 'Manajemen CRM';
 
-    protected static ?int $navigationSort = 3;
+    protected static ?int $navigationSort = 4;
 
     protected static ?string $slug = 'crm/customers';
 
@@ -35,7 +35,6 @@ class CustomerResource extends Resource
     {
         return $form
             ->schema([
-                // SECTION 1: INFORMASI DASAR
                 Forms\Components\Section::make('Informasi Pelanggan')
                     ->description('Pilih tipe pelanggan untuk menampilkan form yang sesuai.')
                     ->schema([
@@ -93,7 +92,6 @@ class CustomerResource extends Resource
                     ])
                     ->columns(2),
 
-                // SECTION 2: KHUSUS B2C (PERORANGAN)
                 Forms\Components\Section::make('Detail Perorangan')
                     ->schema([
                         Forms\Components\TextInput::make('nik')
@@ -115,7 +113,6 @@ class CustomerResource extends Resource
                     ->columns(2)
                     ->visible(fn(Forms\Get $get) => $get('customer_type') === 'individual'),
 
-                // SECTION 3: KHUSUS B2B (PERUSAHAAN)
                 Forms\Components\Section::make('Detail Perusahaan & PIC')
                     ->description('Lengkapi data NPWP dan Penanggung Jawab (PIC).')
                     ->schema([
@@ -201,7 +198,19 @@ class CustomerResource extends Resource
                     ->toggleable(isToggledHiddenByDefault: true),
 
                 Tables\Columns\TextColumn::make('created_at')
-                    ->label('Dibuat')
+                    ->label('Dibuat Pada')
+                    ->dateTime('d M Y H:i')
+                    ->sortable()
+                    ->toggleable(isToggledHiddenByDefault: true),
+
+                Tables\Columns\TextColumn::make('updated_at')
+                    ->label('Diperbarui Pada')
+                    ->dateTime('d M Y H:i')
+                    ->sortable()
+                    ->toggleable(isToggledHiddenByDefault: true),
+
+                Tables\Columns\TextColumn::make('deleted_at')
+                    ->label('Dihapus Pada')
                     ->dateTime('d M Y')
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
@@ -231,13 +240,13 @@ class CustomerResource extends Resource
                 Tables\Actions\ViewAction::make(),
                 Tables\Actions\EditAction::make(),
                 Tables\Actions\DeleteAction::make(),
-                Tables\Actions\ForceDeleteAction::make(),
+                // Tables\Actions\ForceDeleteAction::make(),
                 Tables\Actions\RestoreAction::make(),
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([
                     Tables\Actions\DeleteBulkAction::make(),
-                    Tables\Actions\ForceDeleteBulkAction::make(),
+                    // Tables\Actions\ForceDeleteBulkAction::make(),
                     Tables\Actions\RestoreBulkAction::make(),
                 ]),
             ]);
@@ -262,9 +271,6 @@ class CustomerResource extends Resource
 
     public static function getEloquentQuery(): Builder
     {
-        return parent::getEloquentQuery()
-            ->withoutGlobalScopes([
-                SoftDeletingScope::class,
-            ]);
+        return parent::getEloquentQuery()->withoutGlobalScopes([SoftDeletingScope::class]);
     }
 }

@@ -77,85 +77,53 @@ class DealResource extends Resource
                                     ->relationship(
                                         name: 'stage',
                                         titleAttribute: 'name',
-                                        modifyQueryUsing: fn(Builder $query) => $query->orderBy('order', 'asc'),
+                                        modifyQueryUsing: fn($query) => $query->orderBy('order', 'asc'),
                                     )
                                     ->getOptionLabelFromRecordUsing(fn($record) => "Stage {$record->order} - {$record->name}")
                                     ->searchable()
                                     ->preload()
                                     ->required()
-                                    ->native(false)
-                                    ->live()
-                                    ->prefixIcon('heroicon-o-queue-list')
-                                    ->helperText('Tahapan/Stage deal saat ini.')
-                                    ->afterStateUpdated(function ($state, callable $set, $record) {
-                                        if (!$record)
+                                    ->live() // Wajib
+                                    ->afterStateUpdated(function ($state, $old, callable $set, callable $get, $record) {
+                                        if (!$state)
                                             return;
 
-                                        $deal = Deal::with('stage', 'quotations')->find($record->id);
                                         $targetStage = DealStage::find($state);
-
-                                        if (!$deal || !$targetStage)
+                                        if (!$targetStage)
                                             return;
 
                                         $stageName = strtolower($targetStage->name);
-                                        $hasQuotation = $deal->quotations()->exists();
+                                        $hasQuotation = $record ? $record->quotations()->exists() : false; // Cek kutipan aman untuk create/edit
+                            
+                                        $isWon = str_contains($stageName, 'closed won') || str_contains($stageName, 'won');
+                                        $isLost = str_contains($stageName, 'closed lost') || str_contains($stageName, 'lost');
 
-                                        $isWon = str_contains($stageName, 'won');
-                                        $isLost = str_contains($stageName, 'lost');
-
-                                        $penawaranStage = DealStage::whereRaw(
-                                            'LOWER(name) LIKE ?',
-                                            ['%penawaran%']
-                                        )->first();
-
+                                        $penawaranStage = DealStage::whereRaw('LOWER(name) LIKE ?', ['%penawaran%'])->first();
                                         $penawaranProbability = $penawaranStage?->probability ?? 0;
 
-                                        // TIDAK PUNYA PENAWARAN
+                                        // --- LOGIC VALIDASI (Sama seperti sebelumnya) ---
                                         if (!$hasQuotation) {
-
                                             if ($targetStage->probability >= $penawaranProbability && !$isLost) {
-
-                                                Notification::make()
-                                                    ->title('Gagal Memperbarui Deal')
-                                                    ->body('Deal tanpa Penawaran tidak bisa ke stage Penawaran atau di atasnya.')
-                                                    ->danger()
-                                                    ->send();
-
-                                                $set('nx_deal_stage_id', $deal->nx_deal_stage_id);
+                                                Notification::make()->title('Gagal')->body('Deal tanpa Penawaran tidak bisa ke stage Penawaran/atasnya.')->danger()->send();
+                                                $set('nx_deal_stage_id', $old);
                                                 return;
                                             }
-
                                             if ($isWon) {
-                                                Notification::make()
-                                                    ->title('Gagal Memperbarui Deal')
-                                                    ->body('Deal tanpa Penawaran tidak bisa Closed Won.')
-                                                    ->danger()
-                                                    ->send();
-
-                                                $set('nx_deal_stage_id', $deal->nx_deal_stage_id);
+                                                Notification::make()->title('Gagal')->body('Deal tanpa Penawaran tidak bisa Closed Won.')->danger()->send();
+                                                $set('nx_deal_stage_id', $old);
                                                 return;
                                             }
                                         }
-
-                                        // PUNYA PENAWARAN
                                         if ($hasQuotation) {
-
-                                            if (
-                                                $targetStage->probability < $penawaranProbability
-                                                && !$isLost
-                                            ) {
-                                                Notification::make()
-                                                    ->title('Gagal Memperbarui Deal')
-                                                    ->body('Deal tidak bisa kembali ke bawah stage Penawaran kecuali Closed Lost.')
-                                                    ->warning()
-                                                    ->send();
-
-                                                $set('nx_deal_stage_id', $deal->nx_deal_stage_id);
+                                            if ($targetStage->probability < $penawaranProbability && !$isLost) {
+                                                Notification::make()->title('Gagal')->body('Deal tidak bisa kembali ke bawah stage Penawaran kecuali Lost.')->warning()->send();
+                                                $set('nx_deal_stage_id', $old);
                                                 return;
                                             }
                                         }
 
-                                        // AUTO SYNC STATUS
+                                        // --- LOGIC UPDATE STATUS & CLOSE DATE ---
+                                        $currentStatus = $get('status') ?? ($record?->status ?? 'open');
                                         $newStatus = 'open';
 
                                         if ($isWon) {
@@ -164,49 +132,19 @@ class DealResource extends Resource
                                             $newStatus = 'lost';
                                         }
 
-                                        if ($deal->status === 'won' && !$isWon) {
+                                        // Jika dari WON turun ke stage lain (bukan lost), status kembali OPEN
+                                        if ($currentStatus === 'won' && !$isWon && !$isLost) {
                                             $newStatus = 'open';
                                         }
 
                                         $set('status', $newStatus);
 
-                                        // PUNYA QUOTATION + STATUS LOST = Tidak boleh turun ke bawah Penawaran
-                                        if ($hasQuotation && $deal->status === 'lost') {
-
-                                            if ($targetStage->probability < $penawaranProbability) {
-
-                                                Notification::make()
-                                                    ->title('Gagal Memperbarui Deal')
-                                                    ->body('Deal yang sudah Closed Lost tidak bisa kembali ke stage sebelum Penawaran.')
-                                                    ->warning()
-                                                    ->send();
-
-                                                $set('nx_deal_stage_id', $deal->nx_deal_stage_id);
-                                                return;
-                                            }
+                                        // LOGIC TANGGAL DISINI:
+                                        if (in_array($newStatus, ['won', 'lost'])) {
+                                            $set('close_date', now()->format('Y-m-d'));
+                                        } else {
+                                            $set('close_date', null);
                                         }
-
-                                        // TANPA QUOTATION + STATUS LOST = Tidak boleh naik ke Penawaran atau atasnya
-                                        if (!$hasQuotation && $deal->status === 'lost') {
-
-                                            if ($targetStage->probability >= $penawaranProbability) {
-
-                                                Notification::make()
-                                                    ->title('Gagal Memperbarui Deal')
-                                                    ->body('Deal tanpa Penawaran yang sudah Closed Lost tidak bisa ke stage Penawaran atau di atasnya.')
-                                                    ->danger()
-                                                    ->send();
-
-                                                $set('nx_deal_stage_id', $deal->nx_deal_stage_id);
-                                                return;
-                                            }
-                                        }
-
-                                        Notification::make()
-                                            ->title('Berhasil Memperbarui Deal')
-                                            ->body("Stage berhasil diperbarui menjadi {$targetStage->name}.")
-                                            ->success()
-                                            ->send();
                                     }),
 
                                 Forms\Components\Select::make('nx_customer_id')
@@ -226,108 +164,72 @@ class DealResource extends Resource
                         Forms\Components\Grid::make(2)
                             ->schema([
                                 Forms\Components\TextInput::make('estimated_value')
-                                    ->label('Estimasi Nilai (IDR)')
+                                    ->label('Estimasi Nilai')
                                     ->numeric()
-                                    ->prefix('IDR'),
+                                    ->prefix('IDR')
+                                    ->required(),
 
                                 Forms\Components\Select::make('status')
-                                    ->label('Status Deal')
+                                    ->label('Status')
                                     ->options([
-                                        'open' => 'Open (Masih Negosiasi/Proses)',
-                                        'won' => 'Won (Berhasil Closing)',
-                                        'lost' => 'Lost (Gagal Closing)',
+                                        'open' => 'Open',
+                                        'won' => 'Won',
+                                        'lost' => 'Lost',
                                     ])
-                                    ->default('open')
                                     ->required()
-                                    ->native(false)
-                                    ->live()
-                                    ->prefixIcon('heroicon-o-adjustments-vertical')
-                                    ->afterStateUpdated(function ($state, callable $set, $record) {
-
-                                        if (!$record)
+                                    ->selectablePlaceholder(false)
+                                    ->live() // Wajib Live
+                                    ->afterStateUpdated(function ($state, $old, callable $set, callable $get, $record) {
+                                        if (!$state)
                                             return;
 
-                                        $deal = Deal::with('quotations')->find($record->id);
-                                        $hasQuotation = $deal->quotations()->exists();
+                                        $hasQuotation = $record ? $record->quotations()->exists() : false;
 
-                                        $penawaranStage = DealStage::whereRaw(
-                                            'LOWER(name) LIKE ?',
-                                            ['%penawaran%']
-                                        )->first();
+                                        $penawaranStage = DealStage::whereRaw('LOWER(name) LIKE ?', ['%penawaran%'])->first();
+                                        $kualifikasiStage = DealStage::whereRaw('LOWER(name) LIKE ?', ['%kualifikasi%'])->orderBy('probability')->first();
+                                        $wonStage = DealStage::whereRaw('LOWER(name) LIKE ?', ['%won%'])->first();
+                                        $lostStage = DealStage::whereRaw('LOWER(name) LIKE ?', ['%lost%'])->first();
 
                                         // WON TANPA PENAWARAN = GAGAL
                                         if ($state === 'won' && !$hasQuotation) {
-
-                                            $kualifikasiStage = DealStage::whereRaw(
-                                                'LOWER(name) LIKE ?',
-                                                ['%kualifikasi%']
-                                            )->orderBy('probability')
-                                                ->first();
-
-                                            $set('status', 'open');
-                                            $set('nx_deal_stage_id', $kualifikasiStage?->id);
-
                                             Notification::make()
-                                                ->title('Gagal Memperbarui Deal')
+                                                ->title('Gagal Memperbarui Status')
                                                 ->body('Deal tanpa Penawaran tidak bisa menjadi WON. Status dikembalikan ke OPEN dan stage dipindahkan ke Kualifikasi.')
                                                 ->danger()
                                                 ->send();
 
+                                            $set('status', 'open');
+                                            $set('nx_deal_stage_id', $kualifikasiStage?->id);
                                             return;
                                         }
 
-                                        // WON PUNYA PENAWARAN
+                                        // WON PUNYA PENAWARAN = BOLEH
                                         if ($state === 'won') {
-
-                                            $wonStage = DealStage::whereRaw(
-                                                'LOWER(name) LIKE ?',
-                                                ['%won%']
-                                            )->first();
-
                                             $set('nx_deal_stage_id', $wonStage?->id);
+                                            // $set('close_date', now()->format('Y-m-d')); // Aktifkan jika ada field close_date
                                         }
 
-                                        // LOST
+                                        // LOST DENGAN DAN TANPA PENAWARAN = BOLEH
                                         elseif ($state === 'lost') {
-
-                                            $lostStage = DealStage::whereRaw(
-                                                'LOWER(name) LIKE ?',
-                                                ['%lost%']
-                                            )->first();
-
                                             $set('nx_deal_stage_id', $lostStage?->id);
+                                            // $set('close_date', now()->format('Y-m-d')); // Aktifkan jika ada field close_date
                                         }
 
                                         // OPEN
                                         elseif ($state === 'open') {
-
                                             if (!$hasQuotation) {
-
-                                                $kualifikasiStage = DealStage::whereRaw(
-                                                    'LOWER(name) LIKE ?',
-                                                    ['%kualifikasi%']
-                                                )->orderBy('probability')
-                                                    ->first();
-
-                                                $set('nx_deal_stage_id', $kualifikasiStage?->id);
-
                                                 Notification::make()
-                                                    ->title('Berhasil Memperbarui Deal')
-                                                    ->body('Status dikembalikan ke OPEN dan stage dipindahkan ke Kualifikasi.')
-                                                    ->success()
+                                                    ->title('Info')
+                                                    ->body('Status berubah ke OPEN dan stage dikembalikan ke Kualifikasi.')
+                                                    ->info()
                                                     ->send();
 
-                                                return;
+                                                $set('nx_deal_stage_id', $kualifikasiStage?->id);
+                                            } else {
+                                                $set('nx_deal_stage_id', $penawaranStage?->id);
                                             }
-
-                                            $set('nx_deal_stage_id', $penawaranStage?->id);
+                                            // $set('close_date', null); // Aktifkan jika ada field close_date
                                         }
-
-                                        Notification::make()
-                                            ->title('Berhasil Memperbarui Deal')
-                                            ->body('Status deal berhasil diperbarui.')
-                                            ->success()
-                                            ->send();
                                     }),
 
                                 Forms\Components\DatePicker::make('deal_date')
@@ -343,7 +245,7 @@ class DealResource extends Resource
                                     ->native(false)
                                     ->displayFormat('d M Y')
                                     ->prefixIcon('heroicon-o-calendar-days')
-                                    ->helperText('Diisi ketika status menjadi Won atau Lost.')
+                                    ->helperText('Diisi otomatis ketika status menjadi Won atau Lost.')
                                     ->dehydrateStateUsing(fn($state) => $state ?? null)
                                     ->suffixAction(
                                         Forms\Components\Actions\Action::make('clear')
@@ -354,7 +256,7 @@ class DealResource extends Resource
                                     ),
                             ]),
                     ]),
-            ])->columns(1);
+            ]);
     }
 
     public static function table(Table $table): Table
@@ -408,8 +310,8 @@ class DealResource extends Resource
                         $stageName = strtolower($targetStage->name);
                         $hasQuotation = $deal->quotations()->exists();
 
-                        $isWon = str_contains($stageName, 'won');
-                        $isLost = str_contains($stageName, 'lost');
+                        $isWon = str_contains($stageName, 'closed won');
+                        $isLost = str_contains($stageName, 'closed lost');
 
                         $penawaranStage = DealStage::whereRaw(
                             'LOWER(name) LIKE ?',
@@ -475,16 +377,18 @@ class DealResource extends Resource
 
                         $stageName = strtolower($targetStage->name);
 
+                        // dd($stageName);
+            
                         $newStatus = 'open';
 
-                        if (str_contains($stageName, 'won')) {
+                        if (str_contains($stageName, 'closed won')) {
                             $newStatus = 'won';
-                        } elseif (str_contains($stageName, 'lost')) {
+                        } elseif (str_contains($stageName, 'closed lost')) {
                             $newStatus = 'lost';
                         }
 
-                        // Jika dari WON turun → kembali OPEN
-                        if ($deal->status === 'won' && !str_contains($stageName, 'won')) {
+                        // Jika dari WON turun ke stage lain (KECUALI pindah ke LOST) -> kembali OPEN
+                        if ($deal->status === 'won' && !str_contains($stageName, 'closed won') && !str_contains($stageName, 'closed lost')) {
                             $newStatus = 'open';
                         }
 
@@ -633,6 +537,24 @@ class DealResource extends Resource
                     ->color(fn(int $state): string => $state > 0 ? 'info' : 'gray')
                     ->sortable()
                     ->formatStateUsing(fn($state) => $state . ' Penawaran'),
+
+                Tables\Columns\TextColumn::make('created_at')
+                    ->label('Dibuat Pada')
+                    ->dateTime('d M Y H:i')
+                    ->sortable()
+                    ->toggleable(isToggledHiddenByDefault: true),
+
+                Tables\Columns\TextColumn::make('updated_at')
+                    ->label('Diperbarui Pada')
+                    ->dateTime('d M Y H:i')
+                    ->sortable()
+                    ->toggleable(isToggledHiddenByDefault: true),
+
+                Tables\Columns\TextColumn::make('deleted_at')
+                    ->label('Dihapus Pada')
+                    ->dateTime('d M Y H:i')
+                    ->sortable()
+                    ->toggleable(isToggledHiddenByDefault: true),
             ])
             ->filters([
                 Tables\Filters\SelectFilter::make('status')
@@ -686,6 +608,10 @@ class DealResource extends Resource
 
                         return $indicators;
                     }),
+
+                Tables\Filters\TrashedFilter::make()
+                    ->label('Deleted Status')
+                    ->native(false),
             ])
             ->actions([
                 Tables\Actions\Action::make('create_quotation')
@@ -694,14 +620,17 @@ class DealResource extends Resource
                     ->color('warning')
                     ->url(fn(deal $record): string => QuotationResource::getUrl('create', ['nx_deal_id' => $record->id]))
                     ->openUrlInNewTab(),
-
                 Tables\Actions\ViewAction::make(),
                 Tables\Actions\EditAction::make(),
                 Tables\Actions\DeleteAction::make(),
+                // Tables\Actions\ForceDeleteAction::make(),
+                Tables\Actions\RestoreAction::make(),
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([
                     Tables\Actions\DeleteBulkAction::make(),
+                    // Tables\Actions\ForceDeleteBulkAction::make(),
+                    Tables\Actions\RestoreBulkAction::make(),
                 ]),
             ])
             ->defaultSort('created_at', 'desc');
@@ -722,5 +651,13 @@ class DealResource extends Resource
             'view' => Pages\ViewDeal::route('/{record}'),
             'edit' => Pages\EditDeal::route('/{record}/edit'),
         ];
+    }
+
+    public static function getEloquentQuery(): Builder
+    {
+        return parent::getEloquentQuery()
+            ->withoutGlobalScopes([
+                SoftDeletingScope::class,
+            ]);
     }
 }
