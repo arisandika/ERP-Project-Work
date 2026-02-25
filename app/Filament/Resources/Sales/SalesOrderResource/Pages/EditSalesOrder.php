@@ -90,7 +90,7 @@ class EditSalesOrder extends EditRecord
             // ─────────────────────────────────────────────
             if ($newStatus === 'confirmed' && $oldStatus !== 'confirmed') {
 
-                // --- A1: Pindah Stok Utama ke Gudang Transit ---
+                // A1: Pindah Stok Utama ke Gudang Transit
                 $transactionCode = $this->generateNoTransactionOut();
                 StockTransaction::$autoUpdateStock = false;
 
@@ -137,12 +137,12 @@ class EditSalesOrder extends EditRecord
 
                 StockTransaction::$autoUpdateStock = true;
 
-                // --- A2: Promo usage ---
+                // A2: Promo usage
                 if ($record->promo_code_id) {
                     PromoCode::find($record->promo_code_id)?->increment('times_used');
                 }
 
-                // --- A3: Auto-generate DO ---
+                // A3: Auto-generate DO
                 $hasDo = DeliveryOrder::where('nx_sales_order_id', $record->id)
                     ->where('status', '!=', 'cancelled')
                     ->exists();

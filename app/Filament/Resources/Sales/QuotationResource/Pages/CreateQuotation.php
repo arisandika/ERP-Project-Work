@@ -5,6 +5,7 @@ namespace App\Filament\Resources\Sales\QuotationResource\Pages;
 use App\Filament\Resources\Sales\QuotationResource;
 use App\Models\CRM\Deal;
 use App\Models\CRM\DealStage;
+use Filament\Notifications\Notification;
 use Filament\Resources\Pages\CreateRecord;
 use Illuminate\Support\Carbon;
 
@@ -19,6 +20,30 @@ class CreateQuotation extends CreateRecord
 
     public function mount(): void
     {
+        $dealId = request()->query('nx_deal_id');
+
+        if ($dealId) {
+            // 2. Cari Deal (termasuk yang soft deleted)
+            $deal = Deal::withTrashed()->find($dealId);
+
+            // 3. Jika Deal ditemukan DAN statusnya trashed (terhapus)
+            if ($deal && $deal->trashed()) {
+
+                // Kirim notifikasi bahaya
+                Notification::make()
+                    ->title('Akses Ditolak')
+                    ->body("Deal {$deal->deal_number} sudah dihapus. Restore terlebih dahulu untuk membuat penawaran.")
+                    ->danger()
+                    ->persistent() // Agar notif tidak cepat hilang
+                    ->send();
+
+                // Redirect kembali ke index Quotation (atau bisa ke index Deal)
+                $this->redirect($this->getResource()::getUrl('index'));
+
+                return; // Hentikan proses mount
+            }
+        }
+        
         parent::mount();
 
         $this->form->fill([

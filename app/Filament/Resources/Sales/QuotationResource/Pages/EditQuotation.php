@@ -22,6 +22,7 @@ class EditQuotation extends EditRecord
     {
         return [
             Actions\ViewAction::make(),
+            
             Action::make('approve')
                 ->label('Approve')
                 ->icon('heroicon-o-check-circle')
@@ -37,6 +38,7 @@ class EditQuotation extends EditRecord
                         'approved_at' => now(),
                     ]);
                 }),
+
             Action::make('reject')
                 ->label('Reject')
                 ->icon('heroicon-o-x-circle')
@@ -55,8 +57,9 @@ class EditQuotation extends EditRecord
                         'notes' => trim(($record->notes ? $record->notes."\n" : '')."Rejected: ".$data['reason']),
                     ]);
                 }),
+                
             Actions\DeleteAction::make(),
-            Actions\ForceDeleteAction::make(),
+            // Actions\ForceDeleteAction::make(),
             Actions\RestoreAction::make(),
         ];
     }

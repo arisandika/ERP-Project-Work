@@ -3,6 +3,7 @@
 namespace App\Filament\Resources\CRM\DealResource\Pages;
 
 use App\Filament\Resources\CRM\DealResource;
+use App\Models\CRM\Deal;
 use Filament\Actions;
 use Filament\Actions\Action;
 use Filament\Infolists\Components\Grid;
@@ -54,18 +55,26 @@ class ViewDeal extends ViewRecord
 
                                 TextEntry::make('customer_or_lead')
                                     ->label('Lead / Customer')
-                                    ->getStateUsing(function ($record) {
+                                    ->getStateUsing(function (Deal $record) {
                                         if ($record->customer) {
                                             return $record->customer->name . ' (Customer)';
                                         }
-                                        if ($record->lead) {
-                                            return $record->lead->name . ' (Lead)';
+
+                                        // Ambil Lead withTrashed
+                                        $lead = $record->lead()->withTrashed()->first();
+
+                                        if ($lead) {
+                                            $suffix = $lead->trashed() ? ' (Terhapus)' : ' (Lead)';
+                                            return $lead->name . $suffix;
                                         }
                                         return '-';
                                     })
                                     ->weight('semibold')
                                     ->icon('heroicon-o-user')
-                                    ->color('primary'),
+                                    ->color(
+                                        fn(Deal $record) =>
+                                        ($record->lead()->withTrashed()->first()?->trashed()) ? 'danger' : 'primary'
+                                    ),
 
                                 TextEntry::make('status')
                                     ->label('Status')
@@ -115,20 +124,21 @@ class ViewDeal extends ViewRecord
                                     ->badge()
                                     ->color('info'),
 
-                                // Menghitung durasi deal (mirip Remaining Days di Project)
                                 TextEntry::make('duration')
                                     ->label('Durasi Proses')
                                     ->getStateUsing(function ($record): string {
                                         $start = \Carbon\Carbon::parse($record->created_at);
+                                        // Gunakan close_date atau sekarang
                                         $end = $record->close_date ? \Carbon\Carbon::parse($record->close_date) : now();
-                                        
-                                        if(!$start) return '-';
-                                        
+
+                                        if (!$start)
+                                            return '-';
+
                                         $diff = $start->diff($end);
-                                        
-                                        if($diff->days > 0) {
+
+                                        if ($diff->days > 0) {
                                             return "{$diff->days} Hari";
-                                        } elseif($diff->h > 0) {
+                                        } elseif ($diff->h > 0) {
                                             return "{$diff->h} Jam {$diff->i} Menit";
                                         } else {
                                             return "{$diff->i} Menit";
@@ -146,39 +156,51 @@ class ViewDeal extends ViewRecord
                     ]),
 
                 Section::make('Informasi Kontak Lead')
+                    ->description(fn(Deal $record) => $record->lead()->withTrashed()->first()?->trashed() ? 'Data Lead ini telah dihapus.' : null)
                     ->schema([
                         Grid::make(2)->schema([
-                            TextEntry::make('lead.name')
+                            TextEntry::make('lead_name_manual')
                                 ->label('Nama Kontak')
+                                ->getStateUsing(fn(Deal $record) => $record->lead()->withTrashed()->first()?->name)
                                 ->placeholder('—'),
 
-                            TextEntry::make('lead.company')
-                                ->label('Perusahaan')
-                                ->placeholder('Perorangan / Tidak ada data'),
+                            TextEntry::make('lead_company_manual') // Asumsi relasi atau kolom company ada di lead
+                                ->label('Tipe Customer')
+                                ->getStateUsing(fn(Deal $record) => ucfirst($record->lead()->withTrashed()->first()?->customer_type ?? ''))
+                                ->placeholder('—'),
 
-                            TextEntry::make('lead.phone')
+                            TextEntry::make('lead_phone_manual')
                                 ->label('Nomor Telepon')
                                 ->icon('heroicon-o-phone')
-                                ->url(fn($record) => $record->lead?->phone ? "tel:{$record->lead->phone}" : null)
+                                ->getStateUsing(fn(Deal $record) => $record->lead()->withTrashed()->first()?->phone)
+                                ->url(function ($record) {
+                                    $phone = $record->lead()->withTrashed()->first()?->phone;
+                                    return $phone ? "tel:{$phone}" : null;
+                                })
                                 ->placeholder('—')
-                                ->color('primary'),
+                                ->color(fn(Deal $record) => $record->lead()->withTrashed()->first()?->trashed() ? 'danger' : 'primary'),
 
-                            TextEntry::make('lead.email')
+                            TextEntry::make('lead_email_manual')
                                 ->label('Email')
                                 ->icon('heroicon-o-envelope')
-                                ->url(fn($record) => $record->lead?->email ? "mailto:{$record->lead->email}" : null)
+                                ->getStateUsing(fn(Deal $record) => $record->lead()->withTrashed()->first()?->email)
+                                ->url(function ($record) {
+                                    $email = $record->lead()->withTrashed()->first()?->email;
+                                    return $email ? "mailto:{$email}" : null;
+                                })
                                 ->placeholder('—')
-                                ->color('primary'),
+                                ->color(fn(Deal $record) => $record->lead()->withTrashed()->first()?->trashed() ? 'danger' : 'primary'),
 
-                            TextEntry::make('lead.address')
+                            TextEntry::make('lead_address_manual')
                                 ->label('Alamat')
+                                ->getStateUsing(fn(Deal $record) => $record->lead()->withTrashed()->first()?->address)
                                 ->columnSpanFull()
                                 ->placeholder('Tidak ada alamat tersimpan'),
                         ]),
                     ])
                     ->collapsible()
-                    ->persistCollapsed(), // Agar status collapse tersimpan
-                    
+                    ->persistCollapsed(),
+
                 Section::make('Pengelolaan Data')
                     ->columns(2)
                     ->schema([
