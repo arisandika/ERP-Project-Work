@@ -10,7 +10,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 class Lead extends Model
 {
     use SoftDeletes;
-    
+
     protected $table = 'nx_leads';
 
     protected $fillable = [
@@ -33,5 +33,29 @@ class Lead extends Model
     public function convertedCustomer(): BelongsTo
     {
         return $this->belongsTo(Customer::class, 'converted_customer_id');
+    }
+
+    protected static function booted(): void
+    {
+        // Logic Hapus (yang sudah ada)
+        static::deleting(function (Lead $lead) {
+            if ($lead->isForceDeleting()) {
+                $lead->deals()->withTrashed()->get()->each(function ($deal) {
+                    $deal->forceDelete();
+                });
+            } else {
+                $lead->deals()->get()->each(function ($deal) {
+                    $deal->delete();
+                });
+            }
+        });
+
+        // TAMBAHKAN LOGIC RESTORE DI SINI
+        static::restored(function (Lead $lead) {
+
+            $lead->deals()->onlyTrashed()->get()->each(function ($deal) {
+                $deal->restore();
+            });
+        });
     }
 }

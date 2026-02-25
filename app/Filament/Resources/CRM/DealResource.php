@@ -16,8 +16,10 @@ use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\HtmlString;
 use Illuminate\Validation\ValidationException;
 
 class DealResource extends Resource
@@ -57,7 +59,10 @@ class DealResource extends Resource
 
                                 Forms\Components\Select::make('nx_lead_id')
                                     ->label('Lead')
-                                    ->relationship('lead', 'name')
+                                    ->relationship('lead', 'name', function ($query) {
+                                        // PENTING: Sertakan withTrashed agar Lead yang terhapus tetap muncul di opsi (saat edit)
+                                        return $query->withTrashed();
+                                    })
                                     ->searchable()
                                     ->preload()
                                     ->required()
@@ -67,9 +72,14 @@ class DealResource extends Resource
                                         $context === 'edit' || filled(request()->query('nx_lead_id'))
                                     )
                                     ->dehydrated()
-                                    ->getOptionLabelFromRecordUsing(
-                                        fn($record) => $record->name ?? 'Tanpa Lead'
-                                    )
+                                    // Custom label untuk memberitahu user jika Lead tersebut sudah dihapus
+                                    ->getOptionLabelFromRecordUsing(function ($record) {
+                                        if (!$record)
+                                            return 'Tanpa Lead';
+                                        return $record->trashed()
+                                            ? "{$record->name} (Terhapus)"
+                                            : $record->name;
+                                    })
                                     ->prefixIcon('heroicon-o-funnel'),
 
                                 Forms\Components\Select::make('nx_deal_stage_id')
@@ -101,7 +111,7 @@ class DealResource extends Resource
                                         $penawaranStage = DealStage::whereRaw('LOWER(name) LIKE ?', ['%penawaran%'])->first();
                                         $penawaranProbability = $penawaranStage?->probability ?? 0;
 
-                                        // --- LOGIC VALIDASI (Sama seperti sebelumnya) ---
+                                        // LOGIC VALIDASI (Sama seperti sebelumnya)
                                         if (!$hasQuotation) {
                                             if ($targetStage->probability >= $penawaranProbability && !$isLost) {
                                                 Notification::make()->title('Gagal')->body('Deal tanpa Penawaran tidak bisa ke stage Penawaran/atasnya.')->danger()->send();
@@ -122,7 +132,7 @@ class DealResource extends Resource
                                             }
                                         }
 
-                                        // --- LOGIC UPDATE STATUS & CLOSE DATE ---
+                                        // LOGIC UPDATE STATUS & CLOSE DATE
                                         $currentStatus = $get('status') ?? ($record?->status ?? 'open');
                                         $newStatus = 'open';
 
@@ -271,30 +281,72 @@ class DealResource extends Resource
                     ->copyable(),
 
                 Tables\Columns\TextColumn::make('customer_or_lead')
-                    ->label('Lead')
+                    ->label('Lead / Customer')
                     ->state(function (Deal $record) {
-                        if ($record->customer)
-                            return $record->customer->name . ' (Customer)';
-                        if ($record->lead)
-                            return $record->lead->name . ' (Lead)';
+                        // Cek jika ini Customer (biasanya jarang dihapus soft delete di case ini, tapi aman)
+                        if ($record->nx_customer_id) {
+                            return $record->customer?->name . ' (Customer)';
+                        }
+
+                        // AMBIL LEAD DENGAN WITH TRASHED
+                        // Kita panggil query manual agar data yang terhapus tetap terambil
+                        $lead = $record->lead()->withTrashed()->first();
+
+                        if ($lead) {
+                            // Opsional: Kasih tanda jika lead-nya sudah dihapus
+                            $status = $lead->trashed() ? ' (Dihapus)' : '';
+                            return $lead->name . ' (Lead)' . $status;
+                        }
+
                         return '-';
                     })
-                    ->searchable(['customer.name', 'lead.name'])
+                    ->description(function (Deal $record) {
+                        // Lakukan hal yang sama untuk deskripsi email/phone
+                        if ($record->nx_customer_id)
+                            return $record->customer?->email;
+
+                        $lead = $record->lead()->withTrashed()->first();
+                        if ($lead) {
+                            $desc = $lead->email ?? '-';
+                            // Jika lead terhapus, kita bisa kasih warning warna merah di description
+                            if ($lead->trashed()) {
+                                return new HtmlString("<span class='text-danger-600 font-bold'>Lead Terhapus</span> • {$desc}");
+                            }
+                            return $desc;
+                        }
+                        return '-';
+                    })
+                    ->searchable(['customer.name', 'lead.name']) // Search mungkin agak tricky jika deleted, tapi display aman
                     ->sortable()
                     ->weight('semibold')
-                    ->icon('heroicon-o-user')
-                    ->color('primary'),
+                    ->icon(fn($record) => $record->nx_customer_id ? 'heroicon-o-user-group' : 'heroicon-o-user')
+                    ->color(function (Deal $record) {
+                        // Warnanya bisa dibedakan jika lead terhapus
+                        $lead = $record->lead()->withTrashed()->first();
+                        if ($lead && $lead->trashed())
+                            return 'danger'; // Merah jika lead dihapus
+                        return 'primary';
+                    }),
 
                 Tables\Columns\TextColumn::make('lead.phone')
                     ->label('Kontak')
                     ->state(function (Deal $record) {
-                        return $record->lead?->phone ?? '-';
+                        $lead = $record->lead()->withTrashed()->first();
+                        return $lead?->phone ?? '-';
                     })
-                    ->description(fn(Deal $record) => $record->lead?->email ?? '-')
+                    ->description(function (Deal $record) {
+                        $lead = $record->lead()->withTrashed()->first();
+                        return $lead?->email ?? '-';
+                    })
                     ->sortable()
                     ->icon('heroicon-o-phone')
+                    // Searchable tetap mengacu ke relasi standar, tapi display sudah aman
                     ->searchable(['lead.phone', 'lead.email'])
-                    ->color('success'),
+                    ->color(function (Deal $record) {
+                        $lead = $record->lead()->withTrashed()->first();
+                        // Jika lead terhapus, kita beri warna danger sebagai warning
+                        return ($lead && $lead->trashed()) ? 'danger' : 'success';
+                    }),
 
                 Tables\Columns\SelectColumn::make('nx_deal_stage_id')
                     ->label('Stage Deal')
@@ -618,19 +670,49 @@ class DealResource extends Resource
                     ->label('Buat Penawaran')
                     ->icon('heroicon-o-document-text')
                     ->color('warning')
-                    ->url(fn(deal $record): string => QuotationResource::getUrl('create', ['nx_deal_id' => $record->id]))
-                    ->openUrlInNewTab(),
+                    ->url(fn(Deal $record): string => QuotationResource::getUrl('create', ['nx_deal_id' => $record->id]))
+                    ->openUrlInNewTab()
+                    ->visible(fn(Deal $record) => !$record->trashed()),
+
                 Tables\Actions\ViewAction::make(),
                 Tables\Actions\EditAction::make(),
                 Tables\Actions\DeleteAction::make(),
                 // Tables\Actions\ForceDeleteAction::make(),
-                Tables\Actions\RestoreAction::make(),
+                Tables\Actions\RestoreAction::make()
+                    ->before(function (Tables\Actions\RestoreAction $action, Deal $record) {
+                        // Ambil parent lead-nya (meskipun lead sedang soft-deleted)
+                        $lead = $record->lead()->withTrashed()->first();
+
+                        if ($lead && $lead->trashed()) {
+                            Notification::make()
+                                ->warning()
+                                ->title('Gagal Restore Deal')
+                                ->body('Silakan restore Lead terkait terlebih dahulu!')
+                                ->send();
+
+                            $action->cancel(); // Batalkan proses restore
+                        }
+                    }),
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([
                     Tables\Actions\DeleteBulkAction::make(),
                     // Tables\Actions\ForceDeleteBulkAction::make(),
-                    Tables\Actions\RestoreBulkAction::make(),
+                    Tables\Actions\RestoreBulkAction::make()
+                        ->before(function (Tables\Actions\RestoreBulkAction $action, Collection $records) {
+                            foreach ($records as $record) {
+                                $lead = $record->lead()->withTrashed()->first();
+                                if ($lead && $lead->trashed()) {
+                                    Notification::make()
+                                        ->warning()
+                                        ->title('Gagal Restore Bulk')
+                                        ->body("Deal {$record->deal_number} tidak dapat di-restore karena Lead terkait masih terhapus.")
+                                        ->send();
+
+                                    $action->cancel();
+                                }
+                            }
+                        }),
                 ]),
             ])
             ->defaultSort('created_at', 'desc');

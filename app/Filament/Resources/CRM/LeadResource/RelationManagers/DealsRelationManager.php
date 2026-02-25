@@ -6,6 +6,7 @@ use App\Filament\Resources\CRM\DealResource;
 use App\Filament\Resources\Sales\QuotationResource;
 use App\Models\CRM\Deal;
 use App\Models\CRM\DealStage;
+use App\Models\CRM\Lead;
 use Filament\Forms;
 use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Form;
@@ -733,6 +734,27 @@ class DealsRelationManager extends RelationManager
                 Tables\Actions\CreateAction::make()
                     ->label('Tambah Deal')
                     ->mutateFormDataUsing(function (array $data) {
+                        $leadId = $data['nx_lead_id'] ?? null;
+
+                        if ($leadId) {
+                            // Cari Lead (termasuk yang soft deleted)
+                            $lead = Lead::withTrashed()->find($leadId);
+
+                            // Jika Lead ditemukan dan statusnya terhapus
+                            if ($lead && $lead->trashed()) {
+
+                                Notification::make()
+                                    ->title('Gagal Membuat Deal')
+                                    ->body("Lead '{$lead->name}' sedang terhapus. Silakan restore Lead terlebih dahulu.")
+                                    ->danger()
+                                    ->send();
+
+                                // Hentikan proses simpan dan munculkan error di field form
+                                throw ValidationException::withMessages([
+                                    'nx_lead_id' => 'Lead ini sedang dalam kondisi terhapus (Trash).',
+                                ]);
+                            }
+                        }
 
                         $targetStage = DealStage::find($data['nx_deal_stage_id']);
 
@@ -760,21 +782,20 @@ class DealsRelationManager extends RelationManager
                                 ->danger()
                                 ->send();
 
-                            throw ValidationException::withMessages([
+                            throw \Illuminate\Validation\ValidationException::withMessages([
                                 'nx_deal_stage_id' => 'Stage tidak valid',
                             ]);
                         }
 
                         // VALIDASI STATUS
                         if (in_array($data['status'], ['won', 'lost'])) {
-
                             Notification::make()
                                 ->title('Gagal Menambahkan Deal')
                                 ->body('Deal baru tidak boleh langsung berstatus Won atau Lost.')
                                 ->danger()
                                 ->send();
 
-                            throw ValidationException::withMessages([
+                            throw \Illuminate\Validation\ValidationException::withMessages([
                                 'status' => 'Status tidak valid',
                             ]);
                         }
@@ -797,5 +818,10 @@ class DealsRelationManager extends RelationManager
         );
 
         return $dealNumber;
+    }
+
+    public function isReadOnly(): bool
+    {
+        return false;
     }
 }

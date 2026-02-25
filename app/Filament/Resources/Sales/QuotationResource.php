@@ -26,6 +26,7 @@ use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Mail;
@@ -229,39 +230,71 @@ class QuotationResource extends Resource
                     ->weight('bold'),
 
                 Tables\Columns\TextColumn::make('client_name')
-                    ->label('Lead')
+                    ->label('Lead / Client')
                     ->state(function (Quotation $record) {
-                        $deal = $record->deal;
+                        // 1. Ambil Deal (termasuk yang terhapus)
+                        $deal = $record->deal()->withTrashed()->first();
+
                         if (!$deal)
                             return '-';
 
-                        if ($deal->customer)
-                            return $deal->customer->name . ' (Customer)';
-                        if ($deal->lead)
-                            return $deal->lead->name . ' (Lead)';
+                        // 2. Cek Customer
+                        if ($deal->nx_customer_id) {
+                            return $deal->customer?->name . ' (Customer)';
+                        }
+
+                        // 3. Ambil Lead (termasuk yang terhapus)
+                        $lead = $deal->lead()->withTrashed()->first();
+
+                        if ($lead) {
+                            // Tampilkan nama lead
+                            return $lead->name . ' (Lead)';
+                        }
 
                         return '-';
                     })
                     ->description(function (Quotation $record) {
-                        $deal = $record->deal;
+                        // Ambil relasi manual withTrashed
+                        $deal = $record->deal()->withTrashed()->first();
                         if (!$deal)
                             return '-';
 
-                        $desc = $deal->deal_number;
+                        $lead = $deal->lead()->withTrashed()->first();
 
-                        if ($record->trashed() || $deal->trashed() || $deal->status === 'lost') {
-                            $desc .= '<div class="relative fi-color-danger bg-danger-50 text-danger-600 ring-danger-600/10 dark:bg-danger-400/10 dark:text-danger-400 dark:ring-danger-400/30 rounded-md text-xs font-medium ring-1 ring-inset px-2 py-1 capitalize w-fit">Deal Lost</div>';
-                        } elseif ($deal->status === 'won') {
-                            $desc .= '<div class="relative fi-color-success bg-success-50 text-success-600 ring-success-600/10 dark:bg-success-400/10 dark:text-success-400 dark:ring-success-400/30 rounded-md text-xs font-medium ring-1 ring-inset px-2 py-1 capitalize w-fit">Deal Won</div>';
+                        $infoParts = [];
+                        $infoParts[] = "Deal: {$deal->deal_number}";
+
+                        // Cek status deleted untuk visualisasi
+                        if ($deal->trashed()) {
+                            $infoParts[] = "<span class='text-danger-600 font-bold'>[Deal Dihapus]</span>";
+                        }
+                        if ($lead && $lead->trashed()) {
+                            $infoParts[] = "<span class='text-danger-600 font-bold'>[Lead Dihapus]</span>";
                         }
 
-                        return new HtmlString($desc);
+                        // Tambahkan badge status Deal Won/Lost (dari kode lama Anda)
+                        if ($deal->status === 'lost') {
+                            $infoParts[] = '<span class="text-xs font-medium px-2 py-0.5 rounded bg-danger-50 text-danger-600">Deal Lost</span>';
+                        } elseif ($deal->status === 'won') {
+                            $infoParts[] = '<span class="text-xs font-medium px-2 py-0.5 rounded bg-success-50 text-success-600">Deal Won</span>';
+                        }
+
+                        return new HtmlString(implode(' <br> ', $infoParts));
                     })
                     ->searchable(['deal.customer.name', 'deal.lead.name'])
                     ->sortable()
                     ->weight('semibold')
                     ->icon('heroicon-o-user')
-                    ->color('primary'),
+                    ->color(function (Quotation $record) {
+                        $deal = $record->deal()->withTrashed()->first();
+                        $lead = $deal?->lead()->withTrashed()->first();
+
+                        // Jika Deal atau Lead terhapus, warna jadi merah/danger
+                        if (($deal && $deal->trashed()) || ($lead && $lead->trashed())) {
+                            return 'danger';
+                        }
+                        return 'primary';
+                    }),
 
                 Tables\Columns\TextColumn::make('status')
                     ->badge()
@@ -484,13 +517,52 @@ class QuotationResource extends Resource
                 Tables\Actions\EditAction::make(),
                 Tables\Actions\DeleteAction::make(),
                 // Tables\Actions\ForceDeleteAction::make(),
-                Tables\Actions\RestoreAction::make(),
+                Tables\Actions\RestoreAction::make()
+                    ->before(function (Tables\Actions\RestoreAction $action, Quotation $record) {
+                        // Ambil deal dan lead terkait walau terhapus
+                        $deal = $record->deal()->withTrashed()->first();
+                        $lead = $deal ? $deal->lead()->withTrashed()->first() : null;
+
+                        if ($lead && $lead->trashed()) {
+                            Notification::make()
+                                ->warning()
+                                ->title('Gagal Restore Penawaran')
+                                ->body('Silakan restore Lead terkait terlebih dahulu!')
+                                ->send();
+
+                            $action->cancel();
+                        } elseif ($deal && $deal->trashed()) {
+                            Notification::make()
+                                ->warning()
+                                ->title('Gagal Restore Penawaran')
+                                ->body('Silakan restore Deal terkait terlebih dahulu!')
+                                ->send();
+
+                            $action->cancel();
+                        }
+                    }),
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([
                     Tables\Actions\DeleteBulkAction::make(),
                     // Tables\Actions\ForceDeleteBulkAction::make(),
-                    Tables\Actions\RestoreBulkAction::make(),
+                    Tables\Actions\RestoreBulkAction::make()
+                        ->before(function (Tables\Actions\RestoreBulkAction $action, Collection $records) {
+                            foreach ($records as $record) {
+                                $deal = $record->deal()->withTrashed()->first();
+                                $lead = $deal ? $deal->lead()->withTrashed()->first() : null;
+
+                                if (($lead && $lead->trashed()) || ($deal && $deal->trashed())) {
+                                    Notification::make()
+                                        ->warning()
+                                        ->title('Gagal Restore Bulk')
+                                        ->body("Satu atau lebih Penawaran tidak dapat di-restore karena Deal/Lead terkait masih terhapus.")
+                                        ->send();
+
+                                    $action->cancel();
+                                }
+                            }
+                        }),
                 ]),
             ])
             ->defaultSort('created_at', 'desc');
