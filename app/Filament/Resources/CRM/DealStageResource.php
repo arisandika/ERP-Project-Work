@@ -101,25 +101,85 @@ class DealStageResource extends Resource
                     ->sortable()
                     ->formatStateUsing(fn($state) => $state . ' Deal'),
 
-                Tables\Columns\TextColumn::make('updated_at')
-                    ->label('Terakhir Diubah')
+                Tables\Columns\TextColumn::make('created_at')
+                    ->label('Dibuat Pada')
                     ->dateTime('d M Y H:i')
+                    ->sortable()
+                    ->toggleable(isToggledHiddenByDefault: true),
+
+                Tables\Columns\TextColumn::make('updated_at')
+                    ->label('Diperbarui Pada')
+                    ->dateTime('d M Y H:i')
+                    ->sortable()
+                    ->toggleable(isToggledHiddenByDefault: true),
+
+                Tables\Columns\TextColumn::make('deleted_at')
+                    ->label('Dihapus Pada')
+                    ->dateTime('d M Y H:i')
+                    ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
             ])
-            ->defaultSort('order', 'asc') // Agar urutan pipeline rapi dari tahap awal
             ->filters([
-                //
+                Tables\Filters\Filter::make('created_at')
+                    ->form([
+                        Forms\Components\DatePicker::make('created_from')
+                            ->label('Dibuat Dari')
+                            ->required()
+                            ->displayFormat('d M Y')
+                            ->native(false)
+                            ->prefixIcon('heroicon-o-calendar-days'),
+
+                        Forms\Components\DatePicker::make('created_until')
+                            ->label('Dibuat Hingga')
+                            ->required()
+                            ->displayFormat('d M Y')
+                            ->native(false)
+                            ->prefixIcon('heroicon-o-calendar-days'),
+                    ])
+                    ->query(function (Builder $query, array $data): Builder {
+                        return $query
+                            ->when(
+                                $data['created_from'],
+                                fn(Builder $query, $date): Builder => $query->whereDate('created_at', '>=', $date),
+                            )
+                            ->when(
+                                $data['created_until'],
+                                fn(Builder $query, $date): Builder => $query->whereDate('created_at', '<=', $date),
+                            );
+                    })
+                    ->indicateUsing(function (array $data): array {
+                        $indicators = [];
+
+                        if ($data['created_from'] ?? null) {
+                            $indicators[] = 'Created from ' . Carbon::parse($data['created_from'])->toFormattedDateString();
+                        }
+
+                        if ($data['created_until'] ?? null) {
+                            $indicators[] = 'Created until ' . Carbon::parse($data['created_until'])->toFormattedDateString();
+                        }
+
+                        return $indicators;
+                    }),
+
+                Tables\Filters\TrashedFilter::make()
+                    ->label('Deleted Status')
+                    ->native(false),
             ])
             ->actions([
                 Tables\Actions\ViewAction::make(),
                 Tables\Actions\EditAction::make(),
-                Tables\Actions\DeleteAction::make(),
+                // Tables\Actions\DeleteAction::make(),
+                // Tables\Actions\ForceDeleteAction::make(),
+                Tables\Actions\RestoreAction::make(),
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([
                     Tables\Actions\DeleteBulkAction::make(),
+                    // Tables\Actions\ForceDeleteBulkAction::make(),
+                    Tables\Actions\RestoreBulkAction::make(),
                 ]),
-            ]);
+            ])
+            ->defaultSort('created_at', 'desc');
     }
 
     public static function getRelations(): array
@@ -133,9 +193,17 @@ class DealStageResource extends Resource
     {
         return [
             'index' => Pages\ListDealStages::route('/'),
-            'create' => Pages\CreateDealStage::route('/create'),
+            // 'create' => Pages\CreateDealStage::route('/create'),
             'view' => Pages\ViewDealStage::route('/{record}'),
             'edit' => Pages\EditDealStage::route('/{record}/edit'),
         ];
+    }
+
+    public static function getEloquentQuery(): Builder
+    {
+        return parent::getEloquentQuery()
+            ->withoutGlobalScopes([
+                SoftDeletingScope::class,
+            ]);
     }
 }

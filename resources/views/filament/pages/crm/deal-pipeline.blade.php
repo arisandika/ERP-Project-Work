@@ -482,11 +482,10 @@
                                             {{ $deal->deal_number }}
                                         </span>
 
-                                        {{-- 1 & 2. SECTION STATUS DINAMIS DI POJOK KANAN ATAS --}}
                                         @php
                                             $dealStatusColor = match (strtolower($deal->status)) {
-                                                'won' => 'fi-color-green bg-green-50 text-green-600 ring-green-600/10 dark:bg-green-400/10 dark:text-green-400 dark:ring-green-400/30 fi-color-green',
-                                                'lost' => 'fi-color-red bg-red-50 text-red-600 ring-red-600/10 dark:bg-red-400/10 dark:text-red-400 dark:ring-red-400/30 fi-color-red',
+                                                'won' => 'fi-color-success bg-success-50 text-success-600 ring-success-600/10 dark:bg-success-400/10 dark:text-success-400 dark:ring-success-400/30 fi-color-success',
+                                                'lost' => 'fi-color-danger bg-danger-50 text-danger-600 ring-danger-600/10 dark:bg-danger-400/10 dark:text-danger-400 dark:ring-danger-400/30 fi-color-danger',
                                                 default => 'fi-color-gray bg-gray-50 text-gray-600 ring-gray-600/10 dark:bg-gray-400/10 dark:text-gray-400 dark:ring-gray-400/30 fi-color-gray',
                                             };
                                         @endphp
@@ -495,17 +494,14 @@
                                         </span>
                                     </div>
 
-                                    {{-- Deal Name / Customer Name --}}
                                     <h4 class="mb-1 text-[15px] font-semibold text-gray-900 dark:text-white line-clamp-2">
                                         {{ $deal->customer?->name ?? $deal->lead?->name ?? 'Unknown Client' }}
                                     </h4>
 
-                                    {{-- Deal Value (Warna dinamis berdasarkan kondisi atas) --}}
                                     <div class="mb-1 text-lg font-bold {{ $valueColor }}">
                                         Rp {{ number_format($deal->estimated_value, 0, ',', '.') }}
                                     </div>
 
-                                    {{-- 3. SECTION DATE DIPINDAH KE BAWAH VALUE --}}
                                     <div class="flex items-center gap-2 mb-3 text-xs whitespace-nowrap">
                                         @php
                                             $start = $deal->deal_date ? \Carbon\Carbon::parse($deal->deal_date) : null;
@@ -597,7 +593,6 @@
                                         @endif
 
                                         <div class="flex items-center flex-shrink-0 gap-2">
-                                            {{-- Quotations Dropdown --}}
                                             @if($deal->quotations && $deal->quotations->isNotEmpty())
                                                 <div class="relative" x-data="{ openQuotations: false }">
                                                     <button @click="openQuotations = !openQuotations"
@@ -605,7 +600,6 @@
                                                         class="relative flex items-center justify-center w-8 h-8 transition-colors bg-white border border-gray-200 rounded-full shadow-sm hover:bg-gray-50 dark:bg-gray-800 dark:border-gray-700 dark:hover:bg-gray-700 text-amber-600 dark:text-amber-500"
                                                         title="Lihat {{ $deal->quotations->count() }} Penawaran">
                                                         <x-heroicon-o-document-text class="w-4 h-4" />
-                                                        {{-- Badge Total Penawaran --}}
                                                         <span
                                                             class="absolute top-0 right-0 flex items-center justify-center w-3.5 h-3.5 text-[10px] font-bold text-white bg-red-500 rounded-full transform translate-x-1/4 -translate-y-1/4">
                                                             {{ $deal->quotations->count() }}
@@ -634,7 +628,6 @@
                                                                             {{ $quotation->quotation_number }}
                                                                         </span>
 
-                                                                        {{-- Status Badge Dinamis --}}
                                                                         @php
                                                                             $statusColor = match (strtolower($quotation->status)) {
                                                                                 'approved', 'accepted', 'win' => 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400',
@@ -658,7 +651,6 @@
                                                 </div>
                                             @endif
 
-                                            {{-- Link to Resource View --}}
                                             <a href="{{ \App\Filament\Resources\CRM\DealResource::getUrl('view', ['record' => $deal->id]) }}"
                                                 target="_blank" rel="noopener noreferrer" onclick="
                                     event.preventDefault();
@@ -684,7 +676,6 @@
                                     Tidak ada deal di stage ini
                                 </div>
                             @else
-                                <!-- Loading indicator for more deals -->
                                 <div x-show="visibleDeals < totalDeals"
                                     class="flex items-center justify-center py-4 text-sm text-gray-500 dark:text-gray-400">
                                     <div class="flex items-center gap-2">

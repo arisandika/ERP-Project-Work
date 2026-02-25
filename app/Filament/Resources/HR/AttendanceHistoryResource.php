@@ -83,7 +83,7 @@ class AttendanceHistoryResource extends Resource
 
                 Tables\Columns\TextColumn::make('deleted_at')
                     ->label('Dihapus Pada')
-                    ->dateTime('d M Y')
+                    ->dateTime('d M Y H:i')
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
             ])

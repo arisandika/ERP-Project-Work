@@ -50,7 +50,14 @@ class DealPipeline extends Page
         $stages = DealStage::with([
             'deals' => function ($query) {
                 // Eager load customer dan lead untuk menampilkan nama di card
-                $query->with(['customer', 'lead', 'quotations'])
+                $query->whereNull('deleted_at')
+
+                    ->whereHas('lead', function ($q) {
+                    $q->whereNull('deleted_at');
+                })
+
+                    ->with(['customer', 'lead', 'quotations'])
+
                     ->select(
                         'id',
                         'nx_customer_id',
@@ -66,7 +73,7 @@ class DealPipeline extends Page
                     )
                     ->orderByDesc('created_at')
                     ->orderByDesc('id');
-            },
+            }
         ])
             ->orderBy('order')
             ->get();
@@ -149,7 +156,7 @@ class DealPipeline extends Page
 
         // VALIDASI 1: TIDAK PUNYA PENAWARAN
         if (!$hasQuotation) {
-            
+
             // Tidak boleh ke Penawaran atau di atasnya (Kecuali LOST)
             if ($targetStage->probability >= $penawaranProbability && !$isLost) {
                 Notification::make()
@@ -181,7 +188,7 @@ class DealPipeline extends Page
 
         // VALIDASI 2: PUNYA PENAWARAN
         if ($hasQuotation) {
-            
+
             // Jika turun ke bawah Penawaran tapi bukan LOST -> Tolak
             if ($targetStage->probability < $penawaranProbability && !$isLost) {
                 Notification::make()
@@ -199,7 +206,7 @@ class DealPipeline extends Page
 
         // LOGIKA OTOMATISASI UPDATE STATUS DEAL
         $oldStatus = $deal->status;
-        $newStatus = 'open'; // Default
+        $newStatus = 'open'; // Default selalu Open kecuali ke Won/Lost
 
         if ($isWon) {
             $newStatus = 'won';
@@ -207,8 +214,12 @@ class DealPipeline extends Page
             $newStatus = 'lost';
         }
 
-        // Jika dari WON turun -> kembali OPEN
-        if ($oldStatus === 'won' && !$isWon) {
+        // ADJUSTMENT TERBARU: Jika dari WON atau LOST ditarik ke stage biasa -> kembali OPEN
+        if ($oldStatus === 'won' && !$isWon && !$isLost) {
+            $newStatus = 'open';
+        }
+
+        if ($oldStatus === 'lost' && !$isWon && !$isLost) {
             $newStatus = 'open';
         }
 
@@ -218,6 +229,11 @@ class DealPipeline extends Page
         $deal->nx_deal_stage_id = $newStageId;
         $deal->status = $newStatus;
         $deal->close_date = in_array($newStatus, ['won', 'lost']) ? now() : null;
+
+        // EKSEKUSI SAVE:
+        // Panggilan $deal->save() ini akan otomatis memicu `static::updated()` di file app/Models/Deal.php
+        // sehingga Quotation-nya akan otomatis berubah jadi "accepted", "rejected", atau "negotiation"
+        // beserta "approved_by" dan "approved_at"!!
         $deal->save();
 
         // Refresh state board untuk menyimpan urutan baru
@@ -229,17 +245,19 @@ class DealPipeline extends Page
         // NOTIFIKASI DINAMIS BERHASIL
         if ($statusChanged) {
             $statusLabel = strtoupper($newStatus);
+
+            // Sesuaikan warna notifikasi biar lebih interaktif
             $color = match ($newStatus) {
                 'won' => 'success',
-                'lost' => 'danger',
+                'lost' => 'danger', // saya ubah ke danger untuk Lost
                 default => 'info',
             };
 
             Notification::make()
-                ->title('Berhasil Memperbarui Deal')
-                ->body("Status Deal otomatis diperbarui menjadi {$statusLabel}.")
+                        ->title('Berhasil Memperbarui Deal')
+                        ->body("Status Deal otomatis diperbarui menjadi {$statusLabel}.")
                 ->$color()
-                ->send();
+                    ->send();
         } else {
             Notification::make()
                 ->title('Berhasil Memperbarui Deal')

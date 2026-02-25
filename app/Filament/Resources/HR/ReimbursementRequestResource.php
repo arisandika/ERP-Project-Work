@@ -27,7 +27,7 @@ class ReimbursementRequestResource extends Resource
 
     protected static ?int $navigationSort = 3;
 
-    protected static ?string $slug = '/reimburse-requests';
+    protected static ?string $slug = 'reimburse-requests';
 
     protected static ?string $pluralModelLabel = 'Pengajuan Reimburse';
 
