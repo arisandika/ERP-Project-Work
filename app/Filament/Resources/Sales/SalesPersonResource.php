@@ -3,6 +3,7 @@ namespace App\Filament\Resources\Sales;
 
 use App\Filament\Resources\Sales\SalesPersonResource\Pages;
 use App\Models\HR\Employee;
+use App\Models\Sales\Quotation;
 use App\Models\Sales\SalesPerson;
 use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\Grid;
@@ -16,6 +17,7 @@ use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\HtmlString;
 
 class SalesPersonResource extends Resource
 {
@@ -119,14 +121,20 @@ class SalesPersonResource extends Resource
             ->columns([
                 Tables\Columns\TextColumn::make('display_name')
                     ->label('Nama PIC')
-                    ->getStateUsing(
-                        fn($record) =>
-                        $record->type === 'internal'
-                        ? ($record->employee->full_name ?: "Employee #{$record->employee_id}")
-                        : ($record->full_name ?: '-')
-                    )
-                    ->searchable()
-                    ->sortable(),
+                    ->getStateUsing(function ($record) {
+                        if ($record->type === 'internal') {
+                            return $record->employee?->full_name
+                                ?? $record->full_name
+                                ?? "Employee #{$record->employee_id}";
+                        }
+
+                        return $record->full_name ?: '-';
+                    })
+                    ->icon('heroicon-o-user')
+                    ->weight('semibold')
+                    ->color(fn($record) => $record->type === 'internal' ? 'primary' : 'success')
+                    ->searchable(['full_name', 'employee.full_name'])
+                    ->sortable(['full_name']),
 
                 Tables\Columns\TextColumn::make('type')
                     ->label('Tipe PIC')

@@ -30,3 +30,22 @@ nav.fi-sidebar-nav.flex-grow.flex.flex-col.gap-y-7.overflow-y-auto.overflow-x-hi
 .fi-simple-main {
     @apply rounded-xl;
 }
+
+.fi-ta-text-item-label:has(.custom-badge) {
+     @apply flex flex-col gap-2;
+}
+
+.flex.max-w-max:has(.card-repeater) {
+    width: 100% !important;
+    max-width: unset !important;
+}
+
+.flex.max-w-max .fi-in-text-item {
+    width: 100% !important;
+    max-width: unset !important;
+}
+
+.flex.max-w-max .fi-in-text-item .text-sm {
+    width: 100% !important;
+    max-width: unset !important;
+}

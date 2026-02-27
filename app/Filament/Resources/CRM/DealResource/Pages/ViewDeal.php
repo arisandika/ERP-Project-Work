@@ -45,22 +45,33 @@ class ViewDeal extends ViewRecord
                                     ->weight('bold')
                                     ->size('lg')
                                     ->icon('heroicon-o-hashtag')
-                                    ->copyable(),
+                                    ->copyable()
+                                    ->color(function (Deal $record) {
+                                        $record->withTrashed()->first();
+                                        if ($record && $record->trashed())
+                                            return 'danger';
+                                        return 'primary';
+                                    })
+                                    ->placeholder('—'),
 
                                 TextEntry::make('stage.name')
                                     ->label('Stage Deal')
-                                    ->badge()
-                                    ->color('info')
-                                    ->icon('heroicon-o-queue-list'),
+                                    ->icon('heroicon-o-queue-list')
+                                    ->formatStateUsing(fn(string $state): string => ucfirst($state))
+                                    ->color(fn(Deal $record): string => match ($record->status) {
+                                        'won' => 'success',
+                                        'lost' => 'danger',
+                                        default => 'warning',
+                                    })
+                                    ->placeholder('—'),
 
                                 TextEntry::make('customer_or_lead')
-                                    ->label('Lead / Customer')
+                                    ->label('Lead')
                                     ->getStateUsing(function (Deal $record) {
                                         if ($record->customer) {
                                             return $record->customer->name . ' (Customer)';
                                         }
 
-                                        // Ambil Lead withTrashed
                                         $lead = $record->lead()->withTrashed()->first();
 
                                         if ($lead) {
@@ -73,12 +84,12 @@ class ViewDeal extends ViewRecord
                                     ->icon('heroicon-o-user')
                                     ->color(
                                         fn(Deal $record) =>
-                                        ($record->lead()->withTrashed()->first()?->trashed()) ? 'danger' : 'primary'
-                                    ),
+                                        ($record->lead()->withTrashed()->first()?->trashed()) ? 'danger' : ''
+                                    )
+                                    ->placeholder('—'),
 
                                 TextEntry::make('status')
                                     ->label('Status')
-                                    ->badge()
                                     ->color(fn(string $state): string => match ($state) {
                                         'open' => 'warning',
                                         'won' => 'success',
@@ -91,7 +102,8 @@ class ViewDeal extends ViewRecord
                                         'won' => 'heroicon-o-check-circle',
                                         'lost' => 'heroicon-o-x-circle',
                                         default => 'heroicon-o-question-mark-circle',
-                                    }),
+                                    })
+                                    ->placeholder('—'),
 
                                 TextEntry::make('deal_date')
                                     ->label('Tanggal Deal Dibuat')
@@ -116,19 +128,31 @@ class ViewDeal extends ViewRecord
                                     ->money('IDR')
                                     ->weight('bold')
                                     ->size('lg')
-                                    ->color('success'),
+                                    ->color('success')
+                                    ->placeholder('—'),
 
                                 TextEntry::make('quotations_count')
                                     ->label('Jumlah Penawaran')
-                                    ->getStateUsing(fn($record) => $record->quotations()->count())
+                                    ->formatStateUsing(fn($state) => $state . ' Penawaran')
                                     ->badge()
-                                    ->color('info'),
+                                    
+                                    ->state(function (Deal $record) {
+                                        return $record->quotations()->withTrashed()->count();
+                                    })
+                                    ->color(function (Deal $record, int $state): string {
+                                        if ($state === 0)
+                                            return 'gray';
+
+                                        $hasTrashed = $record->quotations()->onlyTrashed()->exists();
+
+                                        return $hasTrashed ? 'danger' : 'info';
+                                    })
+                                    ->placeholder('—'),
 
                                 TextEntry::make('duration')
                                     ->label('Durasi Proses')
                                     ->getStateUsing(function ($record): string {
                                         $start = \Carbon\Carbon::parse($record->created_at);
-                                        // Gunakan close_date atau sekarang
                                         $end = $record->close_date ? \Carbon\Carbon::parse($record->close_date) : now();
 
                                         if (!$start)
@@ -145,13 +169,15 @@ class ViewDeal extends ViewRecord
                                         }
                                     })
                                     ->badge()
-                                    ->color('gray'),
+                                    ->color('gray')
+                                    ->placeholder('—'),
 
                                 TextEntry::make('stage.order')
                                     ->label('Urutan Stage')
                                     ->badge()
                                     ->color('primary')
-                                    ->formatStateUsing(fn($state) => 'Tahap ke-' . $state),
+                                    ->formatStateUsing(fn($state) => 'Tahap ke-' . $state)
+                                    ->placeholder('—'),
                             ]),
                     ]),
 
@@ -160,25 +186,24 @@ class ViewDeal extends ViewRecord
                     ->schema([
                         Grid::make(2)->schema([
                             TextEntry::make('lead_name_manual')
-                                ->label('Nama Kontak')
+                                ->label('Nama Lead')
                                 ->getStateUsing(fn(Deal $record) => $record->lead()->withTrashed()->first()?->name)
-                                ->placeholder('—'),
+                                ->placeholder('—')
+                                ->icon('heroicon-o-user')
+                                ->weight('bold')
+                                ->size('lg')
+                                ->color(function (Deal $record) {
+                                    $record->withTrashed()->first();
+                                    if ($record && $record->trashed())
+                                        return 'danger';
+                                    return '';
+                                }),
 
-                            TextEntry::make('lead_company_manual') // Asumsi relasi atau kolom company ada di lead
+                            TextEntry::make('lead_company_manual')
                                 ->label('Tipe Customer')
                                 ->getStateUsing(fn(Deal $record) => ucfirst($record->lead()->withTrashed()->first()?->customer_type ?? ''))
-                                ->placeholder('—'),
-
-                            TextEntry::make('lead_phone_manual')
-                                ->label('Nomor Telepon')
-                                ->icon('heroicon-o-phone')
-                                ->getStateUsing(fn(Deal $record) => $record->lead()->withTrashed()->first()?->phone)
-                                ->url(function ($record) {
-                                    $phone = $record->lead()->withTrashed()->first()?->phone;
-                                    return $phone ? "tel:{$phone}" : null;
-                                })
                                 ->placeholder('—')
-                                ->color(fn(Deal $record) => $record->lead()->withTrashed()->first()?->trashed() ? 'danger' : 'primary'),
+                                ->icon('heroicon-o-identification'),
 
                             TextEntry::make('lead_email_manual')
                                 ->label('Email')
@@ -189,12 +214,24 @@ class ViewDeal extends ViewRecord
                                     return $email ? "mailto:{$email}" : null;
                                 })
                                 ->placeholder('—')
-                                ->color(fn(Deal $record) => $record->lead()->withTrashed()->first()?->trashed() ? 'danger' : 'primary'),
+                                ->color('warning'),
+
+                            TextEntry::make('lead_phone_manual')
+                                ->label('Nomor Telepon')
+                                ->icon('heroicon-o-phone')
+                                ->getStateUsing(fn(Deal $record) => $record->lead()->withTrashed()->first()?->phone)
+                                ->url(function ($record) {
+                                    $phone = $record->lead()->withTrashed()->first()?->phone;
+                                    return $phone ? "tel:{$phone}" : null;
+                                })
+                                ->placeholder('—')
+                                ->color('success'),
 
                             TextEntry::make('lead_address_manual')
                                 ->label('Alamat')
                                 ->getStateUsing(fn(Deal $record) => $record->lead()->withTrashed()->first()?->address)
                                 ->columnSpanFull()
+                                ->icon('heroicon-o-map-pin')
                                 ->placeholder('Tidak ada alamat tersimpan'),
                         ]),
                     ])

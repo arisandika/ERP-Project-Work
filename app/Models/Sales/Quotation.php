@@ -29,7 +29,8 @@ class Quotation extends Model
         'grand_total',
         'promo_code_id',
         'notes',
-        'nx_employee_id',
+        'internal_pic_id',
+        'field_staff_pic_id',
         'created_by',
         'approved_by',
         'approved_at'
@@ -46,9 +47,14 @@ class Quotation extends Model
         return $this->belongsTo(Deal::class, 'nx_deal_id')->withTrashed()->withDefault();
     }
 
-    public function employee(): BelongsTo
+    public function internalPic(): BelongsTo
     {
-        return $this->belongsTo(Employee::class, 'nx_employee_id')->withDefault();
+        return $this->belongsTo(SalesPerson::class, 'internal_pic_id')->withDefault();
+    }
+
+    public function fieldStaffPic(): BelongsTo
+    {
+        return $this->belongsTo(SalesPerson::class, 'field_staff_pic_id')->withDefault();
     }
 
     public function createdBy(): BelongsTo

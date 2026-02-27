@@ -5,14 +5,17 @@ namespace App\Filament\Resources\DealResource\RelationManagers;
 use App\Filament\Resources\Sales\QuotationResource;
 use App\Mail\QuotationSent;
 use App\Models\Sales\Quotation;
+use App\Models\Sales\SalesPerson;
 use Filament\Forms\Components\DatePicker;
 use Filament\Notifications\Notification;
 use Filament\Resources\RelationManagers\RelationManager;
 use Filament\Tables;
+use Filament\Tables\Columns\TextColumn\TextColumnSize;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\HtmlString;
 
 class QuotationsRelationManager extends RelationManager
 {
@@ -33,27 +36,99 @@ class QuotationsRelationManager extends RelationManager
                 Tables\Columns\TextColumn::make('client_name')
                     ->label('Lead')
                     ->state(function (Quotation $record) {
-                        $deal = $record->deal;
+                        $deal = $record->deal()->withTrashed()->first();
+
                         if (!$deal)
                             return '-';
-                        if ($deal->customer)
-                            return $deal->customer->name . ' (Customer)';
-                        if ($deal->lead)
-                            return $deal->lead->name . ' (Lead)';
+
+                        if ($deal->nx_customer_id) {
+                            return $deal->customer?->name . ' (Customer)';
+                        }
+
+                        $lead = $deal->lead()->withTrashed()->first();
+
+                        if ($lead) {
+                            return $lead->name . ' (Lead)';
+                        }
+
                         return '-';
                     })
-                    ->description(fn(Quotation $record) => $record->deal?->deal_number)
+                    ->description(function (Quotation $record) {
+                        $deal = $record->deal()->withTrashed()->first();
+                        if (!$deal)
+                            return '-';
+
+                        $lead = $deal->lead()->withTrashed()->first();
+
+                        $infoParts = [];
+                        $infoParts[] = "Deal: {$deal->deal_number}";
+
+                        if ($deal->trashed()) {
+                            $infoParts[] = "<span class='inline-flex items-center px-2 py-1 mt-2 text-xs font-medium capitalize bg-white rounded-md shadow-sm ring-1 ring-inset fi-color-danger text-danger-600 ring-danger-600/30 dark:bg-danger-400/10 dark:text-danger-400 dark:ring-danger-400/30'>Deal Terhapus</span>";
+                        }
+                        if ($lead && $lead->trashed()) {
+                            $infoParts[] = "<span class='inline-flex items-center px-2 py-1 mt-2 text-xs font-medium capitalize bg-white rounded-md shadow-sm ring-1 ring-inset fi-color-danger text-danger-600 ring-danger-600/30 dark:bg-danger-400/10 dark:text-danger-400 dark:ring-danger-400/30'>Lead Terhapus</span>";
+                        }
+
+                        if ($deal->status === 'lost') {
+                            $infoParts[] = '<span class="inline-flex items-center px-2 py-1 mt-2 text-xs font-medium capitalize bg-white rounded-md shadow-sm ring-1 ring-inset fi-color-danger text-danger-600 ring-danger-600/30 dark:bg-danger-400/10 dark:text-danger-400 dark:ring-danger-400/30">Status Deal: Lost</span>';
+                        } elseif ($deal->status === 'won') {
+                            $infoParts[] = '<span class="inline-flex items-center px-2 py-1 mt-2 text-xs font-medium capitalize bg-white rounded-md shadow-sm ring-1 ring-inset fi-color-success text-success-600 ring-success-600/30 dark:bg-success-400/10 dark:text-success-400 dark:ring-success-400/30">Status Deal: Won</span>';
+                        } else {
+                            $infoParts[] = '<span class="inline-flex items-center px-2 py-1 mt-2 text-xs font-medium capitalize bg-white rounded-md shadow-sm ring-1 ring-inset fi-color-warning text-warning-600 ring-warning-600/30 dark:bg-warning-400/10 dark:text-warning-400 dark:ring-warning-400/30">Status Deal: Open</span>';
+                        }
+
+                        return new HtmlString(implode(' <br> ', $infoParts));
+                    })
                     ->searchable(['deal.customer.name', 'deal.lead.name'])
                     ->sortable()
                     ->weight('semibold')
                     ->icon('heroicon-o-user')
-                    ->color('primary'),
+                    ->color(function (Quotation $record) {
+                        $deal = $record->deal()->withTrashed()->first();
+                        $lead = $deal?->lead()->withTrashed()->first();
 
-                Tables\Columns\TextColumn::make('employee.full_name')
-                    ->label('PIC (Sales)')
+                        if (($deal && $deal->trashed()) || ($lead && $lead->trashed())) {
+                            return 'danger';
+                        }
+                        return '';
+                    }),
+
+                Tables\Columns\TextColumn::make('status')
+                    ->label('Status Penawaran')
+                    ->badge()
+                    ->color(fn(string $state): string => match ($state) {
+                        'draft' => 'gray',
+                        'sent' => 'warning',
+                        'negotiation' => 'info',
+                        'accepted' => 'success',
+                        'rejected' => 'danger',
+                        default => 'gray'
+                    })
+                    ->formatStateUsing(fn(string $state): string => match ($state) {
+                        'draft' => 'Draft',
+                        'sent' => 'Terkirim',
+                        'negotiation' => 'Negosiasi',
+                        'accepted' => 'Diterima',
+                        'rejected' => 'Ditolak',
+                        default => ucfirst($state),
+                    }),
+
+                Tables\Columns\TextColumn::make('internalPic.full_name')
+                    ->label('PIC Internal')
                     ->searchable()
                     ->sortable()
-                    ->toggleable(isToggledHiddenByDefault: true),
+                    ->icon('heroicon-o-user')
+                    ->weight('semibold')
+                    ->toggleable(isToggledHiddenByDefault: false),
+
+                Tables\Columns\TextColumn::make('fieldStaffPic.full_name')
+                    ->label('Field Staff')
+                    ->searchable()
+                    ->sortable()
+                    ->icon('heroicon-o-user')
+                    ->weight('semibold')
+                    ->toggleable(isToggledHiddenByDefault: false),
 
                 Tables\Columns\TextColumn::make('quotation_date')
                     ->label('Tanggal Penawaran')
@@ -93,6 +168,7 @@ class QuotationsRelationManager extends RelationManager
                     ->color(fn(string $state): string => match ($state) {
                         'draft' => 'gray',
                         'sent' => 'warning',
+                        'negotiation' => 'warning',
                         'accepted' => 'success',
                         'rejected' => 'danger',
                         default => 'gray'
@@ -100,6 +176,7 @@ class QuotationsRelationManager extends RelationManager
                     ->formatStateUsing(fn(string $state): string => match ($state) {
                         'draft' => 'Draft',
                         'sent' => 'Terkirim',
+                        'negotiation' => 'Negosiasi',
                         'accepted' => 'Diterima',
                         'rejected' => 'Ditolak',
                         default => ucfirst($state),
@@ -137,7 +214,7 @@ class QuotationsRelationManager extends RelationManager
                     ->label('Diperbarui Pada')
                     ->dateTime('d M Y H:i')
                     ->sortable()
-                    ->toggleable(isToggledHiddenByDefault: true),
+                    ->toggleable(isToggledHiddenByDefault: false),
 
                 Tables\Columns\TextColumn::make('deleted_at')
                     ->label('Dihapus Pada')
@@ -151,16 +228,39 @@ class QuotationsRelationManager extends RelationManager
                     ->options([
                         'draft' => 'Draft',
                         'sent' => 'Terkirim',
+                        'negotiation' => 'Negosiasi',
                         'accepted' => 'Diterima',
                         'rejected' => 'Ditolak',
                     ]),
 
-                Tables\Filters\SelectFilter::make('nx_employee_id')
-                    ->label('PIC (Sales)')
-                    ->relationship('employee', 'full_name')
+                Tables\Filters\SelectFilter::make('internal_pic_id')
+                    ->label('PIC (Internal Sales)')
+                    ->relationship('internalPic', 'full_name', function ($query) {
+                        return $query->where('type', 'internal');
+                    })
                     ->searchable()
                     ->preload()
-                    ->multiple(),
+                    ->default(function () {
+                        $employeeId = auth()->user()?->employee?->id;
+
+                        if ($employeeId) {
+                            $salesPerson = SalesPerson::where('employee_id', $employeeId)
+                                ->where('type', 'internal')
+                                ->first();
+
+                            return $salesPerson?->id;
+                        }
+
+                        return null;
+                    }),
+
+                Tables\Filters\SelectFilter::make('field_staff_pic_id')
+                    ->label('PIC (External/Field Staff)')
+                    ->relationship('fieldStaffPic', 'full_name', function ($query) {
+                        return $query->where('type', 'external');
+                    })
+                    ->searchable()
+                    ->preload(),
 
                 Tables\Filters\TernaryFilter::make('is_expired')
                     ->label('Status Kedaluwarsa')
