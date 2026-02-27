@@ -28,17 +28,16 @@ class SalesPerson extends Model
         'commission_rate' => 'decimal:2',
     ];
 
-    /**
-     * Relasi ke employee (pegawai)
-     */
-    public function employee(): BelongsTo
+    public function internalQuotations(): HasMany
     {
-        return $this->belongsTo(Employee::class, 'employee_id', 'id');
+        return $this->hasMany(Quotation::class, 'internal_pic_id');
     }
 
-    /**
-     * Relasi ke quotation
-     */
+    public function fieldQuotations(): HasMany
+    {
+        return $this->hasMany(Quotation::class, 'field_staff_pic_id');
+    }
+
     public function quotations(): HasMany
     {
         return $this->hasMany(Quotation::class, 'nx_salesperson_id');

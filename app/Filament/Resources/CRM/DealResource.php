@@ -60,7 +60,6 @@ class DealResource extends Resource
                                 Forms\Components\Select::make('nx_lead_id')
                                     ->label('Lead')
                                     ->relationship('lead', 'name', function ($query) {
-                                        // PENTING: Sertakan withTrashed agar Lead yang terhapus tetap muncul di opsi (saat edit)
                                         return $query->withTrashed();
                                     })
                                     ->searchable()
@@ -72,7 +71,6 @@ class DealResource extends Resource
                                         $context === 'edit' || filled(request()->query('nx_lead_id'))
                                     )
                                     ->dehydrated()
-                                    // Custom label untuk memberitahu user jika Lead tersebut sudah dihapus
                                     ->getOptionLabelFromRecordUsing(function ($record) {
                                         if (!$record)
                                             return 'Tanpa Lead';
@@ -93,7 +91,7 @@ class DealResource extends Resource
                                     ->searchable()
                                     ->preload()
                                     ->required()
-                                    ->live() // Wajib
+                                    ->live()
                                     ->afterStateUpdated(function ($state, $old, callable $set, callable $get, $record) {
                                         if (!$state)
                                             return;
@@ -188,7 +186,7 @@ class DealResource extends Resource
                                     ])
                                     ->required()
                                     ->selectablePlaceholder(false)
-                                    ->live() // Wajib Live
+                                    ->live()
                                     ->afterStateUpdated(function ($state, $old, callable $set, callable $get, $record) {
                                         if (!$state)
                                             return;
@@ -216,13 +214,11 @@ class DealResource extends Resource
                                         // WON PUNYA PENAWARAN = BOLEH
                                         if ($state === 'won') {
                                             $set('nx_deal_stage_id', $wonStage?->id);
-                                            // $set('close_date', now()->format('Y-m-d')); // Aktifkan jika ada field close_date
                                         }
 
                                         // LOST DENGAN DAN TANPA PENAWARAN = BOLEH
                                         elseif ($state === 'lost') {
                                             $set('nx_deal_stage_id', $lostStage?->id);
-                                            // $set('close_date', now()->format('Y-m-d')); // Aktifkan jika ada field close_date
                                         }
 
                                         // OPEN
@@ -238,7 +234,6 @@ class DealResource extends Resource
                                             } else {
                                                 $set('nx_deal_stage_id', $penawaranStage?->id);
                                             }
-                                            // $set('close_date', null); // Aktifkan jika ada field close_date
                                         }
                                     }),
 
@@ -281,51 +276,44 @@ class DealResource extends Resource
                     ->copyable(),
 
                 Tables\Columns\TextColumn::make('customer_or_lead')
-                    ->label('Lead / Customer')
+                    ->label('Lead')
                     ->state(function (Deal $record) {
-                        // Cek jika ini Customer (biasanya jarang dihapus soft delete di case ini, tapi aman)
                         if ($record->nx_customer_id) {
                             return $record->customer?->name . ' (Customer)';
                         }
 
-                        // AMBIL LEAD DENGAN WITH TRASHED
-                        // Kita panggil query manual agar data yang terhapus tetap terambil
                         $lead = $record->lead()->withTrashed()->first();
 
                         if ($lead) {
-                            // Opsional: Kasih tanda jika lead-nya sudah dihapus
                             $status = $lead->trashed() ? ' (Dihapus)' : '';
-                            return $lead->name . ' (Lead)' . $status;
+                            return $lead->name . $status;
                         }
 
                         return '-';
                     })
                     ->description(function (Deal $record) {
-                        // Lakukan hal yang sama untuk deskripsi email/phone
                         if ($record->nx_customer_id)
                             return $record->customer?->email;
 
                         $lead = $record->lead()->withTrashed()->first();
                         if ($lead) {
-                            $desc = $lead->email ?? '-';
-                            // Jika lead terhapus, kita bisa kasih warning warna merah di description
+                            $desc = '';
                             if ($lead->trashed()) {
-                                return new HtmlString("<span class='text-danger-600 font-bold'>Lead Terhapus</span> • {$desc}");
+                                return new HtmlString("<span class='inline-flex items-center px-2 py-1 text-xs font-medium rounded-md custom-badge ring-1 ring-inset fi-color-danger bg-danger-50 text-danger-600 ring-danger-600/10 dark:bg-danger-400/10 dark:text-danger-400 dark:ring-danger-400/30'>Lead Terhapus</span>");
                             }
                             return $desc;
                         }
                         return '-';
                     })
-                    ->searchable(['customer.name', 'lead.name']) // Search mungkin agak tricky jika deleted, tapi display aman
+                    ->searchable(['customer.name', 'lead.name'])
                     ->sortable()
                     ->weight('semibold')
                     ->icon(fn($record) => $record->nx_customer_id ? 'heroicon-o-user-group' : 'heroicon-o-user')
                     ->color(function (Deal $record) {
-                        // Warnanya bisa dibedakan jika lead terhapus
                         $lead = $record->lead()->withTrashed()->first();
                         if ($lead && $lead->trashed())
-                            return 'danger'; // Merah jika lead dihapus
-                        return 'primary';
+                            return 'danger';
+                        return '';
                     }),
 
                 Tables\Columns\TextColumn::make('lead.phone')
@@ -340,11 +328,9 @@ class DealResource extends Resource
                     })
                     ->sortable()
                     ->icon('heroicon-o-phone')
-                    // Searchable tetap mengacu ke relasi standar, tapi display sudah aman
                     ->searchable(['lead.phone', 'lead.email'])
                     ->color(function (Deal $record) {
                         $lead = $record->lead()->withTrashed()->first();
-                        // Jika lead terhapus, kita beri warna danger sebagai warning
                         return ($lead && $lead->trashed()) ? 'danger' : 'success';
                     }),
 
@@ -584,11 +570,28 @@ class DealResource extends Resource
 
                 Tables\Columns\TextColumn::make('quotations_count')
                     ->label('Jumlah Penawaran')
-                    ->counts('quotations')
                     ->badge()
-                    ->color(fn(int $state): string => $state > 0 ? 'info' : 'gray')
-                    ->sortable()
-                    ->formatStateUsing(fn($state) => $state . ' Penawaran'),
+                    ->state(function (Deal $record) {
+                        return $record->quotations()->withTrashed()->count();
+                    })
+                    ->color(function (Deal $record, int $state): string {
+                        if ($state === 0)
+                            return 'gray';
+
+                        $hasTrashed = $record->quotations()->onlyTrashed()->exists();
+
+                        return $hasTrashed ? 'danger' : 'info';
+                    })
+                    ->formatStateUsing(function ($state, Deal $record) {
+                        $trashedCount = $record->quotations()->onlyTrashed()->count();
+
+                        if ($trashedCount > 0) {
+                            return "{$trashedCount} Penawaran Terhapus";
+                        }
+
+                        return $state . ' Penawaran';
+                    })
+                    ->sortable(),
 
                 Tables\Columns\TextColumn::make('created_at')
                     ->label('Dibuat Pada')

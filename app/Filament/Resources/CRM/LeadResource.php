@@ -16,6 +16,7 @@ use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\HtmlString;
 
 class LeadResource extends Resource
 {
@@ -75,7 +76,7 @@ class LeadResource extends Resource
                                 Forms\Components\Textarea::make('address')
                                     ->label('Alamat Domisili/Kantor')
                                     ->rows(3)
-                                    ->columnSpanFull(), // Disesuaikan tipe Text (hapus maxLength)
+                                    ->columnSpanFull(),
                             ]),
                     ]),
 
@@ -83,20 +84,6 @@ class LeadResource extends Resource
                     ->schema([
                         Forms\Components\Grid::make(2)
                             ->schema([
-                                Forms\Components\Select::make('status')
-                                    ->label('Status Lead')
-                                    ->options([
-                                        'new' => 'New (Baru)',
-                                        'contacted' => 'Contacted (Dihubungi)',
-                                        'qualified' => 'Qualified (Potensial)',
-                                        'converted' => 'Converted (Jadi Deal)',
-                                        'lost' => 'Lost (Gagal)',
-                                    ])
-                                    ->default('new')
-                                    ->required()
-                                    ->live()
-                                    ->native(false),
-
                                 Forms\Components\Select::make('source')
                                     ->label('Sumber dari')
                                     ->options([
@@ -111,7 +98,6 @@ class LeadResource extends Resource
                                     ->searchable()
                                     ->native(false),
 
-                                // Field ini muncul jika statusnya 'converted'
                                 Forms\Components\Select::make('converted_customer_id')
                                     ->label('Pilih Customer Terkonversi')
                                     ->relationship('convertedCustomer', 'name')
@@ -127,6 +113,87 @@ class LeadResource extends Resource
                             ->placeholder('Tulis kebutuhan spesifik klien...')
                             ->columnSpanFull(),
                     ]),
+
+                Forms\Components\Section::make('Daftar Deal Terkait')
+                    ->icon('heroicon-o-briefcase')
+                    ->schema([
+                        Forms\Components\Placeholder::make('deals_list')
+                            ->hiddenLabel()
+                            ->content(function ($record) {
+                                $deals = $record->deals()->withTrashed()->with('stage')->latest()->get();
+
+                                if ($deals->isEmpty()) {
+                                    return new HtmlString(
+                                        '<p class="text-sm italic text-gray-500">Belum ada deal yang dibuat.</p>'
+                                    );
+                                }
+
+                                $html = '<div class="grid w-full grid-cols-1 gap-4 card-repeater md:grid-cols-2">';
+
+                                foreach ($deals as $deal) {
+                                    $isDeleted = $deal->trashed();
+
+                                    if ($isDeleted) {
+                                        $containerClass = 'bg-danger-50 ring-danger-600/30 dark:bg-danger-900/20 dark:ring-danger-500/30 border-danger-200';
+                                        $badgeClass = 'fi-color-danger bg-white text-danger-600 ring-danger-600/30 dark:bg-danger-400/10 dark:text-danger-400 dark:ring-danger-400/30 fi-color-danger';
+                                        $textClass = 'text-gray-700 dark:text-white';
+                                        $statusLabel = 'Terhapus';
+                                    } else {
+                                        $containerClass = match ($deal->status) {
+                                            'won' => 'fi-color-success bg-success-100/40 text-success-600 ring-success-600/30 dark:bg-success-400/10 dark:text-success-400 dark:ring-success-400/30 fi-color-success',
+                                            'lost' => 'fi-color-danger bg-danger-100/40 text-danger-600 ring-danger-600/30 dark:bg-danger-400/10 dark:text-danger-400 dark:ring-danger-400/30 fi-color-danger',
+                                            default => 'fi-color-warning bg-warning-100/40 text-warning-600 ring-warning-600/30 dark:bg-warning-400/10 dark:text-warning-400 dark:ring-warning-400/30 fi-color-warning',
+                                        };
+
+                                        $badgeClass = match ($deal->status) {
+                                            'won' => 'fi-color-success bg-white text-success-600 ring-success-600/30 dark:bg-success-400/10 dark:text-success-400 dark:ring-success-400/30 fi-color-success',
+                                            'lost' => 'fi-color-danger bg-white text-danger-600 ring-danger-600/30 dark:bg-danger-400/10 dark:text-danger-400 dark:ring-danger-400/30 fi-color-danger',
+                                            default => 'fi-color-warning bg-white text-warning-600 ring-warning-600/30 dark:bg-warning-400/10 dark:text-warning-400 dark:ring-warning-400/30 fi-color-warning',
+                                        };
+
+                                        $textClass = 'text-gray-700 dark:text-white';
+                                        $statusLabel = ucfirst($deal->status);
+                                    }
+
+                                    $stageName = $deal->stage->name ?? '-';
+                                    $dealNumber = $deal->deal_number;
+                                    $value = 'IDR ' . number_format($deal->estimated_value, 0, ',', '.');
+                                    $date = $deal->created_at->format('d M Y');
+                                    $deletedDate = $isDeleted ? '<br><span class="text-xs font-semibold text-danger-600 dark:text-danger-400">Dihapus: ' . $deal->deleted_at->format('d M Y') . '</span>' : '';
+
+                                    $html .= "
+                                    <div class='flex flex-col justify-between p-4 rounded-lg ring-1 ring-inset shadow-sm {$containerClass} transition duration-150 ease-in-out'>
+                                        <div class='flex items-start justify-between mb-2'>
+                                            <div>
+                                                <span class='font-bold text-sm block {$textClass}'>{$dealNumber}</span>
+                                                <span class='text-xs opacity-75 {$textClass}'>{$date}</span>
+                                                {$deletedDate}
+                                            </div>
+                                            <span class='inline-flex items-center rounded-md px-2 py-1 text-xs ring-1 ring-inset shadow-sm capitalize {$badgeClass}'>
+                                                {$statusLabel}
+                                            </span>
+                                        </div>
+                                        
+                                        <div class='flex items-end justify-between pt-3 mt-3 border-t border-black/20 dark:border-white/20'>
+                                            <div class='text-xs {$textClass}'>
+                                                <p class='opacity-70 uppercase tracking-wider text-[10px]'>Stage</p>
+                                                <p class='text-sm font-semibold'>{$stageName}</p>
+                                            </div>
+                                            <div class='text-xs text-right {$textClass}'>
+                                                <p class='opacity-70 uppercase tracking-wider text-[10px]'>Est. Value</p>
+                                                <p class='text-sm font-semibold'>{$value}</p>
+                                            </div>
+                                        </div>
+                                    </div>";
+                                }
+
+                                $html .= '</div>';
+
+                                return new HtmlString($html);
+                            }),
+                    ])
+                    ->visible(fn($record) => $record && $record->deals()->withTrashed()->exists())
+                    ->columnSpanFull(),
             ])->columns(1);
     }
 
@@ -136,11 +203,26 @@ class LeadResource extends Resource
             ->columns([
                 Tables\Columns\TextColumn::make('name')
                     ->label('Nama Lead')
+                    ->state(function (Lead $record) {
+                        $record->withTrashed()->first();
+
+                        if ($record) {
+                            $status = $record->trashed() ? ' (Dihapus)' : '';
+                            return $record->name . $status;
+                        }
+
+                        return '-';
+                    })
                     ->searchable()
                     ->sortable()
                     ->weight('semibold')
                     ->icon('heroicon-o-user')
-                    ->color('primary'),
+                    ->color(function (Lead $record) {
+                        $record->withTrashed()->first();
+                        if ($record && $record->trashed())
+                            return 'danger';
+                        return '';
+                    }),
 
                 Tables\Columns\TextColumn::make('phone')
                     ->label('Kontak')
@@ -149,43 +231,123 @@ class LeadResource extends Resource
                     ->sortable()
                     ->icon('heroicon-o-phone')
                     ->searchable(['lead.phone', 'lead.email'])
-                    ->color('success'),
+                    ->color(function (Lead $record) {
+                        $record->withTrashed()->first();
+                        return ($record && $record->trashed()) ? 'danger' : 'success';
+                    }),
 
                 Tables\Columns\TextColumn::make('customer_type')
                     ->label('Tipe')
-                    ->badge()
-                    ->color(fn(string $state): string => match ($state) {
-                        'company' => 'primary',
-                        'individual' => 'success',
-                        default => 'gray',
-                    })
+                    ->sortable()
                     ->formatStateUsing(fn(string $state): string => ucfirst($state)),
+
+                Tables\Columns\TextColumn::make('status')
+                    ->label('Status Deal')
+                    ->badge()
+                    ->getStateUsing(function (Lead $record) {
+                        $allDeals = $record->deals()->withTrashed()->get();
+
+                        $activeDeals = $allDeals->whereNull('deleted_at');
+
+                        if ($allDeals->isEmpty()) {
+                            return match ($record->status) {
+                                'new' => 'New',
+                                'contacted' => 'Contacted',
+                                'qualified' => 'Qualified',
+                                default => ucfirst($record->status),
+                            };
+                        }
+
+                        if ($activeDeals->isEmpty()) {
+                            return 'All Deals Deleted';
+                        }
+
+                        if ($activeDeals->contains('status', 'open')) {
+                            return 'Active Process';
+                        }
+                        if ($activeDeals->contains('status', 'won')) {
+                            return 'Existing Customer';
+                        }
+
+                        return 'Lost Prospect';
+                    })
+                    ->color(fn(string $state): string => match ($state) {
+                        'Active Process' => 'info',
+                        'Existing Customer' => 'success',
+                        'Lost Prospect' => 'danger',
+                        'All Deals Deleted' => 'danger',
+                        'New' => 'primary',
+                        'Contacted' => 'warning',
+                        'Qualified' => 'success',
+
+                        default => 'gray',
+                    }),
+
+                Tables\Columns\TextColumn::make('deals_summary')
+                    ->label('Ringkasan Deal')
+                    ->state(function (Lead $record) {
+                        $deals = $record->deals()->withTrashed()->with('stage')->latest()->get();
+
+                        if ($deals->isEmpty())
+                            return '-';
+
+                        $badges = [];
+
+                        foreach ($deals as $deal) {
+                            if ($deal->trashed()) {
+                                $color = 'fi-color-danger bg-danger-50 text-danger-600 ring-danger-600/10 dark:bg-danger-400/10 dark:text-danger-400 dark:ring-danger-400/30';
+                                $label = 'Terhapus';
+                            } else {
+                                $color = match ($deal->status) {
+                                    'won' => 'fi-color-success bg-success-50 text-success-600 ring-success-600/10 dark:bg-success-400/10 dark:text-success-400 dark:ring-success-400/30',
+                                    'lost' => 'fi-color-danger bg-danger-50 text-danger-600 ring-danger-600/10 dark:bg-danger-400/10 dark:text-danger-400 dark:ring-danger-400/30',
+                                    default => 'fi-color-warning bg-warning-50 text-warning-600 ring-warning-600/10 dark:bg-warning-400/10 dark:text-warning-400 dark:ring-warning-400/30',
+                                };
+                                $label = $deal->stage->name ?? 'Unknown';
+                            }
+
+                            $badges[] = "<span class='custom-badge inline-flex items-center rounded-md px-2 py-1 text-xs font-medium ring-1 ring-inset {$color}'>{$label}</span>";
+                        }
+
+                        $display = array_slice($badges, 0, 2);
+
+                        if (count($badges) > 2) {
+                            $more = count($badges) - 2;
+                            $display[] = "<span class='text-xs font-medium text-gray-500'>+{$more} deal lainnya</span>";
+                        }
+
+                        return new HtmlString(implode(' ', $display));
+                    }),
 
                 Tables\Columns\TextColumn::make('source')
                     ->label('Sumber')
-                    ->badge()
-                    ->color('gray')
-                    ->formatStateUsing(fn(string $state): string => ucwords(str_replace('_', ' ', $state))),
-
-                Tables\Columns\TextColumn::make('status')
-                    ->label('Status')
-                    ->badge()
-                    ->color(fn(string $state): string => match ($state) {
-                        'new' => 'warning',
-                        'contacted' => 'warning',
-                        'qualified', 'converted' => 'success',
-                        'lost' => 'danger',
-                        default => 'gray',
-                    })
-                    ->formatStateUsing(fn(string $state): string => ucwords(str_replace('_', ' ', $state))),
+                    ->formatStateUsing(fn(string $state): string => ucwords(str_replace('_', ' ', $state)))
+                    ->toggleable(isToggledHiddenByDefault: true),
 
                 Tables\Columns\TextColumn::make('deals_count')
                     ->label('Jumlah Deal')
-                    ->counts('deals')
                     ->badge()
-                    ->color(fn(int $state): string => $state > 0 ? 'info' : 'gray')
+                    ->state(function (Lead $record) {
+                        return $record->deals()->withTrashed()->count();
+                    })
+                    ->color(function (Lead $record, int $state): string {
+                        if ($state === 0)
+                            return 'gray';
+
+                        $hasTrashed = $record->deals()->onlyTrashed()->exists();
+
+                        return $hasTrashed ? 'danger' : 'success';
+                    })
                     ->sortable()
-                    ->formatStateUsing(fn($state) => $state . ' Deal'),
+                    ->formatStateUsing(function ($state, Lead $record) {
+                        $trashedCount = $record->deals()->onlyTrashed()->count();
+
+                        if ($trashedCount > 0) {
+                            return "{$trashedCount} Deal Terhapus";
+                        }
+
+                        return $state . ' Deal';
+                    }),
 
                 Tables\Columns\TextColumn::make('created_at')
                     ->label('Dibuat Pada')
@@ -281,13 +443,11 @@ class LeadResource extends Resource
                 Tables\Actions\ViewAction::make(),
                 Tables\Actions\EditAction::make(),
                 Tables\Actions\DeleteAction::make(),
-                // Tables\Actions\ForceDeleteAction::make(),
                 Tables\Actions\RestoreAction::make(),
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([
                     Tables\Actions\DeleteBulkAction::make(),
-                    // Tables\Actions\ForceDeleteBulkAction::make(),
                     Tables\Actions\RestoreBulkAction::make(),
                 ]),
             ])

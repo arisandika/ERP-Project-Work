@@ -9,6 +9,7 @@ use App\Models\Inventory\Product;
 use App\Models\Inventory\Service;
 use App\Models\Marketing\PromoCode;
 use App\Models\Sales\Quotation;
+use App\Models\Sales\SalesPerson;
 use Filament\Forms\Components\Actions\Action as FormAction;
 use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\Grid;
@@ -24,6 +25,7 @@ use Filament\Forms\Set;
 use Filament\Notifications\Notification;
 use Filament\Resources\Resource;
 use Filament\Tables;
+use Filament\Tables\Columns\TextColumn\TextColumnSize;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection;
@@ -48,9 +50,8 @@ class QuotationResource extends Resource
 
     public static function getNavigationBadge(): ?string
     {
-        return static::getModel()::where('status', 'draft')->count();
+        return static::getModel()::count();
     }
-
     public static function form(Form $form): Form
     {
         return $form->schema([
@@ -86,26 +87,63 @@ class QuotationResource extends Resource
                         ->schema([
                             Select::make('nx_deal_id')
                                 ->label('No. Deal (Ref)')
-                                ->relationship('deal', 'deal_number')
-                                ->searchable()
+                                ->relationship('deal', 'deal_number', function (Builder $query) {
+                                    return $query->withTrashed();
+                                })
+                                ->searchable(['deal_number', 'customer.name', 'lead.name'])
                                 ->preload()
                                 ->required()
                                 ->default(fn() => request()->query('nx_deal_id'))
                                 ->disabled(fn($record) => $record !== null || request()->has('nx_deal_id'))
                                 ->dehydrated()
                                 ->getOptionLabelFromRecordUsing(function ($record) {
-                                    $client = $record->customer?->name ?? $record->lead?->name ?? 'Tanpa Klien';
-                                    return "{$record->deal_number} - {$client}";
-                                })
-                                ->prefixIcon('heroicon-o-briefcase'),
+                                    $lead = $record->lead()->withTrashed()->first();
 
-                            Select::make('nx_employee_id')
-                                ->label('PIC (Sales)')
-                                ->relationship('employee', 'full_name')
+                                    $clientName = $record->customer?->name ?? $lead?->name ?? 'Tanpa Klien';
+
+                                    $label = "{$record->deal_number} - {$clientName}";
+
+                                    if ($record->trashed()) {
+                                        return "{$label} (Deal Terhapus)";
+                                    }
+
+                                    if ($lead && $lead->trashed()) {
+                                        return "{$label} (Lead Terhapus)";
+                                    }
+
+                                    return $label;
+                                }),
+
+                            Select::make('internal_pic_id')
+                                ->label('PIC (Internal Sales)')
+                                ->relationship('internalPic', 'full_name', function ($query) {
+                                    return $query->where('type', 'internal');
+                                })
                                 ->searchable()
                                 ->preload()
-                                ->default(fn() => auth()->user()?->employee?->id ?? null)
+                                ->default(function () {
+                                    $employeeId = auth()->user()?->employee?->id;
+
+                                    if ($employeeId) {
+                                        $salesPerson = SalesPerson::where('employee_id', $employeeId)
+                                            ->where('type', 'internal')
+                                            ->first();
+
+                                        return $salesPerson?->id;
+                                    }
+
+                                    return null;
+                                })
                                 ->prefixIcon('heroicon-o-user'),
+
+                            Select::make('field_staff_pic_id')
+                                ->label('PIC (External/Field Staff)')
+                                ->relationship('fieldStaffPic', 'full_name', function ($query) {
+                                    return $query->where('type', 'external');
+                                })
+                                ->searchable()
+                                ->preload()
+                                ->prefixIcon('heroicon-o-users'),
 
                             Select::make('created_by')
                                 ->label('Dibuat Oleh')
@@ -150,7 +188,6 @@ class QuotationResource extends Resource
                 ->schema([
                     Grid::make(4)
                         ->schema([
-                            // 1. SUBTOTAL
                             TextInput::make('subtotal')
                                 ->label('Subtotal')
                                 ->disabled()
@@ -159,7 +196,6 @@ class QuotationResource extends Resource
                                 ->numeric()
                                 ->formatStateUsing(fn($state) => (int) $state),
 
-                            // 2. PROMO LOGIC
                             TextInput::make('promo_code_input')
                                 ->label('Kode Promo')
                                 ->placeholder('Masukkan kode promo')
@@ -185,7 +221,6 @@ class QuotationResource extends Resource
                             Hidden::make('temp_discount_value')
                                 ->dehydrated(false),
 
-                            // 3. DISCOUNT
                             TextInput::make('discount_amount')
                                 ->label('Potongan')
                                 ->disabled()
@@ -194,7 +229,6 @@ class QuotationResource extends Resource
                                 ->numeric()
                                 ->formatStateUsing(fn($state) => (int) $state),
 
-                            // 4. TAX
                             TextInput::make('tax')
                                 ->label('Pajak (%)')
                                 ->numeric()
@@ -205,7 +239,6 @@ class QuotationResource extends Resource
                                 ->formatStateUsing(fn($state) => (float) $state)
                                 ->prefixIcon('heroicon-o-receipt-percent'),
 
-                            // 5. GRAND TOTAL
                             TextInput::make('grand_total')
                                 ->label('Total')
                                 ->disabled()
@@ -230,31 +263,26 @@ class QuotationResource extends Resource
                     ->weight('bold'),
 
                 Tables\Columns\TextColumn::make('client_name')
-                    ->label('Lead / Client')
+                    ->label('Lead')
                     ->state(function (Quotation $record) {
-                        // 1. Ambil Deal (termasuk yang terhapus)
                         $deal = $record->deal()->withTrashed()->first();
 
                         if (!$deal)
                             return '-';
 
-                        // 2. Cek Customer
                         if ($deal->nx_customer_id) {
                             return $deal->customer?->name . ' (Customer)';
                         }
 
-                        // 3. Ambil Lead (termasuk yang terhapus)
                         $lead = $deal->lead()->withTrashed()->first();
 
                         if ($lead) {
-                            // Tampilkan nama lead
                             return $lead->name . ' (Lead)';
                         }
 
                         return '-';
                     })
                     ->description(function (Quotation $record) {
-                        // Ambil relasi manual withTrashed
                         $deal = $record->deal()->withTrashed()->first();
                         if (!$deal)
                             return '-';
@@ -264,19 +292,19 @@ class QuotationResource extends Resource
                         $infoParts = [];
                         $infoParts[] = "Deal: {$deal->deal_number}";
 
-                        // Cek status deleted untuk visualisasi
                         if ($deal->trashed()) {
-                            $infoParts[] = "<span class='text-danger-600 font-bold'>[Deal Dihapus]</span>";
+                            $infoParts[] = "<span class='inline-flex items-center px-2 py-1 mt-2 text-xs font-medium capitalize bg-white rounded-md shadow-sm ring-1 ring-inset fi-color-danger text-danger-600 ring-danger-600/30 dark:bg-danger-400/10 dark:text-danger-400 dark:ring-danger-400/30'>Deal Terhapus</span>";
                         }
                         if ($lead && $lead->trashed()) {
-                            $infoParts[] = "<span class='text-danger-600 font-bold'>[Lead Dihapus]</span>";
+                            $infoParts[] = "<span class='inline-flex items-center px-2 py-1 mt-2 text-xs font-medium capitalize bg-white rounded-md shadow-sm ring-1 ring-inset fi-color-danger text-danger-600 ring-danger-600/30 dark:bg-danger-400/10 dark:text-danger-400 dark:ring-danger-400/30'>Lead Terhapus</span>";
                         }
 
-                        // Tambahkan badge status Deal Won/Lost (dari kode lama Anda)
                         if ($deal->status === 'lost') {
-                            $infoParts[] = '<span class="text-xs font-medium px-2 py-0.5 rounded bg-danger-50 text-danger-600">Deal Lost</span>';
+                            $infoParts[] = '<span class="inline-flex items-center px-2 py-1 mt-2 text-xs font-medium capitalize bg-white rounded-md shadow-sm ring-1 ring-inset fi-color-danger text-danger-600 ring-danger-600/30 dark:bg-danger-400/10 dark:text-danger-400 dark:ring-danger-400/30">Status Deal: Lost</span>';
                         } elseif ($deal->status === 'won') {
-                            $infoParts[] = '<span class="text-xs font-medium px-2 py-0.5 rounded bg-success-50 text-success-600">Deal Won</span>';
+                            $infoParts[] = '<span class="inline-flex items-center px-2 py-1 mt-2 text-xs font-medium capitalize bg-white rounded-md shadow-sm ring-1 ring-inset fi-color-success text-success-600 ring-success-600/30 dark:bg-success-400/10 dark:text-success-400 dark:ring-success-400/30">Status Deal: Won</span>';
+                        } else {
+                            $infoParts[] = '<span class="inline-flex items-center px-2 py-1 mt-2 text-xs font-medium capitalize bg-white rounded-md shadow-sm ring-1 ring-inset fi-color-warning text-warning-600 ring-warning-600/30 dark:bg-warning-400/10 dark:text-warning-400 dark:ring-warning-400/30">Status Deal: Open</span>';
                         }
 
                         return new HtmlString(implode(' <br> ', $infoParts));
@@ -289,14 +317,14 @@ class QuotationResource extends Resource
                         $deal = $record->deal()->withTrashed()->first();
                         $lead = $deal?->lead()->withTrashed()->first();
 
-                        // Jika Deal atau Lead terhapus, warna jadi merah/danger
                         if (($deal && $deal->trashed()) || ($lead && $lead->trashed())) {
                             return 'danger';
                         }
-                        return 'primary';
+                        return '';
                     }),
 
                 Tables\Columns\TextColumn::make('status')
+                    ->label('Status Penawaran')
                     ->badge()
                     ->color(fn(string $state): string => match ($state) {
                         'draft' => 'gray',
@@ -315,12 +343,21 @@ class QuotationResource extends Resource
                         default => ucfirst($state),
                     }),
 
-                Tables\Columns\TextColumn::make('employee.full_name')
-                    ->label('PIC (Sales)')
+                Tables\Columns\TextColumn::make('internalPic.full_name')
+                    ->label('PIC Internal')
                     ->searchable()
                     ->sortable()
-                    ->badge()
-                    ->color('gray'),
+                    ->icon('heroicon-o-user')
+                    ->weight('semibold')
+                    ->toggleable(isToggledHiddenByDefault: false),
+
+                Tables\Columns\TextColumn::make('fieldStaffPic.full_name')
+                    ->label('Field Staff')
+                    ->searchable()
+                    ->sortable()
+                    ->icon('heroicon-o-user')
+                    ->weight('semibold')
+                    ->toggleable(isToggledHiddenByDefault: false),
 
                 Tables\Columns\TextColumn::make('quotation_date')
                     ->label('Tanggal Penawaran')
@@ -425,12 +462,34 @@ class QuotationResource extends Resource
                         'rejected' => 'Ditolak',
                     ]),
 
-                Tables\Filters\SelectFilter::make('nx_employee_id')
-                    ->label('PIC (Sales)')
-                    ->relationship('employee', 'full_name')
+                Tables\Filters\SelectFilter::make('internal_pic_id')
+                    ->label('PIC (Internal Sales)')
+                    ->relationship('internalPic', 'full_name', function ($query) {
+                        return $query->where('type', 'internal');
+                    })
                     ->searchable()
                     ->preload()
-                    ->multiple(),
+                    ->default(function () {
+                        $employeeId = auth()->user()?->employee?->id;
+
+                        if ($employeeId) {
+                            $salesPerson = SalesPerson::where('employee_id', $employeeId)
+                                ->where('type', 'internal')
+                                ->first();
+
+                            return $salesPerson?->id;
+                        }
+
+                        return null;
+                    }),
+
+                Tables\Filters\SelectFilter::make('field_staff_pic_id')
+                    ->label('PIC (External/Field Staff)')
+                    ->relationship('fieldStaffPic', 'full_name', function ($query) {
+                        return $query->where('type', 'external');
+                    })
+                    ->searchable()
+                    ->preload(),
 
                 Tables\Filters\TernaryFilter::make('is_expired')
                     ->label('Status Kedaluwarsa')
@@ -516,10 +575,8 @@ class QuotationResource extends Resource
                     }),
                 Tables\Actions\EditAction::make(),
                 Tables\Actions\DeleteAction::make(),
-                // Tables\Actions\ForceDeleteAction::make(),
                 Tables\Actions\RestoreAction::make()
                     ->before(function (Tables\Actions\RestoreAction $action, Quotation $record) {
-                        // Ambil deal dan lead terkait walau terhapus
                         $deal = $record->deal()->withTrashed()->first();
                         $lead = $deal ? $deal->lead()->withTrashed()->first() : null;
 
@@ -545,7 +602,6 @@ class QuotationResource extends Resource
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([
                     Tables\Actions\DeleteBulkAction::make(),
-                    // Tables\Actions\ForceDeleteBulkAction::make(),
                     Tables\Actions\RestoreBulkAction::make()
                         ->before(function (Tables\Actions\RestoreBulkAction $action, Collection $records) {
                             foreach ($records as $record) {
@@ -706,13 +762,13 @@ class QuotationResource extends Resource
                 ->dehydrated(true),
 
             TextInput::make('item_code')
-                ->label('Kode Product')
+                ->label('Kode Item')
                 ->disabled()
                 ->dehydrated()
                 ->required(),
 
             TextInput::make('item_name')
-                ->label('Nama Product')
+                ->label('Nama Item')
                 ->disabled()
                 ->dehydrated(true),
 
@@ -741,7 +797,6 @@ class QuotationResource extends Resource
                 ->reactive()
                 ->afterStateUpdated(fn(Set $set, Get $get) => self::updateItemTotal($get, $set)),
 
-            // [FIX] Memindahkan line_total ke akhir array schema items
             TextInput::make('line_total')
                 ->label('Subtotal')
                 ->disabled()

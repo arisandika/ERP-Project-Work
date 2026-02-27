@@ -23,39 +23,33 @@ class CreateQuotation extends CreateRecord
         $dealId = request()->query('nx_deal_id');
 
         if ($dealId) {
-            // 2. Cari Deal (termasuk yang soft deleted)
             $deal = Deal::withTrashed()->find($dealId);
 
-            // 3. Jika Deal ditemukan DAN statusnya trashed (terhapus)
             if ($deal && $deal->trashed()) {
 
-                // Kirim notifikasi bahaya
                 Notification::make()
                     ->title('Akses Ditolak')
                     ->body("Deal {$deal->deal_number} sudah dihapus. Restore terlebih dahulu untuk membuat penawaran.")
                     ->danger()
-                    ->persistent() // Agar notif tidak cepat hilang
+                    ->persistent()
                     ->send();
 
-                // Redirect kembali ke index Quotation (atau bisa ke index Deal)
                 $this->redirect($this->getResource()::getUrl('index'));
 
-                return; // Hentikan proses mount
+                return;
             }
         }
-        
+
         parent::mount();
 
         $this->form->fill([
             'created_by' => auth()->user()?->employee?->id,
-
-            'nx_deal_id'       => request()->query('nx_deal_id'),
+            'nx_deal_id' => request()->query('nx_deal_id'),
             'quotation_number' => $this->generateQuotationNumber(),
-            'nx_employee_id'   => auth()->user()?->employee?->id,
-            'quotation_date'   => now()->toDateString(),
-            'valid_until'      => now()->addDays(7)->toDateString(),
-            'status'           => 'draft',
-            'tax'              => 11,
+            'quotation_date' => now()->toDateString(),
+            'valid_until' => now()->addDays(7)->toDateString(),
+            'status' => 'draft',
+            'tax' => 11,
         ]);
     }
 
@@ -81,12 +75,31 @@ class CreateQuotation extends CreateRecord
         $quotation = $this->record;
 
         if ($quotation && $quotation->nx_deal_id) {
-            $penawaranStage = DealStage::where('name', 'Penawaran')->first();
+            $deal = Deal::find($quotation->nx_deal_id);
 
-            if ($penawaranStage) {
-                Deal::where('id', $quotation->nx_deal_id)->update([
-                    'nx_deal_stage_id' => $penawaranStage->id
-                ]);
+            if ($deal) {
+                $updateData = [];
+
+                $penawaranStage = DealStage::where('name', 'like', '%Penawaran%')->first();
+
+                if ($penawaranStage) {
+                    $updateData['nx_deal_stage_id'] = $penawaranStage->id;
+                }
+
+                if ($deal->status === 'lost') {
+                    $updateData['status'] = 'open';
+                    $updateData['close_date'] = null;
+
+                    Notification::make()
+                        ->title('Deal Dibuka Kembali')
+                        ->body("Status Deal {$deal->deal_number} otomatis berubah dari Lost menjadi Open.")
+                        ->info()
+                        ->send();
+                }
+
+                if (!empty($updateData)) {
+                    $deal->update($updateData);
+                }
             }
         }
     }
