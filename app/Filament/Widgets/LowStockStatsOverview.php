@@ -13,29 +13,30 @@ class LowStockStatsOverview extends BaseWidget
 
     protected function getStats(): array
     {
-        $lowStockCount = ProductStock::where('qty', '<=', 10)->count();
+        // REVISI: Mengganti qty menjadi qty_available
+        $lowStockCount = ProductStock::where('qty_available', '<=', 10)->count();
 
-        $outOfStockCount = ProductStock::where('qty', '<=', 0)->count();
+        $outOfStockCount = ProductStock::where('qty_available', '<=', 0)->count();
 
-        $lowStockProducts = ProductStock::where('qty', '<=', 10)
+        $lowStockProducts = ProductStock::where('qty_available', '<=', 10)
             ->distinct('product_id')
-            ->count('id');
+            ->count('product_id');
 
         return [
             Stat::make('Product Stock Kritis', $lowStockProducts)
-                ->description('Product unique dengan stock rendah')
+                ->description('Product unique dengan stock tersedia rendah')
                 ->descriptionIcon('heroicon-m-exclamation-triangle')
                 ->color('danger')
                 ->chart([7, 8, 6, 9, 10, 12, $lowStockProducts]),
 
-            Stat::make('Total Items Stock Rendah', $lowStockCount)
-                ->description('Termasuk semua warehouse')
+            Stat::make('Total Akses Gudang Stock Rendah', $lowStockCount)
+                ->description('Tersebar di berbagai warehouse')
                 ->descriptionIcon('heroicon-m-arrow-trending-down')
                 ->color('warning')
                 ->chart([5, 7, 6, 8, 9, 10, $lowStockCount]),
 
-            Stat::make('Stock Habis', $outOfStockCount)
-                ->description('Item dengan qty = 0')
+            Stat::make('Stock Tersedia Habis', $outOfStockCount)
+                ->description('Item dengan qty siap jual = 0')
                 ->descriptionIcon('heroicon-m-x-circle')
                 ->color($outOfStockCount > 0 ? 'danger' : 'success')
                 ->chart([3, 2, 4, 3, 2, 1, $outOfStockCount]),
@@ -44,7 +45,8 @@ class LowStockStatsOverview extends BaseWidget
 
     public static function canView(): bool
     {
-        return ProductStock::where('qty', '<=', 10)->exists();
+        // REVISI: Mengganti qty menjadi qty_available
+        return ProductStock::where('qty_available', '<=', 10)->exists();
     }
 
     protected function getPollingInterval(): ?string
@@ -52,4 +54,3 @@ class LowStockStatsOverview extends BaseWidget
         return '30s';
     }
 }
-

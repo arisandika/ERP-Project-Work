@@ -14,8 +14,9 @@ class ProductStock extends Model
     protected $fillable = [
         'product_id',
         'warehouse_id',
-        'qty',
-        'status',
+        'qty_available',
+        'qty_reserved',
+        'qty_on_delivery',
     ];
 
     // Relasi BelongsTo: Product

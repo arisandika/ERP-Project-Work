@@ -37,7 +37,7 @@ class ListProducts extends ListRecords
         parent::mount();
 
         // Check for low stock items and show notification
-        $lowStockCount = \App\Models\Inventory\ProductStock::where('qty', '<=', 10)->count();
+        $lowStockCount = \App\Models\Inventory\ProductStock::where('qty_available', '<=', 10)->count();
 
         if ($lowStockCount > 0) {
             \Filament\Notifications\Notification::make()

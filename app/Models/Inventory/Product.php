@@ -14,7 +14,7 @@ class Product extends Model
     protected $table = 'nx_products';
 
     protected $fillable = [
-        'product_code',    // Menambahkan ini
+        'product_code',
         'product_name',
         'category_id',
         'label',
@@ -24,6 +24,8 @@ class Product extends Model
         'purchase_price',
         'selling_price',
         'image_path',
+        'is_serialized',
+        'is_web_published',
     ];
 
     protected $appends = ['image_url'];
@@ -50,6 +52,12 @@ class Product extends Model
     }
 
     // === RELASI ===
+
+    public function serialNumbers(): HasMany
+    {
+        return $this->hasMany(SerialNumber::class, 'product_id', 'id');
+    }
+    
     public function category(): BelongsTo
     {
         return $this->belongsTo(Category::class, 'category_id');

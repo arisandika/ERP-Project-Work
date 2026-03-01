@@ -2,6 +2,7 @@
 
 namespace App\Models\CRM;
 
+use App\Models\CRM\Deal;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -20,6 +21,10 @@ class Lead extends Model
         'address',
         'customer_type',
         'source',
+        'pic_name',
+        'pic_phone',
+        'pic_email',
+        'pic_position',
         'status',
         'notes',
         'converted_customer_id'
@@ -37,25 +42,50 @@ class Lead extends Model
 
     protected static function booted(): void
     {
-        // Logic Hapus (yang sudah ada)
         static::deleting(function (Lead $lead) {
             if ($lead->isForceDeleting()) {
-                $lead->deals()->withTrashed()->get()->each(function ($deal) {
-                    $deal->forceDelete();
-                });
+                $lead->deals()->withTrashed()->get()->each->forceDelete();
             } else {
-                $lead->deals()->get()->each(function ($deal) {
-                    $deal->delete();
-                });
+                $lead->deals()->get()->each->delete();
             }
         });
 
-        // TAMBAHKAN LOGIC RESTORE DI SINI
         static::restored(function (Lead $lead) {
+            $lead->deals()->onlyTrashed()->get()->each->restore();
+        });
+    }
 
-            $lead->deals()->onlyTrashed()->get()->each(function ($deal) {
-                $deal->restore();
-            });
+    /**
+     * Konversi Lead ke tabel nx_customers
+     */
+    public function convertToCustomer()
+    {
+        // 1. Cek duplikasi
+        if ($this->converted_customer_id) {
+            return \App\Models\CRM\Customer::find($this->converted_customer_id);
+        }
+
+        // 2. Gunakan Transaction untuk keamanan data skala Enterprise
+        return \Illuminate\Support\Facades\DB::transaction(function () {
+            $customer = \App\Models\CRM\Customer::create([
+                'name'          => $this->name,
+                'email'         => $this->email,
+                'phone'         => $this->phone,
+                'address'       => $this->address,
+                'customer_type' => $this->customer_type,
+                'source'        => $this->source,
+                'pic_name'      => $this->pic_name,
+                'pic_phone'     => $this->pic_phone,
+                'status'        => 'active',
+            ]);
+
+            // 3. Update Lead: simpan ID customer DAN ubah status lead
+            $this->update([
+                'converted_customer_id' => $customer->id,
+                'status' => 'converted' // agar Lead tidak dianggap prospek baru lagi
+            ]);
+
+            return $customer;
         });
     }
 }

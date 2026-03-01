@@ -53,43 +53,53 @@ class InventoryMonitoringResource extends Resource
                     ->color('info')
                     ->icon('heroicon-o-building-office'),
 
-                Tables\Columns\TextColumn::make('qty')
-                    ->label('Stock Saat Ini')
+                // REVISI ARSITEKTUR 3-EMBER
+                Tables\Columns\TextColumn::make('qty_available')
+                    ->label('Siap Jual')
                     ->numeric()
                     ->sortable()
                     ->badge()
                     ->color(fn($state) => match (true) {
                         $state <= 0 => 'danger',
-                        $state <= 5 => 'danger',
-                        $state <= 10 => 'warning',
+                        $state <= 5 => 'warning',
                         default => 'success',
                     })
                     ->icon(fn($state) => match (true) {
                         $state <= 0 => 'heroicon-m-x-circle',
-                        $state <= 10 => 'heroicon-m-exclamation-triangle',
+                        $state <= 5 => 'heroicon-m-exclamation-triangle',
                         default => 'heroicon-m-check-circle',
                     })
-                    ->suffix(' Qty'),
+                    ->suffix(' Unit'),
 
-                Tables\Columns\TextColumn::make('status')
-                    ->label('Status')
+                Tables\Columns\TextColumn::make('qty_reserved')
+                    ->label('Dipesan (Reserved)')
+                    ->numeric()
+                    ->sortable()
                     ->badge()
-                    ->color(fn(string $state): string => match ($state) {
-                        'available' => 'success',
-                        'reserved' => 'warning',
-                        'out_of_stock' => 'danger',
-                        default => 'gray',
-                    })
-                    ->formatStateUsing(fn(string $state): string => match ($state) {
-                        'available' => 'Tersedia',
-                        'reserved' => 'Dipesan',
-                        'out_of_stock' => 'Habis',
-                        default => $state,
-                    }),
+                    ->color('warning')
+                    ->suffix(' Unit'),
+
+                Tables\Columns\TextColumn::make('qty_on_delivery')
+                    ->label('Dikirim (Delivery)')
+                    ->numeric()
+                    ->sortable()
+                    ->badge()
+                    ->color('info')
+                    ->suffix(' Unit'),
+
+                // Menampilkan total fisik keseluruhan
+                Tables\Columns\TextColumn::make('total_fisik')
+                    ->label('Total Fisik')
+                    ->getStateUsing(fn($record) => $record->qty_available + $record->qty_reserved + $record->qty_on_delivery)
+                    ->numeric()
+                    ->weight('bold')
+                    ->suffix(' Unit'),
+
+                // Kolom 'status' yang lama dihapus karena sudah diwakili oleh angka-angka di atas
             ])
             ->actions([
                 Tables\Actions\Action::make('view')
-                    ->label('View')
+                    ->label('View Product')
                     ->icon('heroicon-o-eye')
                     ->color('gray')
                     ->url(
@@ -101,9 +111,9 @@ class InventoryMonitoringResource extends Resource
                     ->openUrlInNewTab(),
 
                 Tables\Actions\Action::make('restock')
-                    ->label('Tambah Stock')
-                    ->icon('heroicon-o-arrow-up-tray')
-                    ->color('success')
+                    ->label('Mutasi / Restock')
+                    ->icon('heroicon-o-arrows-right-left')
+                    ->color('primary')
                     ->url(
                         fn(ProductStock $record): string =>
                         route('filament.admin.resources.inventory.transactions.create', [
@@ -113,13 +123,15 @@ class InventoryMonitoringResource extends Resource
                     ),
             ])
             ->filters([
+                // REVISI FILTER: Mencari stok siap jual yang rendah
                 Filter::make('low_stock')
-                    ->label('Stock ≤ 10')
-                    ->query(fn(Builder $query) => $query->where('qty', '<=', 10)),
+                    ->label('Stok Siap Jual ≤ 10')
+                    ->query(fn(Builder $query) => $query->where('qty_available', '<=', 10)),
             ])
             ->bulkActions([])
-            ->heading('Semua Product Stock')
-            ->defaultSort('created_at', 'desc');
+            ->heading('Live Monitoring Stock Gudang')
+            ->defaultSort('created_at', 'desc')
+            ->poll('30s');
     }
 
     public static function getPages(): array

@@ -20,6 +20,7 @@ class SalesOrder extends Model
     protected $fillable = [
         'nx_deal_id',
         'nx_quotation_id',
+        'nx_customer_id',
         'nx_employee_id',
         'order_number',
         'order_date',
@@ -43,10 +44,10 @@ class SalesOrder extends Model
     }
 
     // Relasi ke Customer
-    // public function customer(): BelongsTo
-    // {
-    //     return $this->belongsTo(Customer::class, 'nx_customer_id')->withDefault();
-    // }
+    public function customer(): BelongsTo
+    {
+        return $this->belongsTo(Customer::class, 'nx_customer_id')->withDefault();
+    }
 
     public function deal(): BelongsTo
     {
@@ -68,7 +69,7 @@ class SalesOrder extends Model
     // App\Models\Sales\SalesOrder.php
     public function promoCode()
     {
-        return $this->belongsTo(\App\Models\Sales\PromoCode::class, 'promo_code_id');
+        return $this->belongsTo(\App\Models\Marketing\PromoCode::class, 'promo_code_id');
     }
 
     // Relasi ke DeliveryOrder
