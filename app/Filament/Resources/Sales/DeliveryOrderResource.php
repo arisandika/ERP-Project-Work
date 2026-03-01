@@ -274,7 +274,7 @@ class DeliveryOrderResource extends Resource
                     DB::transaction(function () use ($record) {
                         $warehouseUtamaId = Warehouse::where('warehouse_name', 'Gudang Utama')->value('id') ?? 1;
 
-                        StockTransaction::$autoUpdateStock = false; // Matikan observer
+                        StockTransaction::$autoUpdateStock = false;
 
                         foreach ($record->items as $item) {
                             if ($item->item_type === 'product' && $item->qty > 0) {
