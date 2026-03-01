@@ -11,16 +11,19 @@ class LowStockAlert extends BaseWidget
 {
     protected static ?int $sort = 1;
     protected int|string|array $columnSpan = 'full';
-    protected static ?string $heading = 'Product dengan Stock Rendah';
+
+    // REVISI: Copywriting disesuaikan
+    protected static ?string $heading = 'Peringatan: Product dengan Stock Tersedia Rendah';
 
     public function table(Table $table): Table
     {
         return $table
             ->query(
+                // REVISI: Ganti qty menjadi qty_available
                 fn() => ProductStock::query()
-                    ->where('qty', '<=', 10)
+                    ->where('qty_available', '<=', 10)
                     ->with(['product.unit', 'product.category', 'warehouse'])
-                    ->orderBy('qty', 'asc')
+                    ->orderBy('qty_available', 'asc')
             )
             ->columns([
                 Tables\Columns\TextColumn::make('product.product_code')
@@ -43,8 +46,9 @@ class LowStockAlert extends BaseWidget
                     ->color('info')
                     ->icon('heroicon-o-building-office'),
 
-                Tables\Columns\TextColumn::make('qty')
-                    ->label('Stock Saat Ini')
+                // REVISI: Ganti qty menjadi qty_available
+                Tables\Columns\TextColumn::make('qty_available')
+                    ->label('Stock Siap Jual')
                     ->numeric()
                     ->sortable()
                     ->badge()
@@ -59,23 +63,17 @@ class LowStockAlert extends BaseWidget
                         $state <= 10 => 'heroicon-m-exclamation-triangle',
                         default => 'heroicon-m-check-circle',
                     })
-                    ->suffix(' Qty'),
+                    ->suffix(' Unit'),
 
-                Tables\Columns\TextColumn::make('status')
-                    ->label('Status')
+                // TAMBAHAN: Menampilkan stok yang tertahan/dipesan
+                Tables\Columns\TextColumn::make('qty_reserved')
+                    ->label('Dipesan (Reserved)')
+                    ->numeric()
                     ->badge()
-                    ->color(fn(string $state): string => match ($state) {
-                        'available' => 'success',
-                        'reserved' => 'warning',
-                        'out_of_stock' => 'danger',
-                        default => 'gray',
-                    })
-                    ->formatStateUsing(fn(string $state): string => match ($state) {
-                        'available' => 'Tersedia',
-                        'reserved' => 'Dipesan',
-                        'out_of_stock' => 'Habis',
-                        default => $state,
-                    }),
+                    ->color('warning')
+                    ->suffix(' Unit'),
+
+                // REVISI: Menghapus kolom 'status' (enum) yang sudah tidak ada
             ])
             ->actions([
                 Tables\Actions\Action::make('view')
@@ -97,20 +95,21 @@ class LowStockAlert extends BaseWidget
                     ->url(
                         fn(ProductStock $record): string =>
                         route('filament.admin.resources.inventory.transactions.create', [
+                            // Mengoper parameter agar form transaksi langsung terisi
                             'product' => $record->product->id,
                             'warehouse' => $record->warehouse->id,
                         ])
                     ),
             ])
-            ->emptyStateHeading('Semua Stock Aman')
-            ->emptyStateDescription('Tidak ada Product dengan stock rendah saat ini.')
+            ->emptyStateHeading('Semua Stock Tersedia Aman')
+            ->emptyStateDescription('Tidak ada Product dengan stock siap jual yang rendah saat ini.')
             ->emptyStateIcon('heroicon-o-check-circle')
-            ->poll('30s'); // Auto refresh setiap 30 detik
+            ->poll('30s');
     }
 
     public static function canView(): bool
     {
-        return ProductStock::where('qty', '<=', 10)->exists();
+        // REVISI: Ganti qty menjadi qty_available
+        return ProductStock::where('qty_available', '<=', 10)->exists();
     }
 }
-

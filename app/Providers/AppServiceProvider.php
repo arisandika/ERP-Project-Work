@@ -15,6 +15,8 @@ use App\Models\Sales\DeliveryOrder;
 use App\Observers\DeliveryOrderObserver;
 use App\Models\Sales\SalesOrder;
 use App\Observers\SalesOrderObserver;
+use Illuminate\Database\Eloquent\Relations\Relation;
+use App\Models\Inventory\Product;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -31,6 +33,10 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        Relation::morphMap([
+            'product' => Product::class,
+        ]);
+
         // Register ProductStock Observer untuk auto-check low stock
         ProductStock::observe(ProductStockObserver::class);
 
@@ -43,5 +49,7 @@ class AppServiceProvider extends ServiceProvider
         SalesOrder::observe(SalesOrderObserver::class);
 
         ReimbursementRequest::observe(ReimbursementRequestObserver::class);
+
+
     }
 }

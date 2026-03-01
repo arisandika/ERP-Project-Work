@@ -155,16 +155,33 @@
             padding-top: 10px;
             font-style: italic;
         }
+
+        /* Tambahan styling untuk detail valuasi */
+        .summary-table {
+            width: 40%;
+            float: right;
+            border-collapse: collapse;
+            margin-top: 20px;
+            font-size: 11px;
+        }
+
+        .summary-table th, .summary-table td {
+            padding: 6px;
+            border: 1px solid #ccc;
+        }
+
+        .summary-table th {
+            background-color: #f4f4f4;
+            text-align: left;
+        }
     </style>
 </head>
 
 <body>
 
-    <!-- 1. HEADER PERUSAHAAN -->
     <table class="header-table">
         <tr>
             <td class="logo-cell">
-                {{-- Pastikan file ada di public/assets/logo2.png --}}
                 <img src="{{ public_path('assets/logo2.png') }}" alt="Logo">
             </td>
             <td class="company-info-cell">
@@ -181,14 +198,12 @@
 
     <div class="header-divider"></div>
 
-    <!-- TITLE -->
     <div class="document-title">
-        <h1>LAPORAN STOK PRODUCT</h1>
+        <h1>LAPORAN VALUASI STOK PRODUCT</h1>
         <p>Per {{ now()->format('d F Y H:i') }}</p>
-        <span class="status-badge">INVENTORY REPORT</span>
+        <span class="status-badge">INVENTORY AUDIT REPORT</span>
     </div>
 
-    <!-- TABLE -->
     <table class="items-table">
         <thead>
             <tr>
@@ -196,20 +211,32 @@
                 <th style="width: 13%;">Kode Product</th>
                 <th style="width: 22%;">Nama Product</th>
                 <th style="width: 12%;">Kategori</th>
-                <th style="width: 10%;" class="text-center">Stok</th>
+                <th style="width: 10%;" class="text-center">Stok Fisik</th>
                 <th style="width: 8%;" class="text-center">Satuan</th>
-                <th style="width: 15%;" class="text-right">Harga</th>
-                <th style="width: 15%;" class="text-right">Total Harga</th>
+                <th style="width: 15%;" class="text-right">Harga Satuan</th>
+                <th style="width: 15%;" class="text-right">Valuasi Stok</th>
             </tr>
         </thead>
         <tbody>
+            @php $grandTotalValuation = 0; @endphp
             @foreach ($products as $index => $product)
                 @php
-                    $totalStock = $product->productStocks->sum('qty');
-                    $stockClass = $totalStock <= 0 ? 'stock-danger' :
-                        ($totalStock <= 10 ? 'stock-warning' : 'stock-success');
-                    $price = $product->selling_price ?? $product->price;
-                    $totalHarga = $totalStock * $price;
+                    // REVISI ARSITEKTUR: Menghitung total fisik dari ke-3 kolom
+                    $available = $product->productStocks->sum('qty_available');
+                    $reserved  = $product->productStocks->sum('qty_reserved');
+                    $delivery  = $product->productStocks->sum('qty_on_delivery');
+
+                    $totalPhysicalStock = $available + $reserved + $delivery;
+
+                    // REVISI: Logika warna tetap menggunakan stok siap jual (available)
+                    $stockClass = $available <= 0 ? 'stock-danger' :
+                        ($available <= 10 ? 'stock-warning' : 'stock-success');
+
+                    // Prioritaskan harga beli (purchase_price) untuk laporan valuasi aset
+                    $price = $product->purchase_price ?? $product->selling_price ?? $product->price ?? 0;
+
+                    $totalValuation = $totalPhysicalStock * $price;
+                    $grandTotalValuation += $totalValuation;
                 @endphp
                 <tr class="{{ $index % 2 ? 'row-bg' : '' }}">
                     <td class="text-center">{{ $index + 1 }}</td>
@@ -220,7 +247,7 @@
                     <td>{{ $product->category->name ?? '-' }}</td>
                     <td class="text-center">
                         <span class="stock-badge {{ $stockClass }}">
-                            {{ $totalStock }}
+                            {{ $totalPhysicalStock }}
                         </span>
                     </td>
                     <td class="text-center">
@@ -230,12 +257,30 @@
                         IDR {{ number_format($price, 0, ',', '.') }}
                     </td>
                     <td class="text-right">
-                        IDR {{ number_format($totalHarga, 0, ',', '.') }}
+                        IDR {{ number_format($totalValuation, 0, ',', '.') }}
                     </td>
                 </tr>
             @endforeach
         </tbody>
     </table>
+
+    <table class="summary-table">
+        <tr>
+            <th>Total Valuasi Aset Inventaris:</th>
+            <td class="text-right" style="font-weight: bold; font-size: 13px;">
+                IDR {{ number_format($grandTotalValuation, 0, ',', '.') }}
+            </td>
+        </tr>
+    </table>
+
+    <div style="clear: both;"></div>
+
+    <div class="notes-section">
+        <strong>Catatan Sistem:</strong><br>
+        1. Stok fisik merupakan akumulasi dari barang tersedia, dipesan, dan dalam perjalanan.<br>
+        2. Status warna (Merah/Kuning/Hijau) merepresentasikan tingkat ketersediaan barang yang siap jual.<br>
+        3. Valuasi dihitung berdasarkan Harga Beli (HPP) terakhir dari master data produk.
+    </div>
 </body>
 
 </html>

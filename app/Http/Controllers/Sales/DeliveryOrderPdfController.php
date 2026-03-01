@@ -13,29 +13,24 @@ class DeliveryOrderPdfController extends Controller
 {
     public function print(DeliveryOrder $record)
     {
-        // 1. Load Relasi
+        // 1. WAJIB LOAD RELATIONSHIP biar datanya GAK KOSONG pas dicetak
         $record->load(['items', 'customer', 'salesOrder', 'employee']);
 
-        // 2. Update Status jadi On Delivery (jika baru pertama dicetak)
-        if (in_array($record->status, ['draft', 'ready'])) {
-            $record->update(['status' => 'on_delivery']);
-        }
-
-        // 3. Generate QR Code ke halaman public tracking
+        // 2. Generate QR Code ke halaman public tracking
         $trackingUrl = route('tracking.delivery-order', ['do_number' => $record->do_number]);
         $qrCode = new QrCode(data: $trackingUrl, encoding: new Encoding('UTF-8'), size: 150, margin: 0);
         $writer = new PngWriter();
         $qrBase64 = base64_encode($writer->write($qrCode)->getString());
 
-        // 4. Setup Nama File
+        // 3. Setup Nama File
         $safeNumber = str_replace(['/', '\\'], '-', $record->do_number);
-        $filename   = "DO-{$safeNumber}.pdf";
+        $filename   = "Surat-Jalan-{$safeNumber}.pdf";
 
-        // 5. Return PDF Stream (buka di tab baru)
+        // 4. Return PDF Stream (PASTIKAN NAMA VIEW SUDAH SESUAI FOLDER)
+        // Folder: resources/views/pdf/delivery-order.blade.php
         return Pdf::loadView('pdf.delivery-order', [
             'record' => $record,
             'qrCode' => $qrBase64,
-            'do'     => $record,
-        ])->stream($filename);
+        ])->setPaper('a4', 'portrait')->stream($filename);
     }
 }

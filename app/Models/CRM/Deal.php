@@ -3,6 +3,7 @@
 namespace App\Models\CRM;
 
 use App\Models\Sales\Quotation;
+use App\Models\CRM\Customer;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -62,28 +63,30 @@ class Deal extends Model
         static::updated(function (Deal $deal) {
             if ($deal->wasChanged('status')) {
 
-                // Ambil ID employee dari user yang sedang login saat ini
                 $employeeId = auth()->user()?->employee?->id;
 
-                if ($deal->status === 'won') {
-                    $deal->quotations()->update([
-                        'status' => 'accepted',
-                        'approved_by' => $employeeId,
-                        'approved_at' => now(), // Mengisi jam saat ini secara otomatis
-                    ]);
-                } elseif ($deal->status === 'lost') {
-                    $deal->quotations()->update([
-                        'status' => 'rejected',
-                        'approved_by' => null, // Reset/kosongkan jika batal
-                        'approved_at' => null,
-                    ]);
-                } elseif ($deal->status === 'open') {
-                    $deal->quotations()->update([
-                        'status' => 'negotiation',
-                        'approved_by' => null, // Reset/kosongkan jika batal
-                        'approved_at' => null,
-                    ]);
-                }
+
+                $deal->quotations->each(function ($quotation) use ($deal, $employeeId) {
+                    if ($deal->status === 'won') {
+                        $quotation->update([
+                            'status' => 'accepted',
+                            'approved_by' => $employeeId,
+                            'approved_at' => now(),
+                        ]);
+                    } elseif ($deal->status === 'lost') {
+                        $quotation->update([
+                            'status' => 'rejected',
+                            'approved_by' => null,
+                            'approved_at' => null,
+                        ]);
+                    } elseif ($deal->status === 'open') {
+                        $quotation->update([
+                            'status' => 'negotiation',
+                            'approved_by' => null,
+                            'approved_at' => null,
+                        ]);
+                    }
+                });
             }
         });
     }

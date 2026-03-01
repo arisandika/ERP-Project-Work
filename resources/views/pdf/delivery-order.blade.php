@@ -121,6 +121,7 @@
             border: 1px solid #999;
             padding: 8px;
             font-size: 11px;
+            vertical-align: top;
         }
 
         .items-table .text-right {
@@ -129,6 +130,28 @@
 
         .items-table .text-center {
             text-align: center;
+        }
+
+        /* Style khusus untuk list Serial Number agar rapi */
+        .sn-container {
+            margin-top: 5px;
+            padding: 5px;
+            background-color: #f9f9f9;
+            border: 1px dashed #bbb;
+            font-size: 9px;
+            color: #222;
+        }
+
+        .sn-label {
+            font-weight: bold;
+            text-decoration: underline;
+            margin-bottom: 2px;
+            display: block;
+        }
+
+        .sn-list {
+            font-family: 'Courier', monospace; /* Monospace agar mudah dibaca per karakter */
+            letter-spacing: 0.3px;
         }
 
         .signature-table {
@@ -152,10 +175,9 @@
         .signature-line {
             border-top: 1px solid #333;
             width: 60%;
-            margin: 95px auto 5px auto; /* Jarak untuk TTD basah penerima */
+            margin: 95px auto 5px auto;
         }
 
-        /* Style QR Code persis Invoice */
         .qr-container {
             margin: 10px auto;
             padding: 5px;
@@ -177,7 +199,6 @@
 
 <body>
 
-    <!-- 1. HEADER PERUSAHAAN -->
     <table class="header-table">
         <tr>
             <td class="logo-cell">
@@ -195,16 +216,13 @@
     </table>
     <div class="header-divider"></div>
 
-    <!-- 2. JUDUL DOKUMEN -->
     <div class="document-title">
         <h1>SURAT JALAN</h1>
         <p>No: {{ $record->do_number }}</p>
     </div>
 
-    <!-- 3. INFO PENGIRIMAN -->
     <table class="details-table">
         <tr>
-            <!-- Kiri: Penerima -->
             <td style="width: 55%; padding-right: 20px;">
                 <strong>Dikirim Kepada:</strong>
                 <div class="client-box">
@@ -215,7 +233,6 @@
                     </div>
                 </div>
             </td>
-            <!-- Kanan: Detail Dokumen -->
             <td style="width: 45%;">
                 <table style="width: 100%;">
                     <tr>
@@ -235,16 +252,15 @@
         </tr>
     </table>
 
-    <!-- 4. TABEL BARANG (NO PRICES!) -->
     <table class="items-table">
         <thead>
             <tr>
                 <th style="width: 5%;" class="text-center">No</th>
                 <th style="width: 15%;">Kode Barang</th>
-                <th style="width: 40%;">Nama Barang / Deskripsi</th>
+                <th style="width: 45%;">Nama Barang & Identitas Unit (SN)</th>
                 <th style="width: 10%;" class="text-center">Satuan</th>
-                <th style="width: 15%;" class="text-center">Qty Pesan</th>
-                <th style="width: 15%;" class="text-center">Qty Kirim</th>
+                <th style="width: 12.5%;" class="text-center">Qty Pesan</th>
+                <th style="width: 12.5%;" class="text-center">Qty Kirim</th>
             </tr>
         </thead>
         <tbody>
@@ -254,11 +270,28 @@
                     <td>{{ $item->item_code ?? '-' }}</td>
                     <td>
                         <strong>{{ $item->item_name }}</strong>
-                        @if($item->item_desc) <br><small style="color:#666">{{ $item->item_desc }}</small> @endif
+                        @if($item->item_desc)
+                            <br><small style="color:#666">{{ $item->item_desc }}</small>
+                        @endif
+
+                        {{-- PERBAIKAN LOGIKA SN: Murni ngambil dari string database items --}}
+                        @if(!empty($item->scanned_sns))
+                            <div class="sn-container">
+                                <span class="sn-label">Serial Number (S/N):</span>
+                                <span class="sn-list">
+                                    {{-- Mengganti spasi atau newline yang tidak sengaja terbawa dengan format koma yang rapi --}}
+                                    @php
+                                        $snArray = explode(',', $item->scanned_sns);
+                                        $snClean = array_map('trim', $snArray);
+                                        echo implode(', ', $snClean);
+                                    @endphp
+                                </span>
+                            </div>
+                        @endif
                     </td>
                     <td class="text-center">{{ $item->uom ?? 'Pcs' }}</td>
                     <td class="text-center">{{ number_format($item->qty_ordered, 0, ',', '.') }}</td>
-                    <td class="text-center" style="font-weight: bold;">
+                    <td class="text-center" style="font-weight: bold; font-size: 12px;">
                         {{ number_format($item->qty, 0, ',', '.') }}
                     </td>
                 </tr>
@@ -270,17 +303,14 @@
         </tbody>
     </table>
 
-    <!-- 5. CATATAN -->
     @if($record->notes)
         <div style="margin-bottom: 20px; font-size: 10px; border: 1px dashed #aaa; padding: 5px;">
             <strong>Catatan Pengiriman:</strong> {{ $record->notes }}
         </div>
     @endif
 
-    <!-- 6. TANDA TANGAN (Hanya 2 Kolom: Pengirim dgn QR & Penerima) -->
     <table class="signature-table">
         <tr>
-            <!-- Kiri: Pengirim / Admin (Pakai QR Code sebagai TTD Digital) -->
             <td style="width: 50%;">
                 <span class="signature-header">Hormat Kami,</span>
 
@@ -300,7 +330,6 @@
                 </span>
             </td>
 
-            <!-- Kanan: Penerima Barang (TTD Basah) -->
             <td style="width: 50%;">
                 <span class="signature-header">
                     Penerima Barang<br>
@@ -315,13 +344,12 @@
                     ( Nama Jelas & Stempel )
                 </p>
             </td>
-
         </tr>
     </table>
 
     <p class="footer-note">
         * Barang yang sudah diterima dalam kondisi baik tidak dapat ditukar atau dikembalikan.<br>
-        * Scan QR Code di atas untuk memvalidasi Surat Jalan & melacak status pengiriman.
+        * Scan QR Code di atas untuk memvalidasi Surat Jalan & melacak status pengiriman secara real-time.
     </p>
 
 </body>

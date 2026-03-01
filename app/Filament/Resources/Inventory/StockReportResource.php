@@ -49,7 +49,7 @@ class StockReportResource extends Resource
                     ->icon('heroicon-o-tag'),
 
                 Tables\Columns\TextColumn::make('warehouses')
-                    ->label('Gudang')
+                    ->label('Lokasi Gudang')
                     ->getStateUsing(function ($record) {
                         return $record->productStocks()
                             ->with('warehouse')
@@ -62,13 +62,14 @@ class StockReportResource extends Resource
                     ->sortable()
                     ->badge()
                     ->color('info')
-                    ->icon('heroicon-o-building-office'),
+                    ->icon('heroicon-o-building-office')
+                    ->wrap(), // Membungkus teks jika gudang banyak
 
-                Tables\Columns\TextColumn::make('total_stock')
-                    ->label('Total Stock')
-                    ->getStateUsing(fn($record) => $record->productStocks()->sum('qty'))
+                // REVISI ARSITEKTUR LAPORAN: Memecah Total menjadi 3 detail metrik
+                Tables\Columns\TextColumn::make('qty_available_total')
+                    ->label('Tersedia (Siap Jual)')
+                    ->getStateUsing(fn($record) => $record->productStocks()->sum('qty_available'))
                     ->numeric()
-                    ->sortable()
                     ->badge()
                     ->color(fn($state) => match (true) {
                         $state <= 0 => 'danger',
@@ -76,39 +77,63 @@ class StockReportResource extends Resource
                         $state <= 10 => 'warning',
                         default => 'success',
                     })
-                    ->icon(fn($state) => match (true) {
-                        $state <= 0 => 'heroicon-m-x-circle',
-                        $state <= 10 => 'heroicon-m-exclamation-triangle',
-                        default => 'heroicon-m-check-circle',
-                    })
-                    ->suffix(' Qty'),
+                    ->sortable(),
+
+                Tables\Columns\TextColumn::make('qty_reserved_total')
+                    ->label('Dipesan (Reserved)')
+                    ->getStateUsing(fn($record) => $record->productStocks()->sum('qty_reserved'))
+                    ->numeric()
+                    ->badge()
+                    ->color('warning')
+                    ->sortable(),
+
+                Tables\Columns\TextColumn::make('qty_delivery_total')
+                    ->label('Pengiriman (Delivery)')
+                    ->getStateUsing(fn($record) => $record->productStocks()->sum('qty_on_delivery'))
+                    ->numeric()
+                    ->badge()
+                    ->color('indigo')
+                    ->sortable(),
+
+                // Kolom Total Fisik Keseluruhan untuk keperluan audit
+                Tables\Columns\TextColumn::make('total_physical_stock')
+                    ->label('Total Fisik Keseluruhan')
+                    ->getStateUsing(fn($record) =>
+                        $record->productStocks()->sum('qty_available') +
+                        $record->productStocks()->sum('qty_reserved') +
+                        $record->productStocks()->sum('qty_on_delivery')
+                    )
+                    ->numeric()
+                    ->weight('bold')
+                    ->icon('heroicon-m-archive-box')
+                    ->suffix(' Unit'),
 
                 Tables\Columns\TextColumn::make('purchase_price')
                     ->label('Harga Beli')
                     ->money('IDR')
-                    ->color(fn($state) => $state < 0 ? 'danger' : 'success')
                     ->sortable()
-                    ->weight('semibold'),
+                    ->weight('semibold')
+                    ->toggleable(isToggledHiddenByDefault: true), // Disembunyikan secara default di laporan stock
 
                 Tables\Columns\TextColumn::make('selling_price')
                     ->label('Harga Jual')
                     ->money('IDR')
-                    ->color(fn($state) => $state < 0 ? 'danger' : 'success')
                     ->sortable()
-                    ->weight('semibold'),
+                    ->weight('semibold')
+                    ->toggleable(isToggledHiddenByDefault: true),
             ])
             ->filters([
                 Tables\Filters\Filter::make('stock')
-                    ->label('Filter Stock')
+                    ->label('Filter Stock Tersedia')
                     ->form([
                         Forms\Components\Select::make('status')
-                            ->label('Status')
+                            ->label('Status Tersedia')
                             ->options([
-                                'low'    => 'Stock Rendah',
-                                'normal' => 'Stock Normal',
+                                'low'    => 'Stock Tersedia Rendah (<= 10)',
+                                'normal' => 'Stock Tersedia Normal (> 10)',
                             ]),
                         Forms\Components\Select::make('warehouse_id')
-                            ->label('Gudang')
+                            ->label('Lokasi Gudang')
                             ->options(fn() => Warehouse::query()
                                     ->orderBy('warehouse_name')
                                     ->pluck('warehouse_name', 'id')
@@ -120,9 +145,9 @@ class StockReportResource extends Resource
                         $indicators = [];
 
                         if (($data['status'] ?? null) === 'low') {
-                            $indicators[] = 'Status Stock: Hanya Stock Rendah';
+                            $indicators[] = 'Status: Hanya Stock Tersedia Rendah';
                         } elseif (($data['status'] ?? null) === 'normal') {
-                            $indicators[] = 'Status Stock: Stock Normal';
+                            $indicators[] = 'Status: Stock Tersedia Normal';
                         }
 
                         if (! empty($data['warehouse_id'])) {
@@ -138,12 +163,13 @@ class StockReportResource extends Resource
                         $status      = $data['status'] ?? null;
                         $warehouseId = $data['warehouse_id'] ?? null;
 
+                        // REVISI: Mengganti query filter qty menjadi qty_available
                         if ($status === 'low') {
                             return $query->whereHas('productStocks', function ($subQuery) use ($warehouseId) {
                                 if ($warehouseId) {
                                     $subQuery->where('id', $warehouseId);
                                 }
-                                $subQuery->where('qty', '<=', 10);
+                                $subQuery->where('qty_available', '<=', 10);
                             });
                         }
 
@@ -158,8 +184,15 @@ class StockReportResource extends Resource
                                     if ($warehouseId) {
                                         $subQuery->where('id', $warehouseId);
                                     }
-                                    $subQuery->where('qty', '<=', 10);
+                                    $subQuery->where('qty_available', '<=', 10);
                                 });
+                        }
+
+                        // Jika hanya filter gudang yang dipilih tanpa status
+                        if ($warehouseId && !$status) {
+                             return $query->whereHas('productStocks', function ($subQuery) use ($warehouseId) {
+                                $subQuery->where('id', $warehouseId);
+                             });
                         }
 
                         return $query;
@@ -205,9 +238,10 @@ class StockReportResource extends Resource
 
     public static function getNavigationBadge(): ?string
     {
-        $count = \App\Models\Inventory\ProductStock::where('qty', '<=', 10)
+        // REVISI: Mengganti qty menjadi qty_available
+        $count = \App\Models\Inventory\ProductStock::where('qty_available', '<=', 10)
             ->distinct('product_id')
-            ->count('id');
+            ->count('product_id');
 
         return $count > 0 ? (string) $count : null;
     }
@@ -219,6 +253,6 @@ class StockReportResource extends Resource
 
     public static function getNavigationBadgeTooltip(): ?string
     {
-        return 'Product dengan Stock rendah (≤ 10)';
+        return 'Product dengan Stock Tersedia rendah (≤ 10)';
     }
 }

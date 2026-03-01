@@ -18,6 +18,7 @@ class DeliveryOrderItem extends Model
         'item_id',
         'item_code',
         'item_name',
+        'scanned_sns',
         'qty',
         'qty_ordered',
         'qty_remaining',
@@ -33,5 +34,10 @@ class DeliveryOrderItem extends Model
     public function deliveryOrder(): BelongsTo
     {
         return $this->belongsTo(DeliveryOrder::class, 'nx_delivery_order_id', 'id');
+    }
+
+    public function item()
+    {
+        return $this->morphTo(__FUNCTION__, 'item_type', 'item_id');
     }
 }

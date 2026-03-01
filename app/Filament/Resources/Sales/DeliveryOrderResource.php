@@ -5,6 +5,11 @@ namespace App\Filament\Resources\Sales;
 use App\Filament\Resources\Sales\DeliveryOrderResource\Pages;
 use App\Models\Sales\DeliveryOrder;
 use App\Models\Sales\SalesOrder;
+use App\Models\Inventory\Product;
+use App\Models\Inventory\SerialNumber;
+use App\Models\Inventory\ProductStock;
+use App\Models\Inventory\StockTransaction;
+use App\Models\Inventory\Warehouse;
 use Filament\Notifications\Notification;
 use Filament\Forms\Components\FileUpload;
 use Filament\Forms;
@@ -25,19 +30,16 @@ use Filament\Tables\Actions\Action;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\DB;
+use Closure;
 
 class DeliveryOrderResource extends Resource
 {
     protected static ?string $model = DeliveryOrder::class;
-    
     protected static ?string $navigationIcon = 'heroicon-o-truck';
-
     protected static ?string $navigationGroup = 'Manajemen Sales';
-
     protected static ?int $navigationSort = 4;
-
     protected static ?string $slug = 'sales/delivery-orders';
-
     protected static ?string $pluralModelLabel = 'Surat Jalan';
 
     public static function getNavigationBadge(): ?string
@@ -80,15 +82,10 @@ class DeliveryOrderResource extends Resource
                         ->placeholder('Pilih Sales Order')
                         ->disabled(fn($record) => $record && $record->exists)
                         ->afterStateUpdated(function ($state, callable $set) {
-                            $set('items', []);
-                            $set('nx_customer_id', null);
-
-                            if (!$state)
-                                return;
+                            if (!$state) return;
 
                             $so = SalesOrder::with('items')->find($state);
-                            if (!$so)
-                                return;
+                            if (!$so) return;
 
                             $set('nx_customer_id', $so->nx_customer_id);
 
@@ -99,14 +96,17 @@ class DeliveryOrderResource extends Resource
 
                             $items = $so->items->map(function ($item) use ($existingDOs) {
                                 $qtyOrder = floatval($item->qty ?? 0);
-
-                                // Hitung total qty item ini yang SUDAH dikirim di DO lain
                                 $qtyShipped = $existingDOs->flatMap->items
                                     ->where('item_id', $item->item_id)
                                     ->sum('qty');
 
-                                // Sisa jatah yang BOLEH dikirim sekarang
                                 $qtyRemainingQuota = max($qtyOrder - $qtyShipped, 0);
+
+                                $isSerialized = false;
+                                if ($item->item_type === 'product') {
+                                    $product = Product::find($item->item_id);
+                                    $isSerialized = $product ? $product->is_serialized : false;
+                                }
 
                                 return [
                                     'item_type' => $item->item_type,
@@ -116,6 +116,7 @@ class DeliveryOrderResource extends Resource
                                     'qty_ordered' => $qtyRemainingQuota,
                                     'qty' => 0,
                                     'qty_remaining' => $qtyRemainingQuota,
+                                    'is_serialized' => $isSerialized,
                                 ];
                             })->values()->toArray();
 
@@ -169,13 +170,13 @@ class DeliveryOrderResource extends Resource
                     ->schema([
                         Hidden::make('item_type')->default('product'),
                         Hidden::make('item_id'),
-                        Hidden::make('item_code'),
+                        Hidden::make('is_serialized'),
 
                         Grid::make(2)->schema([
                             TextInput::make('item_code')
                                 ->label('Kode Product')
                                 ->disabled()
-                                ->dehydrated(false),
+                                ->dehydrated(true),
 
                             TextInput::make('item_name')
                                 ->label('Nama Product')
@@ -185,7 +186,6 @@ class DeliveryOrderResource extends Resource
                             TextInput::make('qty_ordered')
                                 ->label('Sisa Jatah')
                                 ->numeric()
-                                ->default(0)
                                 ->disabled()
                                 ->dehydrated(),
 
@@ -206,12 +206,37 @@ class DeliveryOrderResource extends Resource
                             TextInput::make('qty_remaining')
                                 ->label('Sisa Nanti')
                                 ->numeric()
-                                ->default(0)
                                 ->disabled()
                                 ->dehydrated(),
+
+                            Textarea::make('scanned_sns')
+                                ->label('Scan Serial Number')
+                                ->rows(5)
+                                ->columnSpanFull()
+                                ->visible(fn (Get $get): bool => $get('is_serialized') === true && (float) $get('qty') > 0)
+                                ->required(fn (Get $get): bool => $get('is_serialized') === true && (float) $get('qty') > 0)
+                                ->rules([
+                                    fn (Get $get): Closure => function (string $attribute, $value, Closure $fail) use ($get) {
+                                        if (!$get('is_serialized') || (float) $get('qty') <= 0) return;
+                                        $sns = array_filter(array_map('trim', explode("\n", $value)));
+                                        $qtyKirim = (int) $get('qty');
+                                        if (count($sns) !== $qtyKirim) {
+                                            $fail("ERROR: Scan " . count($sns) . " SN, tapi kirim {$qtyKirim} unit.");
+                                            return;
+                                        }
+                                        if (count($sns) !== count(array_unique($sns))) {
+                                            $fail("ERROR: Ada SN Duplikat!");
+                                            return;
+                                        }
+                                        foreach ($sns as $sn) {
+                                            $snRecord = SerialNumber::where('serial_number', $sn)->first();
+                                            if (!$snRecord) $fail("SN {$sn} tidak terdaftar.");
+                                            elseif ($snRecord->status !== 'AVAILABLE') $fail("SN {$sn} status {$snRecord->status}.");
+                                        }
+                                    },
+                                ]),
                         ]),
                     ])
-                    ->columns(1)
                     ->addable(false)
                     ->deletable(false)
                     ->reorderable(false),
@@ -223,108 +248,92 @@ class DeliveryOrderResource extends Resource
     {
         return $table
             ->columns([
-                Tables\Columns\TextColumn::make('do_number')
-                    ->label('No. Surat Jalan')
-                    ->sortable()
-                    ->searchable()
-                    ->weight('bold'),
-
-                Tables\Columns\TextColumn::make('salesOrder.order_number')
-                    ->label('Ref. Pesanan')
-                    ->sortable()
-                    ->searchable(),
-
-                Tables\Columns\TextColumn::make('customer.name')
-                    ->label('Customer')
-                    ->sortable()
-                    ->searchable(),
-
-                Tables\Columns\TextColumn::make('do_date')
-                    ->label('Tanggal')
-                    ->date('d M Y H:i'),
-
+                Tables\Columns\TextColumn::make('do_number')->label('No. Surat Jalan')->sortable()->searchable()->weight('bold'),
+                Tables\Columns\TextColumn::make('salesOrder.order_number')->label('Ref. Pesanan')->sortable()->searchable(),
+                Tables\Columns\TextColumn::make('customer.name')->label('Customer')->sortable()->searchable(),
+                Tables\Columns\TextColumn::make('do_date')->label('Tanggal')->date('d M Y H:i'),
                 Tables\Columns\TextColumn::make('status')
                     ->badge()
                     ->color(fn(string $state): string => match ($state) {
-                        'draft' => 'gray',
-                        'ready' => 'warning',
-                        'on_delivery' => 'info',
-                        'delivered' => 'success',
-                        'cancelled' => 'danger',
-                        default => 'gray',
+                        'draft' => 'gray', 'ready' => 'warning', 'on_delivery' => 'info', 'delivered' => 'success', 'cancelled' => 'danger', default => 'gray',
                     })
                     ->formatStateUsing(fn(string $state): string => match ($state) {
-                        'draft' => 'Draft',
-                        'ready' => 'Siap Kirim',
-                        'on_delivery' => 'Dalam Pengiriman',
-                        'delivered' => 'Diterima',
-                        'cancelled' => 'Batal',
-                        default => $state,
+                        'draft' => 'Draft', 'ready' => 'Siap Kirim', 'on_delivery' => 'Dalam Pengiriman', 'delivered' => 'Diterima', 'cancelled' => 'Batal', default => $state,
                     }),
-            ])
-            ->filters([
-                Tables\Filters\Filter::make('created_at')
-                    ->form([
-                        Forms\Components\DatePicker::make('created_from')
-                            ->label('Dibuat Dari')
-                            ->required()
-                            ->displayFormat('d M Y')
-                            ->native(false)
-                            ->prefixIcon('heroicon-o-calendar-days'),
-
-                        Forms\Components\DatePicker::make('created_until')
-                            ->label('Dibuat Hingga')
-                            ->required()
-                            ->displayFormat('d M Y')
-                            ->native(false)
-                            ->prefixIcon('heroicon-o-calendar-days'),
-                    ])
-                    ->query(function (Builder $query, array $data): Builder {
-                        return $query
-                            ->when(
-                                $data['created_from'],
-                                fn(Builder $query, $date): Builder => $query->whereDate('created_at', '>=', $date),
-                            )
-                            ->when(
-                                $data['created_until'],
-                                fn(Builder $query, $date): Builder => $query->whereDate('created_at', '<=', $date),
-                            );
-                    })
-                    ->indicateUsing(function (array $data): array {
-                        $indicators = [];
-
-                        if ($data['created_from'] ?? null) {
-                            $indicators[] = 'Created from ' . Carbon::parse($data['created_from'])->toFormattedDateString();
-                        }
-
-                        if ($data['created_until'] ?? null) {
-                            $indicators[] = 'Created until ' . Carbon::parse($data['created_until'])->toFormattedDateString();
-                        }
-
-                        return $indicators;
-                    }),
-
-                Tables\Filters\TrashedFilter::make()
-                    ->label('Deleted Status')
-                    ->native(false),
             ])
             ->actions([
+                Action::make('kirim_barang')
+                ->label('Kirim Barang')
+                ->icon('heroicon-o-paper-airplane')
+                ->color('warning')
+                ->visible(fn(DeliveryOrder $record) => in_array($record->status, ['draft', 'ready']))
+                ->requiresConfirmation()
+                ->modalHeading('Konfirmasi Pengiriman')
+                ->modalDescription('Apakah Anda yakin barang sudah dimuat ke kendaraan? Stok Reserved akan dipindahkan ke On Delivery.')
+                ->action(function (DeliveryOrder $record): void {
+                    DB::transaction(function () use ($record) {
+                        $warehouseUtamaId = Warehouse::where('warehouse_name', 'Gudang Utama')->value('id') ?? 1;
+
+                        StockTransaction::$autoUpdateStock = false; // Matikan observer
+
+                        foreach ($record->items as $item) {
+                            if ($item->item_type === 'product' && $item->qty > 0) {
+                                $stockUtama = ProductStock::where('product_id', $item->item_id)
+                                    ->where('warehouse_id', $warehouseUtamaId)
+                                    ->lockForUpdate()
+                                    ->first();
+
+                                if (!$stockUtama || $stockUtama->qty_reserved < $item->qty) {
+                                    throw new \Exception("Stok Reserved untuk {$item->item_name} tidak mencukupi!");
+                                }
+
+                                // A. PINDAH STOK DARI RESERVED KE ON DELIVERY
+                                $stockReservedBefore = $stockUtama->qty_reserved;
+                                $stockUtama->decrement('qty_reserved', $item->qty);
+                                $stockUtama->increment('qty_on_delivery', $item->qty); // TAMBAHKAN INI
+
+                                // B. CATAT HISTORY TRANSAKSI (KELUAR)
+                                StockTransaction::create([
+                                    'transaction_code' => "ST-OUT/" . rand(100,999) . "/" . now()->format('Ymd'),
+                                    'transaction_date' => now(),
+                                    'product_id'       => $item->item_id,
+                                    'warehouse_id'     => $warehouseUtamaId,
+                                    'mutation_type'    => 'delivery',
+                                    'type'             => 'keluar',
+                                    'quantity'         => $item->qty,
+                                    'stock_before'     => $stockReservedBefore,
+                                    'stock_after'      => $stockReservedBefore - $item->qty,
+                                    'price'            => 0,
+                                    'total_price'      => 0,
+                                    'reference_id'     => $record->id,
+                                    'reference_type'   => DeliveryOrder::class,
+                                    'no_reference'     => $record->do_number,
+                                    'notes'            => 'Pengiriman Fisik Keluar Gudang (via Table Action)',
+                                    'created_by'       => auth()->id(),
+                                ]);
+                            }
+                        }
+
+                        StockTransaction::$autoUpdateStock = true;
+
+                        // Update status dokumen
+                        $record->update(['status' => 'on_delivery']);
+                        if ($record->salesOrder) {
+                            $record->salesOrder->update(['status' => 'shipped']);
+                        }
+                    });
+
+                    Notification::make()->title('Barang resmi dikirim!')->success()->send();
+                }),
+
                 Action::make('upload_proof')
                     ->label('Upload Bukti')
                     ->icon('heroicon-o-camera')
                     ->color('info')
                     ->visible(fn(DeliveryOrder $record) => in_array($record->status, ['on_delivery', 'delivered']))
                     ->form([
-                        FileUpload::make('proof_image')
-                            ->label('Foto Penerimaan')
-                            ->image()
-                            ->imageEditor()
-                            ->directory('delivery-proofs')
-                            ->required(),
-                        Textarea::make('proof_notes')
-                            ->label('Catatan Penerima')
-                            ->placeholder('Diterima oleh siapa? Keterangan barang?')
-                            ->rows(2),
+                        FileUpload::make('proof_image')->label('Foto Penerimaan')->image()->directory('delivery-proofs')->required(),
+                        Textarea::make('proof_notes')->label('Catatan Penerima')->rows(2),
                     ])
                     ->action(function (DeliveryOrder $record, array $data): void {
                         $record->update([
@@ -332,37 +341,22 @@ class DeliveryOrderResource extends Resource
                             'proof_notes' => $data['proof_notes'],
                             'status' => 'delivered',
                         ]);
-                        Notification::make()->title('Berhasil')->body('Bukti foto tersimpan.')->success()->send();
-                    })
-                    ->modalHeading('Upload Bukti Barang Sampai')
-                    ->modalSubmitActionLabel('Simpan Bukti')
-                    ->modalWidth('md'),
+                        if ($record->salesOrder) $record->salesOrder->update(['status' => 'completed']);
+                        Notification::make()->title('Delivered!')->success()->send();
+                    }),
 
-                Action::make('print')
-                    ->label('Cetak')
-                    ->icon('heroicon-o-printer')
-                    ->color('success')
-                    ->url(fn(DeliveryOrder $record) => route('print.delivery-order', $record))
-                    ->openUrlInNewTab(),
-
+                Action::make('print')->label('Cetak')->icon('heroicon-o-printer')->color('success')->url(fn(DeliveryOrder $record) => route('print.delivery-order', $record))->openUrlInNewTab(),
                 Tables\Actions\EditAction::make(),
                 Tables\Actions\DeleteAction::make(),
-                // Tables\Actions\ForceDeleteAction::make(),
                 Tables\Actions\RestoreAction::make(),
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([
                     Tables\Actions\DeleteBulkAction::make(),
-                    // Tables\Actions\ForceDeleteBulkAction::make(),
                     Tables\Actions\RestoreBulkAction::make(),
                 ]),
             ])
             ->defaultSort('created_at', 'desc');
-    }
-
-    public static function getRelations(): array
-    {
-        return [];
     }
 
     public static function getPages(): array
@@ -376,9 +370,6 @@ class DeliveryOrderResource extends Resource
 
     public static function getEloquentQuery(): Builder
     {
-        return parent::getEloquentQuery()
-            ->withoutGlobalScopes([
-                SoftDeletingScope::class,
-            ]);
+        return parent::getEloquentQuery()->withoutGlobalScopes([SoftDeletingScope::class]);
     }
 }

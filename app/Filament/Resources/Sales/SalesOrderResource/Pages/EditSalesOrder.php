@@ -4,12 +4,11 @@ namespace App\Filament\Resources\Sales\SalesOrderResource\Pages;
 
 use App\Filament\Resources\Sales\SalesOrderResource;
 use App\Models\Sales\SalesOrder;
-use App\Models\Sales\PromoCode;
 use App\Models\Sales\DeliveryOrder;
 use App\Models\Sales\DeliveryOrderItem;
-use App\Models\Inventory\Product;
 use App\Models\Inventory\ProductStock;
 use App\Models\Inventory\StockTransaction;
+use App\Models\Inventory\Warehouse;
 use Filament\Actions;
 use Filament\Resources\Pages\EditRecord;
 use Filament\Notifications\Notification;
@@ -25,313 +24,113 @@ class EditSalesOrder extends EditRecord
         return [
             Actions\ViewAction::make(),
             Actions\DeleteAction::make(),
-            Actions\ForceDeleteAction::make(),
             Actions\RestoreAction::make(),
         ];
     }
 
     public function getTitle(): string
     {
-        return 'Edit Pesanan';
+        return 'Edit Pesanan (Sales Order)';
     }
 
-    // 1. VALIDASI STOK SEBELUM UPDATE
-    protected function mutateFormDataBeforeSave(array $data): array
-    {
-        $record = $this->getRecord();
-        $newStatus = $data['status'];
-        $oldStatus = $record->status;
-
-        if ($newStatus === 'confirmed' && $oldStatus !== 'confirmed') {
-            $items = $data['items'] ?? [];
-
-            foreach ($items as $item) {
-                if (($item['item_type'] ?? 'product') === 'product') {
-                    $productId = $item['item_id'] ?? null;
-                    $qtyOrder  = (int) ($item['qty'] ?? 0);
-                    $warehouseId = 1;
-
-                    if (!$productId) continue;
-
-                    $stockGudang = ProductStock::where('product_id', $productId)
-                        ->where('warehouse_id', $warehouseId)
-                        ->value('qty') ?? 0;
-
-                    if ($stockGudang < $qtyOrder) {
-                        $productName = Product::find($productId)?->product_name ?? 'Product';
-
-                        Notification::make()
-                            ->title('Validasi Gagal')
-                            ->body("Stok '{$productName}' tidak cukup. Sisa: {$stockGudang}")
-                            ->danger()
-                            ->persistent()
-                            ->send();
-
-                        $this->halt();
-                    }
-                }
-            }
-        }
-
-        return $data;
-    }
-
-    // 2. HANDLE UPDATE STATUS, STOK (GUDANG TRANSIT) & AUTO-GENERATE DO
     protected function handleRecordUpdate(Model $record, array $data): Model
     {
         $oldStatus = $record->status;
         $newStatus = $data['status'];
+        $warehouseUtamaId = Warehouse::where('warehouse_name', 'Gudang Utama')->value('id') ?? 1;
 
-        return DB::transaction(function () use ($record, $data, $oldStatus, $newStatus) {
+        return DB::transaction(function () use ($record, $data, $oldStatus, $newStatus, $warehouseUtamaId) {
             $record->update($data);
 
-            // ─────────────────────────────────────────────
-            // KASUS A: Barang Mutasi ke Gudang Transit (Draft → Confirmed)
-            // ─────────────────────────────────────────────
+            // LOGIKA KETIKA SO DI-CONFIRM
             if ($newStatus === 'confirmed' && $oldStatus !== 'confirmed') {
-
-                // A1: Pindah Stok Utama ke Gudang Transit
-                $transactionCode = $this->generateNoTransactionOut();
-                StockTransaction::$autoUpdateStock = false;
+                StockTransaction::$autoUpdateStock = false; // Matikan observer bawaan
 
                 foreach ($record->items as $item) {
                     if ($item->item_type === 'product') {
-                        $warehouseUtama = 1;
-                        $warehouseTransit = 99;
+                        $stockUtama = ProductStock::where('product_id', $item->item_id)
+                            ->where('warehouse_id', $warehouseUtamaId)
+                            ->lockForUpdate() // Cegah race condition
+                            ->first();
 
-                        // Kurangi dari Gudang Utama
-                        $stockUtama = ProductStock::firstOrCreate(
-                            ['product_id' => $item->item_id, 'warehouse_id' => $warehouseUtama],
-                            ['qty' => 0]
-                        );
-                        $stockBeforeUtama = $stockUtama->qty;
-                        $stockUtama->decrement('qty', $item->qty);
+                        if (!$stockUtama || $stockUtama->qty_available < $item->qty) {
+                            throw new \Exception("Stok Siap Jual untuk {$item->item_name} tidak mencukupi!");
+                        }
 
-                        // Tambah ke Gudang Transit
-                        $stockTransit = ProductStock::firstOrCreate(
-                            ['product_id' => $item->item_id, 'warehouse_id' => $warehouseTransit],
-                            ['qty' => 0]
-                        );
-                        $stockTransit->increment('qty', $item->qty);
+                        // 1. PINDAHKAN STOK KE RESERVED
+                        $stockAvailableBefore = $stockUtama->qty_available;
+                        $stockUtama->decrement('qty_available', $item->qty);
+                        $stockUtama->increment('qty_reserved', $item->qty);
 
-                        // Catat ST-OUT dari Gudang Utama
+                        // 2. CATAT HISTORY TRANSAKSI
                         StockTransaction::create([
-                            'transaction_code' => $transactionCode,
+                            'transaction_code' => $this->generateTransactionCode(),
                             'transaction_date' => now(),
                             'product_id'       => $item->item_id,
-                            'warehouse_id'     => $warehouseUtama,
-                            'type'             => 'mutasi_keluar',
+                            'warehouse_id'     => $warehouseUtamaId,
+                            'mutation_type'    => 'reserve',
+                            'type'             => 'keluar',
                             'quantity'         => $item->qty,
-                            'stock_before'     => $stockBeforeUtama,
-                            'stock_after'      => $stockBeforeUtama - $item->qty,
+                            'stock_before'     => $stockAvailableBefore,
+                            'stock_after'      => $stockAvailableBefore - $item->qty,
                             'price'            => $item->unit_price,
                             'total_price'      => $item->line_total,
                             'reference_id'     => $record->id,
                             'reference_type'   => SalesOrder::class,
-                            'no_reference'     => $record->order_number,
-                            'notes'            => 'Barang masuk ke status On Delivery (DO)',
-                            'created_by'       => auth()->id(),
+                            'reference_number' => $record->order_number,
+                            'notes'            => 'Booking Stok (SO Confirmed)',
+                            'created_by'       => auth()->id() ?? 1,
                         ]);
                     }
                 }
-
                 StockTransaction::$autoUpdateStock = true;
 
-                // A2: Promo usage
-                if ($record->promo_code_id) {
-                    PromoCode::find($record->promo_code_id)?->increment('times_used');
-                }
-
-                // A3: Auto-generate DO
-                $hasDo = DeliveryOrder::where('nx_sales_order_id', $record->id)
-                    ->where('status', '!=', 'cancelled')
-                    ->exists();
-
-                if (! $hasDo) {
-                    // PANGGIL GENERATOR DO BARU DI SINI
-                    $doNumber = $this->generateDeliveryNumber();
-
+                // 3. AUTO-CREATE SURAT JALAN (DO)
+                if (!DeliveryOrder::where('nx_sales_order_id', $record->id)->where('status', '!=', 'cancelled')->exists()) {
                     $do = DeliveryOrder::create([
                         'nx_sales_order_id' => $record->id,
                         'nx_customer_id'    => $record->nx_customer_id,
                         'nx_employee_id'    => $record->nx_employee_id,
-                        'do_number'         => $doNumber,
+                        'do_number'         => $this->generateDeliveryNumber(),
                         'do_date'           => now(),
-                        'status'            => 'ready',
-                        'notes'             => $record->notes,
+                        'status'            => 'draft',
                     ]);
-
-                    $record->loadMissing('items');
 
                     foreach ($record->items as $item) {
                         DeliveryOrderItem::create([
                             'nx_delivery_order_id' => $do->id,
                             'item_type'            => $item->item_type,
                             'item_id'              => $item->item_id,
-                            'item_code'            => (string) $item->item_code,
-                            'item_name'            => (string) $item->item_name,
-                            'qty_ordered'          => (int) $item->qty,
-                            'qty'                  => (int) $item->qty,
+                            'item_code'            => $item->item_code,
+                            'item_name'            => $item->item_name,
+                            'qty_ordered'          => $item->qty,
+                            'qty'                  => $item->qty, // Asumsi kirim semua sekaligus
                             'qty_remaining'        => 0,
                         ]);
                     }
-
-                    // NOTIFIKASI JIKA DO BERHASIL DIBUAT OTOMATIS
-                    Notification::make()
-                        ->title('✅ Pesanan Confirmed')
-                        ->body("Stok masuk Gudang Transit & Surat Jalan otomatis dibuat: <strong>{$doNumber}</strong>")
-                        ->success()
-                        ->send();
-
-                } else {
-                    // NOTIFIKASI JIKA DO SUDAH ADA SEBELUMNYA
-                    Notification::make()
-                        ->title('✅ Pesanan Confirmed')
-                        ->body('Stok masuk Gudang Transit. (Surat Jalan sudah ada sebelumnya).')
-                        ->success()
-                        ->send();
                 }
             }
-
-            // ─────────────────────────────────────────────
-            // KASUS B: Barang MASUK (Confirmed → Cancelled/Draft)
-            // ─────────────────────────────────────────────
-            elseif ($oldStatus === 'confirmed' && in_array($newStatus, ['cancelled', 'draft'])) {
-
-                $transactionCode = $this->generateNoTransactionIn();
-                StockTransaction::$autoUpdateStock = false;
-
-                foreach ($record->items as $item) {
-                    if ($item->item_type === 'product') {
-                        $warehouseUtama = 1;
-                        $warehouseTransit = 99;
-
-                        // Kembalikan ke Gudang Utama
-                        $productStock = ProductStock::firstOrCreate(
-                            ['product_id' => $item->item_id, 'warehouse_id' => $warehouseUtama],
-                            ['qty' => 0]
-                        );
-
-                        $stockBefore = $productStock->qty;
-                        $productStock->increment('qty', $item->qty);
-                        $stockAfter = $stockBefore + $item->qty;
-
-                        // Kurangi dari Gudang Transit (karena batal dikirim)
-                        $stockTransit = ProductStock::where('product_id', $item->item_id)
-                            ->where('warehouse_id', $warehouseTransit)
-                            ->first();
-
-                        if ($stockTransit) {
-                            $stockTransit->decrement('qty', $item->qty);
-                        }
-
-                        StockTransaction::create([
-                            'transaction_code' => $transactionCode,
-                            'transaction_date' => now(),
-                            'product_id'       => $item->item_id,
-                            'warehouse_id'     => $warehouseUtama,
-                            'type'             => 'masuk',
-                            'quantity'         => $item->qty,
-                            'stock_before'     => $stockBefore,
-                            'stock_after'      => $stockAfter,
-                            'price'            => $item->unit_price,
-                            'total_price'      => $item->line_total,
-                            'reference_id'     => $record->id,
-                            'reference_type'   => SalesOrder::class,
-                            'no_reference'     => $record->order_number,
-                            'notes'            => 'Restock (Batal dikirim): ' . $record->order_number,
-                            'created_by'       => auth()->id(),
-                        ]);
-                    }
-                }
-
-                StockTransaction::$autoUpdateStock = true;
-
-                if ($record->promo_code_id) {
-                    PromoCode::find($record->promo_code_id)?->decrement('times_used');
-                }
-
-                // Cancel DO yang masih draft/ready (belum di-deliver)
-                DeliveryOrder::where('nx_sales_order_id', $record->id)
-                    ->whereIn('status', ['draft', 'ready', 'on_delivery'])
-                    ->update(['status' => 'cancelled']);
-
-                Notification::make()
-                    ->title('Pesanan Dibatalkan')
-                    ->body('Stok dikembalikan ke Gudang Utama dan DO Dibatalkan.')
-                    ->warning()
-                    ->send();
-            }
-
             return $record;
         });
     }
 
-    // Generate No Transaksi KELUAR
-    private function generateNoTransactionOut(): string
-    {
-        $romanMonths = ['I','II','III','IV','V','VI','VII','VIII','IX','X','XI','XII'];
-        $monthRoman  = $romanMonths[now()->month - 1];
-        $year        = now()->year;
-        $prefixLike  = "%/ST-OUT/NEX/{$monthRoman}/{$year}";
-
-        $last = StockTransaction::where('transaction_code', 'like', $prefixLike)
-            ->orderByDesc('id')
-            ->value('transaction_code');
-
-        $seq    = $last ? ((int) explode('/', $last)[0]) + 1 : 1;
-        $seqStr = str_pad((string) $seq, 3, '0', STR_PAD_LEFT);
-
-        return "{$seqStr}/ST-OUT/NEX/{$monthRoman}/{$year}";
+    private function generateTransactionCode(): string {
+        $roman = ['I','II','III','IV','V','VI','VII','VIII','IX','X','XI','XII'][now()->month - 1];
+        $prefix = "%/ST-RES/NEX/{$roman}/" . now()->year;
+        $last = StockTransaction::where('transaction_code', 'like', $prefix)->orderByDesc('id')->value('transaction_code');
+        $seq = $last ? ((int) explode('/', $last)[0]) + 1 : 1;
+        return str_pad((string) $seq, 3, '0', STR_PAD_LEFT) . "/ST-RES/NEX/{$roman}/" . now()->year;
     }
 
-    // Generate No Transaksi MASUK
-    private function generateNoTransactionIn(): string
-    {
-        $romanMonths = ['I','II','III','IV','V','VI','VII','VIII','IX','X','XI','XII'];
-        $monthRoman  = $romanMonths[now()->month - 1];
-        $year        = now()->year;
-        $prefixLike  = "%/ST-IN/NEX/{$monthRoman}/{$year}";
-
-        $last = StockTransaction::where('transaction_code', 'like', $prefixLike)
-            ->orderByDesc('id')
-            ->value('transaction_code');
-
-        $seq    = $last ? ((int) explode('/', $last)[0]) + 1 : 1;
-        $seqStr = str_pad((string) $seq, 3, '0', STR_PAD_LEFT);
-
-        return "{$seqStr}/ST-IN/NEX/{$monthRoman}/{$year}";
+    private function generateDeliveryNumber(): string {
+        $roman = ['I','II','III','IV','V','VI','VII','VIII','IX','X','XI','XII'][now()->month - 1];
+        $prefix = "%/DO/NEX/{$roman}/" . now()->year;
+        $last = DeliveryOrder::withTrashed()->where('do_number', 'like', $prefix)->orderByDesc('id')->value('do_number');
+        $seq = $last ? ((int) explode('/', $last)[0]) + 1 : 1;
+        return str_pad((string) $seq, 3, '0', STR_PAD_LEFT) . "/DO/NEX/{$roman}/" . now()->year;
     }
 
-    // Generate No DO SESUAI FORMAT YANG DIMINTA
-    private function generateDeliveryNumber(): string
-    {
-        $roman = ['I', 'II', 'III', 'IV', 'V', 'VI', 'VII', 'VIII', 'IX', 'X', 'XI', 'XII'][now()->month - 1];
-        $year = now()->year;
-        $company = 'NEX';
-        $code = 'DO';
-
-        $prefixLike = "%/$code/$company/$roman/$year";
-
-        $last = \App\Models\Sales\DeliveryOrder::withTrashed()
-            ->where('do_number', 'like', $prefixLike)
-            ->orderByDesc('id')
-            ->value('do_number');
-
-        $seq = 1;
-
-        if ($last) {
-            $parts = explode('/', $last);
-            $seq = ((int) $parts[0]) + 1;
-        }
-
-        $seqStr = str_pad((string) $seq, 3, '0', STR_PAD_LEFT);
-
-        return "{$seqStr}/{$code}/{$company}/{$roman}/{$year}";
-    }
-
-    protected function getSavedNotification(): ?Notification
-    {
-        return null;
+    protected function getSavedNotification(): ?Notification {
+        return Notification::make()->success()->title('Sales Order diperbarui!')->body('Stok telah berhasil di-reserve jika status Confirmed.');
     }
 }

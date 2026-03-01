@@ -71,12 +71,47 @@ class LeadResource extends Resource
                                     ])
                                     ->required()
                                     ->native(false)
-                                    ->prefixIcon('heroicon-o-identification'),
+                                    ->prefixIcon('heroicon-o-identification')
+                                    ->live(),
 
                                 Forms\Components\Textarea::make('address')
                                     ->label('Alamat Domisili/Kantor')
                                     ->rows(3)
                                     ->columnSpanFull(),
+                            ]),
+                    ]),
+
+                // Bagian Informasi PIC
+                Forms\Components\Section::make('Informasi PIC (Person In Charge)')
+                    ->description('Data narahubung dari pihak Lead/Perusahaan')
+                    ->icon('heroicon-o-user-circle')
+                    ->collapsible()
+                    // Logic: Section ini hanya muncul jika Tipe Customer adalah 'company'
+                    ->visible(fn (Forms\Get $get) => $get('customer_type') === 'company')
+                    ->schema([
+                        Forms\Components\Grid::make(2)
+                            ->schema([
+                                Forms\Components\TextInput::make('pic_name')
+                                    ->label('Nama PIC')
+                                    ->placeholder('Nama lengkap narahubung')
+                                    ->maxLength(255),
+
+                                Forms\Components\TextInput::make('pic_position')
+                                    ->label('Jabatan PIC')
+                                    ->placeholder('Contoh: Purchasing Manager')
+                                    ->maxLength(255),
+
+                                Forms\Components\TextInput::make('pic_email')
+                                    ->label('Email PIC')
+                                    ->email()
+                                    ->placeholder('pic.abc@company.com')
+                                    ->maxLength(255),
+
+                                Forms\Components\TextInput::make('pic_phone')
+                                    ->label('No. Telp PIC')
+                                    ->tel()
+                                    ->placeholder('Contoh: 08123456789')
+                                    ->maxLength(255),
                             ]),
                     ]),
 
@@ -173,7 +208,7 @@ class LeadResource extends Resource
                                                 {$statusLabel}
                                             </span>
                                         </div>
-                                        
+
                                         <div class='flex items-end justify-between pt-3 mt-3 border-t border-black/20 dark:border-white/20'>
                                             <div class='text-xs {$textClass}'>
                                                 <p class='opacity-70 uppercase tracking-wider text-[10px]'>Stage</p>

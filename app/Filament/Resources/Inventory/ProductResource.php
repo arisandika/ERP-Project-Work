@@ -1,13 +1,14 @@
 <?php
+
 namespace App\Filament\Resources\Inventory;
 
 use App\Filament\Resources\Inventory\ProductResource\Pages;
 use App\Filament\Resources\Inventory\ProductResource\RelationManagers;
 use App\Models\Inventory\Product;
-use App\Models\Inventory\Unit;
 use App\Models\Inventory\Warehouse;
 use Filament\Forms;
 use Filament\Forms\Form;
+use Filament\Forms\Components\Toggle;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
@@ -95,6 +96,25 @@ class ProductResource extends Resource
                             ->prefix('IDR')
                             ->step(0.01),
 
+                        Forms\Components\Section::make('Pengaturan Lanjutan')
+                            ->description('Atur identitas unit dan visibilitas katalog')
+                            ->schema([
+                                Forms\Components\Toggle::make('is_serialized')
+                                    ->label('Wajibkan Serial Number (SN)')
+                                    ->helperText('Aktifkan jika produk ini butuh scan SN untuk setiap unitnya (Barang IT).')
+                                    ->default(false)
+                                    ->live()
+                                    ->onColor('success')
+                                    ->offColor('gray'),
+
+                                Toggle::make('is_web_published')
+                                    ->label('Tampilkan di Katalog Web')
+                                    ->helperText('Jika aktif, produk ini akan muncul di halaman Company Profile.')
+                                    ->default(false)
+                                    ->onColor('info')
+                                    ->offColor('gray'),
+                            ])->columns(2),
+
                         Forms\Components\FileUpload::make('image_path')
                             ->label('Foto Product')
                             ->directory('products')
@@ -126,33 +146,33 @@ class ProductResource extends Resource
                                     ->distinct()
                                     ->disableOptionsWhenSelectedInSiblingRepeaterItems(),
 
-                                Forms\Components\TextInput::make('qty')
-                                    ->label('Jumlah Stock')
+                                // REVISI: Mengubah 'qty' tunggal dan 'status' menjadi 3 kolom metric stock
+                                Forms\Components\TextInput::make('qty_available')
+                                    ->label('Stock Tersedia')
                                     ->numeric()
                                     ->default(0)
-                                    ->minValue(0)
                                     ->disabled()
                                     ->dehydrated(true)
-                                    ->helperText(
-                                        'Stock awal otomatis 0. ' .
-                                        'Penambahan Stock dilakukan melalui menu "Transaksi Stock Product".'
-                                    )
+                                    ->helperText('Otomatis 0. Tambah via Transaksi Stock.')
                                     ->prefixIcon('heroicon-o-archive-box'),
 
-                                Forms\Components\Select::make('status')
-                                    ->label('Status')
-                                    ->options([
-                                        'available' => 'Tersedia',
-                                        'reserved' => 'Dipesan',
-                                        'out_of_stock' => 'Habis',
-                                    ])
-                                    ->default('available')
-                                    ->required()
-                                    ->prefixIcon('heroicon-o-adjustments-horizontal'),
+                                Forms\Components\TextInput::make('qty_reserved')
+                                    ->label('Dipesan (Reserved)')
+                                    ->numeric()
+                                    ->default(0)
+                                    ->disabled()
+                                    ->dehydrated(true),
+
+                                Forms\Components\TextInput::make('qty_on_delivery')
+                                    ->label('Dalam Pengiriman')
+                                    ->numeric()
+                                    ->default(0)
+                                    ->disabled()
+                                    ->dehydrated(true),
                             ])
-                            ->columns(3)
+                            ->columns(4) // REVISI: Diubah jadi 4 agar layout 1 baris pas untuk ke-4 field di atas
                             ->defaultItems(1)
-                            ->addActionLabel('Tambah Stock di Gudang')
+                            ->addActionLabel('Tambah Akses Gudang')
                             ->reorderable(false)
                             ->collapsible(),
                     ])
@@ -206,8 +226,13 @@ class ProductResource extends Resource
                     ->icon('heroicon-o-building-office'),
 
                 Tables\Columns\TextColumn::make('total_stock')
-                    ->label('Total Stock')
-                    ->getStateUsing(fn($record) => $record->productStocks()->sum('qty'))
+                    ->label('Total Stock Fisik')
+                    // REVISI: Menggabungkan total dari 3 kolom untuk physical stock
+                    ->getStateUsing(fn($record) =>
+                        $record->productStocks()->sum('qty_available') +
+                        $record->productStocks()->sum('qty_reserved') +
+                        $record->productStocks()->sum('qty_on_delivery')
+                    )
                     ->numeric()
                     ->sortable()
                     ->badge()
@@ -245,8 +270,8 @@ class ProductResource extends Resource
                         Forms\Components\Select::make('status')
                             ->label('Status Stock')
                             ->options([
-                                'low' => 'Stock Rendah',
-                                'normal' => 'Stock Normal',
+                                'low' => 'Stock Tersedia Rendah',
+                                'normal' => 'Stock Tersedia Normal',
                             ])
                             ->prefixIcon('heroicon-o-chart-bar'),
                         Forms\Components\Select::make('warehouse_id')
@@ -282,7 +307,8 @@ class ProductResource extends Resource
                                 if ($warehouseId) {
                                     $subQuery->where('id', $warehouseId);
                                 }
-                                $subQuery->where('qty', '<=', 10);
+                                // REVISI: qty diubah menjadi qty_available
+                                $subQuery->where('qty_available', '<=', 10);
                             });
                         }
 
@@ -297,7 +323,8 @@ class ProductResource extends Resource
                                     if ($warehouseId) {
                                         $subQuery->where('id', $warehouseId);
                                     }
-                                    $subQuery->where('qty', '<=', 10);
+                                    // REVISI: qty diubah menjadi qty_available
+                                    $subQuery->where('qty_available', '<=', 10);
                                 });
                         }
 
@@ -342,12 +369,14 @@ class ProductResource extends Resource
 
     public static function getNavigationBadge(): ?string
     {
-        $count = \App\Models\Inventory\ProductStock::where('qty', '<=', 10)
+        // REVISI: qty diubah menjadi qty_available
+        $count = \App\Models\Inventory\ProductStock::where('qty_available', '<=', 10)
             ->distinct('product_id')
-            ->count('id');
+            ->count('product_id');
 
         return $count > 0 ? (string) $count : null;
     }
+
 
     public static function getNavigationBadgeColor(): ?string
     {
@@ -356,6 +385,6 @@ class ProductResource extends Resource
 
     public static function getNavigationBadgeTooltip(): ?string
     {
-        return 'Product dengan stock rendah (≤ 10)';
+        return 'Product dengan stock tersedia rendah (≤ 10)';
     }
 }

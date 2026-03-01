@@ -93,7 +93,7 @@ class SalesOrderResource extends Resource
                         ->disabled(fn($record) => $record && $record->exists)
                         ->afterStateUpdated(function ($state, Set $set, Get $get) {
                             if (!$state) {
-                                // Reset semua jika dihapus
+                                $set('nx_customer_id', null);
                                 $set('items', []);
                                 $set('subtotal', 0);
                                 $set('tax', 0);
@@ -104,13 +104,14 @@ class SalesOrderResource extends Resource
                                 return;
                             }
 
-                            $quotation = Quotation::with('items', 'promoCode')->find($state);
+                            $quotation = Quotation::with('items', 'promoCode', 'deal')->find($state);
                             if (!$quotation) {
                                 return;
                             }
 
                             // 1. Copy Header
-                            $set('nx_customer_id', $quotation->nx_customer_id);
+                            $customerId = $quotation->nx_customer_id ?? $quotation->deal?->nx_customer_id;
+                            $set('nx_customer_id', $customerId);
 
                             // 2. Copy Pajak
                             $taxPercent = (float) ($quotation->tax ?? 0);
@@ -185,6 +186,7 @@ class SalesOrderResource extends Resource
                         ->relationship('customer', 'name')
                         ->searchable()
                         ->required()
+                        ->live()
                         ->disabled(fn(Get $get) => filled($get('nx_quotation_id')))
                         ->dehydrated()
                         ->prefixIcon('heroicon-o-user-circle'),
@@ -225,13 +227,12 @@ class SalesOrderResource extends Resource
                     ->schema([
                         Hidden::make('item_type')->default('product')->dehydrated(true),
                         Hidden::make('item_id')->dehydrated(true),
-                        Hidden::make('item_code')->dehydrated(true),
 
                         Grid::make(2)->schema([
                             TextInput::make('item_code')
                                 ->label('Kode Product')
                                 ->disabled()
-                                ->dehydrated(false),
+                                ->dehydrated(true),
 
                             TextInput::make('item_name')
                                 ->label('Nama Product')
@@ -520,7 +521,7 @@ class SalesOrderResource extends Resource
             'edit' => Pages\EditSalesOrder::route('/{record}/edit'),
         ];
     }
-    
+
     public static function getEloquentQuery(): Builder
     {
         return parent::getEloquentQuery()
