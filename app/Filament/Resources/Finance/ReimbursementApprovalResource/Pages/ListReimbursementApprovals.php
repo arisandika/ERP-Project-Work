@@ -1,9 +1,9 @@
 <?php
 
-namespace App\Filament\Resources\HR\ReimbursementApprovalResource\Pages;
+namespace App\Filament\Resources\Finance\ReimbursementApprovalResource\Pages;
 
-use App\Filament\Resources\HR\ReimbursementApprovalResource;
-use App\Filament\Widgets\HR\ReimburseApprovalOverview;
+use App\Filament\Resources\Finance\ReimbursementApprovalResource;
+use App\Filament\Widgets\Finance\ReimburseApprovalOverview;
 use App\Models\Finance\ReimbursementRequest;
 use Filament\Actions;
 use Filament\Resources\Components\Tab;

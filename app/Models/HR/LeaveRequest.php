@@ -22,7 +22,7 @@ class LeaveRequest extends Model
         'status',
         'approved_by',
         'approved_at',
-        'leave_prove',
+        'leave_proof',
     ];
 
     protected $casts = [

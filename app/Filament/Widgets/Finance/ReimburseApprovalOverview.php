@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Filament\Widgets\HR;
+namespace App\Filament\Widgets\Finance;
 
 use App\Models\Finance\ReimbursementRequest;
 use Filament\Widgets\StatsOverviewWidget as BaseWidget;

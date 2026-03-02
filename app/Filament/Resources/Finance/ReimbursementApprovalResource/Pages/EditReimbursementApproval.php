@@ -1,8 +1,8 @@
 <?php
 
-namespace App\Filament\Resources\HR\ReimbursementApprovalResource\Pages;
+namespace App\Filament\Resources\Finance\ReimbursementApprovalResource\Pages;
 
-use App\Filament\Resources\HR\ReimbursementApprovalResource;
+use App\Filament\Resources\Finance\ReimbursementApprovalResource;
 use App\Models\Finance\FinancialRecord;
 use Filament\Actions;
 use Filament\Notifications\Notification;

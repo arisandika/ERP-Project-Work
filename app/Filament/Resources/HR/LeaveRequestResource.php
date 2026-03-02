@@ -31,6 +31,16 @@ class LeaveRequestResource extends Resource
 
     protected static ?string $pluralModelLabel = 'Pengajuan Cuti';
 
+    public static function getNavigationBadge(): ?string
+    {
+        return static::getModel()::where('status', 'pending')->count();
+    }
+
+    public static function getNavigationBadgeColor(): ?string
+    {
+        return 'warning';
+    }
+
     public static function form(Form $form): Form
     {
         return $form->schema([
@@ -143,10 +153,10 @@ class LeaveRequestResource extends Resource
                         ->rows(3)
                         ->maxLength(500),
 
-                    Forms\Components\FileUpload::make('leave_prove')
+                    Forms\Components\FileUpload::make('leave_proof')
                         ->label('Bukti Cuti')
                         ->image()
-                        ->directory('leave-prove')
+                        ->directory('leave-proofs')
                         ->imageEditor()
                         ->previewable()
                         ->maxSize(2048) // 2MB
@@ -424,7 +434,7 @@ class LeaveRequestResource extends Resource
                             ->label('Alasan Cuti')
                             ->placeholder('-'),
 
-                        ImageEntry::make('leave_prove')
+                        ImageEntry::make('leave_proof')
                             ->label('Bukti Cuti/Sakit')
                             ->placeholder('-')
                             ->extraImgAttributes(['style' => 'width: 100%; height: auto; object-fit: cover;']),
