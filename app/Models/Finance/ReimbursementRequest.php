@@ -48,17 +48,4 @@ class ReimbursementRequest extends Model
     {
         return $this->hasOne(FinancialRecord::class);
     }
-
-    public function canBeCancelledBy($employeeId): bool
-    {
-        return $this->employee_id === $employeeId
-            && in_array($this->status, ['pending', 'approved']);
-    }
-
-    public function cancel(): void
-    {
-        $this->update([
-            'status' => 'cancelled'
-        ]);
-    }
 }

@@ -189,7 +189,11 @@
 }
 
 .fi-modal-header {
-    @apply bg-secondary-light dark:bg-secondary-dark shadow-none ring-1 ring-border-light dark:ring-border-dark !important;
+    @apply rounded-2xl bg-secondary-light dark:bg-secondary-dark shadow-none ring-1 ring-border-light dark:ring-border-dark !important;
+}
+
+.fi-modal-header:has(.mb-5.flex.items-center.justify-center) {
+    @apply rounded-2xl bg-secondary-light dark:bg-secondary-dark shadow-none ring-0 !important;
 }
 
 .fi-modal-close-overlay {
