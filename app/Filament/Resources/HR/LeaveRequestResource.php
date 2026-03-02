@@ -9,6 +9,7 @@ use Filament\Infolists\Components\ImageEntry;
 use Filament\Infolists\Components\Section;
 use Filament\Infolists\Components\TextEntry;
 use Filament\Infolists\Infolist;
+use Filament\Notifications\Notification;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
@@ -323,14 +324,46 @@ class LeaveRequestResource extends Resource
                     ->visible(fn(LeaveRequest $record) => $record->status === 'pending')
                     ->requiresConfirmation()
                     ->action(function ($record) {
-
                         $employeeId = auth()->user()?->employee?->id;
 
-                        if (!$record->canBeCancelledBy($employeeId)) {
-                            abort(403);
+                        // Employee tidak ditemukan
+                        if (!$employeeId) {
+                            Notification::make()
+                                ->title('Data karyawan tidak ditemukan')
+                                ->danger()
+                                ->send();
+
+                            return;
                         }
 
-                        $record->cancel();
+                        // Bukan milik sendiri
+                        if ($record->employee_id !== $employeeId) {
+                            Notification::make()
+                                ->title('Anda tidak bisa membatalkan pengajuan orang lain')
+                                ->danger()
+                                ->send();
+
+                            return;
+                        }
+
+                        // Status tidak valid
+                        if (!in_array($record->status, ['pending', 'approved'])) {
+                            Notification::make()
+                                ->title('Status pengajuan tidak bisa dibatalkan')
+                                ->warning()
+                                ->send();
+
+                            return;
+                        }
+
+                        $record->update([
+                            'status' => 'cancelled',
+                        ]);
+
+                        Notification::make()
+                            ->title('Pengajuan berhasil dibatalkan')
+                            ->success()
+                            ->send();
                     }),
 
                 Tables\Actions\ViewAction::make(),
