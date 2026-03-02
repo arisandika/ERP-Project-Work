@@ -22,15 +22,29 @@ class FinancialRecord extends Model
         'amount',
         'category',
         'reimburse_id',
+        'receipt',
     ];
 
+    protected $casts = [
+        'created_by' => 'integer',
+        'reimburse_id' => 'integer',
+    ];
+
+    // Dari reimburse
     public function reimbursement()
     {
-        return $this->belongsTo(ReimbursementRequest::class);
+        return $this->belongsTo(
+            ReimbursementRequest::class,
+            'reimburse_id'
+        );
     }
 
+    // Dibuat oleh employee
     public function employee()
     {
-        return $this->belongsTo(Employee::class, 'created_by');
+        return $this->belongsTo(
+            Employee::class,
+            'created_by'
+        );
     }
 }

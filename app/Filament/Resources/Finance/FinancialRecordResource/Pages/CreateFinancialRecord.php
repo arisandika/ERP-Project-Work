@@ -12,7 +12,7 @@ class CreateFinancialRecord extends CreateRecord
 
     public function getTitle(): string
     {
-        return 'Tambah Catatan Operasional';
+        return 'Tambah Transaksi';
     }
 
     protected function mutateFormDataBeforeCreate(array $data): array

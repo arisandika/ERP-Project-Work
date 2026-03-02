@@ -29,6 +29,7 @@ class LeaveRequest extends Model
         'start_date' => 'date',
         'end_date' => 'date',
         'approved_at' => 'datetime',
+        'employee_id' => 'integer',
     ];
 
     // Relationships

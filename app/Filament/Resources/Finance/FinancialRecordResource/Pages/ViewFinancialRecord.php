@@ -14,7 +14,7 @@ class ViewFinancialRecord extends ViewRecord
     protected function getHeaderActions(): array
     {
         return [
-            Actions\EditAction::make(),
+            // Actions\EditAction::make(),
             Action::make('Kembali')
                 ->url(static::getResource()::getUrl())
                 ->button()
@@ -24,6 +24,6 @@ class ViewFinancialRecord extends ViewRecord
 
     public function getTitle(): string
     {
-        return 'Lihat Catatan Operasional';
+        return 'Lihat Transaksi';
     }
 }
