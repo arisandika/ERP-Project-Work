@@ -1,14 +1,15 @@
 <?php
 
-namespace App\Models\HR;
+namespace App\Models\Finance;
 
-use App\Models\Finance\FinancialRecord;
+use App\Models\HR\Employee;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class ReimbursementRequest extends Model
 {
-    use HasFactory;
+    use SoftDeletes, HasFactory;
 
     protected $table = 'nx_reimbursements';
 
@@ -46,5 +47,18 @@ class ReimbursementRequest extends Model
     public function financialRecord()
     {
         return $this->hasOne(FinancialRecord::class);
+    }
+
+    public function canBeCancelledBy($employeeId): bool
+    {
+        return $this->employee_id === $employeeId
+            && in_array($this->status, ['pending', 'approved']);
+    }
+
+    public function cancel(): void
+    {
+        $this->update([
+            'status' => 'cancelled'
+        ]);
     }
 }

@@ -34,14 +34,16 @@ class AdminPanelProvider extends PanelProvider
             ->colors([
                 'danger' => Color::Red,
                 'gray' => Color::Gray,
-                'info' => Color::Blue,
-                'primary' => Color::Blue,
                 'success' => Color::Emerald,
                 'yellow' => Color::Yellow,
                 'warning' => Color::Orange,
                 'secondary' => Color::Purple,
                 'indigo' => Color::Indigo,
                 'green' => Color::Green,
+                'primary' => Color::hex('#1c9cf0'),
+                'info' => Color::hex('#1c9cf0'),
+                'light' => Color::hex('#ffffff'),
+                'dark' => Color::hex('#1c2433'),
             ])
             ->font('Poppins')
             ->brandName('Nexicon ERP Dashboard')
@@ -88,9 +90,11 @@ class AdminPanelProvider extends PanelProvider
                         slug: 'my-profile' 
                     )
             ])
-            ->sidebarCollapsibleOnDesktop()
+            ->sidebarCollapsibleOnDesktop(false)
             ->databaseNotifications()
             ->databaseNotificationsPolling('30s')
+            ->globalSearchKeyBindings(['command+k', 'ctrl+k'])
+            ->globalSearchDebounce('750ms')
             ;
     }
 }

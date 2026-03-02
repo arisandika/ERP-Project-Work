@@ -1,8 +1,8 @@
 <?php
 
-namespace App\Filament\Resources\HR\ReimbursementRequestResource\Pages;
+namespace App\Filament\Resources\Finance\ReimbursementRequestResource\Pages;
 
-use App\Filament\Resources\HR\ReimbursementRequestResource;
+use App\Filament\Resources\Finance\ReimbursementRequestResource;
 use Filament\Facades\Filament;
 use Filament\Resources\Pages\CreateRecord;
 

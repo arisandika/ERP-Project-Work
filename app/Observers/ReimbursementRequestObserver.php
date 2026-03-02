@@ -2,7 +2,7 @@
 
 namespace App\Observers;
 
-use App\Models\HR\ReimbursementRequest;
+use App\Models\Finance\ReimbursementRequest;
 use App\Models\User;
 use App\Notifications\ReimbursementAdminNotification;
 use App\Notifications\ReimbursementEmployeeNotification;

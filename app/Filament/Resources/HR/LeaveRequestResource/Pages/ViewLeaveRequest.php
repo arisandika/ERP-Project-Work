@@ -14,7 +14,7 @@ class ViewLeaveRequest extends ViewRecord
     public function mount(int|string $record): void
     {
         parent::mount($record);
-        
+
         if (auth()->user()->hasRole('super_admin')) {
             abort(403, 'Super Admin tidak memiliki akses pengajuan cuti');
         }
@@ -23,9 +23,26 @@ class ViewLeaveRequest extends ViewRecord
     protected function getHeaderActions(): array
     {
         return [
-            Actions\EditAction::make('Edit Pengajuan Cuti')
+            Actions\Action::make('cancel')
+                ->label('Batalkan')
+                ->icon('heroicon-o-x-circle')
+                ->color('danger')
+                ->visible(fn(LeaveRequest $record) => $record->status === 'pending')
+                ->requiresConfirmation()
+                ->action(function ($record) {
+                    $employeeId = auth()->user()?->employee?->id;
+
+                    if (!$record->canBeCancelledBy($employeeId)) {
+                        abort(403);
+                    }
+
+                    $record->cancel();
+                }),
+
+            Actions\EditAction::make()
                 ->visible(fn(LeaveRequest $record) => $record->status === 'pending'),
-            Action::make('back')
+
+            Action::make('Kembali')
                 ->url(static::getResource()::getUrl())
                 ->button()
                 ->color('gray'),

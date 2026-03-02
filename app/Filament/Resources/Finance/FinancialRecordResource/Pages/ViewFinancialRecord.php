@@ -4,6 +4,7 @@ namespace App\Filament\Resources\Finance\FinancialRecordResource\Pages;
 
 use App\Filament\Resources\Finance\FinancialRecordResource;
 use Filament\Actions;
+use Filament\Actions\Action;
 use Filament\Resources\Pages\ViewRecord;
 
 class ViewFinancialRecord extends ViewRecord
@@ -14,6 +15,15 @@ class ViewFinancialRecord extends ViewRecord
     {
         return [
             Actions\EditAction::make(),
+            Action::make('Kembali')
+                ->url(static::getResource()::getUrl())
+                ->button()
+                ->color('gray'),
         ];
+    }
+
+    public function getTitle(): string
+    {
+        return 'Lihat Catatan Operasional';
     }
 }

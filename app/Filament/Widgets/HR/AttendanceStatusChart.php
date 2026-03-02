@@ -12,12 +12,9 @@ class AttendanceStatusChart extends ApexChartWidget
 {
     protected static ?string $chartId = 'attendanceStatusChart';
 
-    protected static ?string $heading = null;
-
-    protected function getHeading(): string
-    {
-        return 'Status Presensi ' . Carbon::today()->locale('id')->translatedFormat('l, d F Y');
-    }
+    protected static ?string $heading = 'Status Presensi Hari Ini';
+    
+    protected static ?string $subHeading = 'Status Presensi Hari Ini'; 
 
     protected int|string|array $columnSpan = [
         'default' => 2,
@@ -51,7 +48,6 @@ class AttendanceStatusChart extends ApexChartWidget
         $absent = max($totalEmployees - ($present + $late + $leaveToday), 0);
 
         return [
-
             'chart' => [
                 'type' => 'bar',
                 'height' => 200,
@@ -99,13 +95,13 @@ class AttendanceStatusChart extends ApexChartWidget
             'plotOptions' => [
                 'bar' => [
                     'borderRadius' => 1,
-                    'columnWidth' => '45%',
+                    'columnWidth' => '35%',
                 ],
             ],
 
             'dataLabels' => [
                 'enabled' => true,
-                'offsetY' => -6,
+                'offsetY' => 0,
                 'style' => [
                     'fontSize' => '12px',
                     'fontWeight' => 600,
@@ -118,9 +114,9 @@ class AttendanceStatusChart extends ApexChartWidget
             ],
 
             'colors' => [
-                '#10b981', // hadir
                 '#f59e0b', // terlambat
                 '#ef4444', // absen
+                '#10b981', // hadir
                 '#6366f1', // cuti
             ],
 

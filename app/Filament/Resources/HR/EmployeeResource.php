@@ -40,13 +40,17 @@ class EmployeeResource extends Resource
         return static::getModel()::count();
     }
 
+    public static function getGloballySearchableAttributes(): array
+    {
+        return ['full_name', 'email', 'phone_number'];
+    }
+
     public static function form(Form $form): Form
     {
         return $form
             ->schema([
                 Forms\Components\Section::make('Informasi Pribadi')
                     ->schema([
-
                         Forms\Components\TextInput::make('national_id')
                             ->label('NIK')
                             ->required()
@@ -129,10 +133,10 @@ class EmployeeResource extends Resource
                         Forms\Components\Select::make('marital_status')
                             ->label('Status Perkawinan')
                             ->options([
-                                'Menikah'       => 'Menikah',
+                                'Menikah' => 'Menikah',
                                 'Belum Menikah' => 'Belum Menikah',
-                                'Duda'          => 'Duda',
-                                'Janda'         => 'Janda',
+                                'Duda' => 'Duda',
+                                'Janda' => 'Janda',
                             ])
                             ->native(false)
                             ->prefixIcon('heroicon-o-heart'),
@@ -140,14 +144,14 @@ class EmployeeResource extends Resource
                         Forms\Components\Select::make('education_level')
                             ->label('Pendidikan Terakhir')
                             ->options([
-                                'SD'       => 'SD',
-                                'SMP'      => 'SMP',
-                                'SMA'      => 'SMA',
-                                'Diploma'  => 'Diploma (D1/D2/D3)',
-                                'Sarjana'  => 'Sarjana (S1)',
+                                'SD' => 'SD',
+                                'SMP' => 'SMP',
+                                'SMA' => 'SMA',
+                                'Diploma' => 'Diploma (D1/D2/D3)',
+                                'Sarjana' => 'Sarjana (S1)',
                                 'Magister' => 'Magister (S2)',
-                                'Doktor'   => 'Doktor (S3)',
-                                'Lainnya'  => 'Lainnya',
+                                'Doktor' => 'Doktor (S3)',
+                                'Lainnya' => 'Lainnya',
                             ])
                             ->native(false)
                             ->prefixIcon('heroicon-o-academic-cap'),
@@ -166,7 +170,6 @@ class EmployeeResource extends Resource
 
                 Forms\Components\Section::make('Informasi Pekerjaan')
                     ->schema([
-
                         Forms\Components\Select::make('office_id')
                             ->label('Kantor Cabang')
                             ->required()
@@ -214,11 +217,11 @@ class EmployeeResource extends Resource
                             ->label('Jabatan')
                             ->required()
                             ->options([
-                                'Staf'            => 'Staf',
-                                'Junior'          => 'Junior',
-                                'Senior'          => 'Senior',
-                                'Magang'          => 'Magang',
-                                'Pimpinan'        => 'Pimpinan',
+                                'Staf' => 'Staf',
+                                'Junior' => 'Junior',
+                                'Senior' => 'Senior',
+                                'Magang' => 'Magang',
+                                'Pimpinan' => 'Pimpinan',
                                 'Mantan Karyawan' => 'Mantan Karyawan',
                             ])
                             ->native(false)
@@ -228,8 +231,8 @@ class EmployeeResource extends Resource
                             ->label('Jenis Kontrak')
                             ->options([
                                 'Karyawan Tetap' => 'Karyawan Tetap',
-                                'Kontrak'        => 'Kontrak',
-                                'Magang'         => 'Magang',
+                                'Kontrak' => 'Kontrak',
+                                'Magang' => 'Magang',
                             ])
                             ->native(false)
                             ->default('Kontrak')
@@ -246,9 +249,9 @@ class EmployeeResource extends Resource
                         Forms\Components\Select::make('status')
                             ->label('Status Karyawan')
                             ->options([
-                                'Aktif'             => 'Aktif',
+                                'Aktif' => 'Aktif',
                                 'Mengundurkan Diri' => 'Mengundurkan Diri',
-                                'Diberhentikan'     => 'Diberhentikan',
+                                'Diberhentikan' => 'Diberhentikan',
                             ])
                             ->native(false)
                             ->default('Aktif')
@@ -305,8 +308,8 @@ class EmployeeResource extends Resource
                 Tables\Columns\BadgeColumn::make('status')
                     ->colors([
                         'success' => 'Aktif',
-                        'gray'    => 'Mengundurkan Diri',
-                        'danger'  => 'Diberhentikan',
+                        'gray' => 'Mengundurkan Diri',
+                        'danger' => 'Diberhentikan',
                     ])
                     ->formatStateUsing(fn(string $state): string => ucwords(str_replace('_', ' ', $state))),
 
@@ -348,9 +351,9 @@ class EmployeeResource extends Resource
                 Tables\Filters\SelectFilter::make('status')
                     ->label('Status Karyawan')
                     ->options([
-                        'Aktif'             => 'Aktif',
+                        'Aktif' => 'Aktif',
                         'Mengundurkan Diri' => 'Mengundurkan Diri',
-                        'Diberhentikan'     => 'Diberhentikan',
+                        'Diberhentikan' => 'Diberhentikan',
                     ])
                     ->native(false),
 
@@ -399,7 +402,7 @@ class EmployeeResource extends Resource
 
                         return $indicators;
                     }),
-                    
+
                 Tables\Filters\TrashedFilter::make()
                     ->label('Deleted Status')
                     ->native(false),
@@ -465,17 +468,17 @@ class EmployeeResource extends Resource
                             ->label('Jenis Kontrak')
                             ->formatStateUsing(fn(?string $state): string => match ($state) {
                                 'Karyawan Tetap', 'permanent' => 'Karyawan Tetap',
-                                'Kontrak', 'contract'         => 'Kontrak',
-                                'Magang', 'intern'            => 'Magang',
+                                'Kontrak', 'contract' => 'Kontrak',
+                                'Magang', 'intern' => 'Magang',
                                 default => ucwords($state ?? '-'),
                             }),
 
                         TextEntry::make('status')
                             ->label('Status Karyawan')
                             ->formatStateUsing(fn(?string $state): string => match ($state) {
-                                'Aktif', 'active'               => 'Aktif',
+                                'Aktif', 'active' => 'Aktif',
                                 'Mengundurkan Diri', 'resigned' => 'Mengundurkan Diri',
-                                'Diberhentikan', 'terminated'   => 'Diberhentikan',
+                                'Diberhentikan', 'terminated' => 'Diberhentikan',
                                 default => ucwords($state ?? '-'),
                             }),
 
@@ -562,10 +565,10 @@ class EmployeeResource extends Resource
     public static function getPages(): array
     {
         return [
-            'index'  => Pages\ListEmployees::route('/'),
+            'index' => Pages\ListEmployees::route('/'),
             'create' => Pages\CreateEmployee::route('/create'),
-            'view'   => Pages\ViewEmployee::route('/{record}'),
-            'edit'   => Pages\EditEmployee::route('/{record}/edit'),
+            'view' => Pages\ViewEmployee::route('/{record}'),
+            'edit' => Pages\EditEmployee::route('/{record}/edit'),
         ];
     }
 

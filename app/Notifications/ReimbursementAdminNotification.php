@@ -2,7 +2,7 @@
 
 namespace App\Notifications;
 
-use App\Models\HR\ReimbursementRequest;
+use App\Models\Finance\ReimbursementRequest;
 use Illuminate\Bus\Queueable;
 use Illuminate\Notifications\Notification;
 use Filament\Notifications\Notification as FilamentNotification;

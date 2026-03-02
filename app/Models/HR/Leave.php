@@ -16,10 +16,12 @@ class Leave extends Model
     protected $fillable = [
         'leave_type',
         'days_count',
+        'is_male_only',
         'is_female_only',
     ];
 
     protected $casts = [
+        'is_male_only' => 'boolean',
         'is_female_only' => 'boolean',
     ];
 

@@ -28,7 +28,7 @@ class ViewTicket extends ViewRecord
     {
         return [
             Actions\EditAction::make(),
-            Action::make('back')
+            Action::make('Kembali')
                 ->label('Back to Board')
                 ->color('gray')
                 ->url(fn() => ProjectBoard::getUrl(['project_id' => $this->record->project_id])),
