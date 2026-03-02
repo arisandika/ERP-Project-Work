@@ -14,7 +14,7 @@ class ListFinancialRecords extends ListRecords
     {
         return [
             Actions\CreateAction::make()
-                ->label('Tambah Catatan Operasional'),
+                ->label('Tambah Transaksi'),
         ];
     }
 }

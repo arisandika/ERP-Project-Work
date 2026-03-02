@@ -23,7 +23,6 @@ class ReimbursementRequest extends Model
         'status',
         'approved_by',
         'approved_at',
-        'financial_record_id',
     ];
 
     protected $casts = [
@@ -33,20 +32,30 @@ class ReimbursementRequest extends Model
         'employee_id' => 'integer',
     ];
 
-    // Pengaju Reimburse
+    // Pengaju
     public function employee()
     {
-        return $this->belongsTo(Employee::class, 'employee_id');
+        return $this->belongsTo(
+            Employee::class,
+            'employee_id'
+        );
     }
 
-    // Yang menyetujui
+    // Approver
     public function approver()
     {
-        return $this->belongsTo(Employee::class, 'approved_by');
+        return $this->belongsTo(
+            Employee::class,
+            'approved_by'
+        );
     }
 
+    // Financial record hasil reimburse
     public function financialRecord()
     {
-        return $this->hasOne(FinancialRecord::class);
+        return $this->hasOne(
+            FinancialRecord::class,
+            'reimburse_id'
+        );
     }
 }

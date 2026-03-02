@@ -10,6 +10,14 @@
     @apply bg-secondary-light dark:bg-secondary-dark shadow-none ring-0 !important;
 }
 
+.fi-sidebar {
+    @apply bg-main-light dark:bg-main-dark !important;
+}
+
+.fi-sidebar-close-overlay {
+    @apply bg-main-light/50 dark:bg-main-dark/50 shadow-none ring-1 ring-border-light dark:ring-border-dark !important;
+}
+
 .fi-sidebar-nav {
     @apply bg-secondary-light dark:bg-secondary-dark rounded-2xl ml-4 mr-4 md:mr-0 mt-4 px-6 py-6 !important;
 }
@@ -189,11 +197,17 @@
 }
 
 .fi-modal-header {
-    @apply rounded-2xl bg-secondary-light dark:bg-secondary-dark shadow-none ring-1 ring-border-light dark:ring-border-dark !important;
+    @apply bg-secondary-light dark:bg-secondary-dark shadow-none ring-1 ring-border-light dark:ring-border-dark !important;
 }
 
 .fi-modal-header:has(.mb-5.flex.items-center.justify-center) {
     @apply rounded-2xl bg-secondary-light dark:bg-secondary-dark shadow-none ring-0 !important;
+}
+
+.fi-modal-window {
+    .fi-no-notification {
+        @apply rounded-none bg-secondary-light dark:bg-secondary-dark shadow-none ring-1 ring-border-light dark:ring-border-dark hover:bg-main-light dark:hover:bg-main-dark !important;
+    }
 }
 
 .fi-modal-close-overlay {
