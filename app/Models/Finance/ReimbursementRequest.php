@@ -30,6 +30,7 @@ class ReimbursementRequest extends Model
         'date' => 'date',
         'approved_at' => 'datetime',
         'amount' => 'decimal:2',
+        'employee_id' => 'integer',
     ];
 
     // Pengaju Reimburse
