@@ -71,6 +71,7 @@ class LeaveRequestResource extends Resource
                         ->required()
                         ->searchable()
                         ->preload()
+                        ->native(false)
                         ->prefixIcon('heroicon-o-arrow-right-start-on-rectangle'),
 
                     Forms\Components\DatePicker::make('start_date')
@@ -188,13 +189,13 @@ class LeaveRequestResource extends Resource
                             return 'danger';
                         return '';
                     })
-                    ->placeholder('-'),
+                    ->placeholder('—'),
 
                 Tables\Columns\TextColumn::make('leave.leave_type')
                     ->label('Jenis Cuti')
                     ->sortable()
                     ->searchable()
-                    ->placeholder('-'),
+                    ->placeholder('—'),
 
                 Tables\Columns\BadgeColumn::make('status')
                     ->label('Status')
@@ -214,25 +215,25 @@ class LeaveRequestResource extends Resource
                             str_replace('_', ' ', $state)
                         ),
                     })
-                    ->placeholder('-'),
+                    ->placeholder('—'),
 
                 Tables\Columns\TextColumn::make('start_date')
                     ->label('Tanggal Mulai')
                     ->date('d M Y')
                     ->sortable()
-                    ->placeholder('-'),
+                    ->placeholder('—'),
 
                 Tables\Columns\TextColumn::make('end_date')
                     ->label('Tanggal Selesai')
                     ->date('d M Y')
                     ->sortable()
-                    ->placeholder('-'),
+                    ->placeholder('—'),
 
                 Tables\Columns\TextColumn::make('total_days')
                     ->label('Durasi (Hari)')
                     ->sortable()
                     ->formatStateUsing(fn($state) => $state . ' Hari')
-                    ->placeholder('-'),
+                    ->placeholder('—'),
 
                 Tables\Columns\TextColumn::make('approver.full_name')
                     ->label('Disetujui Oleh')
@@ -246,13 +247,13 @@ class LeaveRequestResource extends Resource
                             return 'danger';
                         return '';
                     })
-                    ->placeholder('-'),
+                    ->placeholder('—'),
 
                 Tables\Columns\TextColumn::make('created_at')
                     ->label('Diajukan Pada')
                     ->dateTime('d M Y H:i')
                     ->sortable()
-                    ->placeholder('-'),
+                    ->placeholder('—'),
 
                 Tables\Columns\TextColumn::make('created_at')
                     ->label('Dibuat Pada')
@@ -279,7 +280,8 @@ class LeaveRequestResource extends Resource
                         'approved' => 'Approved',
                         'rejected' => 'Rejected',
                         'cancelled' => 'Cancelled',
-                    ]),
+                    ])
+                    ->native(false),
 
                 Tables\Filters\Filter::make('created_at')
                     ->form([
@@ -408,35 +410,35 @@ class LeaveRequestResource extends Resource
                             ->color('primary')
                             ->weight('semibold')
                             ->icon('heroicon-o-user')
-                            ->placeholder('-'),
+                            ->placeholder('—'),
 
                         TextEntry::make('leave.leave_type')
                             ->label('Jenis Cuti')
-                            ->placeholder('-'),
+                            ->placeholder('—'),
 
                         TextEntry::make('start_date')
                             ->label('Tanggal Mulai')
                             ->date('D, d M Y')
-                            ->placeholder('-'),
+                            ->placeholder('—'),
 
                         TextEntry::make('end_date')
                             ->label('Tanggal Selesai')
                             ->date('D, d M Y')
-                            ->placeholder('-'),
+                            ->placeholder('—'),
 
                         TextEntry::make('total_days')
                             ->label('Durasi (Hari Kerja)')
                             ->numeric()
                             ->formatStateUsing(fn($state) => $state . ' Hari')
-                            ->placeholder('-'),
+                            ->placeholder('—'),
 
                         TextEntry::make('reason')
                             ->label('Alasan Cuti')
-                            ->placeholder('-'),
+                            ->placeholder('—'),
 
                         ImageEntry::make('leave_proof')
                             ->label('Bukti Cuti/Sakit')
-                            ->placeholder('-')
+                            ->placeholder('—')
                             ->extraImgAttributes(['style' => 'width: 100%; height: auto; object-fit: cover;']),
                     ]),
 
@@ -462,26 +464,25 @@ class LeaveRequestResource extends Resource
                                         str_replace('_', ' ', $state)
                                     ),
                                 };
-
                             })
-                            ->placeholder('-'),
+                            ->placeholder('—'),
 
                         TextEntry::make('approver.full_name')
                             ->label('Disetujui Oleh')
                             ->color('primary')
                             ->weight('semibold')
                             ->icon('heroicon-o-user')
-                            ->placeholder('-'),
+                            ->placeholder('—'),
 
                         TextEntry::make('approved_at')
                             ->label('Waktu Persetujuan')
                             ->dateTime('d M Y H:i')
                             ->visible(fn($record) => $record->approved_at !== null)
-                            ->placeholder('-'),
+                            ->placeholder('—'),
 
                         TextEntry::make('approval_note')
                             ->label('Catatan Admin')
-                            ->placeholder('-')
+                            ->placeholder('—')
                             ->columnSpanFull(),
                     ]),
 

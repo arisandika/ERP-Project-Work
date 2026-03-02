@@ -77,7 +77,7 @@
         @apply text-main-primary dark:text-main-primary rounded-full bg-white/80 dark:bg-white/80 !important;
     }
     .fi-badge.fi-color-warning {
-        @apply bg-warning-50 dark:bg-secondary-dark/60 text-warning-600 dark:text-warning-400 ring-warning-600/10 dark:ring-warning-400/30 !important;
+        @apply bg-warning-50 text-warning-600 ring-warning-600/10 !important;
     }
 }
 

@@ -72,6 +72,7 @@ class FinancialRecordResource extends Resource
                                         'Lainnya' => 'Lainnya (Tulis di keterangan)',
                                     ])
                                     ->searchable()
+                                    ->native(false)
                                     ->prefixIcon('heroicon-o-tag'),
 
                                 Forms\Components\TextInput::make('amount')
@@ -119,7 +120,7 @@ class FinancialRecordResource extends Resource
                     )
                     ->sortable()
                     ->weight('semibold')
-                    ->placeholder('-'),
+                    ->placeholder('—'),
 
                 Tables\Columns\TextColumn::make('type')
                     ->label('Tipe Transaksi')
@@ -137,7 +138,7 @@ class FinancialRecordResource extends Resource
                             str_replace('_', ' ', $state)
                         ),
                     })
-                    ->placeholder('-'),
+                    ->placeholder('—'),
 
                 Tables\Columns\TextColumn::make('source')
                     ->label('Sumber')
@@ -156,7 +157,7 @@ class FinancialRecordResource extends Resource
                     )
                     ->sortable()
                     ->searchable()
-                    ->placeholder('-'),
+                    ->placeholder('—'),
 
                 Tables\Columns\TextColumn::make('description')
                     ->label('Keterangan')
@@ -177,7 +178,7 @@ class FinancialRecordResource extends Resource
                     )
                     ->date('D, d M Y')
                     ->sortable()
-                    ->placeholder('-'),
+                    ->placeholder('—'),
 
                 Tables\Columns\TextColumn::make('amount')
                     ->label('Nominal')
@@ -189,7 +190,7 @@ class FinancialRecordResource extends Resource
                     })
                     ->sortable()
                     ->weight('semibold')
-                    ->placeholder('-'),
+                    ->placeholder('—'),
 
                 Tables\Columns\TextColumn::make('created_at')
                     ->label('Dibuat Pada')
@@ -315,12 +316,12 @@ class FinancialRecordResource extends Resource
                             ->color('primary')
                             ->weight('semibold')
                             ->icon('heroicon-o-user')
-                            ->placeholder('-'),
+                            ->placeholder('—'),
 
                         TextEntry::make('transaction_date')
                             ->label('Tanggal Transaksi')
                             ->date('D, d M Y')
-                            ->placeholder('-'),
+                            ->placeholder('—'),
 
                         TextEntry::make('type')
                             ->label('Jenis Transaksi')
@@ -337,7 +338,7 @@ class FinancialRecordResource extends Resource
                                     default => ucwords(str_replace('_', ' ', $state)),
                                 }
                             )
-                            ->placeholder('-'),
+                            ->placeholder('—'),
 
                         TextEntry::make('amount')
                             ->label('Nominal')
@@ -348,15 +349,15 @@ class FinancialRecordResource extends Resource
                                 'pengeluaran' => 'danger',
                                 default => 'gray',
                             })
-                            ->placeholder('-'),
+                            ->placeholder('—'),
 
                         TextEntry::make('category')
                             ->label('Kategori')
-                            ->placeholder('-'),
+                            ->placeholder('—'),
 
                         TextEntry::make('description')
                             ->label('Keterangan')
-                            ->placeholder('-'),
+                            ->placeholder('—'),
 
                     ]),
 
@@ -371,19 +372,19 @@ class FinancialRecordResource extends Resource
                             ->color('primary')
                             ->weight('semibold')
                             ->icon('heroicon-o-user')
-                            ->placeholder('-'),
+                            ->placeholder('—'),
 
                         TextEntry::make('reimbursement.date')
                             ->label('Tanggal Reimburse')
                             ->date('D, d M Y')
-                            ->placeholder('-'),
+                            ->placeholder('—'),
 
                         TextEntry::make('reimbursement.amount')
                             ->label('Nominal Reimburse')
                             ->money('IDR')
                             ->color('danger')
                             ->weight('semibold')
-                            ->placeholder('-'),
+                            ->placeholder('—'),
 
                         TextEntry::make('reimbursement.status')
                             ->label('Status')
@@ -403,11 +404,11 @@ class FinancialRecordResource extends Resource
                                     default => ucwords(str_replace('_', ' ', $state)),
                                 }
                             )
-                            ->placeholder('-'),
+                            ->placeholder('—'),
 
                         ImageEntry::make('reimbursement.receipt')
                             ->label('Bukti Reimburse')
-                            ->placeholder('-')
+                            ->placeholder('—')
                             ->extraImgAttributes(['style' => 'width: 100%; height: auto; object-fit: cover;']),
 
                         TextEntry::make('reimbursement.approver.full_name')
@@ -415,7 +416,7 @@ class FinancialRecordResource extends Resource
                             ->color('primary')
                             ->weight('semibold')
                             ->icon('heroicon-o-user')
-                            ->placeholder('-'),
+                            ->placeholder('—'),
 
                     ]),
 
@@ -429,7 +430,7 @@ class FinancialRecordResource extends Resource
                             ->extraImgAttributes([
                                 'style' => 'max-width:400px;height:auto;object-fit:cover;',
                             ])
-                            ->placeholder('-'),
+                            ->placeholder('—'),
 
                     ]),
 

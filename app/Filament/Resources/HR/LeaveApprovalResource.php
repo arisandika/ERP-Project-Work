@@ -156,7 +156,7 @@ class LeaveApprovalResource extends Resource
 
                 Tables\Columns\TextColumn::make('approver.full_name')
                     ->label('Disetujui Oleh')
-                    ->placeholder('-'),
+                    ->placeholder('—'),
 
                 Tables\Columns\TextColumn::make('created_at')
                     ->label('Diajukan')
@@ -234,27 +234,32 @@ class LeaveApprovalResource extends Resource
                     ->columns(2)
                     ->schema([
                         TextEntry::make('employee.full_name')
-                            ->label('Nama Karyawan'),
+                            ->label('Nama Karyawan')
+                            ->placeholder('—'),
 
                         TextEntry::make('leave.leave_type')
-                            ->label('Jenis Cuti'),
+                            ->label('Jenis Cuti')
+                            ->placeholder('—'),
 
                         TextEntry::make('start_date')
                             ->label('Tanggal Mulai')
-                            ->date('d M Y'),
+                            ->date('d M Y')
+                            ->placeholder('—'),
 
                         TextEntry::make('end_date')
                             ->label('Tanggal Selesai')
-                            ->date('d M Y'),
+                            ->date('d M Y')
+                            ->placeholder('—'),
 
                         TextEntry::make('total_days')
                             ->label('Durasi (Hari Kerja)')
-                            ->numeric(),
+                            ->numeric()
+                            ->placeholder('—'),
 
                         TextEntry::make('reason')
                             ->label('Alasan Cuti')
                             ->columnSpanFull()
-                            ->placeholder('-'),
+                            ->placeholder('—'),
                     ]),
 
                 Section::make('Status Persetujuan')
@@ -269,20 +274,22 @@ class LeaveApprovalResource extends Resource
                                 'rejected' => 'danger',
                                 default => 'secondary',
                             })
-                            ->formatStateUsing(fn(string $state): string => ucwords(str_replace('_', ' ', $state))),
+                            ->formatStateUsing(fn(string $state): string => ucwords(str_replace('_', ' ', $state)))
+                            ->placeholder('—'),
 
                         TextEntry::make('approver.full_name')
                             ->label('Disetujui Oleh')
-                            ->placeholder('-'),
+                            ->placeholder('—'),
 
                         TextEntry::make('approved_at')
                             ->label('Waktu Persetujuan')
                             ->dateTime('d M Y H:i')
-                            ->visible(fn($record) => $record->approved_at !== null),
+                            ->visible(fn($record) => $record->approved_at !== null)
+                            ->placeholder('—'),
 
                         TextEntry::make('approval_note')
                             ->label('Catatan Admin')
-                            ->placeholder('-')
+                            ->placeholder('—')
                             ->columnSpanFull(),
                     ]),
 

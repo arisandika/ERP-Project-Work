@@ -50,7 +50,7 @@ class OfficeResource extends Resource
                             ->prefixIcon('heroicon-o-map-pin'),
 
                         Forms\Components\TextInput::make('phone_number')
-                            ->label('No. HP Kantor')
+                            ->label('No. Whatsapp Kantor')
                             ->required()
                             ->numeric()
                             ->unique(ignoreRecord: true)
@@ -116,7 +116,7 @@ class OfficeResource extends Resource
                     ->label('Radius (m)'),
 
                 TextColumn::make('phone_number')
-                    ->label('No. HP Kantor')
+                    ->label('No. Whatsapp Kantor')
                     ->searchable()
                     ->sortable(),
 

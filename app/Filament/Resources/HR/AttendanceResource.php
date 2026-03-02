@@ -55,13 +55,13 @@ class AttendanceResource extends Resource
                 Tables\Columns\TextColumn::make('clock_in')
                     ->label('Jam Masuk')
                     ->time('H:i')
-                    ->placeholder('-')
+                    ->placeholder('—')
                     ->sortable(),
 
                 Tables\Columns\TextColumn::make('clock_out')
                     ->label('Jam Keluar')
                     ->time('H:i')
-                    ->placeholder('-')
+                    ->placeholder('—')
                     ->sortable(),
 
                 Tables\Columns\BadgeColumn::make('status')
@@ -179,7 +179,7 @@ class AttendanceResource extends Resource
                         TextEntry::make('clock_out')
                             ->label('Jam Keluar')
                             ->time('H:i')
-                            ->placeholder('-'),
+                            ->placeholder('—'),
 
                         TextEntry::make('status')
                             ->label('Status')
@@ -195,15 +195,15 @@ class AttendanceResource extends Resource
 
                         TextEntry::make('note')
                             ->label('Catatan')
-                            ->placeholder('-'),
+                            ->placeholder('—'),
 
                         ImageEntry::make('face_snapshot_in')
                             ->label('Foto Presensi Masuk')
-                            ->placeholder('-'),
+                            ->placeholder('—'),
 
                         ImageEntry::make('face_snapshot_out')
                             ->label('Foto Presensi Keluar')
-                            ->placeholder('-'),
+                            ->placeholder('—'),
                     ]),
 
                 Section::make('Pengelolaan Data')

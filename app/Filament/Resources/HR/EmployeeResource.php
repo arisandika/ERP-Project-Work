@@ -81,7 +81,7 @@ class EmployeeResource extends Resource
                             ->prefixIcon('heroicon-o-shield-check'),
 
                         Forms\Components\TextInput::make('email')
-                            ->label('Alamat Email')
+                            ->label('Email')
                             ->required()
                             ->email()
                             ->prefixIcon('heroicon-o-envelope')
@@ -115,7 +115,6 @@ class EmployeeResource extends Resource
 
                         Forms\Components\DatePicker::make('birth_date')
                             ->label('Tanggal Lahir')
-                            ->default(now())
                             ->required()
                             ->displayFormat('d M Y')
                             ->native(false)
@@ -235,7 +234,6 @@ class EmployeeResource extends Resource
                                 'Magang' => 'Magang',
                             ])
                             ->native(false)
-                            ->default('Kontrak')
                             ->prefixIcon('heroicon-o-document-text'),
 
                         Forms\Components\DatePicker::make('join_date')
@@ -254,7 +252,6 @@ class EmployeeResource extends Resource
                                 'Diberhentikan' => 'Diberhentikan',
                             ])
                             ->native(false)
-                            ->default('Aktif')
                             ->prefixIcon('heroicon-o-check-circle'),
 
                         Forms\Components\Toggle::make('can_wfa')
@@ -269,7 +266,6 @@ class EmployeeResource extends Resource
 
                     ])->columns(2),
             ]);
-
     }
 
     public static function table(Table $table): Table
@@ -284,14 +280,28 @@ class EmployeeResource extends Resource
                 Tables\Columns\TextColumn::make('full_name')
                     ->label('Nama Lengkap')
                     ->searchable()
-                    ->sortable(),
-
-                Tables\Columns\TextColumn::make('user.email')
-                    ->label('Email')
-                    ->searchable(),
+                    ->sortable()
+                    ->weight('semibold')
+                    ->icon('heroicon-o-user')
+                    ->color(function (Employee $record) {
+                        $record->withTrashed()->first();
+                        if ($record && $record->trashed())
+                            return 'danger';
+                        return '';
+                    })
+                    ->placeholder('—'),
 
                 Tables\Columns\TextColumn::make('phone_number')
-                    ->label('No. WhatsApp'),
+                    ->label('Kontak')
+                    ->description(fn(Employee $record) => $record->email)
+                    ->searchable(['phone', 'user.email'])
+                    ->sortable()
+                    ->icon('heroicon-o-phone')
+                    ->searchable(['phone_number', 'user.email'])
+                    ->color(function (Employee $record) {
+                        $record->withTrashed()->first();
+                        return ($record && $record->trashed()) ? 'danger' : 'success';
+                    }),
 
                 Tables\Columns\TextColumn::make('department.name')
                     ->label('Departemen')
@@ -434,25 +444,35 @@ class EmployeeResource extends Resource
                         ImageEntry::make('photo')
                             ->label('Foto Profil')
                             ->circular()
-                            ->defaultImageUrl(url('/assets/placeholder.jpg')),
+                            ->defaultImageUrl(url('/assets/placeholder.jpg'))
+                            ->placeholder('—')
+                            ->columnSpanFull(),
 
                         TextEntry::make('full_name')
-                            ->label('Nama Lengkap'),
+                            ->label('Nama Lengkap')
+                            ->color('primary')
+                            ->weight('semibold')
+                            ->icon('heroicon-o-user')
+                            ->placeholder('—'),
 
                         TextEntry::make('email')
                             ->label('Alamat Email')
-                            ->state(fn(Employee $employee) => optional($employee->user)->email),
+                            ->state(fn(Employee $employee) => optional($employee->user)->email)
+                            ->placeholder('—'),
 
                         TextEntry::make('phone_number')
-                            ->label('No. HP'),
+                            ->label('No. Whatsapp')
+                            ->placeholder('—'),
 
                         TextEntry::make('address')
-                            ->label('Alamat'),
+                            ->label('Alamat')
+                            ->placeholder('—'),
 
                         TextEntry::make('roles')
                             ->label('Peran (Role)')
                             ->state(fn(Employee $employee) => $employee->roles->pluck('name')->join(', '))
-                            ->formatStateUsing(fn(string $state): string => ucwords(str_replace('_', ' ', $state))),
+                            ->formatStateUsing(fn(string $state): string => ucwords(str_replace('_', ' ', $state)))
+                            ->placeholder('—'),
                     ])
                     ->collapsible()
                     ->persistCollapsed(),
@@ -460,9 +480,34 @@ class EmployeeResource extends Resource
                 Section::make('Informasi Pekerjaan')
                     ->columns(2)
                     ->schema([
+                        TextEntry::make('status')
+                            ->label('Status Karyawan')
+                            ->badge()
+                            ->color(fn(string $state): string => match ($state) {
+                                'Aktif', 'active' => 'success',
+                                'Mengundurkan Diri', 'resigned' => 'danger',
+                                'Diberhentikan', 'terminated' => 'danger',
+                                default => 'danger',
+                            })
+                            ->formatStateUsing(fn(string $state) => match ($state) {
+                                'Aktif', 'active' => 'Aktif',
+                                'Mengundurkan Diri', 'resigned' => 'Mengundurkan Diri',
+                                'Diberhentikan', 'terminated' => 'Diberhentikan',
+
+                                default => ucwords(
+                                    str_replace('_', ' ', $state)
+                                ),
+                            })
+                            ->placeholder('—'),
+
+                        TextEntry::make('department.name')
+                            ->label('Departemen')
+                            ->placeholder('—'),
+
                         TextEntry::make('position')
                             ->label('Jabatan')
-                            ->formatStateUsing(fn(?string $state): string => ucwords(str_replace('_', ' ', $state ?? '-'))),
+                            ->formatStateUsing(fn(?string $state): string => ucwords(str_replace('_', ' ', $state ?? '-')))
+                            ->placeholder('—'),
 
                         TextEntry::make('contract_type')
                             ->label('Jenis Kontrak')
@@ -471,36 +516,29 @@ class EmployeeResource extends Resource
                                 'Kontrak', 'contract' => 'Kontrak',
                                 'Magang', 'intern' => 'Magang',
                                 default => ucwords($state ?? '-'),
-                            }),
-
-                        TextEntry::make('status')
-                            ->label('Status Karyawan')
-                            ->formatStateUsing(fn(?string $state): string => match ($state) {
-                                'Aktif', 'active' => 'Aktif',
-                                'Mengundurkan Diri', 'resigned' => 'Mengundurkan Diri',
-                                'Diberhentikan', 'terminated' => 'Diberhentikan',
-                                default => ucwords($state ?? '-'),
-                            }),
-
-                        TextEntry::make('department.name')
-                            ->label('Departemen'),
+                            })
+                            ->placeholder('—'),
 
                         TextEntry::make('office.name')
-                            ->label('Kantor Cabang'),
+                            ->label('Kantor Cabang')
+                            ->placeholder('—'),
 
                         TextEntry::make('join_date')
                             ->label('Tanggal Masuk')
-                            ->date('d M Y'),
+                            ->date('d M Y')
+                            ->placeholder('—'),
 
                         IconEntry::make('can_wfa')
                             ->label('Boleh Work From Anywhere (WFA)')
                             ->trueIcon('heroicon-o-check-circle')
-                            ->falseIcon('heroicon-o-x-circle'),
+                            ->falseIcon('heroicon-o-x-circle')
+                            ->placeholder('—'),
 
                         IconEntry::make('can_unlock_shift')
                             ->label('Boleh Unlock Shift')
                             ->trueIcon('heroicon-o-check-circle')
-                            ->falseIcon('heroicon-o-x-circle'),
+                            ->falseIcon('heroicon-o-x-circle')
+                            ->placeholder('—'),
                     ])
                     ->collapsible()
                     ->persistCollapsed(),
@@ -509,26 +547,33 @@ class EmployeeResource extends Resource
                     ->columns(2)
                     ->schema([
                         TextEntry::make('national_id')
-                            ->label('NIK'),
+                            ->label('NIK')
+                            ->placeholder('—'),
 
                         TextEntry::make('identity_number')
-                            ->label('No. KTP'),
+                            ->label('No. KTP')
+                            ->placeholder('—'),
 
                         TextEntry::make('birth_place')
-                            ->label('Tempat Lahir'),
+                            ->label('Tempat Lahir')
+                            ->placeholder('—'),
 
                         TextEntry::make('birth_date')
                             ->label('Tanggal Lahir')
-                            ->date('d M Y'),
+                            ->date('d M Y')
+                            ->placeholder('—'),
 
                         TextEntry::make('gender')
-                            ->label('Jenis Kelamin'),
+                            ->label('Jenis Kelamin')
+                            ->placeholder('—'),
 
                         TextEntry::make('marital_status')
-                            ->label('Status Perkawinan'),
+                            ->label('Status Perkawinan')
+                            ->placeholder('—'),
 
                         TextEntry::make('education_level')
-                            ->label('Pendidikan Terakhir'),
+                            ->label('Pendidikan Terakhir')
+                            ->placeholder('—'),
                     ])
                     ->collapsible()
                     ->persistCollapsed(),
@@ -537,7 +582,7 @@ class EmployeeResource extends Resource
                     ->columns(2)
                     ->schema([
                         TextEntry::make('created_at')
-                            ->label('Dibuat Pada')
+                            ->label('Diajukan Pada')
                             ->dateTime('d M Y H:i'),
 
                         TextEntry::make('updated_at')
@@ -547,7 +592,7 @@ class EmployeeResource extends Resource
                         TextEntry::make('deleted_at')
                             ->label('Dihapus Pada')
                             ->dateTime('d M Y H:i')
-                            ->visible(fn(Employee $employee) => $employee->trashed()),
+                            ->visible(fn($record) => $record->trashed()),
                     ])
                     ->collapsible()
                     ->persistCollapsed(),

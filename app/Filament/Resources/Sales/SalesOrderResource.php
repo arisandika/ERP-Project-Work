@@ -416,7 +416,7 @@ class SalesOrderResource extends Resource
                     ->label('Promo')
                     ->badge()
                     ->color('info')
-                    ->placeholder('-'),
+                    ->placeholder('—'),
 
                 Tables\Columns\TextColumn::make('grand_total')
                     ->label('Total')

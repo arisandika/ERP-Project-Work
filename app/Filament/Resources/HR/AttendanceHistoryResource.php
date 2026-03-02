@@ -54,7 +54,7 @@ class AttendanceHistoryResource extends Resource
                             return 'danger';
                         return '';
                     })
-                    ->placeholder('-'),
+                    ->placeholder('—'),
 
                 Tables\Columns\BadgeColumn::make('status')
                     ->label('Status')
@@ -79,24 +79,24 @@ class AttendanceHistoryResource extends Resource
                             str_replace('_', ' ', $state)
                         ),
                     })
-                    ->placeholder('-'),
+                    ->placeholder('—'),
 
                 Tables\Columns\TextColumn::make('date')
                     ->label('Tanggal')
                     ->date('D, d M Y')
                     ->sortable()
-                    ->placeholder('-'),
+                    ->placeholder('—'),
 
                 Tables\Columns\TextColumn::make('clock_in')
                     ->label('Jam Masuk')
                     ->time('H:i')
-                    ->placeholder('-')
+                    ->placeholder('—')
                     ->sortable(),
 
                 Tables\Columns\TextColumn::make('clock_out')
                     ->label('Jam Keluar')
                     ->time('H:i')
-                    ->placeholder('-')
+                    ->placeholder('—')
                     ->sortable(),
 
                 Tables\Columns\TextColumn::make('created_at')
@@ -201,22 +201,22 @@ class AttendanceHistoryResource extends Resource
                             ->color('primary')
                             ->weight('semibold')
                             ->icon('heroicon-o-user')
-                            ->placeholder('-'),
+                            ->placeholder('—'),
 
                         TextEntry::make('date')
                             ->label('Tanggal')
                             ->date('D, d M Y')
-                            ->placeholder('-'),
+                            ->placeholder('—'),
 
                         TextEntry::make('clock_in')
                             ->label('Jam Masuk')
                             ->time('H:i')
-                            ->placeholder('-'),
+                            ->placeholder('—'),
 
                         TextEntry::make('clock_out')
                             ->label('Jam Keluar')
                             ->time('H:i')
-                            ->placeholder('-'),
+                            ->placeholder('—'),
 
                         TextEntry::make('status')
                             ->label('Status')
@@ -230,20 +230,20 @@ class AttendanceHistoryResource extends Resource
                                 'gray' => 'no_checkout',
                             ])
                             ->formatStateUsing(fn(string $state): string => ucwords(str_replace('_', ' ', $state)))
-                            ->placeholder('-'),
+                            ->placeholder('—'),
 
                         TextEntry::make('note')
                             ->label('Catatan')
-                            ->placeholder('-'),
+                            ->placeholder('—'),
 
                         ImageEntry::make('face_snapshot_in')
                             ->label('Foto Presensi Masuk')
-                            ->placeholder('-')
+                            ->placeholder('—')
                             ->extraImgAttributes(['style' => 'width: 100%; height: auto; object-fit: cover;']),
 
                         ImageEntry::make('face_snapshot_out')
                             ->label('Foto Presensi Keluar')
-                            ->placeholder('-')
+                            ->placeholder('—')
                             ->extraImgAttributes(['style' => 'width: 100%; height: auto; object-fit: cover;']),
                     ]),
 
