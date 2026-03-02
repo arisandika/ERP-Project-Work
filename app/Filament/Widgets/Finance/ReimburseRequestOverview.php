@@ -23,13 +23,40 @@ class ReimburseRequestOverview extends BaseWidget
         // Query tunggal, semua agregasi
         $stats = ReimbursementRequest::where('employee_id', $employee->id)
             ->selectRaw("
-            COUNT(CASE WHEN status = 'pending' THEN 1 END) as pending_count,
-            COUNT(CASE WHEN status = 'approved' AND MONTH(created_at) = ? THEN 1 END) as approved_month_count,
-            COUNT(CASE WHEN status = 'rejected' AND MONTH(created_at) = ? THEN 1 END) as rejected_month_count,
-            SUM(CASE WHEN date BETWEEN ? AND ? THEN amount ELSE 0 END) as monthly_total,
-            SUM(CASE WHEN status = 'approved' THEN amount ELSE 0 END) as approved_total,
-            SUM(CASE WHEN status = 'pending' THEN amount ELSE 0 END) as pending_total
-        ", [$currentMonth, $currentMonth, $monthStart, $monthEnd])
+                COUNT(CASE WHEN status = 'pending' THEN 1 END) as pending_count,
+
+                COUNT(CASE 
+                    WHEN status = 'approved' 
+                    AND MONTH(created_at) = ? 
+                    THEN 1 
+                END) as approved_month_count,
+
+                COUNT(CASE 
+                    WHEN status = 'rejected' 
+                    AND MONTH(created_at) = ? 
+                    THEN 1 
+                END) as rejected_month_count,
+
+                SUM(CASE 
+                    WHEN date BETWEEN ? AND ?
+                    AND status = 'approved'
+                    THEN amount 
+                    ELSE 0 
+                END) as monthly_total,
+
+                SUM(CASE 
+                    WHEN status = 'approved' 
+                    THEN amount 
+                    ELSE 0 
+                END) as approved_total,
+
+                SUM(CASE 
+                    WHEN status = 'pending' 
+                    THEN amount 
+                    ELSE 0 
+                END) as pending_total
+
+            ", [$currentMonth, $currentMonth, $monthStart, $monthEnd])
             ->first();
 
         return [
