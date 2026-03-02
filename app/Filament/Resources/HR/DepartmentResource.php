@@ -70,6 +70,7 @@ class DepartmentResource extends Resource
 
                 Tables\Columns\BadgeColumn::make('employees_count')
                     ->label('Jumlah Karyawan')
+                    ->counts('employees')
                     ->badge()
                     ->color(fn(int $state): string => $state > 0 ? 'info' : 'gray')
                     ->sortable()
@@ -164,28 +165,34 @@ class DepartmentResource extends Resource
                     ->columns(2)
                     ->schema([
                         TextEntry::make('name')
-                            ->label('Nama Departemen'),
+                            ->label('Nama Departemen')
+                            ->weight('semibold')
+                            ->icon('heroicon-o-briefcase')
+                            ->placeholder('—'),
+
                         TextEntry::make('employees_count')
                             ->label('Jumlah Karyawan')
-                            ->badge()
-                            ->color('primary')
                             ->state(function (Department $department) {
-                                return $department->employees()->count();
-                            }),
+                                return $department->employees()->count() . ' Karyawan';
+                            })
+                            ->placeholder('—'),
                     ]),
+
                 Section::make('Pengelolaan Data')
                     ->columns(2)
                     ->schema([
                         TextEntry::make('created_at')
-                            ->label('Dibuat Pada')
+                            ->label('Diajukan Pada')
                             ->dateTime('d M Y H:i'),
+
                         TextEntry::make('updated_at')
                             ->label('Diperbarui Pada')
                             ->dateTime('d M Y H:i'),
+
                         TextEntry::make('deleted_at')
                             ->label('Dihapus Pada')
                             ->dateTime('d M Y H:i')
-                            ->visible(fn(Department $department) => $department->trashed()),
+                            ->visible(fn($record) => $record->trashed()),
                     ]),
             ]);
     }

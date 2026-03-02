@@ -130,7 +130,7 @@
                                         class="inline-flex items-center mx-auto fi-fo-field-wrp-label gap-x-3">
                                         <span class="text-sm font-medium leading-6 text-gray-950 dark:text-white">
                                             Masukkan <span class="font-bold text-blue-600 dark:text-blue-400">4 digit
-                                                terakhir</span> No. HP
+                                                terakhir</span> No. Whatsapp
                                             Anda
                                         </span>
                                     </label>

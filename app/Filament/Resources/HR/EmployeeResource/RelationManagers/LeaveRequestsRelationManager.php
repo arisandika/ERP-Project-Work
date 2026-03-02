@@ -1,6 +1,7 @@
 <?php
 namespace App\Filament\Resources\HR\EmployeeResource\RelationManagers;
 
+use App\Models\HR\LeaveRequest;
 use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Resources\RelationManagers\RelationManager;
@@ -13,7 +14,7 @@ class LeaveRequestsRelationManager extends RelationManager
 {
     protected static string $relationship = 'leaveRequests';
     protected static ?string $recordTitleAttribute = 'start_date';
-    protected static ?string $title = 'Riwayat Permohonan Cuti Karyawan';
+    protected static ?string $title = 'Riwayat Cuti Karyawan';
 
     public function form(Form $form): Form
     {
@@ -28,6 +29,11 @@ class LeaveRequestsRelationManager extends RelationManager
         return $table
             ->recordTitleAttribute('full_name')
             ->columns([
+                Tables\Columns\TextColumn::make('employee.full_name')
+                    ->label('Karyawan')
+                    ->sortable()
+                    ->searchable(),
+
                 Tables\Columns\TextColumn::make('leave.leave_type')
                     ->label('Jenis Cuti')
                     ->sortable()
@@ -64,7 +70,7 @@ class LeaveRequestsRelationManager extends RelationManager
 
                 Tables\Columns\TextColumn::make('approver.full_name')
                     ->label('Disetujui Oleh')
-                    ->placeholder('-'),
+                    ->placeholder('—'),
 
                 Tables\Columns\TextColumn::make('created_at')
                     ->label('Diajukan')
@@ -72,6 +78,14 @@ class LeaveRequestsRelationManager extends RelationManager
                     ->sortable(),
             ])
             ->filters([
+                Tables\Filters\SelectFilter::make('status')
+                    ->options([
+                        'pending' => 'Menunggu Persetujuan',
+                        'approved' => 'Disetujui',
+                        'rejected' => 'Ditolak',
+                    ])
+                    ->label('Status'),
+
                 Tables\Filters\Filter::make('created_at')
                     ->form([
                         Forms\Components\DatePicker::make('created_from')
@@ -112,16 +126,20 @@ class LeaveRequestsRelationManager extends RelationManager
 
                         return $indicators;
                     }),
-            ])
-            ->headerActions([
-                //
+
+                Tables\Filters\TrashedFilter::make()
+                    ->label('Deleted Status')
+                    ->native(false),
             ])
             ->actions([
-                //
+                Tables\Actions\ViewAction::make(),
+                Tables\Actions\EditAction::make()
+                    ->label('Review')
+                    ->visible(fn(LeaveRequest $record) => $record->status === 'pending'),
             ])
-            ->bulkActions([
+            ->defaultSort('created_at', 'desc')
+            ->headerActions([
                 //
-            ])
-            ->defaultSort('created_at', 'desc');
+            ]);
     }
 }

@@ -69,6 +69,7 @@ class ReimbursementRequestResource extends Resource
                             'Lainnya' => 'Lainnya (Tulis di keterangan)',
                         ])
                         ->searchable()
+                        ->native(false)
                         ->prefixIcon('heroicon-o-tag'),
 
                     Forms\Components\TextInput::make('amount')
@@ -124,13 +125,13 @@ class ReimbursementRequestResource extends Resource
                             return 'danger';
                         return '';
                     })
-                    ->placeholder('-'),
+                    ->placeholder('—'),
 
                 Tables\Columns\TextColumn::make('type')
                     ->label('Jenis Reimburse')
                     ->sortable()
                     ->searchable()
-                    ->placeholder('-'),
+                    ->placeholder('—'),
 
                 Tables\Columns\BadgeColumn::make('status')
                     ->label('Status')
@@ -150,13 +151,13 @@ class ReimbursementRequestResource extends Resource
                             str_replace('_', ' ', $state)
                         ),
                     })
-                    ->placeholder('-'),
+                    ->placeholder('—'),
 
                 Tables\Columns\TextColumn::make('date')
                     ->label('Tanggal')
                     ->date('D, d M Y')
                     ->sortable()
-                    ->placeholder('-'),
+                    ->placeholder('—'),
 
                 Tables\Columns\TextColumn::make('amount')
                     ->label('Nominal')
@@ -164,7 +165,7 @@ class ReimbursementRequestResource extends Resource
                     ->color(fn($state) => $state < 0 ? 'success' : 'danger')
                     ->sortable()
                     ->weight('semibold')
-                    ->placeholder('-'),
+                    ->placeholder('—'),
 
                 Tables\Columns\TextColumn::make('approver.full_name')
                     ->label('Disetujui Oleh')
@@ -178,13 +179,13 @@ class ReimbursementRequestResource extends Resource
                             return 'danger';
                         return '';
                     })
-                    ->placeholder('-'),
+                    ->placeholder('—'),
 
                 Tables\Columns\TextColumn::make('created_at')
                     ->label('Diajukan Pada')
                     ->dateTime('d M Y H:i')
                     ->sortable()
-                    ->placeholder('-'),
+                    ->placeholder('—'),
 
                 Tables\Columns\TextColumn::make('created_at')
                     ->label('Dibuat Pada')
@@ -211,7 +212,8 @@ class ReimbursementRequestResource extends Resource
                         'approved' => 'Approved',
                         'rejected' => 'Rejected',
                         'cancelled' => 'Cancelled',
-                    ]),
+                    ])
+                    ->native(false),
 
                 Tables\Filters\Filter::make('created_at')
                     ->form([
@@ -342,31 +344,31 @@ class ReimbursementRequestResource extends Resource
                             ->color('primary')
                             ->weight('semibold')
                             ->icon('heroicon-o-user')
-                            ->placeholder('-'),
+                            ->placeholder('—'),
 
                         TextEntry::make('type')
                             ->label('Jenis Reimburse')
-                            ->placeholder('-'),
+                            ->placeholder('—'),
 
                         TextEntry::make('date')
                             ->label('Tanggal Transaksi')
                             ->date('D, d M Y')
-                            ->placeholder('-'),
+                            ->placeholder('—'),
 
                         TextEntry::make('amount')
                             ->label('Nominal')
                             ->money('IDR')
                             ->color('danger')
                             ->weight('semibold')
-                            ->placeholder('-'),
+                            ->placeholder('—'),
 
                         TextEntry::make('description')
                             ->label('Keterangan')
-                            ->placeholder('-'),
+                            ->placeholder('—'),
 
                         ImageEntry::make('receipt')
                             ->label('Bukti Transaksi')
-                            ->placeholder('-')
+                            ->placeholder('—')
                             ->extraImgAttributes(['style' => 'width: 100%; height: auto; object-fit: cover;']),
                     ]),
 
@@ -394,20 +396,20 @@ class ReimbursementRequestResource extends Resource
                                 };
 
                             })
-                            ->placeholder('-'),
+                            ->placeholder('—'),
 
                         TextEntry::make('approver.full_name')
                             ->label('Disetujui Oleh')
                             ->color('primary')
                             ->weight('semibold')
                             ->icon('heroicon-o-user')
-                            ->placeholder('-'),
+                            ->placeholder('—'),
 
                         TextEntry::make('approved_at')
                             ->label('Waktu Persetujuan')
                             ->dateTime('d M Y H:i')
                             ->visible(fn($record) => $record->approved_at !== null)
-                            ->placeholder('-'),
+                            ->placeholder('—'),
                     ]),
 
                 Section::make('Pengelolaan Data')

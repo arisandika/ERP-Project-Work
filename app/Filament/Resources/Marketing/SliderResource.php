@@ -137,7 +137,7 @@ class SliderResource extends Resource
                 Tables\Columns\TextColumn::make('cta_text')
                     ->label('Tombol')
                     ->icon('heroicon-o-cursor-arrow-rays')
-                    ->placeholder('-'),
+                    ->placeholder('—'),
 
                 Tables\Columns\TextColumn::make('sort_order')
                     ->label('Urutan Tampil')

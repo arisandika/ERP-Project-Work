@@ -15,6 +15,7 @@ use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Support\Carbon;
 
 class ReimbursementApprovalResource extends Resource
 {
@@ -51,6 +52,7 @@ class ReimbursementApprovalResource extends Resource
                         ->disabled()
                         ->searchable()
                         ->preload()
+                        ->native(false)
                         ->prefixIcon('heroicon-o-user')
                         ->disabled(),
 
@@ -76,6 +78,7 @@ class ReimbursementApprovalResource extends Resource
                             'Lainnya' => 'Lainnya (Tulis di keterangan)',
                         ])
                         ->searchable()
+                        ->native(false)
                         ->prefixIcon('heroicon-o-tag')
                         ->disabled(),
 
@@ -98,10 +101,10 @@ class ReimbursementApprovalResource extends Resource
                         ->disabled(),
 
                     Forms\Components\FileUpload::make('receipt')
-                        ->label('Upload Bukti')
+                        ->label('Bukti')
                         ->image()
                         ->required()
-                        ->directory('financials')
+                        ->directory('reimbursements')
                         ->imageEditor()
                         ->previewable()
                         ->maxSize(2048) // 2MB
@@ -137,10 +140,10 @@ class ReimbursementApprovalResource extends Resource
                                 );
                             }
 
-                        }),
+                        })
+                        ->native(false),
                 ])
                 ->columns(2)
-
         ]);
     }
 
@@ -149,58 +152,106 @@ class ReimbursementApprovalResource extends Resource
         return $table
             ->columns([
                 Tables\Columns\TextColumn::make('employee.full_name')
-                    ->label('Karyawan')
+                    ->label('Nama Karyawan')
+                    ->searchable()
                     ->sortable()
-                    ->searchable(),
+                    ->weight('semibold')
+                    ->icon('heroicon-o-user')
+                    ->color(function (ReimbursementRequest $record) {
+                        $record->withTrashed()->first();
+                        if ($record && $record->trashed())
+                            return 'danger';
+                        return '';
+                    })
+                    ->placeholder('—'),
+
+                Tables\Columns\TextColumn::make('type')
+                    ->label('Jenis Reimburse')
+                    ->sortable()
+                    ->searchable()
+                    ->placeholder('—'),
+
+                Tables\Columns\BadgeColumn::make('status')
+                    ->label('Status')
+                    ->sortable()
+                    ->color(fn(string $state): string => match ($state) {
+                        'pending' => 'warning',
+                        'approved' => 'success',
+                        default => 'danger',
+                    })
+                    ->formatStateUsing(fn(string $state) => match ($state) {
+                        'pending' => 'Menunggu',
+                        'approved' => 'Disetujui',
+                        'rejected' => 'Ditolak',
+                        'cancelled' => 'Dibatalkan',
+
+                        default => ucwords(
+                            str_replace('_', ' ', $state)
+                        ),
+                    })
+                    ->placeholder('—'),
 
                 Tables\Columns\TextColumn::make('date')
                     ->label('Tanggal')
-                    ->date('d M Y')
-                    ->sortable(),
-
-                Tables\Columns\TextColumn::make('type')
-                    ->label('Jenis')
-                    ->badge()
-                    ->sortable(),
+                    ->date('D, d M Y')
+                    ->sortable()
+                    ->placeholder('—'),
 
                 Tables\Columns\TextColumn::make('amount')
                     ->label('Nominal')
                     ->money('IDR')
                     ->color(fn($state) => $state < 0 ? 'success' : 'danger')
                     ->sortable()
-                    ->weight('semibold'),
-
-                Tables\Columns\BadgeColumn::make('status')
-                    ->label('Status')
-                    ->colors([
-                        'warning' => 'pending',
-                        'success' => 'approved',
-                        'danger' => 'rejected',
-                    ])
-                    ->formatStateUsing(fn(string $state) => match ($state) {
-                        'pending' => 'Menunggu',
-                        'approved' => 'Disetujui',
-                        'rejected' => 'Ditolak',
-                        default => ucwords($state),
-                    }),
+                    ->weight('semibold')
+                    ->placeholder('—'),
 
                 Tables\Columns\TextColumn::make('approver.full_name')
                     ->label('Disetujui Oleh')
-                    ->placeholder('-'),
+                    ->searchable()
+                    ->sortable()
+                    ->weight('semibold')
+                    ->icon('heroicon-o-user')
+                    ->color(function (ReimbursementRequest $record) {
+                        $record->withTrashed()->first();
+                        if ($record && $record->trashed())
+                            return 'danger';
+                        return '';
+                    })
+                    ->placeholder('—'),
 
                 Tables\Columns\TextColumn::make('created_at')
-                    ->label('Diajukan')
+                    ->label('Diajukan Pada')
                     ->dateTime('d M Y H:i')
-                    ->sortable(),
+                    ->sortable()
+                    ->placeholder('—'),
+
+                Tables\Columns\TextColumn::make('created_at')
+                    ->label('Dibuat Pada')
+                    ->dateTime('d M Y H:i')
+                    ->sortable()
+                    ->toggleable(isToggledHiddenByDefault: true),
+
+                Tables\Columns\TextColumn::make('updated_at')
+                    ->label('Diperbarui Pada')
+                    ->dateTime('d M Y H:i')
+                    ->sortable()
+                    ->toggleable(isToggledHiddenByDefault: true),
+
+                Tables\Columns\TextColumn::make('deleted_at')
+                    ->label('Dihapus Pada')
+                    ->dateTime('d M Y H:i')
+                    ->sortable()
+                    ->toggleable(isToggledHiddenByDefault: true),
             ])
             ->filters([
                 Tables\Filters\SelectFilter::make('status')
                     ->options([
-                        'pending' => 'Menunggu Persetujuan',
-                        'approved' => 'Disetujui',
-                        'rejected' => 'Ditolak',
+                        'pending' => 'Pending',
+                        'approved' => 'Approved',
+                        'rejected' => 'Rejected',
+                        'cancelled' => 'Cancelled',
                     ])
-                    ->label('Status'),
+                    ->native(false),
 
                 Tables\Filters\Filter::make('created_at')
                     ->form([
@@ -242,50 +293,67 @@ class ReimbursementApprovalResource extends Resource
 
                         return $indicators;
                     }),
+
+                Tables\Filters\TrashedFilter::make()
+                    ->label('Deleted Status')
+                    ->native(false),
             ])
             ->actions([
-                Tables\Actions\ViewAction::make(),
                 Tables\Actions\EditAction::make()
                     ->label('Review')
                     ->visible(fn(ReimbursementRequest $record) => $record->status === 'pending'),
+
+                Tables\Actions\ViewAction::make(),
+            ])
+            ->bulkActions([
+                Tables\Actions\BulkActionGroup::make([
+                    // Tables\Actions\DeleteBulkAction::make(),
+                    // Tables\Actions\ForceDeleteBulkAction::make(),
+                    // Tables\Actions\RestoreBulkAction::make(),
+                ]),
             ])
             ->defaultSort('created_at', 'desc');
     }
 
     public static function infolist(Infolist $infolist): Infolist
     {
-
         return $infolist
-
             ->schema([
                 Section::make('Informasi Pengajuan Reimburse')
+                    ->description('Kamu bisa edit pengajuan reimburse ini jika masih berstatus pending atau menunggu persetujuan.')
                     ->columns(2)
                     ->schema([
                         TextEntry::make('employee.full_name')
-                            ->label('Nama Karyawan'),
-
-                        TextEntry::make('date')
-                            ->label('Tanggal Transaksi')
-                            ->date('d M Y'),
+                            ->label('Nama Karyawan')
+                            ->color('primary')
+                            ->weight('semibold')
+                            ->icon('heroicon-o-user')
+                            ->placeholder('—'),
 
                         TextEntry::make('type')
                             ->label('Jenis Reimburse')
-                            ->badge(),
+                            ->placeholder('—'),
+
+                        TextEntry::make('date')
+                            ->label('Tanggal Transaksi')
+                            ->date('D, d M Y')
+                            ->placeholder('—'),
 
                         TextEntry::make('amount')
                             ->label('Nominal')
-                            ->money('IDR'),
+                            ->money('IDR')
+                            ->color('danger')
+                            ->weight('semibold')
+                            ->placeholder('—'),
 
                         TextEntry::make('description')
                             ->label('Keterangan')
-                            ->columnSpanFull()
-                            ->placeholder('-'),
+                            ->placeholder('—'),
 
                         ImageEntry::make('receipt')
                             ->label('Bukti Transaksi')
-                            ->columnSpanFull()
-                            ->width('500px')
-                            ->height('auto'),
+                            ->placeholder('—')
+                            ->extraImgAttributes(['style' => 'width: 100%; height: auto; object-fit: cover;']),
                     ]),
 
                 Section::make('Status Persetujuan')
@@ -297,19 +365,35 @@ class ReimbursementApprovalResource extends Resource
                             ->color(fn(string $state) => match ($state) {
                                 'pending' => 'warning',
                                 'approved' => 'success',
-                                'rejected' => 'danger',
-                                default => 'secondary',
+                                default => 'danger',
                             })
-                            ->formatStateUsing(fn(string $state): string => ucwords(str_replace('_', ' ', $state))),
+                            ->formatStateUsing(function (string $state): string {
+                                return match ($state) {
+                                    'pending' => 'Menunggu',
+                                    'approved' => 'Disetujui',
+                                    'rejected' => 'Ditolak',
+                                    'cancelled' => 'Dibatalkan',
+
+                                    default => ucwords(
+                                        str_replace('_', ' ', $state)
+                                    ),
+                                };
+
+                            })
+                            ->placeholder('—'),
 
                         TextEntry::make('approver.full_name')
                             ->label('Disetujui Oleh')
-                            ->placeholder('-'),
+                            ->color('primary')
+                            ->weight('semibold')
+                            ->icon('heroicon-o-user')
+                            ->placeholder('—'),
 
                         TextEntry::make('approved_at')
                             ->label('Waktu Persetujuan')
                             ->dateTime('d M Y H:i')
-                            ->visible(fn($record) => $record->approved_at !== null),
+                            ->visible(fn($record) => $record->approved_at !== null)
+                            ->placeholder('—'),
                     ]),
 
                 Section::make('Pengelolaan Data')
@@ -322,9 +406,13 @@ class ReimbursementApprovalResource extends Resource
                         TextEntry::make('updated_at')
                             ->label('Diperbarui Pada')
                             ->dateTime('d M Y H:i'),
+
+                        TextEntry::make('deleted_at')
+                            ->label('Dihapus Pada')
+                            ->dateTime('d M Y H:i')
+                            ->visible(fn($record) => $record->trashed()),
                     ]),
             ]);
-
     }
 
     public static function getRelations(): array
