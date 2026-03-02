@@ -1,9 +1,9 @@
 <?php
 
-namespace App\Filament\Resources\HR;
+namespace App\Filament\Resources\Finance;
 
-use App\Filament\Resources\HR\ReimbursementApprovalResource\Pages;
-use App\Filament\Resources\HR\ReimbursementApprovalResource\RelationManagers;
+use App\Filament\Resources\Finance\ReimbursementApprovalResource\Pages;
+use App\Filament\Resources\Finance\ReimbursementApprovalResource\RelationManagers;
 use App\Models\Finance\ReimbursementRequest;
 use Filament\Forms;
 use Filament\Forms\Form;
@@ -22,13 +22,23 @@ class ReimbursementApprovalResource extends Resource
 
     protected static ?string $navigationIcon = 'heroicon-o-banknotes';
 
-    protected static ?string $navigationGroup = 'Manajemen HR';
+    protected static ?string $navigationGroup = 'Manajemen Finance';
 
-    protected static ?int $navigationSort = 8;
+    protected static ?int $navigationSort = 3;
 
-    protected static ?string $slug = 'hr/reimburse-approvals';
+    protected static ?string $slug = 'finance/reimburse-approvals';
 
     protected static ?string $pluralModelLabel = 'Persetujuan Reimburse';
+
+    public static function getNavigationBadge(): ?string
+    {
+        return static::getModel()::where('status', 'pending')->count();
+    }
+
+    public static function getNavigationBadgeColor(): ?string
+    {
+        return 'warning';
+    }
 
     public static function form(Form $form): Form
     {

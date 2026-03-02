@@ -119,7 +119,7 @@ class AttendanceController extends Controller
         try {
             $photoInPath = $this->saveBase64Image(
                 $request->face_snapshot,
-                'attendance/in'
+                'attendances/in'
             );
         } catch (\Exception $e) {
             Notification::make()
@@ -251,7 +251,7 @@ class AttendanceController extends Controller
         try {
             $photoOutPath = $this->saveBase64Image(
                 $request->face_snapshot,
-                'attendance/out'
+                'attendances/out'
             );
         } catch (\Exception $e) {
             Notification::make()

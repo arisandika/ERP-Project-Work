@@ -29,6 +29,16 @@ class LeaveApprovalResource extends Resource
 
     protected static ?string $pluralModelLabel = 'Persetujuan Cuti';
 
+    public static function getNavigationBadge(): ?string
+    {
+        return static::getModel()::where('status', 'pending')->count();
+    }
+
+    public static function getNavigationBadgeColor(): ?string
+    {
+        return 'warning';
+    }
+
     public static function form(Form $form): Form
     {
         return $form->schema([

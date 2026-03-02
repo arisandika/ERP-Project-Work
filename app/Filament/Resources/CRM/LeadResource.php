@@ -36,6 +36,7 @@ class LeadResource extends Resource
     {
         return static::getModel()::count();
     }
+
     public static function form(Form $form): Form
     {
         return $form
@@ -87,7 +88,7 @@ class LeadResource extends Resource
                     ->icon('heroicon-o-user-circle')
                     ->collapsible()
                     // Logic: Section ini hanya muncul jika Tipe Customer adalah 'company'
-                    ->visible(fn (Forms\Get $get) => $get('customer_type') === 'company')
+                    ->visible(fn(Forms\Get $get) => $get('customer_type') === 'company')
                     ->schema([
                         Forms\Components\Grid::make(2)
                             ->schema([
