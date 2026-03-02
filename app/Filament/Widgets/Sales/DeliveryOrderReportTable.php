@@ -41,7 +41,7 @@ class DeliveryOrderReportTable extends BaseWidget
                 ->label('Penerima'),
 
             Tables\Columns\TextColumn::make('status')
-                ->labe('Status')
+                ->label('Status')
                 ->badge()
                 ->color(fn (string $state): string => match ($state) {
                     'draft'     => 'gray',
