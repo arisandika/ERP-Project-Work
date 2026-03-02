@@ -21,6 +21,9 @@ class LeaveRequestOverview extends StatsOverviewWidget
         $leavesQuery = Leave::query()
             ->when($employee->gender !== 'Perempuan', function ($q) {
                 $q->where('is_female_only', false);
+            })
+            ->when($employee->gender !== 'Laki-laki', function ($q) {
+                $q->where('is_male_only', false);
             });
 
         // Ambil sekaligus quota total dan jumlah jenis cuti

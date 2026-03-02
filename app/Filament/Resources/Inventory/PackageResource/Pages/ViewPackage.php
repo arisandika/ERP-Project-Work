@@ -15,7 +15,7 @@ class ViewPackage extends ViewRecord
     {
         return [
             Actions\EditAction::make(),
-            Action::make('back')
+            Action::make('Kembali')
                 ->url(static::getResource()::getUrl()) 
                 ->button()
                 ->color('gray'),

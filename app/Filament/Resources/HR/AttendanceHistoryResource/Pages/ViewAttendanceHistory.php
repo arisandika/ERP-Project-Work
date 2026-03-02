@@ -23,7 +23,7 @@ class ViewAttendanceHistory extends ViewRecord
     protected function getHeaderActions(): array
     {
         return [
-            Action::make('back')->url(static::getResource()::getUrl())->button()->color('gray'),
+            Action::make('Kembali')->url(static::getResource()::getUrl())->button()->color('gray'),
         ];
     }
 

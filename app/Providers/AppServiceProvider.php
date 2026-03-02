@@ -3,11 +3,15 @@
 namespace App\Providers;
 
 use App\Models\HR\LeaveRequest;
-use App\Models\HR\ReimbursementRequest;
+use App\Models\Finance\ReimbursementRequest;
 use App\Models\Sales\Invoice;
 use App\Observers\InvoiceObserver;
 use App\Observers\LeaveRequestObserver;
 use App\Observers\ReimbursementRequestObserver;
+use Filament\Support\Colors\Color;
+use Filament\Support\Facades\FilamentColor;
+use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\App;
 use Illuminate\Support\ServiceProvider;
 use App\Models\Inventory\ProductStock;
 use App\Observers\ProductStockObserver;
@@ -33,8 +37,16 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        App::setLocale('id');
+        Carbon::setLocale('id');
+
         Relation::morphMap([
             'product' => Product::class,
+        ]);
+
+        FilamentColor::register([
+            'primary' => Color::hex('#1c9cf0'),
+            'info' => Color::hex('#1c9cf0'),
         ]);
 
         // Register ProductStock Observer untuk auto-check low stock

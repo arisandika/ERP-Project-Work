@@ -54,35 +54,26 @@ class EditReimbursementApproval extends EditRecord
         return $data;
     }
 
-    // Setelah save → masuk Finance
     protected function afterSave(): void
     {
         $record = $this->record;
 
-        // Jika approved
         if ($record->status === 'approved') {
 
             // Hindari double insert
             FinancialRecord::firstOrCreate(
-
                 [
-                    'reimburse_id' => $record->id
+                    'reimburse_id' => $record->id,
+                    'created_by' => $record->employee_id
                 ],
-
                 [
                     'transaction_date' => $record->date,
-
                     'type' => 'pengeluaran',
-
                     'description' =>
-                        'Reimburse - ' .
-                        $record->employee->full_name .
-                        ' - ' .
-                        $record->type,
-
+                    'Reimburse - ' . $record->type,
                     'amount' => $record->amount,
-
-                    'category' => 'Operasional',
+                    'category' => $record->type,
+                    'receipt' => $record->receipt,
                 ]
             );
         }

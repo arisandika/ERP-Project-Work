@@ -33,7 +33,7 @@
                         <x-heroicon-o-building-office class="w-5 h-5 text-gray-400 dark:text-gray-500" />
                     </div>
                     <select id="filter-office"
-                        class="w-full border-none bg-transparent px-3 py-1.5 text-sm text-gray-950 outline-none dark:text-white">
+                        class="w-full border-none bg-transparent px-3 py-1.5 text-sm text-gray-950 outline-none dark:text-white [&_optgroup]:bg-main-light [&_optgroup]:dark:bg-main-dark [&_option]:bg-main-light [&_option]:dark:bg-main-dark">
                         <option value="">Semua Kantor</option>
                         @foreach(\App\Models\HR\Office::all() as $office)
                             <option value="{{ $office->id }}">{{ $office->name }}</option>

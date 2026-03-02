@@ -43,7 +43,7 @@ class AttendanceController extends Controller
         if ($isOnLeave) {
             Notification::make()
                 ->title('Tidak Bisa Presensi')
-                ->body('Kamu sedang dalam masa cuti. Presensi tidak diperbolehkan.')
+                ->body('Kamu sedang dalam masa cuti. Tidak diperbolehkan presensi.')
                 ->danger()
                 ->persistent()
                 ->send();
@@ -65,7 +65,7 @@ class AttendanceController extends Controller
             return redirect()->back();
         }
 
-        // Ambil data shift dan toleransi
+        // Ambil data shift dan toleransi waktu
         $shift      = $employee->shift;
         $shiftStart = Carbon::parse($shift->start_time);
         $shiftEnd   = Carbon::parse($shift->end_time);
@@ -113,8 +113,8 @@ class AttendanceController extends Controller
 
         // Tentukan status (late / present)
         $status = $now->greaterThan($shiftStart->copy()->addMinutes((int) $tolerance))
-            ? 'Terlambat'
-            : 'Hadir';
+            ? 'terlambat'
+            : 'hadir';
 
         try {
             $photoInPath = $this->saveBase64Image(
@@ -183,7 +183,7 @@ class AttendanceController extends Controller
 
         if (! $attendance || ! $attendance->clock_in) {
             Notification::make()
-                ->title('Belum Check-In')
+                ->title('Belum Presensi Masuk')
                 ->body('Kamu belum melakukan presensi masuk hari ini.')
                 ->warning()
                 ->persistent()
@@ -193,7 +193,7 @@ class AttendanceController extends Controller
 
         if ($attendance->clock_out) {
             Notification::make()
-                ->title('Sudah Check-Out')
+                ->title('Sudah Presensi Keluar')
                 ->body('Kamu sudah menyelesaikan presensi keluar hari ini.')
                 ->info()
                 ->send();
@@ -213,7 +213,7 @@ class AttendanceController extends Controller
 
         if ($isOutside && $employee->can_wfa != 1 && $employee->can_unlock_shift != 1) {
             Notification::make()
-                ->title('Tidak Bisa Check-Out')
+                ->title('Tidak Bisa Presensi Keluar')
                 ->body('Kamu berada di luar area kantor dan tidak memiliki izin WFA.')
                 ->danger()
                 ->persistent()

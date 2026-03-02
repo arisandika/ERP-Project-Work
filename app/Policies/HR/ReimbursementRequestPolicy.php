@@ -3,7 +3,7 @@
 namespace App\Policies\HR;
 
 use App\Models\User;
-use App\Models\HR\ReimbursementRequest;
+use App\Models\Finance\ReimbursementRequest;
 use Illuminate\Auth\Access\HandlesAuthorization;
 
 class ReimbursementRequestPolicy
@@ -15,7 +15,7 @@ class ReimbursementRequestPolicy
      */
     public function viewAny(User $user): bool
     {
-        return $user->can('view_any_h::r::reimbursement::request');
+        return $user->can('view_any_h::r::reimbursement::approval');
     }
 
     /**
@@ -23,7 +23,7 @@ class ReimbursementRequestPolicy
      */
     public function view(User $user, ReimbursementRequest $reimbursementRequest): bool
     {
-        return $user->can('view_h::r::reimbursement::request');
+        return $user->can('view_h::r::reimbursement::approval');
     }
 
     /**
@@ -31,7 +31,7 @@ class ReimbursementRequestPolicy
      */
     public function create(User $user): bool
     {
-        return $user->can('create_h::r::reimbursement::request');
+        return $user->can('create_h::r::reimbursement::approval');
     }
 
     /**
@@ -39,7 +39,7 @@ class ReimbursementRequestPolicy
      */
     public function update(User $user, ReimbursementRequest $reimbursementRequest): bool
     {
-        return $user->can('update_h::r::reimbursement::request');
+        return $user->can('update_h::r::reimbursement::approval');
     }
 
     /**
@@ -47,7 +47,7 @@ class ReimbursementRequestPolicy
      */
     public function delete(User $user, ReimbursementRequest $reimbursementRequest): bool
     {
-        return $user->can('delete_h::r::reimbursement::request');
+        return $user->can('delete_h::r::reimbursement::approval');
     }
 
     /**
@@ -55,7 +55,7 @@ class ReimbursementRequestPolicy
      */
     public function deleteAny(User $user): bool
     {
-        return $user->can('delete_any_h::r::reimbursement::request');
+        return $user->can('delete_any_h::r::reimbursement::approval');
     }
 
     /**
@@ -63,7 +63,7 @@ class ReimbursementRequestPolicy
      */
     public function forceDelete(User $user, ReimbursementRequest $reimbursementRequest): bool
     {
-        return $user->can('force_delete_h::r::reimbursement::request');
+        return $user->can('force_delete_h::r::reimbursement::approval');
     }
 
     /**
@@ -71,7 +71,7 @@ class ReimbursementRequestPolicy
      */
     public function forceDeleteAny(User $user): bool
     {
-        return $user->can('force_delete_any_h::r::reimbursement::request');
+        return $user->can('force_delete_any_h::r::reimbursement::approval');
     }
 
     /**
@@ -79,7 +79,7 @@ class ReimbursementRequestPolicy
      */
     public function restore(User $user, ReimbursementRequest $reimbursementRequest): bool
     {
-        return $user->can('restore_h::r::reimbursement::request');
+        return $user->can('restore_h::r::reimbursement::approval');
     }
 
     /**
@@ -87,7 +87,7 @@ class ReimbursementRequestPolicy
      */
     public function restoreAny(User $user): bool
     {
-        return $user->can('restore_any_h::r::reimbursement::request');
+        return $user->can('restore_any_h::r::reimbursement::approval');
     }
 
     /**
@@ -95,7 +95,7 @@ class ReimbursementRequestPolicy
      */
     public function replicate(User $user, ReimbursementRequest $reimbursementRequest): bool
     {
-        return $user->can('replicate_h::r::reimbursement::request');
+        return $user->can('replicate_h::r::reimbursement::approval');
     }
 
     /**
@@ -103,6 +103,6 @@ class ReimbursementRequestPolicy
      */
     public function reorder(User $user): bool
     {
-        return $user->can('reorder_h::r::reimbursement::request');
+        return $user->can('reorder_h::r::reimbursement::approval');
     }
 }

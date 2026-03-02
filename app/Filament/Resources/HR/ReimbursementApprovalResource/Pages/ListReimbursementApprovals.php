@@ -4,7 +4,7 @@ namespace App\Filament\Resources\HR\ReimbursementApprovalResource\Pages;
 
 use App\Filament\Resources\HR\ReimbursementApprovalResource;
 use App\Filament\Widgets\HR\ReimburseApprovalOverview;
-use App\Models\HR\ReimbursementRequest;
+use App\Models\Finance\ReimbursementRequest;
 use Filament\Actions;
 use Filament\Resources\Components\Tab;
 use Filament\Resources\Pages\ListRecords;

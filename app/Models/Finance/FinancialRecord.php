@@ -3,7 +3,8 @@
 namespace App\Models\Finance;
 
 
-use App\Models\HR\ReimbursementRequest;
+use App\Models\Finance\ReimbursementRequest;
+use App\Models\HR\Employee;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
@@ -14,6 +15,7 @@ class FinancialRecord extends Model
     protected $table = 'nx_financial_records';
 
     protected $fillable = [
+        'created_by',
         'transaction_date',
         'description',
         'type',
@@ -25,5 +27,10 @@ class FinancialRecord extends Model
     public function reimbursement()
     {
         return $this->belongsTo(ReimbursementRequest::class);
+    }
+
+    public function employee()
+    {
+        return $this->belongsTo(Employee::class, 'created_by');
     }
 }

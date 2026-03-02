@@ -2,7 +2,6 @@
 
 namespace App\Models\HR;
 
-use App\Models\User;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\SoftDeletes;
@@ -23,11 +22,12 @@ class LeaveRequest extends Model
         'status',
         'approved_by',
         'approved_at',
+        'leave_prove',
     ];
 
     protected $casts = [
-        'start_date'  => 'date',
-        'end_date'    => 'date',
+        'start_date' => 'date',
+        'end_date' => 'date',
         'approved_at' => 'datetime',
     ];
 
@@ -57,5 +57,18 @@ class LeaveRequest extends Model
         $quota = $this->leave->days_count;
 
         return max($quota - $used, 0);
+    }
+
+    public function canBeCancelledBy($employeeId): bool
+    {
+        return $this->employee_id === $employeeId
+            && in_array($this->status, ['pending', 'approved']);
+    }
+
+    public function cancel(): void
+    {
+        $this->update([
+            'status' => 'cancelled'
+        ]);
     }
 }

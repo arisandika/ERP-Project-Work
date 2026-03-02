@@ -1,6 +1,7 @@
 <?php
 namespace App\Models\HR;
 
+use App\Models\Finance\FinancialRecord;
 use App\Models\Project\Notification;
 use App\Models\Project\Project;
 use App\Models\Project\Ticket;
@@ -84,7 +85,7 @@ class Employee extends Model
     // ================================ //
     // Project Management Relationships //
     // ================================ //
-    
+
     // Projects the employee is a member of
     public function projects(): BelongsToMany
     {
@@ -144,5 +145,10 @@ class Employee extends Model
     public function canAccessPanel(Panel $panel): bool
     {
         return true;
+    }
+
+    public function financialRecords(): HasMany
+    {
+        return $this->hasMany(FinancialRecord::class, 'created_by', 'id');
     }
 }

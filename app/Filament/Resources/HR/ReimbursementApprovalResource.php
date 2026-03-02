@@ -4,7 +4,7 @@ namespace App\Filament\Resources\HR;
 
 use App\Filament\Resources\HR\ReimbursementApprovalResource\Pages;
 use App\Filament\Resources\HR\ReimbursementApprovalResource\RelationManagers;
-use App\Models\HR\ReimbursementRequest;
+use App\Models\Finance\ReimbursementRequest;
 use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Infolists\Components\ImageEntry;
@@ -41,45 +41,68 @@ class ReimbursementApprovalResource extends Resource
                         ->disabled()
                         ->searchable()
                         ->preload()
-                        ->prefixIcon('heroicon-o-user'),
+                        ->prefixIcon('heroicon-o-user')
+                        ->disabled(),
 
                     Forms\Components\DatePicker::make('date')
                         ->label('Tanggal Transaksi')
-                        ->disabled()
                         ->required()
                         ->default(now())
                         ->displayFormat('d M Y')
                         ->native(false)
-                        ->prefixIcon('heroicon-o-calendar-days'),
+                        ->closeOnDateSelection()
+                        ->prefixIcon('heroicon-o-calendar-days')
+                        ->disabled(),
 
-                    Forms\Components\TextInput::make('type')
+                    Forms\Components\Select::make('type')
                         ->label('Jenis Reimburse')
-                        ->disabled()
                         ->required()
-                        ->placeholder('Contoh: Bensin, Makan, Transport, Parkir')
-                        ->prefixIcon('heroicon-o-tag'),
+                        ->options([
+                            'Bensin' => 'Bensin',
+                            'Makan' => 'Makan',
+                            'Transport' => 'Transport',
+                            'Parkir' => 'Parkir',
+                            'Hotel' => 'Hotel',
+                            'Lainnya' => 'Lainnya (Tulis di keterangan)',
+                        ])
+                        ->searchable()
+                        ->prefixIcon('heroicon-o-tag')
+                        ->disabled(),
 
                     Forms\Components\TextInput::make('amount')
                         ->label('Nominal')
-                        ->disabled()
                         ->numeric()
                         ->required()
-                        ->prefix('IDR'),
+                        ->prefix('IDR')
+                        ->minValue(0)
+                        ->step(1000)
+                        ->placeholder('Contoh: 50000')
+                        ->prefixIcon('heroicon-o-banknotes')
+                        ->disabled(),
 
                     Forms\Components\Textarea::make('description')
                         ->label('Keterangan')
-                        ->disabled()
                         ->placeholder('Tuliskan keterangan reimburse...')
                         ->rows(3)
-                        ->maxLength(500),
+                        ->maxLength(500)
+                        ->disabled(),
 
                     Forms\Components\FileUpload::make('receipt')
                         ->label('Upload Bukti')
-                        ->disabled()
-                        ->required()
                         ->image()
-                        ->directory('reimbursements')
-                        ->imageEditor(),
+                        ->required()
+                        ->directory('financials')
+                        ->imageEditor()
+                        ->previewable()
+                        ->maxSize(2048) // 2MB
+                        ->acceptedFileTypes([
+                            'image/jpeg',
+                            'image/png',
+                            'image/jpg',
+                            'image/webp'
+                        ])
+                        ->helperText('Upload bukti seperti struk (2MB)')
+                        ->disabled(),
                 ])
                 ->columns(2),
 
@@ -92,6 +115,7 @@ class ReimbursementApprovalResource extends Resource
                             'approved' => 'Disetujui',
                             'rejected' => 'Ditolak',
                         ])
+                        ->default('approved')
                         ->required()
                         ->reactive()
                         ->afterStateUpdated(function ($state, callable $set) {

@@ -28,27 +28,34 @@ class LeaveResource extends Resource
 
     public static function form(Form $form): Form
     {
-        return $form
-            ->schema([
-                Forms\Components\TextInput::make('leave_type')
-                    ->label('Jenis Cuti')
-                    ->required()
-                    ->maxLength(255)
-                    ->prefixIcon('heroicon-o-document-text'),
+        return $form->schema([
+            Forms\Components\Section::make('Informasi Cuti')
+                ->schema([
+                    Forms\Components\TextInput::make('leave_type')
+                        ->label('Jenis Cuti')
+                        ->required()
+                        ->maxLength(255)
+                        ->prefixIcon('heroicon-o-document-text'),
 
-                Forms\Components\TextInput::make('days_count')
-                    ->label('Jumlah Hari')
-                    ->required()
-                    ->numeric()
-                    ->prefixIcon('heroicon-o-calendar-days'),
+                    Forms\Components\TextInput::make('days_count')
+                        ->label('Jumlah Hari')
+                        ->required()
+                        ->numeric()
+                        ->prefixIcon('heroicon-o-calendar-days'),
 
-                Forms\Components\Toggle::make('is_female_only')
-                    ->label('Khusus Wanita')
-                    ->default(false)
-                    ->onIcon('heroicon-s-check-circle')
-                    ->offIcon('heroicon-s-x-circle')
-                    ->inline(false)
-            ]);
+                    Forms\Components\Toggle::make('male_only')
+                        ->label('Khusus Laki-laki')
+                        ->default(false)
+                        ->inline(false),
+
+                    Forms\Components\Toggle::make('is_female_only')
+                        ->label('Khusus Wanita')
+                        ->default(false)
+                        ->inline(false)
+                ])
+                ->columns(2),
+        ]);
+
     }
 
     public static function table(Table $table): Table
@@ -66,6 +73,9 @@ class LeaveResource extends Resource
 
                 Tables\Columns\ToggleColumn::make('is_female_only')
                     ->label('Khusus Wanita'),
+
+                Tables\Columns\ToggleColumn::make('is_male_only')
+                    ->label('Khusus Laki-laki'),
 
                 Tables\Columns\TextColumn::make('created_at')
                     ->label('Dibuat Pada')

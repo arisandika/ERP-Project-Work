@@ -9,4 +9,17 @@ use Filament\Resources\Pages\CreateRecord;
 class CreateFinancialRecord extends CreateRecord
 {
     protected static string $resource = FinancialRecordResource::class;
+
+    public function getTitle(): string
+    {
+        return 'Tambah Catatan Operasional';
+    }
+
+    protected function mutateFormDataBeforeCreate(array $data): array
+    {
+        $data['created_by'] =
+            auth()->user()?->employee?->id;
+
+        return $data;
+    }
 }

@@ -247,9 +247,9 @@
                                     touch.clientX <= rect.right &&
                                     touch.clientY >= rect.top &&
                                     touch.clientY <= rect.bottom) {
-                                    column.classList.add('bg-primary-50', 'dark:bg-primary-950');
+                                    column.classList.add('bg-main-primary/10', 'dark:bg-main-light/10');
                                 } else {
-                                    column.classList.remove('bg-primary-50', 'dark:bg-primary-950');
+                                    column.classList.remove('bg-main-primary/10', 'dark:bg-main-light/10');
                                 }
                             });
                         });
@@ -275,7 +275,7 @@
                                     touch.clientY <= rect.bottom) {
                                     targetColumn = column;
                                 }
-                                column.classList.remove('bg-primary-50', 'dark:bg-primary-950');
+                                column.classList.remove('bg-main-primary/10', 'dark:bg-main-light/10');
                             });
     
                             if (targetColumn && targetColumn !== originalColumn) {
@@ -298,7 +298,7 @@
                             this.draggingDeal = null;
     
                             document.querySelectorAll('.stage-column').forEach(column => {
-                                column.classList.remove('bg-primary-50', 'dark:bg-primary-950');
+                                column.classList.remove('bg-main-primary/10', 'dark:bg-main-light/10');
                             });
                         });
                     });
@@ -308,16 +308,16 @@
                         column.addEventListener('dragover', (e) => {
                             e.preventDefault();
                             e.dataTransfer.dropEffect = 'move';
-                            column.classList.add('bg-primary-50', 'dark:bg-primary-950');
+                            column.classList.add('bg-main-primary/10', 'dark:bg-main-light/10');
                         });
     
                         column.addEventListener('dragleave', () => {
-                            column.classList.remove('bg-primary-50', 'dark:bg-primary-950');
+                            column.classList.remove('bg-main-primary/10', 'dark:bg-main-light/10');
                         });
     
                         column.addEventListener('drop', (e) => {
                             e.preventDefault();
-                            column.classList.remove('bg-primary-50', 'dark:bg-primary-950');
+                            column.classList.remove('bg-main-primary/10', 'dark:bg-main-light/10');
     
                             if (this.draggingDeal) {
                                 const stageId = column.getAttribute('data-stage-id');
@@ -337,7 +337,7 @@
             <?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if BLOCK]><![endif]--><?php endif; ?><?php if(!$this->canMoveDeals()): ?>
                 <div class="flex justify-center mb-4">
                     <div
-                        class="inline-flex items-center gap-2 px-4 py-2 border rounded-lg bg-amber-50 dark:bg-amber-900/20 border-amber-200 dark:border-amber-800 text-amber-800 dark:text-amber-200">
+                        class="inline-flex items-center gap-2 px-4 py-2 border rounded-lg bg-amber-50 dark:bg-amber-900/20 border-amber-200 dark:border-border-dark text-amber-800 dark:text-amber-200">
                         <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24"
                             stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -354,15 +354,15 @@
             <div class="inline-flex min-w-full gap-4 pb-2">
                 <?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if BLOCK]><![endif]--><?php endif; ?><?php $__currentLoopData = $this->dealStages; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $stage): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
                     <div wire:key="stage-column-<?php echo e($stage->id); ?>"
-                        class="stage-column rounded-xl border border-gray-200 dark:border-gray-700 flex flex-col bg-gray-50 dark:bg-gray-900 w-[calc(85vw-2rem)] min-w-[300px] max-w-[380px] h-[700px] sm:w-[calc((100vw-6rem)/2)] sm:h-[750px] lg:w-[calc((100vw-8rem)/3)] lg:h-[800px] xl:w-[calc((100vw-10rem)/4)] xl:h-[850px]"
+                        class="stage-column rounded-xl border border-border-light dark:border-border-dark flex flex-col bg-main-light dark:bg-main-dark w-[calc(85vw-2rem)] min-w-[300px] max-w-[380px] h-[700px] sm:w-[calc((100vw-6rem)/2)] sm:h-[750px] lg:w-[calc((100vw-8rem)/3)] lg:h-[800px] xl:w-[calc((100vw-10rem)/4)] xl:h-[850px]"
                         data-stage-id="<?php echo e($stage->id); ?>">
                         <div
-                            class="flex-shrink-0 px-4 py-3 bg-white border-b border-gray-200 rounded-t-xl dark:border-gray-700 dark:bg-gray-800">
+                            class="flex-shrink-0 px-4 py-3 border-b border-border-light bg-secondary-light rounded-t-xl dark:border-border-dark dark:bg-secondary-dark">
                             <div class="flex items-center justify-between mb-1">
                                 <h3 class="flex items-center gap-2 font-semibold text-gray-900 dark:text-white">
                                     <span><?php echo e($stage->name); ?></span>
                                     <span
-                                        class="inline-flex items-center justify-center flex-shrink-0 w-6 h-6 text-xs font-medium rounded-full text-primary-700 bg-primary-100 dark:text-primary-100 dark:bg-primary-900">
+                                        class="inline-flex items-center justify-center flex-shrink-0 w-6 h-6 text-xs font-medium rounded-full text-main-primary bg-main-primary/10 ring-1 ring-main-primary/30">
                                         <?php echo e($stage->deals->count()); ?>
 
                                     </span>
@@ -385,11 +385,11 @@
                                         x-transition:leave="transition ease-in duration-75"
                                         x-transition:leave-start="transform opacity-100 scale-100"
                                         x-transition:leave-end="transform opacity-0 scale-95"
-                                        class="absolute left-0 z-50 bg-white border border-gray-200 rounded-lg shadow-lg top-8 w-52 dark:bg-gray-800 dark:border-gray-700"
+                                        class="absolute left-0 z-50 border rounded-lg shadow-lg border-border-light bg-secondary-light top-8 w-52 dark:bg-secondary-dark dark:border-border-dark"
                                         style="display: none; transform: translateX(-100%);">
                                         <div class="p-2">
                                             <div
-                                                class="flex items-center justify-between px-3 py-2 border-b border-gray-200 dark:border-gray-700">
+                                                class="flex items-center justify-between px-3 py-2 border-b border-border-light dark:border-border-dark">
                                                 <span class="text-sm font-medium text-gray-900 dark:text-white">Urutkan
                                                     list</span>
                                                 <button @click="open = false"
@@ -404,27 +404,27 @@
                                             <div class="py-1">
                                                 <button wire:click="setSortOrder(<?php echo e($stage->id); ?>, 'date_created_newest')"
                                                     @click="open = false"
-                                                    class="w-full px-3 py-2 text-sm text-left text-gray-700 rounded dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700">Terbaru
+                                                    class="w-full px-3 py-2 text-sm text-left text-gray-700 rounded dark:text-white hover:bg-accent-light dark:hover:bg-accent-dark">Terbaru
                                                     dibuat</button>
                                                 <button wire:click="setSortOrder(<?php echo e($stage->id); ?>, 'date_created_oldest')"
                                                     @click="open = false"
-                                                    class="w-full px-3 py-2 text-sm text-left text-gray-700 rounded dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700">Terlama
+                                                    class="w-full px-3 py-2 text-sm text-left text-gray-700 rounded dark:text-white hover:bg-accent-light dark:hover:bg-accent-dark">Terlama
                                                     dibuat</button>
                                                 <button wire:click="setSortOrder(<?php echo e($stage->id); ?>, 'value_highest')"
                                                     @click="open = false"
-                                                    class="w-full px-3 py-2 text-sm text-left text-gray-700 rounded dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700">Nilai
+                                                    class="w-full px-3 py-2 text-sm text-left text-gray-700 rounded dark:text-white hover:bg-accent-light dark:hover:bg-accent-dark">Nilai
                                                     Tertinggi</button>
                                                 <button wire:click="setSortOrder(<?php echo e($stage->id); ?>, 'value_lowest')"
                                                     @click="open = false"
-                                                    class="w-full px-3 py-2 text-sm text-left text-gray-700 rounded dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700">Nilai
+                                                    class="w-full px-3 py-2 text-sm text-left text-gray-700 rounded dark:text-white hover:bg-accent-light dark:hover:bg-accent-dark">Nilai
                                                     Terendah</button>
                                                 <button wire:click="setSortOrder(<?php echo e($stage->id); ?>, 'name_alphabetical')"
                                                     @click="open = false"
-                                                    class="w-full px-3 py-2 text-sm text-left text-gray-700 rounded dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700">Nama
+                                                    class="w-full px-3 py-2 text-sm text-left text-gray-700 rounded dark:text-white hover:bg-accent-light dark:hover:bg-accent-dark">Nama
                                                     (A–Z)</button>
                                                 <button wire:click="setSortOrder(<?php echo e($stage->id); ?>, 'close_date')"
                                                     @click="open = false"
-                                                    class="w-full px-3 py-2 text-sm text-left text-gray-700 rounded dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700">Tgl
+                                                    class="w-full px-3 py-2 text-sm text-left text-gray-700 rounded dark:text-white hover:bg-accent-light dark:hover:bg-accent-dark">Tgl
                                                     Target (Close Date)</button>
                                             </div>
                                         </div>
@@ -441,7 +441,7 @@
                             
                             <?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if BLOCK]><![endif]--><?php endif; ?><?php if($stage->probability): ?>
                                 <div class="flex items-center gap-1 mt-2">
-                                    <div class="w-full h-1.5 bg-gray-200 rounded-full dark:bg-gray-700">
+                                    <div class="w-full h-1.5 bg-accent-light rounded-full dark:bg-accent-dark">
                                         <div class="h-1.5 rounded-full"
                                             style="width: <?php echo e($stage->probability); ?>%; background: linear-gradient(to right, rgb(239, 68, 68), rgb(245, 158, 11), rgb(34, 197, 94))[<?php echo e(min(100, max(0, $stage->probability))); ?>%]); background-color: <?php echo e($stage->probability < 33 ? 'rgb(239, 68, 68)' : ($stage->probability < 66 ? 'rgb(245, 158, 11)' : 'rgb(34, 197, 94)')); ?>;">
                                         </div>
@@ -451,7 +451,7 @@
                             <?php endif; ?><?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if ENDBLOCK]><![endif]--><?php endif; ?>
                         </div>
     
-                        <div class="flex flex-col flex-1 gap-3 p-3 overflow-y-auto no-scrollbar"
+                        <div class="flex flex-col flex-1 gap-3 p-3 overflow-y-auto no-scrollbar rounded-b-xl"
                             style="max-height: calc(100% - 60px);"
                             x-data="{ visibleDeals: 10, totalDeals: <?php echo e($stage->deals->count()); ?>, scrollPos: 0 }"
                             x-init="$nextTick(() => { $el.addEventListener('scroll', () => { scrollPos = $el.scrollTop; if ($el.scrollTop + $el.clientHeight >= $el.scrollHeight - 100 && visibleDeals < totalDeals) { visibleDeals = Math.min(visibleDeals + 10, totalDeals); } }); })"
@@ -462,26 +462,26 @@
                                     $stageName = strtolower($stage->name);
     
                                     // Default styling
-                                    $borderColor = 'border-l-primary-500 dark:border-l-primary-400';
+                                    $borderColor = 'border-l-primary-500 dark:border-l-primary-500';
                                     $valueColor = 'text-emerald-600 dark:text-emerald-400';
     
                                     // Kondisi jika Closed Lost
                                     if (str_contains($stageName, 'lost')) {
-                                        $borderColor = 'border-l-red-500 dark:border-l-red-400';
+                                        $borderColor = 'border-l-red-500 dark:border-l-red-500';
                                         $valueColor = 'text-red-600 dark:text-red-400';
                                     }
                                     // Kondisi jika Closed Won
                                     elseif (str_contains($stageName, 'won')) {
-                                        $borderColor = 'border-l-emerald-500 dark:border-l-emerald-400';
+                                        $borderColor = 'border-l-emerald-500 dark:border-l-emerald-500';
                                     }
                                     // Kondisi jika masuk stage Penawaran
                                     elseif (str_contains($stageName, 'penawaran')) {
-                                        $borderColor = 'border-l-amber-500 dark:border-l-amber-400';
+                                        $borderColor = 'border-l-amber-500 dark:border-l-amber-500';
                                     }
                                 ?>
     
                                 <div wire:key="deal-<?php echo e($stage->id); ?>-<?php echo e($deal->id); ?>"
-                                    class="relative p-3 transition-shadow bg-white border border-l-4 border-gray-200 rounded-lg shadow-sm cursor-move deal-card dark:bg-gray-800 dark:border-gray-700 <?php echo e($borderColor); ?> hover:shadow-md"
+                                    class="relative p-3 bg-secondary-light border border-l-4 border-border-light rounded-lg cursor-move deal-card dark:bg-secondary-dark dark:border-border-dark <?php echo e($borderColor); ?>"
                                     data-deal-id="<?php echo e($deal->id); ?>" x-show="<?php echo e($index); ?> < visibleDeals"
                                     x-transition:enter="transition ease-out duration-200"
                                     x-transition:enter-start="opacity-0 transform scale-95"
@@ -489,7 +489,7 @@
                                     
                                     <div class="flex items-center justify-between mb-2">
                                         <span
-                                            class="text-xs font-mono font-medium text-gray-600 dark:text-gray-300 px-1.5 py-0.5 bg-gray-100 dark:bg-gray-700 rounded truncate">
+                                            class="text-xs font-mono font-medium text-gray-600 dark:text-gray-300 px-1.5 py-0.5 bg-accent-light dark:bg-accent-dark rounded truncate">
                                             <?php echo e($deal->deal_number); ?>
 
                                         </span>
@@ -498,7 +498,7 @@
                                             $dealStatusColor = match (strtolower($deal->status)) {
                                                 'won' => 'fi-color-success bg-success-50 text-success-600 ring-success-600/10 dark:bg-success-400/10 dark:text-success-400 dark:ring-success-400/30 fi-color-success',
                                                 'lost' => 'fi-color-danger bg-danger-50 text-danger-600 ring-danger-600/10 dark:bg-danger-400/10 dark:text-danger-400 dark:ring-danger-400/30 fi-color-danger',
-                                                default => 'fi-color-gray bg-gray-50 text-gray-600 ring-gray-600/10 dark:bg-gray-400/10 dark:text-gray-400 dark:ring-gray-400/30 fi-color-gray',
+                                                default => 'fi-color-gray bg-main-light text-gray-600 ring-gray-600/10 dark:bg-gray-400/10 dark:text-gray-400 dark:ring-gray-400/30 fi-color-gray',
                                             };
                                         ?>
                                         <span class="fi-badge flex items-center justify-center gap-x-1 rounded-md text-xs font-medium ring-1 ring-inset px-2 min-w-[theme(spacing.6)] py-1 capitalize <?php echo e($dealStatusColor); ?>">
@@ -600,12 +600,12 @@
                                     </div>
 
                                     <div
-                                        class="flex items-center justify-between gap-3 pt-3 mt-4 border-t border-gray-100 dark:border-gray-700">
+                                        class="flex items-center justify-between gap-3 pt-3 mt-4 border-t border-gray-100 dark:border-border-dark">
 
                                         <?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if BLOCK]><![endif]--><?php endif; ?><?php if($this->canMoveDeals()): ?>
                                             <div class="relative flex-1 min-w-0" x-data="{ open: false }">
                                                 <button @click="open = !open" @click.away="open = false" type="button"
-                                                    class="flex items-center justify-between w-full px-2.5 py-1.5 text-xs font-medium text-gray-700 transition-all bg-gray-50 border border-gray-200 rounded-lg shadow-sm hover:bg-gray-100 hover:border-gray-300 dark:bg-gray-800 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-700">
+                                                    class="flex items-center justify-between w-full px-2.5 py-1.5 text-xs font-medium text-gray-700 transition-all bg-main-light border border-border-light rounded-lg shadow-sm hover:bg-accent-light dark:bg-accent-dark dark:border-border-dark dark:text-gray-300 dark:hover:bg-secondary-dark">
                                                     <div class="flex items-center gap-2 overflow-hidden">
                                                         <span class="truncate"><?php echo e($stage->name); ?></span>
                                                     </div>
@@ -620,7 +620,7 @@
                                                 <div x-show="open" x-transition:enter="transition ease-out duration-100"
                                                     x-transition:enter-start="opacity-0 scale-95 translate-y-2"
                                                     x-transition:enter-end="opacity-100 scale-100 translate-y-0"
-                                                    class="absolute left-0 top-full mt-1 z-40 w-full min-w-[150px] overflow-y-auto origin-top bg-white border border-gray-200 rounded-lg shadow-xl dark:bg-gray-800 dark:border-gray-700 max-h-48"
+                                                    class="absolute left-0 top-full mt-1 z-40 w-full min-w-[150px] overflow-y-auto origin-top bg-secondary-light border border-border-light rounded-lg shadow-xl dark:bg-secondary-dark dark:border-border-dark max-h-48 no-scrollbar"
                                                     style="display: none;">
                                                     <div class="p-1">
                                                         <?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if BLOCK]><![endif]--><?php endif; ?><?php $__currentLoopData = $this->dealStages; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $stageOption): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
@@ -628,8 +628,8 @@
                                                                 wire:click="moveDeal(<?php echo e($deal->id); ?>, <?php echo e($stageOption->id); ?>)"
                                                                 @click="open = false" class="flex items-center w-full gap-2 px-3 py-2 text-sm text-left rounded-md transition-colors group
                                                         <?php echo e($stageOption->id === $stage->id
-                                        ? 'bg-primary-50 text-primary-700 dark:bg-primary-900/30 dark:text-primary-400 font-semibold'
-                                        : 'text-gray-700 hover:bg-gray-100 dark:text-gray-200 dark:hover:bg-gray-700'); ?>">
+                                        ? 'bg-main-light text-main-primary dark:bg-accent-dark'
+                                        : 'text-gray-700 hover:bg-accent-light dark:text-gray-200 dark:hover:bg-accent-dark'); ?>">
                                                                 <span class="truncate"><?php echo e($stageOption->name); ?></span>
                                                                 <?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if BLOCK]><![endif]--><?php endif; ?><?php if($stageOption->id === $stage->id): ?>
                                                                     <svg class="w-3.5 h-3.5 ml-auto text-primary-600 dark:text-primary-400 flex-shrink-0"
@@ -650,7 +650,7 @@
                                                 <div class="relative" x-data="{ openQuotations: false }">
                                                     <button @click="openQuotations = !openQuotations"
                                                         @click.away="openQuotations = false"
-                                                        class="relative flex items-center justify-center w-8 h-8 transition-colors bg-white border border-gray-200 rounded-full shadow-sm hover:bg-gray-50 dark:bg-gray-800 dark:border-gray-700 dark:hover:bg-gray-700 text-amber-600 dark:text-amber-500"
+                                                        class="relative flex items-center justify-center w-8 h-8 transition-colors border rounded-full shadow-sm border-border-light bg-main-light hover:bg-accent-light dark:bg-accent-dark dark:border-border-dark dark:hover:bg-secondary-dark text-amber-600 dark:text-amber-500"
                                                         title="Lihat <?php echo e($deal->quotations->count()); ?> Penawaran">
                                                         <?php if (isset($component)) { $__componentOriginal643fe1b47aec0b76658e1a0200b34b2c = $component; } ?>
 <?php if (isset($attributes)) { $__attributesOriginal643fe1b47aec0b76658e1a0200b34b2c = $attributes; } ?>
@@ -682,10 +682,10 @@
                                                     <div x-show="openQuotations" x-transition:enter="transition ease-out duration-100"
                                                         x-transition:enter-start="opacity-0 scale-95"
                                                         x-transition:enter-end="opacity-100 scale-100"
-                                                        class="absolute right-[-120%] z-[999] w-64 p-2 mt-2 origin-top-right bg-white border border-gray-200 rounded-lg shadow-xl dark:bg-gray-800 dark:border-gray-700"
+                                                        class="absolute right-[-120%] z-[999] w-64 p-2 mt-2 origin-top-right bg-secondary-light border border-border-light rounded-lg shadow-xl dark:bg-secondary-dark dark:border-border-dark"
                                                         style="display: none;">
                                                         <div
-                                                            class="px-2 py-1.5 mb-2 text-xs font-semibold tracking-wider text-gray-500 uppercase border-b dark:text-gray-400 dark:border-gray-700">
+                                                            class="px-2 py-1.5 mb-2 text-xs font-semibold tracking-wider text-gray-500 uppercase border-b dark:text-gray-400 dark:border-border-dark">
                                                             List Penawaran
                                                         </div>
 
@@ -693,7 +693,7 @@
                                                             <?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if BLOCK]><![endif]--><?php endif; ?><?php $__currentLoopData = $deal->quotations; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $quotation): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
                                                                 <a href="<?php echo e(\App\Filament\Resources\Sales\QuotationResource::getUrl('edit', ['record' => $quotation->id])); ?>"
                                                                     target="_blank"
-                                                                    class="block px-2 py-2 transition-colors rounded-md hover:bg-gray-50 dark:hover:bg-gray-700">
+                                                                    class="block px-2 py-2 transition-colors rounded-md hover:bg-accent-light dark:hover:bg-accent-dark">
                                                                     <div class="flex items-center justify-between mb-1">
                                                                         <span
                                                                             class="text-xs font-medium text-gray-900 truncate dark:text-gray-100"
@@ -707,7 +707,7 @@
                                                                                 'approved', 'accepted', 'win' => 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400',
                                                                                 'rejected', 'lost' => 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400',
                                                                                 'sent' => 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400',
-                                                                                default => 'bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-300',
+                                                                                default => 'bg-accent-light text-gray-700 dark:bg-accent-dark dark:text-gray-300',
                                                                             };
                                                                         ?>
                                                                         <span
@@ -737,7 +737,7 @@
                                         container.scrollTop = scrollPos;
                                     }, 0);
                                     return false;
-                                " class="flex items-center justify-center w-8 h-8 transition-colors bg-white border border-gray-200 rounded-full shadow-sm hover:bg-gray-50 dark:bg-gray-800 dark:border-gray-700 dark:hover:bg-gray-700 text-primary-600 dark:text-primary-500"
+                                " class="flex items-center justify-center w-8 h-8 transition-colors border rounded-full shadow-sm border-border-light bg-main-light hover:bg-accent-light dark:bg-accent-dark dark:border-border-dark dark:hover:bg-secondary-dark text-primary-600 dark:text-primary-500"
                                                 title="Lihat detail Deal">
                                                 <?php if (isset($component)) { $__componentOriginal643fe1b47aec0b76658e1a0200b34b2c = $component; } ?>
 <?php if (isset($attributes)) { $__attributesOriginal643fe1b47aec0b76658e1a0200b34b2c = $attributes; } ?>
@@ -767,7 +767,7 @@
     
                             <?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if BLOCK]><![endif]--><?php endif; ?><?php if($stage->deals->isEmpty()): ?>
                                 <div
-                                    class="flex items-center justify-center h-24 text-sm italic text-gray-500 border border-gray-300 border-dashed rounded-lg dark:text-gray-400 dark:border-gray-700">
+                                    class="flex items-center justify-center h-24 text-sm italic text-gray-500 border border-gray-300 border-dashed rounded-lg dark:text-gray-400 dark:border-border-dark">
                                     Tidak ada deal di stage ini
                                 </div>
                             <?php else: ?>
@@ -791,7 +791,7 @@
     
                 <?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if BLOCK]><![endif]--><?php endif; ?><?php if($this->dealStages->isEmpty()): ?>
                     <div
-                        class="flex items-center justify-center w-full h-64 text-gray-500 bg-white border border-gray-200 border-dashed dark:text-gray-400 dark:bg-gray-900 rounded-xl dark:border-gray-800">
+                        class="flex items-center justify-center w-full h-64 text-gray-500 border border-dashed border-border-light bg-secondary-light dark:text-gray-400 dark:bg-main-dark rounded-xl dark:border-border-dark">
                         <div class="text-center">
                             <svg class="w-12 h-12 mx-auto mb-3 text-gray-400" fill="none" stroke="currentColor"
                                 viewBox="0 0 24 24">

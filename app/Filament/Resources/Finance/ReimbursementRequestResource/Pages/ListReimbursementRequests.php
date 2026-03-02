@@ -1,10 +1,10 @@
 <?php
 
-namespace App\Filament\Resources\HR\ReimbursementRequestResource\Pages;
+namespace App\Filament\Resources\Finance\ReimbursementRequestResource\Pages;
 
-use App\Filament\Resources\HR\ReimbursementRequestResource;
-use App\Filament\Widgets\HR\ReimburseRequestOverview;
-use App\Models\HR\ReimbursementRequest;
+use App\Filament\Resources\Finance\ReimbursementRequestResource;
+use App\Filament\Widgets\Finance\ReimburseRequestOverview;
+use App\Models\Finance\ReimbursementRequest;
 use Filament\Actions;
 use Filament\Resources\Components\Tab;
 use Filament\Resources\Pages\ListRecords;

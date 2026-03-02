@@ -3,7 +3,9 @@
 namespace App\Filament\Resources\HR\LeaveRequestResource\Pages;
 
 use App\Filament\Resources\HR\LeaveRequestResource;
+use App\Models\HR\LeaveRequest;
 use Filament\Actions;
+use Filament\Actions\Action;
 use Filament\Notifications\Notification;
 use Filament\Resources\Pages\EditRecord;
 
@@ -24,6 +26,23 @@ class EditLeaveRequest extends EditRecord
     {
         return [
             Actions\ViewAction::make(),
+
+            Actions\Action::make('cancel')
+                ->label('Batalkan')
+                ->icon('heroicon-o-x-circle')
+                ->color('danger')
+                ->visible(fn(LeaveRequest $record) => $record->status === 'pending')
+                ->requiresConfirmation()
+                ->action(function ($record) {
+
+                    $employeeId = auth()->user()?->employee?->id;
+
+                    if (!$record->canBeCancelledBy($employeeId)) {
+                        abort(403);
+                    }
+
+                    $record->cancel();
+                })
         ];
     }
 
@@ -42,12 +61,17 @@ class EditLeaveRequest extends EditRecord
     protected function mutateFormDataBeforeFill(array $data): array
     {
         if ($this->record->status === 'approved') {
+
             Notification::make()
-                ->title('Pengajuan cuti yang telah disetujui tidak dapat diedit.')
+                ->title('Pengajuan yang telah disetujui tidak dapat diedit.')
                 ->danger()
                 ->send();
 
-            return $this->getResource()::getUrl('index');
+            redirect(
+                $this->getResource()::getUrl('index')
+            );
+
+            return $data;
         }
 
         return $data;

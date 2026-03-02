@@ -55,7 +55,7 @@ class ViewProject extends ViewRecord
                 ->modalSubmitAction(false)
                 ->modalCancelActionLabel('Close'),
 
-            Action::make('back')
+            Action::make('Kembali')
                 ->url(static::getResource()::getUrl())
                 ->button()
                 ->color('gray'),

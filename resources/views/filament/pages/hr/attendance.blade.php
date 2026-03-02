@@ -29,8 +29,7 @@
             <div class="grid grid-cols-1 gap-6 md:col-span-3">
 
                 @if($employee)
-                    <div
-                        class="p-6 bg-white fi-section rounded-xl ring-1 ring-gray-950/5 dark:bg-gray-900 dark:ring-white/10">
+                    <div class="p-6 fi-section rounded-2xl ring-1">
                         <div class="flex items-center gap-4">
                             <div
                                 class="flex items-center justify-center w-12 h-12 overflow-hidden rounded-full bg-slate-100">
@@ -50,17 +49,17 @@
 
                         <div class="grid grid-cols-2 gap-4 mt-6 text-sm">
                             <div
-                                class="p-3 border border-gray-200 rounded-lg bg-gray-50 dark:bg-gray-800/50 dark:border-white/10">
+                                class="p-4 border rounded-2xl border-border-light bg-main-light dark:bg-accent-dark dark:border-border-dark">
                                 <dt class="text-gray-500 dark:text-gray-400">Departemen</dt>
                                 <dd class="font-medium">{{ $employee->department->name ?? '-' }}</dd>
                             </div>
                             <div
-                                class="p-3 border border-gray-200 rounded-lg bg-gray-50 dark:bg-gray-800/50 dark:border-white/10">
+                                class="p-4 border rounded-2xl border-border-light bg-main-light dark:bg-accent-dark dark:border-border-dark">
                                 <dt class="text-gray-500 dark:text-gray-400">Kantor</dt>
                                 <dd class="font-medium">{{ $office->name ?? '-' }}</dd>
                             </div>
                             <div
-                                class="p-3 border border-gray-200 rounded-lg bg-gray-50 dark:bg-gray-800/50 dark:border-white/10">
+                                class="p-4 border rounded-2xl border-border-light bg-main-light dark:bg-accent-dark dark:border-border-dark">
                                 <dt class="text-gray-500 dark:text-gray-400">Jadwal</dt>
                                 <dd class="font-medium">
                                     {{ $employee->shift->name ?? '-' }}
@@ -70,11 +69,11 @@
                                 </dd>
                             </div>
                             <div
-                                class="p-3 border border-gray-200 rounded-lg bg-gray-50 dark:bg-gray-800/50 dark:border-white/10">
+                                class="p-4 border rounded-2xl border-border-light bg-main-light dark:bg-accent-dark dark:border-border-dark">
                                 <dt class="text-gray-500 dark:text-gray-400">Tipe Karyawan</dt>
                                 <dd class="font-medium">
                                     @if($employee->can_wfa == 1)
-                                        Bekerja dari rumah
+                                        Bekerja dimana saja
                                     @else
                                         Bekerja dari kantor
                                     @endif
@@ -89,22 +88,20 @@
                         </div>
                     </div>
                 @else
-                    <div
-                        class="p-6 text-center text-gray-500 bg-white fi-section rounded-xl ring-1 ring-gray-950/5 dark:bg-gray-900 dark:ring-white/10">
+                    <div class="p-6 text-center text-gray-500 fi-section rounded-2xl ring-1">
                         Tidak ada data karyawan untuk user ini.
                     </div>
                 @endif
 
                 @if(!$hasCheckedIn)
-                    <form action="{{ route('attendance.clockin') }}" method="POST"
-                        class="p-6 bg-white fi-section rounded-xl ring-1 ring-gray-950/5 dark:bg-gray-900 dark:ring-white/10"
+                    <form action="{{ route('attendance.clockin') }}" method="POST" class="p-6 fi-section rounded-2xl ring-1"
                         aria-labelledby="clock-in-title">
                         @csrf
                         <h2 id="clock-in-title" class="text-base font-medium">Siap presensi masuk?</h2>
 
                         <div class="grid grid-cols-1 gap-6 pt-6 md:grid-cols-2 md:gap-4">
                             {{-- CAMERA CLOCK IN --}}
-                            <div class="p-3 text-center border border-gray-200 rounded-lg bg-gray-50 dark:bg-gray-800/50 dark:border-white/10"
+                            <div class="p-4 text-center border rounded-2xl border-border-light bg-main-light dark:bg-accent-dark dark:border-border-dark"
                                 id="camera-box">
 
                                 <!-- INITIAL / EMPTY STATE -->
@@ -113,7 +110,7 @@
 
                                     <button type="button" id="openCameraBtn">
                                         <div
-                                            class="flex items-center justify-center bg-gray-200 rounded-full hover:bg-gray-300 dark:bg-gray-600 w-14 h-14 dark:hover:bg-gray-700">
+                                            class="flex items-center justify-center rounded-full bg-secondary-light hover:bg-accent-light dark:bg-secondary-dark w-14 h-14 dark:hover:bg-main-dark ring-1 ring-border-light dark:ring-border-dark">
                                             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
                                                 stroke-width="1.5" stroke="currentColor" class="size-6">
                                                 <path stroke-linecap="round" stroke-linejoin="round"
@@ -123,23 +120,23 @@
                                             </svg>
                                         </div>
                                     </button>
-                                    <p class="px-4 py-2 text-sm text-gray-700 dark:text-white">
+                                    <p class="px-4 pt-2 pb-1 text-sm font-semibold">
                                         Klik untuk membuka kamera
                                     </p>
-                                    <p class="text-xs text-gray-500">
+                                    <p class="text-xs text-gray-500 dark:text-gray-400">
                                         Pastikan wajah Anda terlihat jelas dalam bingkai.
                                     </p>
                                 </div>
 
                                 <!-- CAMERA LIVE -->
                                 <div id="camera-live" class="hidden">
-                                    <video id="camera-video" class="w-full rounded-lg aspect-[4/3] bg-black" autoplay
+                                    <video id="camera-video" class="w-full rounded-2xl aspect-[4/3] bg-black" autoplay
                                         playsinline>
                                     </video>
 
-                                    <button type="button" id="captureBtn" aria-label="Ambil Foto" class="my-4">
+                                    <button type="button" id="captureBtn" aria-label="Ambil Foto" class="mt-4">
                                         <div
-                                            class="flex items-center justify-center bg-gray-600 rounded-full w-14 h-14 hover:bg-gray-700">
+                                            class="flex items-center justify-center rounded-full w-14 h-14 bg-secondary-light hover:bg-accent-light dark:bg-secondary-dark dark:hover:bg-main-dark ring-1 ring-border-light dark:ring-border-dark">
                                             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
                                                 stroke-width="1.5" stroke="currentColor" class="size-6">
                                                 <path stroke-linecap="round" stroke-linejoin="round"
@@ -153,8 +150,8 @@
 
                                 <!-- PHOTO PREVIEW -->
                                 <div id="camera-preview" class="hidden">
-                                    <img id="photo-preview" class="object-cover w-full rounded-lg" alt="Preview photo">
-                                    <div class="flex justify-center gap-3 my-4">
+                                    <img id="photo-preview" class="object-cover w-full rounded-2xl" alt="Preview photo">
+                                    <div class="flex justify-center gap-4 my-4">
                                         <x-filament::button type="button" id="retakeBtn" color="gray"> Ambil Ulang
                                         </x-filament::button>
                                     </div>
@@ -170,21 +167,21 @@
                             <div>
                                 <div class="grid gap-4">
                                     <div class="flex flex-col gap-1">
-                                        <label for="note" class="mb-2 text-sm text-gray-500 dark:text-gray-400">Catatan
+                                        <label for="note" class="mb-2 text-sm font-semibold">Catatan
                                             (opsional)</label>
                                         <textarea id="note" name="note" rows="3"
-                                            class="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg bg-gray-50 dark:bg-gray-800/50 dark:border-white/10 focus:border-blue-600 focus:ring-1 focus:ring-blue-600"
-                                            placeholder="Tambahkan catatan singkat tentang shift Anda..."></textarea>
+                                            class="w-full px-3 py-2 text-sm border rounded-2xl border-border-light bg-main-light dark:bg-accent-dark dark:border-border-dark focus:border-blue-600 focus:ring-1 focus:ring-blue-600"
+                                            placeholder="Tambahkan catatan..."></textarea>
                                     </div>
                                     <div
-                                        class="flex items-center justify-between px-3 py-2 border border-gray-200 rounded-lg bg-gray-50 dark:bg-gray-800/50 dark:border-white/10">
+                                        class="flex items-center justify-between p-4 border rounded-2xl border-border-light bg-main-light dark:bg-accent-dark dark:border-border-dark">
                                         <div>
-                                            <p class="text-xs text-gray-500 dark:text-gray-400">Waktu saat ini</p>
+                                            <p class="mb-1 text-xs text-gray-500 dark:text-gray-400">Waktu saat ini</p>
                                             <p class="text-sm font-medium" id="current-time-clockin"></p>
                                             <script> function updateTimeClockIn() { const now = new Date(); const hours = now.getHours().toString().padStart(2, '0'); const minutes = now.getMinutes().toString().padStart(2, '0'); const seconds = now.getSeconds().toString().padStart(2, '0'); const ampm = hours >= 12 ? 'PM' : 'AM'; document.getElementById('current-time-clockin').textContent = `${hours}:${minutes}:${seconds} ${ampm}`; } setInterval(updateTimeClockIn, 1000); updateTimeClockIn(); </script>
                                         </div>
                                         <div class="text-right">
-                                            <p class="text-xs text-gray-500 dark:text-gray-400">Jam Kerja</p>
+                                            <p class="mb-1 text-xs text-gray-500 dark:text-gray-400">Jam Kerja</p>
                                             <p class="text-sm font-medium">
                                                 {{ isset($employee->shift->start_time) ? \Carbon\Carbon::parse($employee->shift->start_time)->format('H:i') : '-' }}
                                                 -
@@ -193,12 +190,13 @@
                                         </div>
                                     </div>
 
-                                    <div class="flex items-center gap-3">
+                                    <div class="flex items-center gap-4">
                                         <x-filament::button type="button" id="presensiMasukButton"
                                             aria-label="Presensi sekarang" color="primary">
                                             <span>Tandai Lokasi</span>
                                         </x-filament::button>
-                                        <x-filament::button tag="a" href="/hr/attendance-history" color="gray">Lihat Riwayat</x-filament::button>
+                                        <x-filament::button tag="a" href="/hr/attendance-history" color="gray">Lihat
+                                            Riwayat</x-filament::button>
                                     </div>
                                 </div>
                             </div>
@@ -209,14 +207,14 @@
                     </form>
                 @elseif($hasCheckedIn && !$hasCheckedOut)
                     <form action="{{ route('attendance.clockout') }}" method="POST"
-                        class="p-6 bg-white fi-section rounded-xl ring-1 ring-gray-950/5 dark:bg-gray-900 dark:ring-white/10"
-                        aria-labelledby="clock-out-title" onsubmit="return setLocationBeforeSubmit(event)">
+                        class="p-6 fi-section rounded-2xl ring-1" aria-labelledby="clock-out-title"
+                        onsubmit="return setLocationBeforeSubmit(event)">
                         @csrf
                         <h2 id="clock-out-title" class="text-base font-medium">Sudah selesai kerja?</h2>
 
                         <div class="grid grid-cols-1 gap-6 pt-6 md:grid-cols-2 md:gap-4">
                             {{-- CAMERA CLOCK OUT --}}
-                            <div class="p-3 text-center border border-gray-200 rounded-lg bg-gray-50 dark:bg-gray-800/50 dark:border-white/10"
+                            <div class="p-4 text-center border rounded-2xl border-border-light bg-main-light dark:bg-accent-dark dark:border-border-dark"
                                 id="camera-box-out">
 
                                 <!-- INITIAL / EMPTY STATE -->
@@ -225,7 +223,7 @@
 
                                     <button type="button" id="openCameraBtnOut">
                                         <div
-                                            class="flex items-center justify-center bg-gray-200 rounded-full hover:bg-gray-300 dark:bg-gray-600 w-14 h-14 dark:hover:bg-gray-700">
+                                            class="flex items-center justify-center rounded-full bg-secondary-light hover:bg-accent-light dark:bg-secondary-dark w-14 h-14 dark:hover:bg-main-dark ring-1 ring-border-light dark:ring-border-dark">
                                             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
                                                 stroke-width="1.5" stroke="currentColor" class="size-6">
                                                 <path stroke-linecap="round" stroke-linejoin="round"
@@ -235,23 +233,23 @@
                                             </svg>
                                         </div>
                                     </button>
-                                    <p class="px-4 py-2 text-sm text-gray-700 dark:text-white">
+                                    <p class="px-4 pt-2 pb-1 text-sm font-semibold">
                                         Klik untuk membuka kamera
                                     </p>
-                                    <p class="text-xs text-gray-500">
+                                    <p class="text-xs text-gray-500 dark:text-gray-400">
                                         Pastikan wajah Anda terlihat jelas dalam bingkai.
                                     </p>
                                 </div>
 
                                 <!-- CAMERA LIVE -->
                                 <div id="camera-live-out" class="hidden">
-                                    <video id="camera-video-out" class="w-full rounded-lg aspect-[4/3] bg-black" autoplay
+                                    <video id="camera-video-out" class="w-full rounded-2xl aspect-[4/3] bg-black" autoplay
                                         playsinline>
                                     </video>
 
-                                    <button type="button" id="captureBtnOut" aria-label="Ambil Foto" class="my-4">
+                                    <button type="button" id="captureBtnOut" aria-label="Ambil Foto" class="mt-4">
                                         <div
-                                            class="flex items-center justify-center bg-gray-600 rounded-full w-14 h-14 hover:bg-gray-700">
+                                            class="flex items-center justify-center rounded-full w-14 h-14 bg-secondary-light hover:bg-accent-light dark:bg-secondary-dark dark:hover:bg-main-dark ring-1 ring-border-light dark:ring-border-dark">
                                             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
                                                 stroke-width="1.5" stroke="currentColor" class="size-6">
                                                 <path stroke-linecap="round" stroke-linejoin="round"
@@ -265,9 +263,9 @@
 
                                 <!-- PHOTO PREVIEW -->
                                 <div id="camera-preview-out" class="hidden">
-                                    <img id="photo-preview-out" class="object-cover w-full rounded-lg" alt="Preview photo">
+                                    <img id="photo-preview-out" class="object-cover w-full rounded-2xl" alt="Preview photo">
 
-                                    <div class="flex justify-center gap-3 my-4">
+                                    <div class="flex justify-center gap-4 my-4">
                                         <x-filament::button type="button" id="retakeBtnOut" color="gray">
                                             Ambil Ulang
                                         </x-filament::button>
@@ -285,9 +283,9 @@
                                 <div class="grid gap-4">
                                     @if($attendanceToday)
                                         <div
-                                            class="flex items-center justify-between px-3 py-2 border border-gray-200 rounded-lg bg-gray-50 dark:bg-gray-800/50 dark:border-white/10 h-[76px]">
+                                            class="flex items-center justify-between p-4 border border-border-light rounded-2xl bg-main-light dark:bg-accent-dark dark:border-border-dark h-[76px]">
                                             <div>
-                                                <p class="text-xs text-gray-500 dark:text-gray-400">Jam masuk</p>
+                                                <p class="mb-1 text-xs text-gray-500 dark:text-gray-400">Jam masuk</p>
                                                 <p class="text-sm font-medium">
                                                     {{ \Carbon\Carbon::parse($attendanceToday->clock_in)->format('H:i') }}
                                                 </p>
@@ -301,14 +299,14 @@
                                         </div>
                                     @endif
                                     <div
-                                        class="flex items-center justify-between px-3 py-2 border border-gray-200 rounded-lg fflex bg-gray-50 dark:bg-gray-800/50 dark:border-white/10 h-[76px]">
+                                        class="flex items-center justify-between p-4 border border-border-light rounded-2xl fflex bg-main-light dark:bg-accent-dark dark:border-border-dark h-[76px]">
                                         <div>
-                                            <p class="text-xs text-gray-500 dark:text-gray-400">Waktu saat ini</p>
+                                            <p class="mb-1 text-xs text-gray-500 dark:text-gray-400">Waktu saat ini</p>
                                             <p class="text-sm font-medium" id="current-time-clockout"></p>
                                             <script> function updateTimeClockOut() { const now = new Date(); const hours = now.getHours().toString().padStart(2, '0'); const minutes = now.getMinutes().toString().padStart(2, '0'); const seconds = now.getSeconds().toString().padStart(2, '0'); const ampm = hours >= 12 ? 'PM' : 'AM'; document.getElementById('current-time-clockout').textContent = `${hours}:${minutes}:${seconds} ${ampm}`; } setInterval(updateTimeClockOut, 1000); updateTimeClockOut(); </script>
                                         </div>
                                         <div class="text-right">
-                                            <p class="text-xs text-gray-500 dark:text-gray-400">Jam Kerja</p>
+                                            <p class="mb-1 text-xs text-gray-500 dark:text-gray-400">Jam Kerja</p>
                                             <p class="text-sm font-medium">
                                                 {{ isset($employee->shift->start_time) ? \Carbon\Carbon::parse($employee->shift->start_time)->format('H:i') : '-' }}
                                                 -
@@ -317,12 +315,13 @@
                                         </div>
                                     </div>
 
-                                    <div class="flex items-center gap-3">
+                                    <div class="flex items-center gap-4">
                                         <x-filament::button type="submit" color="danger"
                                             aria-label="Presensi keluar sekarang" id="presensiKeluarButton">
                                             <span>Presensi Keluar</span>
                                         </x-filament::button>
-                                        <x-filament::button tag="a" href="/hr/attendance-history" color="gray"> Lihat Riwayat
+                                        <x-filament::button tag="a" href="/hr/attendance-history" color="gray"> Lihat
+                                            Riwayat
                                         </x-filament::button>
                                     </div>
                                 </div>
@@ -333,15 +332,15 @@
                         <input type="hidden" name="lng" id="lng-out" />
                     </form>
                 @else
-                    <div
-                        class="flex flex-col items-center justify-center p-8 bg-white fi-section rounded-xl ring-1 ring-gray-950/5 dark:bg-gray-900 dark:ring-white/10">
-                        <svg class="w-16 h-16 mb-4 text-blue-500" fill="none" stroke="currentColor" stroke-width="2"
+                    <div class="flex flex-col items-center justify-center p-8 fi-section rounded-2xl ring-1">
+                        <svg class="w-12 h-12 mb-4 text-main-primary" fill="none" stroke="currentColor" stroke-width="2"
                             viewBox="0 0 24 24">
                             <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2" fill="none" />
                             <path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4" />
                         </svg>
-                        <h3 class="mb-2 text-xl font-bold text-blue-600 dark:text-blue-400">Presensi Selesai 🎉</h3>
-                        <p class="mb-4 text-center text-gray-600 dark:text-gray-400">Kamu sudah menyelesaikan presensi hari
+                        <h3 class="mb-2 text-xl font-bold text-main-primary">Presensi Selesai</h3>
+                        <p class="mb-6 text-sm text-center text-gray-500 dark:text-gray-400">Kamu sudah menyelesaikan
+                            presensi hari
                             ini. Terima kasih atas kerja kerasmu!</p>
                         <x-filament::button tag="a" href="/hr/attendance-history" color="primary" icon="heroicon-o-clock">
                             Lihat Riwayat Presensi
@@ -351,8 +350,7 @@
             </div>
 
             <div class="md:col-span-3">
-                <div
-                    class="p-6 bg-white fi-section rounded-xl ring-1 ring-gray-950/5 dark:bg-gray-900 dark:ring-white/10">
+                <div class="p-6 fi-section rounded-2xl ring-1">
                     <div class="flex items-center justify-between mb-4">
                         <div>
                             <h2 class="text-base font-medium">Lokasi</h2>
@@ -362,28 +360,28 @@
                         <div class="flex items-center gap-2">
                             <span class="text-xs text-gray-500 dark:text-gray-400">Akurasi</span>
                             <span
-                                class="px-2 py-1 text-xs font-medium text-gray-500 border border-gray-200 rounded-md bg-gray-50 dark:bg-gray-800/50 dark:border-white/10">~30m</span>
+                                class="px-2 py-1 text-xs font-medium text-gray-500 border rounded-md border-border-light bg-main-light dark:bg-accent-dark dark:border-border-dark">~30m</span>
                         </div>
                     </div>
 
-                    <div class="overflow-hidden border rounded-lg border-slate-200">
+                    <div class="overflow-hidden border rounded-2xl border-slate-200">
                         <div id="map" class="relative h-[400px] w-full bg-slate-100">
                         </div>
                     </div>
 
                     <div class="grid grid-cols-1 gap-4 mt-4 text-sm sm:grid-cols-3" id="location-info">
                         <div
-                            class="p-3 border border-gray-200 rounded-lg bg-gray-50 dark:bg-gray-800/50 dark:border-white/10">
+                            class="p-4 border rounded-2xl border-border-light bg-main-light dark:bg-accent-dark dark:border-border-dark">
                             <p class="text-gray-500 dark:text-gray-400">Alamat</p>
                             <p class="font-medium" id="address-text">-</p>
                         </div>
                         <div
-                            class="p-3 border border-gray-200 rounded-lg bg-gray-50 dark:bg-gray-800/50 dark:border-white/10">
+                            class="p-4 border rounded-2xl border-border-light bg-main-light dark:bg-accent-dark dark:border-border-dark">
                             <p class="text-gray-500 dark:text-gray-400">Koordinat</p>
                             <p class="font-medium" id="coords-text">-</p>
                         </div>
                         <div
-                            class="p-3 border border-gray-200 rounded-lg bg-gray-50 dark:bg-gray-800/50 dark:border-white/10">
+                            class="p-4 border rounded-2xl border-border-light bg-main-light dark:bg-accent-dark dark:border-border-dark">
                             <p class="text-gray-500 dark:text-gray-400">Status</p>
                             <p class="font-medium" id="status-text">-</p>
                         </div>

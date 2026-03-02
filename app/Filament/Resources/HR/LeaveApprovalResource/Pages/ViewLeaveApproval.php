@@ -18,7 +18,7 @@ class ViewLeaveApproval extends ViewRecord
             Actions\EditAction::make()
                 ->label('Review')
                 ->visible(fn(LeaveRequest $record) => $record->status === 'pending'),
-            Action::make('back')->url(static::getResource()::getUrl())->button()->color('gray'),
+            Action::make('Kembali')->url(static::getResource()::getUrl())->button()->color('gray'),
         ];
     }
 

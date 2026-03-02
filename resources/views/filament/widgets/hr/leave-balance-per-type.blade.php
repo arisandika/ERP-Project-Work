@@ -7,30 +7,37 @@
 
     if ($employee) {
 
-        // Query leave berdasarkan gender
+        // Filter leave berdasarkan gender
         $leaves = Leave::query()
-            ->when($employee->gender !== 'Perempuan', function ($query) {
-                $query->where('is_female_only', false);
-            })
+            ->when(
+                $employee->gender !== 'Perempuan',
+                fn($q) => $q->where('is_female_only', false)
+            )
+            ->when(
+                $employee->gender !== 'Laki-laki',
+                fn($q) => $q->where('is_male_only', false)
+            )
             ->get();
 
         foreach ($leaves as $leave) {
 
-            $used = LeaveRequest::where('employee_id', $employee->id)
+            $used = LeaveRequest::query()
+                ->where('employee_id', $employee->id)
                 ->where('leave_id', $leave->id)
                 ->where('status', 'approved')
                 ->sum('total_days');
 
             $remaining = max($leave->days_count - $used, 0);
+
             $percentage = $leave->days_count > 0
                 ? round(($used / $leave->days_count) * 100)
                 : 0;
 
-            $badgeColor = $percentage < 40
-                ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-700 dark:text-emerald-100'
-                : ($percentage < 70
-                    ? 'bg-amber-100 text-amber-700 dark:bg-amber-700 dark:text-amber-100'
-                    : 'bg-red-100 text-red-700 dark:bg-red-700 dark:text-red-100');
+            $badgeColor = match (true) {
+                $percentage < 40 => 'bg-emerald-100 text-emerald-700 dark:bg-emerald-700 dark:text-emerald-100',
+                $percentage < 70 => 'bg-amber-100 text-amber-700 dark:bg-amber-700 dark:text-amber-100',
+                default => 'bg-red-100 text-red-700 dark:bg-red-700 dark:text-red-100'
+            };
 
             $icons = [
                 'Cuti Tahunan' => 'heroicon-o-sun',
@@ -41,8 +48,6 @@
                 'Cuti Istri Melahirkan/Keguguran' => 'heroicon-o-clipboard-document-list',
             ];
 
-            $icon = $icons[$leave->leave_type] ?? 'heroicon-o-calendar';
-
             $rows[] = [
                 'type' => $leave->leave_type,
                 'quota' => $leave->days_count,
@@ -50,7 +55,7 @@
                 'remaining' => $remaining,
                 'percentage' => $percentage,
                 'badge' => $badgeColor,
-                'icon' => $icon,
+                'icon' => $icons[$leave->leave_type] ?? 'heroicon-o-calendar',
             ];
         }
     }
@@ -64,11 +69,11 @@
 
             @foreach($rows as $row)
                 <div
-                    class="w-full p-6 border border-gray-200 rounded-lg bg-gradient-to-br from-white to-gray-50 dark:from-gray-900 dark:to-gray-800 dark:border-gray-700">
+                    class="w-full p-6 rounded-2xl bg-secondary-light dark:bg-secondary-dark ring-1 ring-border-light dark:ring-border-dark">
 
                     <div class="flex items-center justify-between mb-4">
                         <div class="flex items-center gap-2">
-                            <x-filament::icon :icon="$row['icon']" class="w-6 h-6 text-primary-600 dark:text-primary-400" />
+                            <x-filament::icon :icon="$row['icon']" class="w-6 h-6 text-main-primary" />
                             <h3 class="text-lg font-semibold">{{ $row['type'] }}</h3>
                         </div>
                     </div>
@@ -86,19 +91,8 @@
 
                         <div class="flex justify-between">
                             <span class="font-semibold">Sisa</span>
-                            <span class="font-bold text-primary-600 dark:text-primary-400">{{ $row['remaining'] }}
+                            <span class="font-bold text-main-primary">{{ $row['remaining'] }}
                                 hari</span>
-                        </div>
-                    </div>
-
-                    <div class="mt-4">
-                        <div class="w-full h-2 overflow-hidden bg-gray-200 rounded-full dark:bg-gray-700">
-                            <div class="h-full bg-primary-600 dark:bg-primary-400" style="width: {{ $row['percentage'] }}%">
-                            </div>
-                        </div>
-
-                        <div class="mt-1 text-xs text-right text-gray-500 dark:text-gray-400">
-                            {{ $row['percentage'] }}% dari {{ $row['quota'] }} hari
                         </div>
                     </div>
 
@@ -106,6 +100,6 @@
             @endforeach
 
         </div>
-        
+
     </x-filament::section>
 </x-filament::widget>
