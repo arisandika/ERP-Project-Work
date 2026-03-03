@@ -15,6 +15,7 @@ use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\SoftDeletingScope;
 use Illuminate\Support\Carbon;
 
 class ReimbursementApprovalResource extends Resource
@@ -39,6 +40,11 @@ class ReimbursementApprovalResource extends Resource
     public static function getNavigationBadgeColor(): ?string
     {
         return 'warning';
+    }
+
+    public static function getNavigationBadgeTooltip(): ?string
+    {
+        return 'Pengajuan reimburse pending yang perlu di-review';
     }
 
     public static function form(Form $form): Form
@@ -220,7 +226,7 @@ class ReimbursementApprovalResource extends Resource
                     ->placeholder('—'),
 
                 Tables\Columns\TextColumn::make('created_at')
-                    ->label('Diajukan Pada')
+                    ->label('Dibuat Pada')
                     ->dateTime('d M Y H:i')
                     ->sortable()
                     ->placeholder('—'),
@@ -301,6 +307,7 @@ class ReimbursementApprovalResource extends Resource
             ->actions([
                 Tables\Actions\EditAction::make()
                     ->label('Review')
+                    ->color('warning')
                     ->visible(fn(ReimbursementRequest $record) => $record->status === 'pending'),
 
                 Tables\Actions\ViewAction::make(),
@@ -320,7 +327,6 @@ class ReimbursementApprovalResource extends Resource
         return $infolist
             ->schema([
                 Section::make('Informasi Pengajuan Reimburse')
-                    ->description('Kamu bisa edit pengajuan reimburse ini jika masih berstatus pending atau menunggu persetujuan.')
                     ->columns(2)
                     ->schema([
                         TextEntry::make('employee.full_name')
@@ -400,7 +406,7 @@ class ReimbursementApprovalResource extends Resource
                     ->columns(2)
                     ->schema([
                         TextEntry::make('created_at')
-                            ->label('Diajukan Pada')
+                            ->label('Dibuat Pada')
                             ->dateTime('d M Y H:i'),
 
                         TextEntry::make('updated_at')
@@ -426,9 +432,16 @@ class ReimbursementApprovalResource extends Resource
     {
         return [
             'index' => Pages\ListReimbursementApprovals::route('/'),
-            'create' => Pages\CreateReimbursementApproval::route('/create'),
-            'view' => Pages\ViewReimbursementApproval::route('/{record}'),
             'edit' => Pages\EditReimbursementApproval::route('/{record}/edit'),
+            'view' => Pages\EditReimbursementApproval::route('/{record}'),
         ];
+    }
+
+    public static function getEloquentQuery(): Builder
+    {
+        return parent::getEloquentQuery()
+            ->withoutGlobalScopes([
+                SoftDeletingScope::class,
+            ]);
     }
 }

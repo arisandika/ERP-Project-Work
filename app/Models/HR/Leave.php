@@ -21,8 +21,8 @@ class Leave extends Model
     ];
 
     protected $casts = [
-        'is_male_only' => 'boolean',
         'is_female_only' => 'boolean',
+        'is_male_only' => 'boolean',
     ];
 
     // Relationships

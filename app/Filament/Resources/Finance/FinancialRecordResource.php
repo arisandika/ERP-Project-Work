@@ -14,6 +14,7 @@ use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\SoftDeletingScope;
 use Illuminate\Support\Carbon;
 
 class FinancialRecordResource extends Resource
@@ -146,7 +147,8 @@ class FinancialRecordResource extends Resource
                     ->state(
                         fn($record) =>
                         $record->reimbursement ? 'Reimburse' : 'Manual'
-                    ),
+                    )
+                    ->placeholder('—'),
 
                 Tables\Columns\TextColumn::make('transaction_category')
                     ->label('Jenis Transaksi')
@@ -167,6 +169,7 @@ class FinancialRecordResource extends Resource
                         ?? $record->description
                     )
                     ->searchable()
+                    ->placeholder('—')
                     ->limit(30),
 
                 Tables\Columns\TextColumn::make('transaction_date')
@@ -437,7 +440,6 @@ class FinancialRecordResource extends Resource
                 Section::make('Pengelolaan Data')
                     ->columns(2)
                     ->schema([
-
                         TextEntry::make('created_at')
                             ->label('Dibuat Pada')
                             ->dateTime('d M Y H:i'),
@@ -450,7 +452,6 @@ class FinancialRecordResource extends Resource
                             ->label('Dihapus Pada')
                             ->dateTime('d M Y H:i')
                             ->visible(fn($record) => $record->trashed()),
-
                     ]),
             ]);
     }
@@ -463,5 +464,13 @@ class FinancialRecordResource extends Resource
             'view' => Pages\ViewFinancialRecord::route('/{record}'),
             // 'edit' => Pages\EditFinancialRecord::route('/{record}/edit'),
         ];
+    }
+
+    public static function getEloquentQuery(): Builder
+    {
+        return parent::getEloquentQuery()
+            ->withoutGlobalScopes([
+                SoftDeletingScope::class,
+            ]);
     }
 }

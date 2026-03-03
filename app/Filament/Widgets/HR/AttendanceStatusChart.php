@@ -13,8 +13,8 @@ class AttendanceStatusChart extends ApexChartWidget
     protected static ?string $chartId = 'attendanceStatusChart';
 
     protected static ?string $heading = 'Status Presensi Hari Ini';
-    
-    protected static ?string $subHeading = 'Status Presensi Hari Ini'; 
+
+    protected static ?string $subHeading = 'Status Presensi Hari Ini';
 
     protected int|string|array $columnSpan = [
         'default' => 2,
@@ -85,6 +85,9 @@ class AttendanceStatusChart extends ApexChartWidget
             ],
 
             'yaxis' => [
+                'min' => 0,
+                'forceNiceScale' => true,
+                'decimalsInFloat' => 0,
                 'labels' => [
                     'style' => [
                         'fontSize' => '12px',

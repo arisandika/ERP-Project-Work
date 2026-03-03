@@ -2,6 +2,7 @@
 namespace App\Models\HR;
 
 use App\Models\Finance\FinancialRecord;
+use App\Models\Finance\ReimbursementRequest;
 use App\Models\Project\Notification;
 use App\Models\Project\Project;
 use App\Models\Project\Ticket;
@@ -80,6 +81,11 @@ class Employee extends Model
     public function leaveRequests()
     {
         return $this->hasMany(LeaveRequest::class, 'employee_id', 'id');
+    }
+
+    public function reimbursementRequests()
+    {
+        return $this->hasMany(ReimbursementRequest::class, 'employee_id', 'id');
     }
 
     // ================================ //

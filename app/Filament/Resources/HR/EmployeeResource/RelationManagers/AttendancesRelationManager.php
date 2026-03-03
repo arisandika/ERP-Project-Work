@@ -1,8 +1,13 @@
 <?php
 namespace App\Filament\Resources\HR\EmployeeResource\RelationManagers;
 
+use App\Models\HR\Attendance;
 use Filament\Forms;
 use Filament\Forms\Form;
+use Filament\Infolists\Components\ImageEntry;
+use Filament\Infolists\Components\Section;
+use Filament\Infolists\Components\TextEntry;
+use Filament\Infolists\Infolist;
 use Filament\Resources\RelationManagers\RelationManager;
 use Filament\Tables;
 use Filament\Tables\Table;
@@ -12,7 +17,9 @@ use Illuminate\Support\Carbon;
 class AttendancesRelationManager extends RelationManager
 {
     protected static string $relationship = 'attendances';
+
     protected static ?string $recordTitleAttribute = 'date';
+
     protected static ?string $title = 'Riwayat Presensi';
 
     public function form(Form $form): Form
@@ -160,21 +167,87 @@ class AttendancesRelationManager extends RelationManager
             ])
             ->actions([
                 Tables\Actions\ViewAction::make(),
-
-                // Tables\Actions\DeleteAction::make(),
-                // Tables\Actions\ForceDeleteAction::make(),
-                // Tables\Actions\RestoreAction::make(),
-            ])
-            ->bulkActions([
-                Tables\Actions\BulkActionGroup::make([
-                    // Tables\Actions\DeleteBulkAction::make(),
-                    // Tables\Actions\ForceDeleteBulkAction::make(),
-                    // Tables\Actions\RestoreBulkAction::make(),
-                ]),
             ])
             ->defaultSort('created_at', 'desc')
             ->headerActions([
                 //
+            ]);
+    }
+
+    public function infolist(Infolist $infolist): Infolist
+    {
+        return $infolist
+            ->schema([
+                Section::make('Informasi Presensi')
+                    ->columns(2)
+                    ->schema([
+                        TextEntry::make('employee.full_name')
+                            ->label('Nama Karyawan')
+                            ->color('primary')
+                            ->weight('semibold')
+                            ->icon('heroicon-o-user')
+                            ->placeholder('—'),
+
+                        TextEntry::make('date')
+                            ->label('Tanggal')
+                            ->date('D, d M Y')
+                            ->placeholder('—'),
+
+                        TextEntry::make('clock_in')
+                            ->label('Jam Masuk')
+                            ->time('H:i')
+                            ->placeholder('—'),
+
+                        TextEntry::make('clock_out')
+                            ->label('Jam Keluar')
+                            ->time('H:i')
+                            ->placeholder('—'),
+
+                        TextEntry::make('status')
+                            ->label('Status')
+                            ->badge()
+                            ->colors([
+                                'success' => 'hadir',
+                                'warning' => 'terlambat',
+                                'danger' => 'absen',
+                                'yellow' => 'izin',
+                                'info' => 'cuti',
+                                'gray' => 'no_checkout',
+                            ])
+                            ->formatStateUsing(fn(string $state): string => ucwords(str_replace('_', ' ', $state)))
+                            ->placeholder('—'),
+
+                        TextEntry::make('note')
+                            ->label('Catatan')
+                            ->placeholder('—'),
+
+                        ImageEntry::make('face_snapshot_in')
+                            ->label('Foto Presensi Masuk')
+                            ->placeholder('—')
+                            ->extraImgAttributes(['style' => 'width: 100%; height: auto; object-fit: cover;']),
+
+                        ImageEntry::make('face_snapshot_out')
+                            ->label('Foto Presensi Keluar')
+                            ->placeholder('—')
+                            ->extraImgAttributes(['style' => 'width: 100%; height: auto; object-fit: cover;']),
+                    ]),
+
+                Section::make('Pengelolaan Data')
+                    ->columns(2)
+                    ->schema([
+                        TextEntry::make('created_at')
+                            ->label('Dibuat Pada')
+                            ->dateTime('d M Y H:i'),
+
+                        TextEntry::make('updated_at')
+                            ->label('Diperbarui Pada')
+                            ->dateTime('d M Y H:i'),
+
+                        TextEntry::make('deleted_at')
+                            ->label('Dihapus Pada')
+                            ->dateTime('d M Y H:i')
+                            ->visible(fn($record) => $record->trashed()),
+                    ]),
             ]);
     }
 }

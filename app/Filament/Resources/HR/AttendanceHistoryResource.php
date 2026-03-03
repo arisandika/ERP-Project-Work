@@ -251,7 +251,7 @@ class AttendanceHistoryResource extends Resource
                     ->columns(2)
                     ->schema([
                         TextEntry::make('created_at')
-                            ->label('Diajukan Pada')
+                            ->label('Dibuat Pada')
                             ->dateTime('d M Y H:i'),
 
                         TextEntry::make('updated_at')
@@ -277,7 +277,7 @@ class AttendanceHistoryResource extends Resource
     {
         return [
             'index' => Pages\ListAttendanceHistories::route('/'),
-            'view' => Pages\ViewAttendanceHistory::route('/{record}'),
+            // 'view' => Pages\ViewAttendanceHistory::route('/{record}'),
         ];
     }
 

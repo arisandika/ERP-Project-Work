@@ -1,36 +1,30 @@
 <?php
-namespace App\Filament\Resources\HR;
+namespace App\Filament\Resources\HR\EmployeeResource\RelationManagers;
 
-use App\Filament\Resources\HR\AttendanceResource\Pages;
-use App\Models\HR\Attendance;
+use App\Models\Finance\ReimbursementRequest;
+use App\Models\HR\LeaveRequest;
 use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Infolists\Components\ImageEntry;
 use Filament\Infolists\Components\Section;
 use Filament\Infolists\Components\TextEntry;
 use Filament\Infolists\Infolist;
-use Filament\Resources\Resource;
+use Filament\Notifications\Notification;
+use Filament\Resources\RelationManagers\RelationManager;
 use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
-use Illuminate\Database\Eloquent\SoftDeletingScope;
 use Illuminate\Support\Carbon;
 
-class AttendanceResource extends Resource
+class ReimbursementRequestsRelationManager extends RelationManager
 {
-    protected static ?string $model = Attendance::class;
+    protected static string $relationship = 'reimbursementRequests';
 
-    protected static ?string $navigationIcon = 'heroicon-o-computer-desktop';
+    protected static ?string $recordTitleAttribute = 'date';
 
-    protected static ?string $navigationGroup = 'Manajemen HR';
+    protected static ?string $title = 'Riwayat Reimburse';
 
-    protected static ?int $navigationSort = 6;
-
-    protected static ?string $slug = 'hr/monitoring-attendances';
-
-    protected static ?string $pluralModelLabel = 'Monitoring Presensi';
-
-    public static function form(Form $form): Form
+    public function form(Form $form): Form
     {
         return $form
             ->schema([
@@ -38,9 +32,10 @@ class AttendanceResource extends Resource
             ]);
     }
 
-    public static function table(Table $table): Table
+    public function table(Table $table): Table
     {
         return $table
+            ->recordTitleAttribute('full_name')
             ->columns([
                 Tables\Columns\TextColumn::make('employee.full_name')
                     ->label('Nama Karyawan')
@@ -48,7 +43,7 @@ class AttendanceResource extends Resource
                     ->sortable()
                     ->weight('semibold')
                     ->icon('heroicon-o-user')
-                    ->color(function (Attendance $record) {
+                    ->color(function (ReimbursementRequest $record) {
                         $record->withTrashed()->first();
                         if ($record && $record->trashed())
                             return 'danger';
@@ -56,24 +51,25 @@ class AttendanceResource extends Resource
                     })
                     ->placeholder('—'),
 
+                Tables\Columns\TextColumn::make('type')
+                    ->label('Jenis Reimburse')
+                    ->sortable()
+                    ->searchable()
+                    ->placeholder('—'),
+
                 Tables\Columns\BadgeColumn::make('status')
                     ->label('Status')
                     ->sortable()
-                    ->colors([
-                        'success' => 'hadir',
-                        'warning' => 'terlambat',
-                        'danger' => '',
-                        'yellow' => 'izin',
-                        'info' => 'cuti',
-                        'gray' => 'no_checkout',
-                    ])
+                    ->color(fn(string $state): string => match ($state) {
+                        'pending' => 'warning',
+                        'approved' => 'success',
+                        default => 'danger',
+                    })
                     ->formatStateUsing(fn(string $state) => match ($state) {
-                        'hadir' => 'Hadir',
-                        'terlambat' => 'Terlambat',
-                        'absen' => 'Absen',
-                        'cuti' => 'Cuti',
-                        'izin' => 'Izin',
-                        'no_checkout' => 'Tidak Presensi Keluar',
+                        'pending' => 'Menunggu',
+                        'approved' => 'Disetujui',
+                        'rejected' => 'Ditolak',
+                        'cancelled' => 'Dibatalkan',
 
                         default => ucwords(
                             str_replace('_', ' ', $state)
@@ -87,17 +83,33 @@ class AttendanceResource extends Resource
                     ->sortable()
                     ->placeholder('—'),
 
-                Tables\Columns\TextColumn::make('clock_in')
-                    ->label('Jam Masuk')
-                    ->time('H:i')
-                    ->placeholder('—')
-                    ->sortable(),
+                Tables\Columns\TextColumn::make('amount')
+                    ->label('Nominal')
+                    ->money('IDR')
+                    ->color(fn($state) => $state < 0 ? 'success' : 'danger')
+                    ->sortable()
+                    ->weight('semibold')
+                    ->placeholder('—'),
 
-                Tables\Columns\TextColumn::make('clock_out')
-                    ->label('Jam Keluar')
-                    ->time('H:i')
-                    ->placeholder('—')
-                    ->sortable(),
+                Tables\Columns\TextColumn::make('approver.full_name')
+                    ->label('Disetujui Oleh')
+                    ->searchable()
+                    ->sortable()
+                    ->weight('semibold')
+                    ->icon('heroicon-o-user')
+                    ->color(function (ReimbursementRequest $record) {
+                        $record->withTrashed()->first();
+                        if ($record && $record->trashed())
+                            return 'danger';
+                        return '';
+                    })
+                    ->placeholder('—'),
+
+                Tables\Columns\TextColumn::make('created_at')
+                    ->label('Dibuat Pada')
+                    ->dateTime('d M Y H:i')
+                    ->sortable()
+                    ->placeholder('—'),
 
                 Tables\Columns\TextColumn::make('created_at')
                     ->label('Dibuat Pada')
@@ -119,18 +131,15 @@ class AttendanceResource extends Resource
             ])
             ->filters([
                 Tables\Filters\SelectFilter::make('status')
-                    ->label('Status Presensi')
                     ->options([
-                        'hadir' => 'Hadir',
-                        'terlambat' => 'Terlambat',
-                        'absen' => 'Absen',
-                        'cuti' => 'Cuti',
-                        'izin' => 'Izin',
-                        'no_checkout' => 'Tidak Presensi Keluar',
+                        'pending' => 'Pending',
+                        'approved' => 'Approved',
+                        'rejected' => 'Rejected',
+                        'cancelled' => 'Cancelled',
                     ])
                     ->native(false),
 
-                Tables\Filters\Filter::make('date')
+                Tables\Filters\Filter::make('created_at')
                     ->form([
                         Forms\Components\DatePicker::make('created_from')
                             ->label('Dibuat Dari')
@@ -150,21 +159,24 @@ class AttendanceResource extends Resource
                         return $query
                             ->when(
                                 $data['created_from'],
-                                fn(Builder $query, $date): Builder => $query->whereDate('date', '>=', $date),
+                                fn(Builder $query, $date): Builder => $query->whereDate('created_at', '>=', $date),
                             )
                             ->when(
                                 $data['created_until'],
-                                fn(Builder $query, $date): Builder => $query->whereDate('date', '<=', $date),
+                                fn(Builder $query, $date): Builder => $query->whereDate('created_at', '<=', $date),
                             );
                     })
                     ->indicateUsing(function (array $data): array {
                         $indicators = [];
+
                         if ($data['created_from'] ?? null) {
-                            $indicators[] = 'Dari ' . Carbon::parse($data['created_from'])->toFormattedDateString();
+                            $indicators[] = 'Created from ' . Carbon::parse($data['created_from'])->toFormattedDateString();
                         }
+
                         if ($data['created_until'] ?? null) {
-                            $indicators[] = 'Sampai ' . Carbon::parse($data['created_until'])->toFormattedDateString();
+                            $indicators[] = 'Created until ' . Carbon::parse($data['created_until'])->toFormattedDateString();
                         }
+
                         return $indicators;
                     }),
 
@@ -174,26 +186,18 @@ class AttendanceResource extends Resource
             ])
             ->actions([
                 Tables\Actions\ViewAction::make(),
-
-                // Tables\Actions\DeleteAction::make(),
-                // Tables\Actions\ForceDeleteAction::make(),
-                // Tables\Actions\RestoreAction::make(),
             ])
-            ->bulkActions([
-                Tables\Actions\BulkActionGroup::make([
-                    // Tables\Actions\DeleteBulkAction::make(),
-                    // Tables\Actions\ForceDeleteBulkAction::make(),
-                    // Tables\Actions\RestoreBulkAction::make(),
-                ]),
-            ])
-            ->defaultSort('created_at', 'desc');
+            ->defaultSort('created_at', 'desc')
+            ->headerActions([
+                //
+            ]);
     }
 
-    public static function infolist(Infolist $infolist): Infolist
+    public function infolist(Infolist $infolist): Infolist
     {
         return $infolist
             ->schema([
-                Section::make('Informasi Presensi')
+                Section::make('Informasi Pengajuan Reimburse')
                     ->columns(2)
                     ->schema([
                         TextEntry::make('employee.full_name')
@@ -203,48 +207,70 @@ class AttendanceResource extends Resource
                             ->icon('heroicon-o-user')
                             ->placeholder('—'),
 
+                        TextEntry::make('type')
+                            ->label('Jenis Reimburse')
+                            ->placeholder('—'),
+
                         TextEntry::make('date')
-                            ->label('Tanggal')
+                            ->label('Tanggal Transaksi')
                             ->date('D, d M Y')
                             ->placeholder('—'),
 
-                        TextEntry::make('clock_in')
-                            ->label('Jam Masuk')
-                            ->time('H:i')
+                        TextEntry::make('amount')
+                            ->label('Nominal')
+                            ->money('IDR')
+                            ->color('danger')
+                            ->weight('semibold')
                             ->placeholder('—'),
 
-                        TextEntry::make('clock_out')
-                            ->label('Jam Keluar')
-                            ->time('H:i')
+                        TextEntry::make('description')
+                            ->label('Keterangan')
                             ->placeholder('—'),
 
+                        ImageEntry::make('receipt')
+                            ->label('Bukti Transaksi')
+                            ->placeholder('—')
+                            ->extraImgAttributes(['style' => 'width: 100%; height: auto; object-fit: cover;']),
+                    ]),
+
+                Section::make('Status Persetujuan')
+                    ->columns(2)
+                    ->schema([
                         TextEntry::make('status')
                             ->label('Status')
                             ->badge()
-                            ->colors([
-                                'success' => 'hadir',
-                                'warning' => 'terlambat',
-                                'danger' => 'absen',
-                                'yellow' => 'izin',
-                                'info' => 'cuti',
-                                'gray' => 'no_checkout',
-                            ])
-                            ->formatStateUsing(fn(string $state): string => ucwords(str_replace('_', ' ', $state)))
+                            ->color(fn(string $state) => match ($state) {
+                                'pending' => 'warning',
+                                'approved' => 'success',
+                                default => 'danger',
+                            })
+                            ->formatStateUsing(function (string $state): string {
+                                return match ($state) {
+                                    'pending' => 'Menunggu',
+                                    'approved' => 'Disetujui',
+                                    'rejected' => 'Ditolak',
+                                    'cancelled' => 'Dibatalkan',
+
+                                    default => ucwords(
+                                        str_replace('_', ' ', $state)
+                                    ),
+                                };
+
+                            })
                             ->placeholder('—'),
 
-                        TextEntry::make('note')
-                            ->label('Catatan')
+                        TextEntry::make('approver.full_name')
+                            ->label('Disetujui Oleh')
+                            ->color('primary')
+                            ->weight('semibold')
+                            ->icon('heroicon-o-user')
                             ->placeholder('—'),
 
-                        ImageEntry::make('face_snapshot_in')
-                            ->label('Foto Presensi Masuk')
-                            ->placeholder('—')
-                            ->extraImgAttributes(['style' => 'width: 100%; height: auto; object-fit: cover;']),
-
-                        ImageEntry::make('face_snapshot_out')
-                            ->label('Foto Presensi Keluar')
-                            ->placeholder('—')
-                            ->extraImgAttributes(['style' => 'width: 100%; height: auto; object-fit: cover;']),
+                        TextEntry::make('approved_at')
+                            ->label('Waktu Persetujuan')
+                            ->dateTime('d M Y H:i')
+                            ->visible(fn($record) => $record->approved_at !== null)
+                            ->placeholder('—'),
                     ]),
 
                 Section::make('Pengelolaan Data')
@@ -263,29 +289,6 @@ class AttendanceResource extends Resource
                             ->dateTime('d M Y H:i')
                             ->visible(fn($record) => $record->trashed()),
                     ]),
-            ]);
-    }
-
-    public static function getRelations(): array
-    {
-        return [
-            //
-        ];
-    }
-
-    public static function getPages(): array
-    {
-        return [
-            'index' => Pages\ListAttendances::route('/'),
-            // 'view' => Pages\ViewAttendance::route('/{record}'),
-        ];
-    }
-
-    public static function getEloquentQuery(): Builder
-    {
-        return parent::getEloquentQuery()
-            ->withoutGlobalScopes([
-                SoftDeletingScope::class,
             ]);
     }
 }
