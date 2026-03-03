@@ -54,7 +54,7 @@ class SupplierResource extends Resource
                             ->prefixIcon('heroicon-o-phone'),
 
                         Forms\Components\TextInput::make('email')
-                            ->label('Alamat Email')
+                            ->label('Email')
                             ->email()
                             ->maxLength(255)
                             ->prefixIcon('heroicon-o-envelope'),

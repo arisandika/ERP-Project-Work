@@ -33,12 +33,32 @@ class LeaveRequestResource extends Resource
 
     public static function getNavigationBadge(): ?string
     {
-        return static::getModel()::where('status', 'pending')->count();
+        $user = auth()->user();
+
+        $query = static::getModel()::query()
+            ->where('status', 'pending');
+
+        if (!$user->hasRole('super_admin')) {
+            $employee = $user->employee;
+
+            if ($employee) {
+                $query->where('employee_id', $employee->id);
+            } else {
+                return '0';
+            }
+        }
+
+        return (string) $query->count();
     }
 
     public static function getNavigationBadgeColor(): ?string
     {
         return 'warning';
+    }
+
+    public static function getNavigationBadgeTooltip(): ?string
+    {
+        return 'Pengajuan cuti pending yang belum di-review';
     }
 
     public static function form(Form $form): Form
@@ -77,7 +97,6 @@ class LeaveRequestResource extends Resource
                     Forms\Components\DatePicker::make('start_date')
                         ->label('Tanggal Mulai')
                         ->required()
-                        ->default(now())
                         ->displayFormat('d M Y')
                         ->native(false)
                         ->prefixIcon('heroicon-o-calendar-days')
@@ -91,9 +110,13 @@ class LeaveRequestResource extends Resource
                                 $startDate = Carbon::parse($start);
                                 $endDate = Carbon::parse($end);
 
-                                // Swap jika admin salah input (biar ga error)
                                 if ($startDate->gt($endDate)) {
                                     $set('total_days', null);
+                                    return;
+                                }
+
+                                if ($startDate->isSameDay($endDate)) {
+                                    $set('total_days', $startDate->isWeekend() ? 0 : 1);
                                     return;
                                 }
 
@@ -102,7 +125,6 @@ class LeaveRequestResource extends Resource
                                     $endDate
                                 );
 
-                                // INKLUSI hari mulai + hari selesai
                                 $set('total_days', $workingDays + 1);
                             } else {
                                 $set('total_days', null);
@@ -127,6 +149,11 @@ class LeaveRequestResource extends Resource
 
                                 if ($startDate->gt($endDate)) {
                                     $set('total_days', null);
+                                    return;
+                                }
+
+                                if ($startDate->isSameDay($endDate)) {
+                                    $set('total_days', $startDate->isWeekend() ? 0 : 1);
                                     return;
                                 }
 
@@ -250,7 +277,7 @@ class LeaveRequestResource extends Resource
                     ->placeholder('—'),
 
                 Tables\Columns\TextColumn::make('created_at')
-                    ->label('Diajukan Pada')
+                    ->label('Dibuat Pada')
                     ->dateTime('d M Y H:i')
                     ->sortable()
                     ->placeholder('—'),
@@ -490,7 +517,7 @@ class LeaveRequestResource extends Resource
                     ->columns(2)
                     ->schema([
                         TextEntry::make('created_at')
-                            ->label('Diajukan Pada')
+                            ->label('Dibuat Pada')
                             ->dateTime('d M Y H:i'),
 
                         TextEntry::make('updated_at')

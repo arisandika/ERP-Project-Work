@@ -4,6 +4,10 @@ namespace App\Filament\Resources\HR\EmployeeResource\RelationManagers;
 use App\Models\HR\LeaveRequest;
 use Filament\Forms;
 use Filament\Forms\Form;
+use Filament\Infolists\Components\ImageEntry;
+use Filament\Infolists\Components\Section;
+use Filament\Infolists\Components\TextEntry;
+use Filament\Infolists\Infolist;
 use Filament\Resources\RelationManagers\RelationManager;
 use Filament\Tables;
 use Filament\Tables\Table;
@@ -13,8 +17,10 @@ use Illuminate\Support\Carbon;
 class LeaveRequestsRelationManager extends RelationManager
 {
     protected static string $relationship = 'leaveRequests';
+
     protected static ?string $recordTitleAttribute = 'start_date';
-    protected static ?string $title = 'Riwayat Cuti Karyawan';
+
+    protected static ?string $title = 'Riwayat Cuti';
 
     public function form(Form $form): Form
     {
@@ -30,61 +36,110 @@ class LeaveRequestsRelationManager extends RelationManager
             ->recordTitleAttribute('full_name')
             ->columns([
                 Tables\Columns\TextColumn::make('employee.full_name')
-                    ->label('Karyawan')
+                    ->label('Nama Karyawan')
+                    ->searchable()
                     ->sortable()
-                    ->searchable(),
+                    ->weight('semibold')
+                    ->icon('heroicon-o-user')
+                    ->color(function (LeaveRequest $record) {
+                        $record->withTrashed()->first();
+                        if ($record && $record->trashed())
+                            return 'danger';
+                        return '';
+                    })
+                    ->placeholder('—'),
 
                 Tables\Columns\TextColumn::make('leave.leave_type')
                     ->label('Jenis Cuti')
                     ->sortable()
-                    ->searchable(),
-
-                Tables\Columns\TextColumn::make('start_date')
-                    ->label('Mulai')
-                    ->date('d M Y')
-                    ->sortable(),
-
-                Tables\Columns\TextColumn::make('end_date')
-                    ->label('Selesai')
-                    ->date('d M Y')
-                    ->sortable(),
-
-                Tables\Columns\TextColumn::make('total_days')
-                    ->label('Durasi (Hari)')
-                    ->sortable()
-                    ->alignCenter(),
+                    ->searchable()
+                    ->placeholder('—'),
 
                 Tables\Columns\BadgeColumn::make('status')
                     ->label('Status')
-                    ->colors([
-                        'warning' => 'pending',
-                        'success' => 'approved',
-                        'danger' => 'rejected',
-                    ])
+                    ->sortable()
+                    ->color(fn(string $state): string => match ($state) {
+                        'pending' => 'warning',
+                        'approved' => 'success',
+                        default => 'danger',
+                    })
                     ->formatStateUsing(fn(string $state) => match ($state) {
                         'pending' => 'Menunggu',
                         'approved' => 'Disetujui',
                         'rejected' => 'Ditolak',
-                        default => ucwords($state),
-                    }),
+                        'cancelled' => 'Dibatalkan',
+
+                        default => ucwords(
+                            str_replace('_', ' ', $state)
+                        ),
+                    })
+                    ->placeholder('—'),
+
+                Tables\Columns\TextColumn::make('start_date')
+                    ->label('Tanggal Mulai')
+                    ->date('d M Y')
+                    ->sortable()
+                    ->placeholder('—'),
+
+                Tables\Columns\TextColumn::make('end_date')
+                    ->label('Tanggal Selesai')
+                    ->date('d M Y')
+                    ->sortable()
+                    ->placeholder('—'),
+
+                Tables\Columns\TextColumn::make('total_days')
+                    ->label('Durasi (Hari)')
+                    ->sortable()
+                    ->formatStateUsing(fn($state) => $state . ' Hari')
+                    ->placeholder('—'),
 
                 Tables\Columns\TextColumn::make('approver.full_name')
                     ->label('Disetujui Oleh')
+                    ->searchable()
+                    ->sortable()
+                    ->weight('semibold')
+                    ->icon('heroicon-o-user')
+                    ->color(function (LeaveRequest $record) {
+                        $record->withTrashed()->first();
+                        if ($record && $record->trashed())
+                            return 'danger';
+                        return '';
+                    })
                     ->placeholder('—'),
 
                 Tables\Columns\TextColumn::make('created_at')
-                    ->label('Diajukan')
+                    ->label('Dibuat Pada')
                     ->dateTime('d M Y H:i')
-                    ->sortable(),
+                    ->sortable()
+                    ->placeholder('—'),
+
+                Tables\Columns\TextColumn::make('created_at')
+                    ->label('Dibuat Pada')
+                    ->dateTime('d M Y H:i')
+                    ->sortable()
+                    ->toggleable(isToggledHiddenByDefault: true),
+
+                Tables\Columns\TextColumn::make('updated_at')
+                    ->label('Diperbarui Pada')
+                    ->dateTime('d M Y H:i')
+                    ->sortable()
+                    ->toggleable(isToggledHiddenByDefault: true),
+
+                Tables\Columns\TextColumn::make('deleted_at')
+                    ->label('Dihapus Pada')
+                    ->dateTime('d M Y H:i')
+                    ->sortable()
+                    ->toggleable(isToggledHiddenByDefault: true),
             ])
             ->filters([
                 Tables\Filters\SelectFilter::make('status')
                     ->options([
-                        'pending' => 'Menunggu Persetujuan',
-                        'approved' => 'Disetujui',
-                        'rejected' => 'Ditolak',
+                        'pending' => 'Pending',
+                        'approved' => 'Approved',
+                        'rejected' => 'Rejected',
+                        'cancelled' => 'Cancelled',
                     ])
-                    ->label('Status'),
+                    ->native(false),
 
                 Tables\Filters\Filter::make('created_at')
                     ->form([
@@ -133,13 +188,117 @@ class LeaveRequestsRelationManager extends RelationManager
             ])
             ->actions([
                 Tables\Actions\ViewAction::make(),
-                Tables\Actions\EditAction::make()
-                    ->label('Review')
-                    ->visible(fn(LeaveRequest $record) => $record->status === 'pending'),
             ])
             ->defaultSort('created_at', 'desc')
             ->headerActions([
                 //
+            ]);
+    }
+
+    public function infolist(Infolist $infolist): Infolist
+    {
+        return $infolist
+            ->schema([
+                Section::make('Informasi Pengajuan Cuti')
+                    ->columns(2)
+                    ->schema([
+                        TextEntry::make('employee.full_name')
+                            ->label('Nama Karyawan')
+                            ->color('primary')
+                            ->weight('semibold')
+                            ->icon('heroicon-o-user')
+                            ->placeholder('—'),
+
+                        TextEntry::make('leave.leave_type')
+                            ->label('Jenis Cuti')
+                            ->placeholder('—'),
+
+                        TextEntry::make('start_date')
+                            ->label('Tanggal Mulai')
+                            ->date('D, d M Y')
+                            ->placeholder('—'),
+
+                        TextEntry::make('end_date')
+                            ->label('Tanggal Selesai')
+                            ->date('D, d M Y')
+                            ->placeholder('—'),
+
+                        TextEntry::make('total_days')
+                            ->label('Durasi (Hari Kerja)')
+                            ->numeric()
+                            ->formatStateUsing(fn($state) => $state . ' Hari')
+                            ->placeholder('—'),
+
+                        TextEntry::make('reason')
+                            ->label('Alasan Cuti')
+                            ->placeholder('—'),
+
+                        ImageEntry::make('leave_proof')
+                            ->label('Bukti Cuti/Sakit')
+                            ->placeholder('—')
+                            ->extraImgAttributes(['style' => 'width: 100%; height: auto; object-fit: cover;']),
+                    ]),
+
+                Section::make('Status Persetujuan')
+                    ->columns(2)
+                    ->schema([
+                        TextEntry::make('status')
+                            ->label('Status')
+                            ->badge()
+                            ->color(fn(string $state) => match ($state) {
+                                'pending' => 'warning',
+                                'approved' => 'success',
+                                default => 'danger',
+                            })
+                            ->formatStateUsing(function (string $state): string {
+                                return match ($state) {
+                                    'pending' => 'Menunggu',
+                                    'approved' => 'Disetujui',
+                                    'rejected' => 'Ditolak',
+                                    'cancelled' => 'Dibatalkan',
+
+                                    default => ucwords(
+                                        str_replace('_', ' ', $state)
+                                    ),
+                                };
+                            })
+                            ->placeholder('—'),
+
+                        TextEntry::make('approver.full_name')
+                            ->label('Disetujui Oleh')
+                            ->color('primary')
+                            ->weight('semibold')
+                            ->icon('heroicon-o-user')
+                            ->placeholder('—'),
+
+                        TextEntry::make('approved_at')
+                            ->label('Waktu Persetujuan')
+                            ->dateTime('d M Y H:i')
+                            ->visible(fn($record) => $record->approved_at !== null)
+                            ->placeholder('—'),
+
+                        TextEntry::make('approval_note')
+                            ->label('Catatan Admin')
+                            ->placeholder('—')
+                            ->columnSpanFull(),
+                    ]),
+
+                Section::make('Pengelolaan Data')
+                    ->columns(2)
+                    ->schema([
+                        TextEntry::make('created_at')
+                            ->label('Dibuat Pada')
+                            ->dateTime('d M Y H:i'),
+
+                        TextEntry::make('updated_at')
+                            ->label('Diperbarui Pada')
+                            ->dateTime('d M Y H:i'),
+
+                        TextEntry::make('deleted_at')
+                            ->label('Dihapus Pada')
+                            ->dateTime('d M Y H:i')
+                            ->visible(fn($record) => $record->trashed()),
+                    ]),
             ]);
     }
 }

@@ -5,6 +5,8 @@ namespace App\Models\Finance;
 use App\Models\HR\Employee;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
 class ReimbursementRequest extends Model
@@ -33,29 +35,20 @@ class ReimbursementRequest extends Model
     ];
 
     // Pengaju
-    public function employee()
+    public function employee(): BelongsTo
     {
-        return $this->belongsTo(
-            Employee::class,
-            'employee_id'
-        );
+        return $this->belongsTo(Employee::class, 'employee_id');
     }
 
     // Approver
-    public function approver()
+    public function approver(): BelongsTo
     {
-        return $this->belongsTo(
-            Employee::class,
-            'approved_by'
-        );
+        return $this->belongsTo(Employee::class, 'approved_by');
     }
 
     // Financial record hasil reimburse
-    public function financialRecord()
+    public function financialRecord(): HasOne
     {
-        return $this->hasOne(
-            FinancialRecord::class,
-            'reimburse_id'
-        );
+        return $this->hasOne(FinancialRecord::class, 'reimburse_id');
     }
 }

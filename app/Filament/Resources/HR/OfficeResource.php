@@ -218,7 +218,7 @@ class OfficeResource extends Resource
         return [
             'index' => Pages\ListOffices::route('/'),
             'create' => Pages\CreateOffice::route('/create'),
-            'view' => Pages\ViewOffice::route('/{record}'),
+            // 'view' => Pages\ViewOffice::route('/{record}'),
             'edit' => Pages\EditOffice::route('/{record}/edit'),
         ];
     }

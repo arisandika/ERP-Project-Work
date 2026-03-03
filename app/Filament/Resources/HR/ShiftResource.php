@@ -46,12 +46,14 @@ class ShiftResource extends Resource
                         Forms\Components\TimePicker::make('start_time')
                             ->label('Waktu Mulai')
                             ->required()
-                            ->prefixIcon('heroicon-o-clock'),
+                            ->prefixIcon('heroicon-o-clock')
+                            ->native(false),
 
                         Forms\Components\TimePicker::make('end_time')
                             ->label('Waktu Selesai')
                             ->required()
-                            ->prefixIcon('heroicon-o-clock'),
+                            ->prefixIcon('heroicon-o-clock')
+                            ->native(false),
 
                         Forms\Components\TextInput::make('tolerance_minutes')
                             ->label('Toleransi (menit)')
@@ -67,21 +69,26 @@ class ShiftResource extends Resource
     {
         return $table
             ->columns([
-                TextColumn::make('name')
+                Tables\Columns\TextColumn::make('name')
                     ->label('Nama Jam Kerja')
                     ->searchable()
-                    ->sortable(),
+                    ->sortable()
+                    ->placeholder('—'),
 
-                TextColumn::make('start_time')
+                Tables\Columns\TextColumn::make('start_time')
                     ->label('Waktu Mulai')
-                    ->time(),
+                    ->time()
+                    ->placeholder('—'),
 
-                TextColumn::make('end_time')
+                Tables\Columns\TextColumn::make('end_time')
                     ->label('Waktu Selesai')
-                    ->time(),
+                    ->time()
+                    ->placeholder('—'),
 
-                TextColumn::make('tolerance_minutes')
-                    ->label('Toleransi (menit)'),
+                Tables\Columns\TextColumn::make('tolerance_minutes')
+                    ->label('Toleransi')
+                    ->formatStateUsing(fn($state) => $state . ' Menit')
+                    ->placeholder('—'),
 
                 Tables\Columns\TextColumn::make('created_at')
                     ->label('Dibuat Pada')
@@ -142,7 +149,7 @@ class ShiftResource extends Resource
 
                         return $indicators;
                     }),
-                    
+
                 Tables\Filters\TrashedFilter::make()
                     ->label('Deleted Status')
                     ->native(false),
@@ -171,24 +178,41 @@ class ShiftResource extends Resource
                 Section::make('Informasi Jam Kerja')
                     ->columns(2)
                     ->schema([
-                        TextEntry::make('name')->label('Nama Jam Kerja'),
-                        TextEntry::make('start_time')->label('Waktu Mulai')->time(),
-                        TextEntry::make('end_time')->label('Waktu Selesai')->time(),
-                        TextEntry::make('tolerance_minutes')->label('Toleransi (menit)'),
+                        TextEntry::make('name')
+                            ->label('Nama Jam Kerja')
+                            ->placeholder('—'),
+
+                        TextEntry::make('start_time')
+                            ->label('Waktu Mulai')
+                            ->time()
+                            ->placeholder('—'),
+
+                        TextEntry::make('end_time')
+                            ->label('Waktu Selesai')
+                            ->time()
+                            ->placeholder('—'),
+
+                        TextEntry::make('tolerance_minutes')
+                            ->label('Toleransi')
+                            ->formatStateUsing(fn($state) => $state . ' Menit')
+                            ->placeholder('—'),
                     ]),
+
                 Section::make('Pengelolaan Data')
                     ->columns(2)
                     ->schema([
                         TextEntry::make('created_at')
                             ->label('Dibuat Pada')
                             ->dateTime('d M Y H:i'),
+
                         TextEntry::make('updated_at')
                             ->label('Diperbarui Pada')
                             ->dateTime('d M Y H:i'),
+
                         TextEntry::make('deleted_at')
                             ->label('Dihapus Pada')
                             ->dateTime('d M Y H:i')
-                            ->visible(fn(Shift $shift) => $shift->trashed()),
+                            ->visible(fn($record) => $record->trashed()),
                     ]),
             ]);
     }
@@ -205,7 +229,7 @@ class ShiftResource extends Resource
         return [
             'index' => Pages\ListShifts::route('/'),
             'create' => Pages\CreateShift::route('/create'),
-            'view' => Pages\ViewShift::route('/{record}'),
+            // 'view' => Pages\ViewShift::route('/{record}'),
             'edit' => Pages\EditShift::route('/{record}/edit'),
         ];
     }

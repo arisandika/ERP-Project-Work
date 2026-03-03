@@ -61,12 +61,14 @@ class DepartmentResource extends Resource
                 Tables\Columns\TextColumn::make('name')
                     ->label('Nama Departemen')
                     ->sortable()
-                    ->searchable(),
+                    ->searchable()
+                    ->placeholder('—'),
 
                 Tables\Columns\TextColumn::make('code')
                     ->label('Kode Departemen')
                     ->sortable()
-                    ->searchable(),
+                    ->searchable()
+                    ->placeholder('—'),
 
                 Tables\Columns\BadgeColumn::make('employees_count')
                     ->label('Jumlah Karyawan')
@@ -74,7 +76,8 @@ class DepartmentResource extends Resource
                     ->badge()
                     ->color(fn(int $state): string => $state > 0 ? 'info' : 'gray')
                     ->sortable()
-                    ->formatStateUsing(fn($state) => $state . ' Karyawan'),
+                    ->formatStateUsing(fn($state) => $state . ' Karyawan')
+                    ->placeholder('—'),
 
                 Tables\Columns\TextColumn::make('created_at')
                     ->label('Dibuat Pada')
@@ -166,8 +169,6 @@ class DepartmentResource extends Resource
                     ->schema([
                         TextEntry::make('name')
                             ->label('Nama Departemen')
-                            ->weight('semibold')
-                            ->icon('heroicon-o-briefcase')
                             ->placeholder('—'),
 
                         TextEntry::make('employees_count')
@@ -182,7 +183,7 @@ class DepartmentResource extends Resource
                     ->columns(2)
                     ->schema([
                         TextEntry::make('created_at')
-                            ->label('Diajukan Pada')
+                            ->label('Dibuat Pada')
                             ->dateTime('d M Y H:i'),
 
                         TextEntry::make('updated_at')
@@ -209,7 +210,7 @@ class DepartmentResource extends Resource
         return [
             'index' => Pages\ListDepartments::route('/'),
             'create' => Pages\CreateDepartment::route('/create'),
-            'view' => Pages\ViewDepartment::route('/{record}'),
+            // 'view' => Pages\ViewDepartment::route('/{record}'),
             'edit' => Pages\EditDepartment::route('/{record}/edit'),
         ];
     }

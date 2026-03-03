@@ -17,8 +17,13 @@ class ViewReimbursementApproval extends ViewRecord
         return [
             Actions\EditAction::make()
                 ->label('Review')
+                ->color('warning')
                 ->visible(fn(ReimbursementRequest $record) => $record->status === 'pending'),
-            Action::make('Kembali')->url(static::getResource()::getUrl())->button()->color('gray'),
+
+            Action::make('Kembali')
+                ->url(static::getResource()::getUrl())
+                ->button()
+                ->color('gray'),
         ];
     }
 

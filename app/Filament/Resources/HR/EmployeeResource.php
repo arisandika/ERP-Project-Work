@@ -4,6 +4,7 @@ namespace App\Filament\Resources\HR;
 use App\Filament\Resources\HR\EmployeeResource\Pages;
 use App\Filament\Resources\HR\EmployeeResource\RelationManagers\AttendancesRelationManager;
 use App\Filament\Resources\HR\EmployeeResource\RelationManagers\LeaveRequestsRelationManager;
+use App\Filament\Resources\HR\EmployeeResource\RelationManagers\ReimbursementRequestsRelationManager;
 use App\Models\HR\Employee;
 use Filament\Forms;
 use Filament\Forms\Form;
@@ -169,15 +170,6 @@ class EmployeeResource extends Resource
 
                 Forms\Components\Section::make('Informasi Pekerjaan')
                     ->schema([
-                        Forms\Components\Select::make('office_id')
-                            ->label('Kantor Cabang')
-                            ->required()
-                            ->relationship('office', 'name')
-                            ->searchable()
-                            ->preload()
-                            ->native(false)
-                            ->prefixIcon('heroicon-o-building-office'),
-
                         Forms\Components\Select::make('department_id')
                             ->label('Departemen')
                             ->required()
@@ -199,18 +191,6 @@ class EmployeeResource extends Resource
                                     ->afterStateUpdated(fn($state, callable $set) =>
                                         $set('code', strtoupper($state))),
                             ]),
-
-                        Forms\Components\Select::make('shift_id')
-                            ->label('Jam Kerja')
-                            ->required()
-                            ->relationship('shift', 'name')
-                            ->searchable()
-                            ->preload()
-                            ->native(false)
-                            ->prefixIcon('heroicon-o-clock')
-                            ->getOptionLabelFromRecordUsing(function ($record) {
-                                return $record->name . ' (' . $record->start_time . ' - ' . $record->end_time . ')';
-                            }),
 
                         Forms\Components\Select::make('position')
                             ->label('Jabatan')
@@ -235,6 +215,27 @@ class EmployeeResource extends Resource
                             ])
                             ->native(false)
                             ->prefixIcon('heroicon-o-document-text'),
+
+                        Forms\Components\Select::make('office_id')
+                            ->label('Kantor Cabang')
+                            ->required()
+                            ->relationship('office', 'name')
+                            ->searchable()
+                            ->preload()
+                            ->native(false)
+                            ->prefixIcon('heroicon-o-building-office'),
+
+                        Forms\Components\Select::make('shift_id')
+                            ->label('Jam Kerja')
+                            ->required()
+                            ->relationship('shift', 'name')
+                            ->searchable()
+                            ->preload()
+                            ->native(false)
+                            ->prefixIcon('heroicon-o-clock')
+                            ->getOptionLabelFromRecordUsing(function ($record) {
+                                return $record->name . ' (' . $record->start_time . ' - ' . $record->end_time . ')';
+                            }),
 
                         Forms\Components\DatePicker::make('join_date')
                             ->label('Tanggal Masuk')
@@ -275,7 +276,8 @@ class EmployeeResource extends Resource
                 Tables\Columns\ImageColumn::make('photo')
                     ->label('Foto')
                     ->circular()
-                    ->defaultImageUrl(url('/assets/placeholder.jpg')),
+                    ->defaultImageUrl(url('/assets/placeholder.jpg'))
+                    ->placeholder('—'),
 
                 Tables\Columns\TextColumn::make('full_name')
                     ->label('Nama Lengkap')
@@ -301,38 +303,65 @@ class EmployeeResource extends Resource
                     ->color(function (Employee $record) {
                         $record->withTrashed()->first();
                         return ($record && $record->trashed()) ? 'danger' : 'success';
-                    }),
+                    })
+                    ->placeholder('—'),
 
                 Tables\Columns\TextColumn::make('department.name')
                     ->label('Departemen')
-                    ->sortable(),
+                    ->sortable()
+                    ->placeholder('—'),
 
                 Tables\Columns\TextColumn::make('position')
                     ->label('Jabatan')
-                    ->formatStateUsing(fn(string $state): string => ucwords(str_replace('_', ' ', $state))),
+                    ->sortable()
+                    ->formatStateUsing(fn(string $state): string => ucwords(str_replace('_', ' ', $state)))
+                    ->placeholder('—'),
 
                 Tables\Columns\TextColumn::make('office.name')
                     ->label('Kantor Cabang')
-                    ->sortable(),
+                    ->sortable()
+                    ->placeholder('—'),
+
+                Tables\Columns\TextColumn::make('shift.name')
+                    ->label('Jam Kerja')
+                    ->placeholder('—')
+                    ->formatStateUsing(function ($record) {
+                        if (!$record->shift) {
+                            return '—';
+                        }
+
+                        return $record->shift->name . ' (' .
+                            $record->shift->start_time . ' - ' .
+                            $record->shift->end_time . ')';
+                    })
+                    ->toggleable(isToggledHiddenByDefault: true),
 
                 Tables\Columns\BadgeColumn::make('status')
+                    ->sortable()
                     ->colors([
                         'success' => 'Aktif',
                         'gray' => 'Mengundurkan Diri',
                         'danger' => 'Diberhentikan',
                     ])
-                    ->formatStateUsing(fn(string $state): string => ucwords(str_replace('_', ' ', $state))),
+                    ->formatStateUsing(fn(string $state): string => ucwords(str_replace('_', ' ', $state)))
+                    ->placeholder('—'),
 
                 Tables\Columns\BadgeColumn::make('roles.name')
                     ->label('Role')
+                    ->sortable()
                     ->colors(['indigo'])
-                    ->formatStateUsing(fn(string $state): string => ucwords(str_replace('_', ' ', $state))),
+                    ->formatStateUsing(fn(string $state): string => ucwords(str_replace('_', ' ', $state)))
+                    ->placeholder('—'),
 
                 Tables\Columns\ToggleColumn::make('can_wfa')
-                    ->label(new HtmlString(Blade::render('<x-heroicon-o-map-pin class="w-6 h-6" />'))),
+                    ->label(new HtmlString(Blade::render('<x-heroicon-o-map-pin class="w-6 h-6" />')))
+                    ->placeholder('—')
+                    ->tooltip('Boleh Work From Anywhere (WFA)'),
 
                 Tables\Columns\ToggleColumn::make('can_unlock_shift')
-                    ->label(new HtmlString(Blade::render('<x-heroicon-o-clock class="w-6 h-6" />'))),
+                    ->label(new HtmlString(Blade::render('<x-heroicon-o-clock class="w-6 h-6" />')))
+                    ->placeholder('—')
+                    ->tooltip('Boleh Unlock Shift'),
 
                 Tables\Columns\TextColumn::make('created_at')
                     ->label('Dibuat Pada')
@@ -456,13 +485,15 @@ class EmployeeResource extends Resource
                             ->placeholder('—'),
 
                         TextEntry::make('email')
-                            ->label('Alamat Email')
-                            ->state(fn(Employee $employee) => optional($employee->user)->email)
-                            ->placeholder('—'),
+                            ->label('Email')
+                            ->url(fn($record) => $record->email ? "mailto:{$record->email}" : null)
+                            ->placeholder('—')
+                            ->color('warning'),
 
                         TextEntry::make('phone_number')
                             ->label('No. Whatsapp')
-                            ->placeholder('—'),
+                            ->placeholder('—')
+                            ->color('success'),
 
                         TextEntry::make('address')
                             ->label('Alamat')
@@ -523,6 +554,19 @@ class EmployeeResource extends Resource
                             ->label('Kantor Cabang')
                             ->placeholder('—'),
 
+                        TextEntry::make('shift.name')
+                            ->label('Jam Kerja')
+                            ->placeholder('—')
+                            ->formatStateUsing(function ($record) {
+                                if (!$record->shift) {
+                                    return '—';
+                                }
+
+                                return $record->shift->name . ' (' .
+                                    $record->shift->start_time . ' - ' .
+                                    $record->shift->end_time . ')';
+                            }),
+
                         TextEntry::make('join_date')
                             ->label('Tanggal Masuk')
                             ->date('d M Y')
@@ -582,7 +626,7 @@ class EmployeeResource extends Resource
                     ->columns(2)
                     ->schema([
                         TextEntry::make('created_at')
-                            ->label('Diajukan Pada')
+                            ->label('Dibuat Pada')
                             ->dateTime('d M Y H:i'),
 
                         TextEntry::make('updated_at')
@@ -593,9 +637,7 @@ class EmployeeResource extends Resource
                             ->label('Dihapus Pada')
                             ->dateTime('d M Y H:i')
                             ->visible(fn($record) => $record->trashed()),
-                    ])
-                    ->collapsible()
-                    ->persistCollapsed(),
+                    ]),
             ]);
     }
 
@@ -604,6 +646,7 @@ class EmployeeResource extends Resource
         return [
             AttendancesRelationManager::class,
             LeaveRequestsRelationManager::class,
+            ReimbursementRequestsRelationManager::class,
         ];
     }
 
@@ -612,7 +655,7 @@ class EmployeeResource extends Resource
         return [
             'index' => Pages\ListEmployees::route('/'),
             'create' => Pages\CreateEmployee::route('/create'),
-            'view' => Pages\ViewEmployee::route('/{record}'),
+            // 'view' => Pages\ViewEmployee::route('/{record}'),
             'edit' => Pages\EditEmployee::route('/{record}/edit'),
         ];
     }

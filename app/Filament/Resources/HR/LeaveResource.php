@@ -5,6 +5,10 @@ use App\Filament\Resources\HR\LeaveResource\Pages;
 use App\Models\HR\Leave;
 use Filament\Forms;
 use Filament\Forms\Form;
+use Filament\Infolists\Components\IconEntry;
+use Filament\Infolists\Components\Section;
+use Filament\Infolists\Components\TextEntry;
+use Filament\Infolists\Infolist;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
@@ -43,15 +47,15 @@ class LeaveResource extends Resource
                         ->numeric()
                         ->prefixIcon('heroicon-o-calendar-days'),
 
+                    Forms\Components\Toggle::make('is_female_only')
+                        ->label('Khusus Wanita')
+                        ->default(false)
+                        ->inline(false),
+
                     Forms\Components\Toggle::make('male_only')
                         ->label('Khusus Laki-laki')
                         ->default(false)
                         ->inline(false),
-
-                    Forms\Components\Toggle::make('is_female_only')
-                        ->label('Khusus Wanita')
-                        ->default(false)
-                        ->inline(false)
                 ])
                 ->columns(2),
         ]);
@@ -64,18 +68,22 @@ class LeaveResource extends Resource
             ->columns([
                 Tables\Columns\TextColumn::make('leave_type')
                     ->label('Jenis Cuti')
-                    ->searchable(),
+                    ->searchable()
+                    ->placeholder('—'),
 
                 Tables\Columns\TextColumn::make('days_count')
                     ->label('Jumlah Hari')
                     ->numeric()
-                    ->sortable(),
+                    ->sortable()
+                    ->placeholder('—'),
 
                 Tables\Columns\ToggleColumn::make('is_female_only')
-                    ->label('Khusus Wanita'),
+                    ->label('Khusus Wanita')
+                    ->placeholder('—'),
 
                 Tables\Columns\ToggleColumn::make('is_male_only')
-                    ->label('Khusus Laki-laki'),
+                    ->label('Khusus Laki-laki')
+                    ->placeholder('—'),
 
                 Tables\Columns\TextColumn::make('created_at')
                     ->label('Dibuat Pada')
@@ -158,6 +166,54 @@ class LeaveResource extends Resource
             ->defaultSort('created_at', 'desc');
     }
 
+    public static function infolist(Infolist $infolist): Infolist
+    {
+        return $infolist
+            ->schema([
+                Section::make('Informasi Cutii')
+                    ->columns(2)
+                    ->schema([
+                        TextEntry::make('leave_type')
+                            ->label('Nama Cuti')
+                            ->placeholder('—'),
+
+                        TextEntry::make('days_count')
+                            ->label('Jumlah Hari')
+                            ->formatStateUsing(fn($state) => $state . ' Hari')
+                            ->placeholder('—'),
+
+                        IconEntry::make('is_female_only')
+                            ->label('Khusus Wanita')
+                            ->trueIcon('heroicon-o-check-circle')
+                            ->falseIcon('heroicon-o-x-circle')
+                            ->placeholder('—'),
+
+                        IconEntry::make('is_male_only')
+                            ->label('Khusus Laki-laki')
+                            ->trueIcon('heroicon-o-check-circle')
+                            ->falseIcon('heroicon-o-x-circle')
+                            ->placeholder('—'),
+                    ]),
+
+                Section::make('Pengelolaan Data')
+                    ->columns(2)
+                    ->schema([
+                        TextEntry::make('created_at')
+                            ->label('Dibuat Pada')
+                            ->dateTime('d M Y H:i'),
+
+                        TextEntry::make('updated_at')
+                            ->label('Diperbarui Pada')
+                            ->dateTime('d M Y H:i'),
+
+                        TextEntry::make('deleted_at')
+                            ->label('Dihapus Pada')
+                            ->dateTime('d M Y H:i')
+                            ->visible(fn($record) => $record->trashed()),
+                    ]),
+            ]);
+    }
+
     public static function getRelations(): array
     {
         return [
@@ -170,7 +226,7 @@ class LeaveResource extends Resource
         return [
             'index' => Pages\ListLeaves::route('/'),
             'create' => Pages\CreateLeave::route('/create'),
-            'view' => Pages\ViewLeave::route('/{record}'),
+            // 'view' => Pages\ViewLeave::route('/{record}'),
             'edit' => Pages\EditLeave::route('/{record}/edit'),
         ];
     }

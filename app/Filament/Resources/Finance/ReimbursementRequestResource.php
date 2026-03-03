@@ -16,6 +16,7 @@ use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\SoftDeletingScope;
 use Illuminate\Support\Carbon;
 
 class ReimbursementRequestResource extends Resource
@@ -34,12 +35,32 @@ class ReimbursementRequestResource extends Resource
 
     public static function getNavigationBadge(): ?string
     {
-        return static::getModel()::where('status', 'pending')->count();
+        $user = auth()->user();
+
+        $query = static::getModel()::query()
+            ->where('status', 'pending');
+
+        if (!$user->hasRole('super_admin')) {
+            $employee = $user->employee;
+
+            if ($employee) {
+                $query->where('employee_id', $employee->id);
+            } else {
+                return '0';
+            }
+        }
+
+        return (string) $query->count();
     }
 
     public static function getNavigationBadgeColor(): ?string
     {
         return 'warning';
+    }
+
+    public static function getNavigationBadgeTooltip(): ?string
+    {
+        return 'Pengajuan reimburse pending yang belum di-review';
     }
 
     public static function form(Form $form): Form
@@ -182,7 +203,7 @@ class ReimbursementRequestResource extends Resource
                     ->placeholder('—'),
 
                 Tables\Columns\TextColumn::make('created_at')
-                    ->label('Diajukan Pada')
+                    ->label('Dibuat Pada')
                     ->dateTime('d M Y H:i')
                     ->sortable()
                     ->placeholder('—'),
@@ -416,7 +437,7 @@ class ReimbursementRequestResource extends Resource
                     ->columns(2)
                     ->schema([
                         TextEntry::make('created_at')
-                            ->label('Diajukan Pada')
+                            ->label('Dibuat Pada')
                             ->dateTime('d M Y H:i'),
 
                         TextEntry::make('updated_at')
@@ -451,12 +472,12 @@ class ReimbursementRequestResource extends Resource
     public static function getEloquentQuery(): Builder
     {
         $query = parent::getEloquentQuery()->withoutGlobalScopes([
-            //
+            SoftDeletingScope::class,
         ]);
 
         $user = auth()->user();
 
-        // Jika bukan super_admin, hanya tampilkan data cutinya sendiri
+        // Jika bukan super_admin, hanya tampilkan data reimbursenya sendiri
         if (!$user->hasRole('super_admin')) {
             $employee = $user->employee;
             if ($employee) {
