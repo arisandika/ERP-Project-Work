@@ -53,11 +53,11 @@ class AttendancesRelationManager extends RelationManager
                     ->label('Status')
                     ->sortable()
                     ->color(fn(string $state): string => match ($state) {
-                        'success' => 'hadir',
-                        'warning' => 'terlambat',
-                        'danger' => 'absen',
-                        'yellow' => 'izin',
-                        'info' => 'cuti',
+                        'hadir' => 'success',
+                        'terlambat' => 'warning',
+                        'absen' => 'danger',
+                        'izin' => 'yellow',
+                        'cuti' => 'info',
 
                         default => 'gray',
                     })
