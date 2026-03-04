@@ -62,6 +62,7 @@ class AttendancesRelationManager extends RelationManager
                         default => 'gray',
                     })
                     ->formatStateUsing(fn(string $state) => match ($state) {
+                        'belum_presensi' => 'Belum Presensi',
                         'hadir' => 'Hadir',
                         'terlambat' => 'Terlambat',
                         'absen' => 'Absen',
@@ -115,6 +116,7 @@ class AttendancesRelationManager extends RelationManager
                 Tables\Filters\SelectFilter::make('status')
                     ->label('Status Presensi')
                     ->options([
+                        'belum_presensi' => 'Belum Presensi',
                         'hadir' => 'Hadir',
                         'terlambat' => 'Terlambat',
                         'absen' => 'Absen',
@@ -208,11 +210,11 @@ class AttendancesRelationManager extends RelationManager
                             ->label('Status')
                             ->badge()
                             ->color(fn(string $state): string => match ($state) {
-                                'success' => 'hadir',
-                                'warning' => 'terlambat',
-                                'danger' => 'absen',
-                                'yellow' => 'izin',
-                                'info' => 'cuti',
+                                'hadir' => 'success',
+                                'terlambat' => 'warning',
+                                'absen' => 'danger',
+                                'izin' => 'yellow',
+                                'cuti' => 'info',
 
                                 default => 'gray',
                             })
