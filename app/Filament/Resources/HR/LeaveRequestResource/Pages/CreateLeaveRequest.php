@@ -196,12 +196,13 @@ class CreateLeaveRequest extends CreateRecord
                 $query->whereDate('date', '>=', $start)
                     ->whereDate('date', '<=', $end);
             })
+            ->whereNotNull('clock_in')
             ->exists();
 
         if ($hasAttendance) {
             Notification::make()
-                ->title('Validasi Gagal')
-                ->body('Anda tidak dapat mengajukan cuti karena sudah melakukan absensi (Check-in) pada tanggal tersebut.')
+                ->title('Pengajuan Cuti Gagal')
+                ->body('Anda tidak dapat mengajukan cuti karena sudah melakukan presensi (Check-in) pada tanggal tersebut. Segera hubungi atasan anda.')
                 ->danger()
                 ->send();
 

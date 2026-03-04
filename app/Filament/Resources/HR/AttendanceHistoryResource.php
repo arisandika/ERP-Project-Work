@@ -59,14 +59,15 @@ class AttendanceHistoryResource extends Resource
                 Tables\Columns\BadgeColumn::make('status')
                     ->label('Status')
                     ->sortable()
-                    ->colors([
+                    ->color(fn(string $state): string => match ($state) {
                         'success' => 'hadir',
                         'warning' => 'terlambat',
-                        'danger' => '',
+                        'danger' => 'absen',
                         'yellow' => 'izin',
                         'info' => 'cuti',
-                        'gray' => 'no_checkout',
-                    ])
+
+                        default => 'gray',
+                    })
                     ->formatStateUsing(fn(string $state) => match ($state) {
                         'hadir' => 'Hadir',
                         'terlambat' => 'Terlambat',
@@ -222,14 +223,15 @@ class AttendanceHistoryResource extends Resource
                         TextEntry::make('status')
                             ->label('Status')
                             ->badge()
-                            ->colors([
+                            ->color(fn(string $state): string => match ($state) {
                                 'success' => 'hadir',
                                 'warning' => 'terlambat',
                                 'danger' => 'absen',
                                 'yellow' => 'izin',
                                 'info' => 'cuti',
-                                'gray' => 'no_checkout',
-                            ])
+
+                                default => 'gray',
+                            })
                             ->formatStateUsing(fn(string $state): string => ucwords(str_replace('_', ' ', $state)))
                             ->placeholder('—'),
 
