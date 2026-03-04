@@ -3,6 +3,7 @@
 namespace App\Filament\Resources\HR\LeaveRequestResource\Pages;
 
 use App\Filament\Resources\HR\LeaveRequestResource;
+use App\Models\HR\Attendance;
 use App\Models\HR\Leave;
 use App\Models\HR\LeaveRequest;
 use Filament\Facades\Filament;
@@ -180,6 +181,27 @@ class CreateLeaveRequest extends CreateRecord
             Notification::make()
                 ->title('Jatah cuti tidak mencukupi')
                 ->body("Sisa cuti Anda {$remaining} hari.")
+                ->danger()
+                ->send();
+
+            $this->halt();
+        }
+
+        /**
+         * VALIDASI SUDAH ABSENSI
+         */
+        $hasAttendance = Attendance::query()
+            ->where('employee_id', $employee->id)
+            ->where(function ($query) use ($start, $end) {
+                $query->whereDate('date', '>=', $start)
+                    ->whereDate('date', '<=', $end);
+            })
+            ->exists();
+
+        if ($hasAttendance) {
+            Notification::make()
+                ->title('Validasi Gagal')
+                ->body('Anda tidak dapat mengajukan cuti karena sudah melakukan absensi (Check-in) pada tanggal tersebut.')
                 ->danger()
                 ->send();
 

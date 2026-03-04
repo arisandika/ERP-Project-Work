@@ -433,7 +433,7 @@ class ReimbursementApprovalResource extends Resource
         return [
             'index' => Pages\ListReimbursementApprovals::route('/'),
             'edit' => Pages\EditReimbursementApproval::route('/{record}/edit'),
-            'view' => Pages\EditReimbursementApproval::route('/{record}'),
+            'view' => Pages\ViewReimbursementApproval::route('/{record}'),
         ];
     }
 

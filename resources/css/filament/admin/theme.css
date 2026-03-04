@@ -201,7 +201,7 @@
 }
 
 .fi-modal-window {
-    @apply rounded-2xl bg-secondary-light dark:bg-secondary-dark shadow-none ring-1 ring-border-light dark:ring-border-dark !important;
+    @apply rounded-2xl bg-main-light dark:bg-main-dark shadow-none ring-1 ring-border-light dark:ring-border-dark !important;
 }
 
 .fi-modal-heading {

@@ -107,7 +107,8 @@ class LeaveApprovalResource extends Resource
                                 $set('approved_at', now());
                                 $set('approved_by', auth()->user()->employee->id ?? null);
                             }
-                        }),
+                        })
+                        ->native(false),
 
                     Forms\Components\Textarea::make('approval_note')
                         ->label('Catatan Admin')
@@ -409,7 +410,7 @@ class LeaveApprovalResource extends Resource
         return [
             'index' => Pages\ListLeaveApprovals::route('/'),
             'edit' => Pages\EditLeaveApproval::route('/{record}/edit'),
-            'view' => Pages\EditLeaveApproval::route('/{record}'),
+            'view' => Pages\ViewLeaveApproval::route('/{record}'),
         ];
     }
 
