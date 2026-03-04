@@ -14,8 +14,6 @@ class AttendanceStatusChart extends ApexChartWidget
 
     protected static ?string $heading = 'Status Presensi Hari Ini';
 
-    protected static ?string $subHeading = 'Status Presensi Hari Ini';
-
     protected int|string|array $columnSpan = [
         'default' => 2,
         'md' => 1,
@@ -37,8 +35,8 @@ class AttendanceStatusChart extends ApexChartWidget
 
         $attendances = Attendance::whereDate('date', $today)->get();
 
-        $present = $attendances->where('status', 'Hadir Tepat Waktu')->count();
-        $late = $attendances->where('status', 'Terlambat')->count();
+        $present = $attendances->where('status', 'hadir')->count();
+        $late = $attendances->where('status', 'terlambat')->count();
 
         $leaveToday = LeaveRequest::whereDate('start_date', '<=', $today)
             ->whereDate('end_date', '>=', $today)

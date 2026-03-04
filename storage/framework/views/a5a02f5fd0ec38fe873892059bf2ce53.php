@@ -227,7 +227,7 @@
                                     </div>
                                     <hr class="my-1 border-gray-200" />
                                     <div class="grid grid-cols-2 gap-4 mt-3">
-                                        <span><b>Status:</b> ${emp.status}</span>
+                                        <span class="capitalize"><b>Status:</b> ${emp.status}</span>
                                         <span><b>Masuk:</b> ${emp.clock_in}</span>
                                         <span><b>Keluar:</b> ${emp.clock_out}</span>
                                         <span><b>Kantor:</b> ${emp.office.name}</span>

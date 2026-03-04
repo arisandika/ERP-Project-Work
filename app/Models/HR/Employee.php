@@ -19,8 +19,6 @@ class Employee extends Model
 {
     use SoftDeletes, HasRoles;
 
-    protected $guard_name = 'web';
-
     protected $table = 'nx_employees';
 
     protected $fillable = [
