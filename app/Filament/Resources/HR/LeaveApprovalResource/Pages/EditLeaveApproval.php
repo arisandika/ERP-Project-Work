@@ -46,8 +46,38 @@ class EditLeaveApproval extends EditRecord
         return $data;
     }
 
-    protected function getRedirectUrl(): string
+    protected function afterSave(): void
     {
-        return static::getResource()::getUrl('index');
+        // Jika statusnya disetujui, kita update data absensinya
+        if ($this->record->status === 'approved') {
+            
+            $employee = $this->record->employee;
+            $startDate = \Illuminate\Support\Carbon::parse($this->record->start_date);
+            $endDate = \Illuminate\Support\Carbon::parse($this->record->end_date);
+
+            // Looping dari start_date sampai end_date
+            for ($date = $startDate->copy(); $date->lte($endDate); $date->addDay()) {
+                
+                // Lewati jika hari Sabtu / Minggu (opsional, sesuaikan dengan aturan kantor)
+                if ($date->isWeekend()) {
+                    continue;
+                }
+
+                /**
+                 * Kita gunakan updateOrCreate.
+                 * - Jika tanggal cuti HARI INI, dia akan mencari placeholder 'belum_presensi' lalu meng-update-nya jadi 'cuti'.
+                 * - Jika tanggal cuti MINGGU DEPAN, dia akan membuatkan data absensi lebih awal dengan status 'cuti'.
+                 */
+                \App\Models\HR\Attendance::updateOrCreate([
+                        'employee_id' => $employee->id,
+                        'date'        => $date->toDateString(),
+                    ],[
+                        'shift_id'    => $employee->shift_id,
+                        'status'      => 'cuti',
+                        'note'        => 'Cuti: ' . $this->record->reason,
+                    ]
+                );
+            }
+        }
     }
 }

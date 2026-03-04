@@ -71,5 +71,10 @@ class LeaveRequest extends Model
         $this->update([
             'status' => 'cancelled'
         ]);
+
+        Attendance::where('employee_id', $this->employee_id)
+            ->where('status', 'cuti')
+            ->whereBetween('date', [$this->start_date, $this->end_date])
+            ->delete();
     }
 }
