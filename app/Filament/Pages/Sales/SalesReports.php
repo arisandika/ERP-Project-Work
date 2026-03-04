@@ -38,6 +38,8 @@ class SalesReports extends Page implements HasForms
 
     public function mount(): void
     {
+        parent::mount();
+        
         $this->form->fill([
             'start_date' => now()->startOfMonth(),
             'end_date' => now(),

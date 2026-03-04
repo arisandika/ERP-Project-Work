@@ -16,6 +16,8 @@ class ListReimbursementRequests extends ListRecords
 
     public function mount(): void
     {
+        parent::mount();
+        
         if (auth()->user()->hasRole('super_admin')) {
             abort(403, 'Super Admin tidak memiliki akses pengajuan reimburse');
         }

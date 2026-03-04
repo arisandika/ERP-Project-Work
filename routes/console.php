@@ -13,12 +13,12 @@ Schedule::command('stock:check-low --notify')
 Schedule::command('do:auto-complete')->dailyAt('00:00');
 
 // HR SCHEDULER (PRESENSI)
-// 1. Jalankan setiap hari pukul 00:05 untuk membuat placeholder
+// Jalankan setiap hari pukul 00:05 untuk membuat placeholder
 Schedule::command('attendance:generate-placeholders')
     ->dailyAt('00:05')
     ->timezone('Asia/Jakarta');
 
-// 2. Jalankan setiap hari pukul 23:55 untuk finalisasi (menandai yang alpha)
+// Jalankan setiap hari pukul 15:50 untuk finalisasi (menandai yang alpha)
 Schedule::command('attendance:mark-absent')
     ->dailyAt('15:50') 
     ->timezone('Asia/Jakarta');

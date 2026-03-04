@@ -22,7 +22,7 @@ class ReimbursementApprovalResource extends Resource
 {
     protected static ?string $model = ReimbursementRequest::class;
 
-    protected static ?string $navigationIcon = 'heroicon-o-banknotes';
+    protected static ?string $navigationIcon = 'heroicon-o-document-check';
 
     protected static ?string $navigationGroup = 'Manajemen Finance';
 
