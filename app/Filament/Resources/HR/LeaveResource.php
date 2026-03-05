@@ -151,7 +151,7 @@ class LeaveResource extends Resource
             ])
             ->actions([
                 Tables\Actions\ViewAction::make()
-                    ->modalHeading('Lihat Riwayat Presensi'),
+                    ->modalHeading('Lihat Cuti'),
                 Tables\Actions\EditAction::make(),
                 Tables\Actions\DeleteAction::make(),
                 // Tables\Actions\ForceDeleteAction::make(),
