@@ -2,6 +2,7 @@
 namespace App\Filament\Resources\HR\LeaveApprovalResource\Pages;
 
 use App\Filament\Resources\HR\LeaveApprovalResource;
+use App\Models\HR\Attendance;
 use Filament\Actions;
 use Filament\Notifications\Notification;
 use Filament\Resources\Pages\EditRecord;
@@ -68,13 +69,13 @@ class EditLeaveApproval extends EditRecord
                  * - Jika tanggal cuti HARI INI, dia akan mencari placeholder 'belum_presensi' lalu meng-update-nya jadi 'cuti'.
                  * - Jika tanggal cuti MINGGU DEPAN, dia akan membuatkan data absensi lebih awal dengan status 'cuti'.
                  */
-                \App\Models\HR\Attendance::updateOrCreate([
+                Attendance::updateOrCreate([
                         'employee_id' => $employee->id,
                         'date'        => $date->toDateString(),
                     ],[
                         'shift_id'    => $employee->shift_id,
                         'status'      => 'cuti',
-                        'note'        => 'Cuti: ' . $this->record->reason,
+                        'note'        => 'Cuti: ' . $this->record->reason ?? '-',
                     ]
                 );
             }
