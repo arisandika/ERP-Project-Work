@@ -392,21 +392,22 @@ class FinancialRecordResource extends Resource
                         TextEntry::make('reimbursement.status')
                             ->label('Status')
                             ->badge()
-                            ->color(fn($state) => match ($state) {
+                            ->color(fn(string $state): string => match ($state) {
                                 'pending' => 'warning',
                                 'approved' => 'success',
-                                'cancelled' => 'gray',
+
                                 default => 'danger',
                             })
-                            ->formatStateUsing(
-                                fn($state) => match ($state) {
-                                    'pending' => 'Menunggu',
-                                    'approved' => 'Disetujui',
-                                    'rejected' => 'Ditolak',
-                                    'cancelled' => 'Dibatalkan',
-                                    default => ucwords(str_replace('_', ' ', $state)),
-                                }
-                            )
+                            ->formatStateUsing(fn(string $state) => match ($state) {
+                                'pending' => 'Menunggu',
+                                'approved' => 'Disetujui',
+                                'rejected' => 'Ditolak',
+                                'cancelled' => 'Dibatalkan',
+
+                                default => ucwords(
+                                    str_replace('_', ' ', $state)
+                                ),
+                            })
                             ->placeholder('—'),
 
                         ImageEntry::make('reimbursement.receipt')

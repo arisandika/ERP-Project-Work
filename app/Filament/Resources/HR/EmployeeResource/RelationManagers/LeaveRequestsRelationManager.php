@@ -61,6 +61,7 @@ class LeaveRequestsRelationManager extends RelationManager
                     ->color(fn(string $state): string => match ($state) {
                         'pending' => 'warning',
                         'approved' => 'success',
+
                         default => 'danger',
                     })
                     ->formatStateUsing(fn(string $state) => match ($state) {
@@ -68,6 +69,7 @@ class LeaveRequestsRelationManager extends RelationManager
                         'approved' => 'Disetujui',
                         'rejected' => 'Ditolak',
                         'cancelled' => 'Dibatalkan',
+                        'expired' => 'Kadaluwarsa',
 
                         default => ucwords(
                             str_replace('_', ' ', $state)
@@ -251,6 +253,7 @@ class LeaveRequestsRelationManager extends RelationManager
                             ->color(fn(string $state) => match ($state) {
                                 'pending' => 'warning',
                                 'approved' => 'success',
+
                                 default => 'danger',
                             })
                             ->formatStateUsing(function (string $state): string {
@@ -259,6 +262,7 @@ class LeaveRequestsRelationManager extends RelationManager
                                     'approved' => 'Disetujui',
                                     'rejected' => 'Ditolak',
                                     'cancelled' => 'Dibatalkan',
+                                    'expired' => 'Kadaluwarsa',
 
                                     default => ucwords(
                                         str_replace('_', ' ', $state)

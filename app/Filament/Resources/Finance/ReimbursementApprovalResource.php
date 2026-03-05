@@ -175,6 +175,7 @@ class ReimbursementApprovalResource extends Resource
                     ->color(fn(string $state): string => match ($state) {
                         'pending' => 'warning',
                         'approved' => 'success',
+
                         default => 'danger',
                     })
                     ->formatStateUsing(fn(string $state) => match ($state) {
@@ -363,23 +364,21 @@ class ReimbursementApprovalResource extends Resource
                         TextEntry::make('status')
                             ->label('Status')
                             ->badge()
-                            ->color(fn(string $state) => match ($state) {
+                            ->color(fn(string $state): string => match ($state) {
                                 'pending' => 'warning',
                                 'approved' => 'success',
+
                                 default => 'danger',
                             })
-                            ->formatStateUsing(function (string $state): string {
-                                return match ($state) {
-                                    'pending' => 'Menunggu',
-                                    'approved' => 'Disetujui',
-                                    'rejected' => 'Ditolak',
-                                    'cancelled' => 'Dibatalkan',
+                            ->formatStateUsing(fn(string $state) => match ($state) {
+                                'pending' => 'Menunggu',
+                                'approved' => 'Disetujui',
+                                'rejected' => 'Ditolak',
+                                'cancelled' => 'Dibatalkan',
 
-                                    default => ucwords(
-                                        str_replace('_', ' ', $state)
-                                    ),
-                                };
-
+                                default => ucwords(
+                                    str_replace('_', ' ', $state)
+                                ),
                             })
                             ->placeholder('—'),
 

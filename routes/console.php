@@ -19,5 +19,10 @@ Schedule::command('attendance:generate-placeholders')
 
 // Jalankan setiap hari pukul 15:50 untuk finalisasi (menandai yang alpha)
 Schedule::command('attendance:mark-absent')
-    ->dailyAt('15:50')
+    ->dailyAt('23:55')
+    ->timezone('Asia/Jakarta');
+
+// Jalankan setiap jam 00:01 dini hari
+Schedule::command('leave:auto-expire')
+    ->dailyAt('00:01')
     ->timezone('Asia/Jakarta');
