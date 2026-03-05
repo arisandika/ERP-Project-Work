@@ -14,7 +14,7 @@ class LeaveAutoExpire extends Command
      *
      * @var string
      */
-    protected $signature = 'app:leave-auto-expire';
+    protected $signature = 'leave:auto-expire';
 
     /**
      * The console command description.
