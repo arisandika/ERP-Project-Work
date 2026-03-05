@@ -15,6 +15,7 @@ use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\HtmlString;
 
 class LeaveApprovalResource extends Resource
 {
@@ -88,6 +89,14 @@ class LeaveApprovalResource extends Resource
                     Forms\Components\Textarea::make('reason')
                         ->label('Alasan Cuti')
                         ->disabled(),
+
+                    Forms\Components\Placeholder::make('leave_proof_preview')
+                        ->label('Bukti Cuti')
+                        ->content(
+                            fn($record) => $record?->leave_proof
+                            ? new HtmlString('<img src="/storage/' . $record->leave_proof . '" class="w-full rounded-2xl">')
+                            : 'Tidak menyertakan bukti cuti'
+                        )
                 ])
                 ->columns(2),
 

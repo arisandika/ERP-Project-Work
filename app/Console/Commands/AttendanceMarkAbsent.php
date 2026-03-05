@@ -25,7 +25,7 @@ class AttendanceMarkAbsent extends Command
         if ($count > 0) {
             $absentees->update([
                 'status' => 'absen',
-                'note' => 'System Finalized: Tidak Hadir Tanpa Keterangan',
+                'note' => 'Tidak Hadir Tanpa Keterangan',
             ]);
         }
 

@@ -190,23 +190,59 @@ class CreateLeaveRequest extends CreateRecord
         /**
          * VALIDASI SUDAH ABSENSI
          */
-        $hasAttendance = Attendance::query()
+        $hasClockIn = Attendance::query()
             ->where('employee_id', $employee->id)
-            ->where(function ($query) use ($start, $end) {
-                $query->whereDate('date', '>=', $start)
-                    ->whereDate('date', '<=', $end);
-            })
+            ->whereBetween('date', [$start, $end])
             ->whereNotNull('clock_in')
             ->exists();
 
-        if ($hasAttendance) {
+        if ($hasClockIn) {
             Notification::make()
                 ->title('Pengajuan Cuti Gagal')
-                ->body('Anda tidak dapat mengajukan cuti karena sudah melakukan presensi (Check-in) pada tanggal tersebut. Segera hubungi atasan anda.')
+                ->body('Anda tidak dapat mengajukan cuti karena sudah melakukan presensi (Check-in) pada tanggal tersebut.')
                 ->danger()
                 ->send();
-
             $this->halt();
+        }
+
+        /**
+         * Cek apakah status sudah 'absen' oleh sistem
+         */
+        $isMarkedAbsent = Attendance::query()
+            ->where('employee_id', $employee->id)
+            ->whereBetween('date', [$start, $end])
+            ->where('status', 'absen')
+            ->exists();
+
+        if ($isMarkedAbsent) {
+            Notification::make()
+                ->title('Pengajuan Cuti Ditolak')
+                ->body('Anda tidak dapat mengajukan cuti karena sudah ditandai Absen (Alpha) pada tanggal tersebut.')
+                ->danger()
+                ->send();
+            $this->halt();
+        }
+
+        /**
+         * Cek jika jam kerja hari ini sudah selesai
+         */
+        if ($start->isToday()) {
+            $shift = $employee->shift;
+
+            // Pastikan karyawan punya shift dan jam pulang
+            if ($shift && $shift->end_time) {
+                $shiftEndTime = Carbon::parse($shift->end_time); // Ini akan otomatis menggunakan tanggal hari ini
+
+                // Jika waktu sekarang sudah melewati jam pulang shift
+                if (now()->gt($shiftEndTime)) {
+                    Notification::make()
+                        ->title('Waktu Pengajuan Habis')
+                        ->body('Anda tidak dapat mengajukan cuti untuk hari ini karena jam kerja telah berakhir.')
+                        ->danger()
+                        ->send();
+                    $this->halt();
+                }
+            }
         }
 
         /**
