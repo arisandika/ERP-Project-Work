@@ -124,7 +124,6 @@ class ReimbursementRequestResource extends Resource
                             'image/webp'
                         ])
                         ->helperText('Upload bukti seperti struk (2MB)'),
-
                 ])
                 ->columns(2)
         ]);
@@ -390,7 +389,10 @@ class ReimbursementRequestResource extends Resource
                         ImageEntry::make('receipt')
                             ->label('Bukti Transaksi')
                             ->placeholder('—')
-                            ->extraImgAttributes(['style' => 'width: 100%; height: auto; object-fit: cover;']),
+                            ->extraImgAttributes([
+                                'style' => 'width: 100%; height: auto; object-fit: cover;',
+                                'class' => 'w-full rounded-2xl'
+                            ]),
                     ]),
 
                 Section::make('Status Persetujuan')

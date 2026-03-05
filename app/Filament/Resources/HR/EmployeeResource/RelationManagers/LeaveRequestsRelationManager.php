@@ -236,7 +236,10 @@ class LeaveRequestsRelationManager extends RelationManager
                         ImageEntry::make('leave_proof')
                             ->label('Bukti Cuti/Sakit')
                             ->placeholder('—')
-                            ->extraImgAttributes(['style' => 'width: 100%; height: auto; object-fit: cover;']),
+                            ->extraImgAttributes([
+                                'style' => 'width: 100%; height: auto; object-fit: cover;',
+                                'class' => 'w-full rounded-2xl'
+                            ]),
                     ]),
 
                 Section::make('Status Persetujuan')

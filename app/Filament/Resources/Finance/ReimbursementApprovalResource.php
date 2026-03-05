@@ -351,7 +351,10 @@ class ReimbursementApprovalResource extends Resource
                         ImageEntry::make('receipt')
                             ->label('Bukti Transaksi')
                             ->placeholder('—')
-                            ->extraImgAttributes(['style' => 'width: 100%; height: auto; object-fit: cover;']),
+                            ->extraImgAttributes([
+                                'style' => 'width: 100%; height: auto; object-fit: cover;',
+                                'class' => 'w-full rounded-2xl'
+                            ]),
                     ]),
 
                 Section::make('Status Persetujuan')
