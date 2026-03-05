@@ -17,6 +17,7 @@ use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\HtmlString;
 
 class ReimbursementApprovalResource extends Resource
 {
@@ -106,22 +107,13 @@ class ReimbursementApprovalResource extends Resource
                         ->maxLength(500)
                         ->disabled(),
 
-                    Forms\Components\FileUpload::make('receipt')
-                        ->label('Bukti')
-                        ->image()
-                        ->required()
-                        ->directory('reimbursements')
-                        ->imageEditor()
-                        ->previewable()
-                        ->maxSize(2048) // 2MB
-                        ->acceptedFileTypes([
-                            'image/jpeg',
-                            'image/png',
-                            'image/jpg',
-                            'image/webp'
-                        ])
-                        ->helperText('Upload bukti seperti struk (2MB)')
-                        ->disabled(),
+                    Forms\Components\Placeholder::make('receipt_proof_preview')
+                        ->label('Bukti Struk')
+                        ->content(
+                            fn($record) => $record?->receipt
+                            ? new HtmlString('<img src="/storage/' . $record->receipt . '" class="w-full rounded-2xl">')
+                            : 'Tidak menyertakan bukti struk'
+                        ),
                 ])
                 ->columns(2),
 

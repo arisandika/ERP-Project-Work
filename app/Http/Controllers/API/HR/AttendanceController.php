@@ -145,7 +145,7 @@ class AttendanceController extends Controller
         // NEW LOGIC: UPDATE data attendance yang sudah ada (bukan Create lagi)
         $attendance->fill([
             'shift_id' => $shift->id,
-            'note' => $request->note ?? $attendance->note,
+            'note' => $request->filled('note') ? $request->note : null,
             'clock_in' => now(),
             'latitude_in' => $request->lat,
             'longitude_in' => $request->lng,

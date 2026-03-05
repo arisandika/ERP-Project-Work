@@ -427,14 +427,12 @@ class FinancialRecordResource extends Resource
                     ->description('Transaksi ini dibuat langsung di catatan operasional.')
                     ->visible(fn($record) => empty($record->reimburse_id))
                     ->schema([
-
                         ImageEntry::make('receipt')
                             ->label('Bukti Transaksi')
                             ->extraImgAttributes([
                                 'style' => 'max-width:400px;height:auto;object-fit:cover;',
                             ])
                             ->placeholder('—'),
-
                     ]),
 
                 Section::make('Pengelolaan Data')
