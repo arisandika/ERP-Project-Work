@@ -91,7 +91,7 @@ class LeaveApprovalResource extends Resource
                         ->disabled(),
 
                     Forms\Components\Placeholder::make('leave_proof_preview')
-                        ->label('ukti Cuti/Sakit')
+                        ->label('Bukti Cuti/Sakit')
                         ->content(
                             fn($record) => $record?->leave_proof
                             ? new HtmlString('<img src="/storage/' . $record->leave_proof . '" class="w-full rounded-2xl">')
