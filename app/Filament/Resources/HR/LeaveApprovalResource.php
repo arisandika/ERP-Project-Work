@@ -157,6 +157,7 @@ class LeaveApprovalResource extends Resource
                     ->color(fn(string $state): string => match ($state) {
                         'pending' => 'warning',
                         'approved' => 'success',
+
                         default => 'danger',
                     })
                     ->formatStateUsing(fn(string $state) => match ($state) {
@@ -164,6 +165,7 @@ class LeaveApprovalResource extends Resource
                         'approved' => 'Disetujui',
                         'rejected' => 'Ditolak',
                         'cancelled' => 'Dibatalkan',
+                        'expired' => 'Kadaluwarsa',
 
                         default => ucwords(
                             str_replace('_', ' ', $state)
@@ -356,6 +358,7 @@ class LeaveApprovalResource extends Resource
                             ->color(fn(string $state) => match ($state) {
                                 'pending' => 'warning',
                                 'approved' => 'success',
+                                
                                 default => 'danger',
                             })
                             ->formatStateUsing(function (string $state): string {
@@ -364,6 +367,7 @@ class LeaveApprovalResource extends Resource
                                     'approved' => 'Disetujui',
                                     'rejected' => 'Ditolak',
                                     'cancelled' => 'Dibatalkan',
+                                    'expired' => 'Kadaluwarsa',
 
                                     default => ucwords(
                                         str_replace('_', ' ', $state)
