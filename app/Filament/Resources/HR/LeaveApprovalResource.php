@@ -91,7 +91,7 @@ class LeaveApprovalResource extends Resource
                         ->disabled(),
 
                     Forms\Components\Placeholder::make('leave_proof_preview')
-                        ->label('Bukti Cuti')
+                        ->label('ukti Cuti/Sakit')
                         ->content(
                             fn($record) => $record?->leave_proof
                             ? new HtmlString('<img src="/storage/' . $record->leave_proof . '" class="w-full rounded-2xl">')
@@ -341,7 +341,10 @@ class LeaveApprovalResource extends Resource
                         ImageEntry::make('leave_proof')
                             ->label('Bukti Cuti/Sakit')
                             ->placeholder('—')
-                            ->extraImgAttributes(['style' => 'width: 100%; height: auto; object-fit: cover;']),
+                            ->extraImgAttributes([
+                                'style' => 'width: 100%; height: auto; object-fit: cover;',
+                                'class' => 'w-full rounded-2xl'
+                            ]),
                     ]),
 
                 Section::make('Status Persetujuan')

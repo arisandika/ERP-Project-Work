@@ -91,7 +91,7 @@ class FinancialRecordResource extends Resource
                                 Forms\Components\FileUpload::make('receipt')
                                     ->label('Upload Bukti')
                                     ->image()
-                                    // ->required()
+                                    ->required()
                                     ->directory('financials')
                                     ->imageEditor()
                                     ->previewable()
@@ -412,7 +412,10 @@ class FinancialRecordResource extends Resource
                         ImageEntry::make('reimbursement.receipt')
                             ->label('Bukti Reimburse')
                             ->placeholder('—')
-                            ->extraImgAttributes(['style' => 'width: 100%; height: auto; object-fit: cover;']),
+                            ->extraImgAttributes([
+                                'style' => 'width: 100%; height: auto; object-fit: cover;',
+                                'class' => 'w-full rounded-2xl'
+                            ]),
 
                         TextEntry::make('reimbursement.approver.full_name')
                             ->label('Disetujui Oleh')
@@ -429,10 +432,11 @@ class FinancialRecordResource extends Resource
                     ->schema([
                         ImageEntry::make('receipt')
                             ->label('Bukti Transaksi')
+                            ->placeholder('—')
                             ->extraImgAttributes([
-                                'style' => 'max-width:400px;height:auto;object-fit:cover;',
-                            ])
-                            ->placeholder('—'),
+                                'style' => 'width: 100%; height: auto; object-fit: cover;',
+                                'class' => 'w-full rounded-2xl'
+                            ]),
                     ]),
 
                 Section::make('Pengelolaan Data')

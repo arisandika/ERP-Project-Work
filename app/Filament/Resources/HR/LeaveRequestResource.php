@@ -182,7 +182,7 @@ class LeaveRequestResource extends Resource
                         ->maxLength(500),
 
                     Forms\Components\FileUpload::make('leave_proof')
-                        ->label('Bukti Cuti')
+                        ->label('Bukti Cuti/Sakit')
                         ->image()
                         ->directory('leave-proofs')
                         ->imageEditor()
@@ -466,7 +466,10 @@ class LeaveRequestResource extends Resource
                         ImageEntry::make('leave_proof')
                             ->label('Bukti Cuti/Sakit')
                             ->placeholder('—')
-                            ->extraImgAttributes(['style' => 'width: 100%; height: auto; object-fit: cover;']),
+                            ->extraImgAttributes([
+                                'style' => 'width: 100%; height: auto; object-fit: cover;',
+                                'class' => 'w-full rounded-2xl'
+                            ]),
                     ]),
 
                 Section::make('Status Persetujuan')
