@@ -305,10 +305,11 @@ class LeaveRequestResource extends Resource
             ->filters([
                 Tables\Filters\SelectFilter::make('status')
                     ->options([
-                        'pending' => 'Pending',
-                        'approved' => 'Approved',
-                        'rejected' => 'Rejected',
-                        'cancelled' => 'Cancelled',
+                        'pending' => 'Menunggu',
+                        'approved' => 'Disetujui',
+                        'rejected' => 'Ditolak',
+                        'cancelled' => 'Dibatalkan',
+                        'expired' => 'Kadaluwarsa',
                     ])
                     ->native(false),
 

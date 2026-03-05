@@ -150,7 +150,8 @@ class LeaveResource extends Resource
                     ->native(false),
             ])
             ->actions([
-                Tables\Actions\ViewAction::make(),
+                Tables\Actions\ViewAction::make()
+                    ->modalHeading('Lihat Riwayat Presensi'),
                 Tables\Actions\EditAction::make(),
                 Tables\Actions\DeleteAction::make(),
                 // Tables\Actions\ForceDeleteAction::make(),

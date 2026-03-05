@@ -169,7 +169,8 @@ class AttendancesRelationManager extends RelationManager
                     ->native(false),
             ])
             ->actions([
-                Tables\Actions\ViewAction::make(),
+                Tables\Actions\ViewAction::make()
+                    ->modalHeading('Lihat Riwayat Presensi'),
             ])
             ->defaultSort('created_at', 'desc')
             ->headerActions([
