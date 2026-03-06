@@ -4,6 +4,7 @@ namespace App\Filament\Resources\Project\ProjectResource\Pages;
 
 use App\Filament\Pages\Project\ProjectBoard;
 use App\Filament\Resources\Project\ProjectResource;
+use App\Infolists\Components\ProjectDocumentList;
 use Filament\Actions;
 use Filament\Actions\Action;
 use Filament\Infolists\Components\RepeatableEntry;
@@ -20,14 +21,12 @@ class ViewProject extends ViewRecord
     protected function getHeaderActions(): array
     {
         return [
-            Actions\EditAction::make(),
-
             Action::make('board')
                 ->label('Project Board')
                 ->icon('heroicon-o-view-columns')
                 ->color('warning')
-                ->url(fn() => ProjectBoard::getUrl(['project_id' => $this->record->id]))
-            ,
+                ->url(fn() => ProjectBoard::getUrl(['project_id' => $this->record->id])),
+
             Action::make('external_access')
                 ->label('External Dashboard')
                 ->icon('heroicon-o-globe-alt')
@@ -54,6 +53,8 @@ class ViewProject extends ViewRecord
                 })
                 ->modalSubmitAction(false)
                 ->modalCancelActionLabel('Close'),
+
+            Actions\EditAction::make(),
 
             Action::make('Kembali')
                 ->url(static::getResource()::getUrl())
@@ -165,7 +166,7 @@ class ViewProject extends ViewRecord
                             ->columnSpanFull(),
                     ]),
 
-                Section::make('Informasi Kontrak/Sales Order')
+                Section::make('Informasi Kontrak Project')
                     ->description('Project ini berasal dari Sales Order.')
                     ->columns(2)
                     ->schema([
@@ -223,7 +224,7 @@ class ViewProject extends ViewRecord
                             ->placeholder('—'),
                     ]),
 
-                Section::make('Budget Project')
+                Section::make('Estimasi Budget Project')
                     ->description('Perbandingan estimasi biaya dengan pengeluaran aktual.')
                     ->columns(3)
                     ->schema([
@@ -258,37 +259,9 @@ class ViewProject extends ViewRecord
                 Section::make('Dokumen Project')
                     ->description('Dokumen kontrak, BAST, dan file teknis project.')
                     ->schema([
-                        RepeatableEntry::make('documents')
-                            ->label('Dokumen Pendukung')
-                            ->schema([
-
-                                TextEntry::make('document_name')
-                                    ->label('Nama Dokumen')
-                                    ->weight('semibold')
-                                    ->placeholder('—'),
-
-                                TextEntry::make('document_type')
-                                    ->label('Jenis Dokumen')
-                                    ->badge()
-                                    ->color(fn($state) => match ($state) {
-                                        'contract' => 'primary',
-                                        'bast' => 'success',
-                                        'technical' => 'warning',
-                                        default => 'gray',
-                                    })
-                                    ->formatStateUsing(
-                                        fn($state) =>
-                                        ucwords(str_replace('_', ' ', $state))
-                                    ),
-
-                                TextEntry::make('file_path')
-                                    ->label('File')
-                                    ->url(fn($state) => asset('storage/' . $state))
-                                    ->openUrlInNewTab()
-                                    ->color('primary'),
-
-                            ])
-                            ->columns(3)
+                        ProjectDocumentList::make('documents')
+                            ->label('Daftar Dokumen')
+                            ->columnSpanFull(),
                     ]),
 
                 Section::make('Pengelolaan Data')
