@@ -2,6 +2,7 @@
 
 namespace App\Models\Project;
 
+use App\Models\HR\Employee;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -20,6 +21,7 @@ class Epic extends Model
         'start_date',
         'end_date',
         'sort_order',
+        'created_by',
     ];
 
     protected $casts = [
@@ -35,5 +37,10 @@ class Epic extends Model
     public function tickets(): HasMany
     {
         return $this->hasMany(Ticket::class);
+    }
+
+    public function creator()
+    {
+        return $this->belongsTo(Employee::class, 'created_by');
     }
 }
