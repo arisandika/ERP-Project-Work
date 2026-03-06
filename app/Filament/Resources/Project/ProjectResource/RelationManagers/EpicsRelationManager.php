@@ -124,6 +124,9 @@ class EpicsRelationManager extends RelationManager
                             ->fileAttachmentsDisk('public')
                             ->fileAttachmentsDirectory('attachments')
                             ->fileAttachmentsVisibility('public'),
+
+                        Forms\Components\Hidden::make('created_by')
+                            ->default(fn() => auth()->user()->employee?->id),
                     ])
                     ->columns(2)
             ]);
@@ -166,6 +169,14 @@ class EpicsRelationManager extends RelationManager
                     ->color(fn(int $state): string => $state > 0 ? 'info' : 'gray')
                     ->sortable()
                     ->formatStateUsing(fn($state) => $state . ' Ticket')
+                    ->placeholder('—'),
+
+                Tables\Columns\TextColumn::make('creator.full_name')
+                    ->label('Dibuat Oleh')
+                    ->searchable()
+                    ->sortable()
+                    ->weight('semibold')
+                    ->icon('heroicon-o-user')
                     ->placeholder('—'),
 
                 Tables\Columns\TextColumn::make('created_at')
@@ -248,17 +259,22 @@ class EpicsRelationManager extends RelationManager
             ->schema([
                 Section::make('Informasi Epic')
                     ->description('Detail durasi dan urutan pengerjaan Epic.')
-                    ->columns(3)
+                    ->columns(2)
                     ->schema([
                         TextEntry::make('name')
                             ->label('Nama Epic')
                             ->weight('semibold')
-                            ->placeholder('—')
-                            ->columnSpan('2'),
+                            ->placeholder('—'),
 
                         TextEntry::make('sort_order')
                             ->label('Urutan Tampil')
                             ->formatStateUsing(fn($state): string => 'Urutan ke-' . $state)
+                            ->placeholder('—'),
+
+                        TextEntry::make('creator.full_name')
+                            ->label('Dibuat Oleh')
+                            ->weight('semibold')
+                            ->icon('heroicon-o-user')
                             ->placeholder('—'),
 
                         TextEntry::make('start_date')
@@ -303,7 +319,7 @@ class EpicsRelationManager extends RelationManager
                             ->hiddenLabel()
                             ->html()
                             ->prose()
-                            ->placeholder('Tidak ada deskripsi detail.'),
+                            ->placeholder('Tidak ada deskripsi'),
                     ])
                     ->collapsible(),
 

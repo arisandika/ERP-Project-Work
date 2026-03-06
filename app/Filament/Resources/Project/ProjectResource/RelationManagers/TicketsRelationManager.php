@@ -468,13 +468,12 @@ class TicketsRelationManager extends RelationManager
             ->schema([
                 Section::make('Informasi Ticket')
                     ->description('Detail status dan identitas ticket.')
-                    ->columns(3)
+                    ->columns(2)
                     ->schema([
                         TextEntry::make('name')
                             ->label('Judul Ticket')
                             ->weight('semibold')
-                            ->placeholder('—')
-                            ->columnSpan('2'),
+                            ->placeholder('—'),
 
                         TextEntry::make('uuid')
                             ->label('Ticket ID')
@@ -557,7 +556,7 @@ class TicketsRelationManager extends RelationManager
                             ->hiddenLabel()
                             ->html()
                             ->prose()
-                            ->placeholder('Tidak ada deskripsi.'),
+                            ->placeholder('Tidak ada deskripsi'),
                     ])
                     ->collapsible(),
 
