@@ -400,7 +400,7 @@ class SalesOrderResource extends Resource
                     ->label('No. Pesanan')
                     ->sortable()
                     ->searchable()
-                    ->weight('bold'),
+                    ->weight('semibold'),
 
                 Tables\Columns\TextColumn::make('customer_po_number')
                     ->label('PO Customer')

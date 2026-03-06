@@ -36,7 +36,7 @@ class SerialNumberResource extends Resource
                     ->label('Serial Number (SN)')
                     ->searchable()
                     ->sortable()
-                    ->weight('bold')
+                    ->weight('semibold')
                     ->copyable()
                     ->copyMessage('SN berhasil disalin')
                     ->icon('heroicon-o-qr-code'),

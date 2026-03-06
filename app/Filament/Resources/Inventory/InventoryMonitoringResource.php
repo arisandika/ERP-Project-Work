@@ -37,7 +37,7 @@ class InventoryMonitoringResource extends Resource
                     ->label('Kode Product')
                     ->searchable()
                     ->sortable()
-                    ->weight('bold'),
+                    ->weight('semibold'),
 
                 Tables\Columns\TextColumn::make('product.product_name')
                     ->label('Nama Product')
@@ -92,7 +92,7 @@ class InventoryMonitoringResource extends Resource
                     ->label('Total Fisik')
                     ->getStateUsing(fn($record) => $record->qty_available + $record->qty_reserved + $record->qty_on_delivery)
                     ->numeric()
-                    ->weight('bold')
+                    ->weight('semibold')
                     ->suffix(' Unit'),
 
                 // Kolom 'status' yang lama dihapus karena sudah diwakili oleh angka-angka di atas

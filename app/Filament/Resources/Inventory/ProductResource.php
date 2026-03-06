@@ -193,7 +193,7 @@ class ProductResource extends Resource
                     ->label('Kode Product')
                     ->searchable()
                     ->sortable()
-                    ->weight('bold'),
+                    ->weight('semibold'),
 
                 Tables\Columns\TextColumn::make('product_name')
                     ->label('Nama Product')

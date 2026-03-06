@@ -274,7 +274,7 @@ class DealsRelationManager extends RelationManager
                     ->label('No. Deal')
                     ->searchable()
                     ->sortable()
-                    ->weight('bold')
+                    ->weight('semibold')
                     ->copyable(),
 
                 Tables\Columns\TextColumn::make('customer_or_lead')

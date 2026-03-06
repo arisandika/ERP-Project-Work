@@ -230,7 +230,7 @@ class TransactionResource extends Resource
                     ->searchable()
                     ->sortable()
                     ->placeholder('–')
-                    ->weight('bold'),
+                    ->weight('semibold'),
 
                 // Diubah untuk sinkronisasi dengan command simulator kita (yang masukin no_reference)
                 Tables\Columns\TextColumn::make('no_reference')
@@ -248,7 +248,7 @@ class TransactionResource extends Resource
                     ->label('Kode Product')
                     ->searchable()
                     ->sortable()
-                    ->weight('bold'),
+                    ->weight('semibold'),
 
                 Tables\Columns\TextColumn::make('product.product_name')
                     ->label('Nama Product')

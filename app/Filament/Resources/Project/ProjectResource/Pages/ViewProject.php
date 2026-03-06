@@ -78,7 +78,7 @@ class ViewProject extends ViewRecord
                     ->schema([
                         TextEntry::make('name')
                             ->label('Nama Project')
-                            ->weight('bold')
+                            ->weight('semibold')
                             ->size('lg')
                             ->placeholder('—'),
 
@@ -252,7 +252,7 @@ class ViewProject extends ViewRecord
                                 fn($state) =>
                                 $state >= 0 ? 'success' : 'danger'
                             )
-                            ->weight('bold')
+                            ->weight('semibold')
                             ->placeholder('—'),
                     ]),
 

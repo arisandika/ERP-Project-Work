@@ -75,7 +75,7 @@ class SupplierResource extends Resource
                     ->label('Nama Supplier')
                     ->searchable()
                     ->sortable()
-                    ->weight('bold')
+                    ->weight('semibold')
                     ->icon('heroicon-o-building-office-2'),
 
                 Tables\Columns\TextColumn::make('contact_person')

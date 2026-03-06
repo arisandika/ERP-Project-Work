@@ -213,7 +213,7 @@ class PackageResource extends Resource
                     ->label('Kode Paket')
                     ->searchable()
                     ->sortable()
-                    ->weight('bold'),
+                    ->weight('semibold'),
 
                 Tables\Columns\TextColumn::make('package_name')
                     ->label('Nama Paket')

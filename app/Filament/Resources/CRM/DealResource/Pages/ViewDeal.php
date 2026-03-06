@@ -42,7 +42,7 @@ class ViewDeal extends ViewRecord
                             ->schema([
                                 TextEntry::make('deal_number')
                                     ->label('No. Deal')
-                                    ->weight('bold')
+                                    ->weight('semibold')
                                     ->size('lg')
                                     ->icon('heroicon-o-hashtag')
                                     ->copyable()
@@ -126,7 +126,7 @@ class ViewDeal extends ViewRecord
                                 TextEntry::make('estimated_value')
                                     ->label('Estimasi Nilai')
                                     ->money('IDR')
-                                    ->weight('bold')
+                                    ->weight('semibold')
                                     ->size('lg')
                                     ->color('success')
                                     ->placeholder('—'),
@@ -190,7 +190,7 @@ class ViewDeal extends ViewRecord
                                 ->getStateUsing(fn(Deal $record) => $record->lead()->withTrashed()->first()?->name)
                                 ->placeholder('—')
                                 ->icon('heroicon-o-user')
-                                ->weight('bold')
+                                ->weight('semibold')
                                 ->size('lg')
                                 ->color(function (Deal $record) {
                                     $record->withTrashed()->first();

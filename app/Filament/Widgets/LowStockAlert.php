@@ -30,7 +30,7 @@ class LowStockAlert extends BaseWidget
                     ->label('Kode Product')
                     ->searchable()
                     ->sortable()
-                    ->weight('bold'),
+                    ->weight('semibold'),
 
                 Tables\Columns\TextColumn::make('product.product_name')
                     ->label('Product')

@@ -69,7 +69,7 @@ class ServiceResource extends Resource
                     ->label('Kode Layanan')
                     ->searchable()
                     ->sortable()
-                    ->weight('bold'),
+                    ->weight('semibold'),
 
                 Tables\Columns\TextColumn::make('service_name')
                     ->label('Nama Layanan')
