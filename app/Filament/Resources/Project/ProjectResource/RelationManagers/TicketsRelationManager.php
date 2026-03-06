@@ -14,12 +14,20 @@ use Filament\Resources\RelationManagers\RelationManager;
 use Filament\Tables;
 use Filament\Tables\Actions\BulkAction;
 use Filament\Tables\Table;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Carbon;
 
 class TicketsRelationManager extends RelationManager
 {
     protected static string $relationship = 'tickets';
+
+    protected static ?string $title = 'Ticket';
+
+    protected static ?string $modelLabel = 'Ticket';
+
+    protected static ?string $pluralModelLabel = 'Ticket';
 
     public static function getBadge(Model $ownerRecord, string $pageClass): ?string
     {
@@ -35,112 +43,116 @@ class TicketsRelationManager extends RelationManager
 
         return $form
             ->schema([
-                Forms\Components\TextInput::make('name')
-                    ->label('Nama Ticket')
-                    ->required()
-                    ->maxLength(255),
+                Forms\Components\Section::make('Informasi Ticket')
+                    ->schema([
+                        Forms\Components\TextInput::make('name')
+                            ->label('Nama Ticket')
+                            ->required()
+                            ->maxLength(255),
 
-                Forms\Components\Select::make('epic_id')
-                    ->label('Epic')
-                    ->options(function () use ($projectId) {
-                        return Epic::where('project_id', $projectId)
-                            ->pluck('name', 'id')
-                            ->toArray();
-                    })
-                    ->nullable(),
+                        Forms\Components\Select::make('epic_id')
+                            ->label('Epic')
+                            ->options(function () use ($projectId) {
+                                return Epic::where('project_id', $projectId)
+                                    ->pluck('name', 'id')
+                                    ->toArray();
+                            })
+                            ->nullable(),
 
-                Forms\Components\Select::make('ticket_status_id')
-                    ->label('Status')
-                    ->options(function () use ($projectId) {
-                        return TicketStatus::where('project_id', $projectId)
-                            ->pluck('name', 'id')
-                            ->toArray();
-                    })
-                    ->default($defaultStatusId)
-                    ->required()
-                    ->searchable(),
+                        Forms\Components\Select::make('ticket_status_id')
+                            ->label('Status')
+                            ->options(function () use ($projectId) {
+                                return TicketStatus::where('project_id', $projectId)
+                                    ->pluck('name', 'id')
+                                    ->toArray();
+                            })
+                            ->default($defaultStatusId)
+                            ->required()
+                            ->searchable(),
 
-                Forms\Components\Select::make('priority_id')
-                    ->label('Prioritas Ticket')
-                    ->options(TicketPriority::pluck('name', 'id')->toArray())
-                    ->searchable()
-                    ->preload()
-                    ->nullable(),
+                        Forms\Components\Select::make('priority_id')
+                            ->label('Prioritas Ticket')
+                            ->options(TicketPriority::pluck('name', 'id')->toArray())
+                            ->searchable()
+                            ->preload()
+                            ->nullable(),
 
-                Forms\Components\DatePicker::make('start_date')
-                    ->label('Tanggal Mulai')
-                    ->default(now())
-                    ->prefixIcon('heroicon-o-calendar-days')
-                    ->required()
-                    ->displayFormat('d M Y')
-                    ->native(false),
+                        Forms\Components\DatePicker::make('start_date')
+                            ->label('Tanggal Mulai')
+                            ->default(now())
+                            ->prefixIcon('heroicon-o-calendar-days')
+                            ->required()
+                            ->displayFormat('d M Y')
+                            ->native(false),
 
-                Forms\Components\DatePicker::make('due_date')
-                    ->label('Tanggal Selesai')
-                    ->required()
-                    ->displayFormat('d M Y')
-                    ->native(false)
-                    ->prefixIcon('heroicon-o-calendar-days'),
+                        Forms\Components\DatePicker::make('due_date')
+                            ->label('Tanggal Selesai')
+                            ->required()
+                            ->displayFormat('d M Y')
+                            ->native(false)
+                            ->prefixIcon('heroicon-o-calendar-days'),
 
-                Forms\Components\Select::make('assignees')
-                    ->label('Ditugaskan Kepada')
-                    ->multiple()
-                    ->relationship(
-                        name: 'assignees',
-                        titleAttribute: 'full_name',
-                        modifyQueryUsing: function ($query) {
-                            $projectId = $this->getOwnerRecord()->id;
-                            // Only show project members
-                            return $query->whereHas('projects', function ($query) use ($projectId) {
-                                $query->where('nx_projects.id', $projectId);
-                            });
-                        }
-                    )
-                    ->searchable()
-                    ->preload()
-                    ->default(function ($record) {
-                        if ($record && $record->exists) {
-                            return $record->assignees->pluck('id')->toArray();
-                        }
+                        Forms\Components\Select::make('assignees')
+                            ->label('Ditugaskan Kepada')
+                            ->multiple()
+                            ->relationship(
+                                name: 'assignees',
+                                titleAttribute: 'full_name',
+                                modifyQueryUsing: function ($query) {
+                                    $projectId = $this->getOwnerRecord()->id;
+                                    // Only show project members
+                                    return $query->whereHas('projects', function ($query) use ($projectId) {
+                                        $query->where('nx_projects.id', $projectId);
+                                    });
+                                }
+                            )
+                            ->searchable()
+                            ->preload()
+                            ->default(function ($record) {
+                                if ($record && $record->exists) {
+                                    return $record->assignees->pluck('id')->toArray();
+                                }
 
-                        // Auto-assign current user if they're a project member
-                        $project = $this->getOwnerRecord();
-                        $isCurrentUserMember = $project->members()
-                            ->where('nx_employees.id', auth()->user()->employee->id)
-                            ->exists();
+                                // Auto-assign current user if they're a project member
+                                $project = $this->getOwnerRecord();
+                                $isCurrentUserMember = $project->members()
+                                    ->where('nx_employees.id', auth()->user()->employee->id)
+                                    ->exists();
 
-                        return $isCurrentUserMember ? [auth()->user()->employee->id] : [];
-                    })
-                    ->helperText('Pilih beberapa member untuk ditugaskan Ticket ini. Hanya anggota project yang dapat ditugaskan.'),
+                                return $isCurrentUserMember ? [auth()->user()->employee->id] : [];
+                            })
+                            ->helperText('Pilih beberapa member untuk ditugaskan Ticket ini. Hanya anggota project yang dapat ditugaskan.'),
 
-                Forms\Components\Select::make('created_by')
-                    ->label('Dibuat Oleh')
-                    ->relationship('creator', 'full_name')
-                    ->disabled()
-                    ->hiddenOn('create'),
+                        Forms\Components\Select::make('created_by')
+                            ->label('Dibuat Oleh')
+                            ->relationship('creator', 'full_name')
+                            ->disabled()
+                            ->hiddenOn('create'),
 
-                Forms\Components\RichEditor::make('description')
-                    ->label('Deskripsi Ticket')
-                    ->columnSpanFull()
-                    ->toolbarButtons([
-                        'attachFiles',
-                        'blockquote',
-                        'bold',
-                        'bulletList',
-                        'codeBlock',
-                        'h2',
-                        'h3',
-                        'italic',
-                        'link',
-                        'orderedList',
-                        'redo',
-                        'strike',
-                        'underline',
-                        'undo',
+                        Forms\Components\RichEditor::make('description')
+                            ->label('Deskripsi Ticket')
+                            ->columnSpanFull()
+                            ->toolbarButtons([
+                                'attachFiles',
+                                'blockquote',
+                                'bold',
+                                'bulletList',
+                                'codeBlock',
+                                'h2',
+                                'h3',
+                                'italic',
+                                'link',
+                                'orderedList',
+                                'redo',
+                                'strike',
+                                'underline',
+                                'undo',
+                            ])
+                            ->fileAttachmentsDisk('public')
+                            ->fileAttachmentsDirectory('attachments')
+                            ->fileAttachmentsVisibility('public'),
                     ])
-                    ->fileAttachmentsDisk('public')
-                    ->fileAttachmentsDirectory('attachments')
-                    ->fileAttachmentsVisibility('public'),
+                    ->columns(2)
             ]);
     }
 
@@ -148,18 +160,26 @@ class TicketsRelationManager extends RelationManager
     {
         return $table
             ->recordTitleAttribute('name')
-            ->heading('Tickets')
+            ->heading('Ticket')
             ->columns([
                 Tables\Columns\TextColumn::make('uuid')
                     ->label('Ticket ID')
                     ->searchable()
                     ->sortable()
+                    ->weight('semibold')
+                    ->placeholder('—')
                     ->copyable(),
 
                 Tables\Columns\TextColumn::make('name')
                     ->label('Nama Ticket')
                     ->searchable()
                     ->sortable(),
+
+                Tables\Columns\TextColumn::make('epic.name')
+                    ->label('Epic')
+                    ->placeholder('No Epic')
+                    ->sortable()
+                    ->searchable(),
 
                 Tables\Columns\TextColumn::make('status.name')
                     ->label('Status')
@@ -175,7 +195,7 @@ class TicketsRelationManager extends RelationManager
                     ->formatStateUsing(fn(string $state): string => ucwords(str_replace('_', ' ', $state))),
 
                 Tables\Columns\TextColumn::make('priority.name')
-                    ->label('Priority')
+                    ->label('Prioritas')
                     ->badge()
                     ->color(fn(string $state): string => match ($state) {
                         'High' => 'danger',
@@ -187,24 +207,15 @@ class TicketsRelationManager extends RelationManager
                     ->default('—')
                     ->placeholder('No Priority'),
 
-                Tables\Columns\TextColumn::make('epic.name')
-                    ->label('Epic')
-                    ->badge()
-                    ->color('warning')
-                    ->placeholder('No Epic')
-                    ->sortable()
-                    ->searchable(),
-
                 Tables\Columns\TextColumn::make('assignees.full_name')
                     ->label('Ditugaskan')
                     ->badge()
+                    ->color('gray')
+                    ->weight('semibold')
+                    ->icon('heroicon-o-user')
                     ->separator(',')
                     ->expandableLimitedList()
                     ->searchable(),
-
-                Tables\Columns\TextColumn::make('creator.full_name')
-                    ->label('Dibuat Oleh')
-                    ->sortable(),
 
                 Tables\Columns\TextColumn::make('start_date')
                     ->label('Tanggal Mulai')
@@ -215,6 +226,14 @@ class TicketsRelationManager extends RelationManager
                     ->label('Tanggal Selesai')
                     ->dateTime('d M Y')
                     ->sortable(),
+
+                Tables\Columns\TextColumn::make('creator.full_name')
+                    ->label('Dibuat Oleh')
+                    ->searchable()
+                    ->sortable()
+                    ->weight('semibold')
+                    ->icon('heroicon-o-user')
+                    ->placeholder('—'),
 
                 Tables\Columns\TextColumn::make('created_at')
                     ->label('Dibuat Pada')
@@ -240,7 +259,7 @@ class TicketsRelationManager extends RelationManager
                     }),
 
                 Tables\Filters\SelectFilter::make('assignees')
-                    ->label('Assignee')
+                    ->label('Member Ditugaskan')
                     ->relationship('assignees', 'full_name')
                     ->multiple()
                     ->searchable()
@@ -260,10 +279,47 @@ class TicketsRelationManager extends RelationManager
                             ->pluck('name', 'id')
                             ->toArray();
                     }),
-            ])
-            ->headerActions([
-                Tables\Actions\CreateAction::make()
-                    ->label('Tambah Ticket'),
+
+                Tables\Filters\Filter::make('created_at')
+                    ->form([
+                        Forms\Components\DatePicker::make('created_from')
+                            ->label('Dibuat Dari')
+                            ->required()
+                            ->displayFormat('d M Y')
+                            ->native(false)
+                            ->prefixIcon('heroicon-o-calendar-days'),
+
+                        Forms\Components\DatePicker::make('created_until')
+                            ->label('Dibuat Hingga')
+                            ->required()
+                            ->displayFormat('d M Y')
+                            ->native(false)
+                            ->prefixIcon('heroicon-o-calendar-days'),
+                    ])
+                    ->query(function (Builder $query, array $data): Builder {
+                        return $query
+                            ->when(
+                                $data['created_from'],
+                                fn(Builder $query, $date): Builder => $query->whereDate('created_at', '>=', $date),
+                            )
+                            ->when(
+                                $data['created_until'],
+                                fn(Builder $query, $date): Builder => $query->whereDate('created_at', '<=', $date),
+                            );
+                    })
+                    ->indicateUsing(function (array $data): array {
+                        $indicators = [];
+
+                        if ($data['created_from'] ?? null) {
+                            $indicators[] = 'Created from ' . Carbon::parse($data['created_from'])->toFormattedDateString();
+                        }
+
+                        if ($data['created_until'] ?? null) {
+                            $indicators[] = 'Created until ' . Carbon::parse($data['created_until'])->toFormattedDateString();
+                        }
+
+                        return $indicators;
+                    }),
             ])
             ->actions([
                 Tables\Actions\EditAction::make(),
@@ -340,7 +396,7 @@ class TicketsRelationManager extends RelationManager
                             Notification::make()
                                 ->success()
                                 ->title('Users assigned')
-                                ->body(count($records) . ' tickets have been updated with new assignees.')
+                                ->body(count($records) . ' ticket berhasil diperbarui dengan member ditugaskan')
                                 ->send();
                         }),
 
@@ -392,11 +448,20 @@ class TicketsRelationManager extends RelationManager
                             Notification::make()
                                 ->success()
                                 ->title('Epic assignment updated')
-                                ->body(count($records) . ' tickets have been assigned to: ' . $epicName)
+                                ->body(count($records) . ' ticket berhasil ditugaskan untuk: ' . $epicName)
                                 ->send();
                         }),
                 ]),
             ])
-            ->defaultSort('created_at', 'desc');
+            ->defaultSort('created_at', 'desc')
+            ->headerActions([
+                Tables\Actions\CreateAction::make()
+                    ->label('Tambah Ticket'),
+            ]);
+    }
+
+    public function isReadOnly(): bool
+    {
+        return false;
     }
 }

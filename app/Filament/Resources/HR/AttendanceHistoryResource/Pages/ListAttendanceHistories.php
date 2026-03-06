@@ -69,14 +69,6 @@ class ListAttendanceHistories extends ListRecords
                 )
                 ->badge((int) $counts->all_count),
 
-            'last_3_month' => Tab::make('3 Bulan Terakhir')
-                ->modifyQueryUsing(
-                    fn($query) =>
-                    $query->where('employee_id', $employee->id)
-                        ->where('date', '>=', $start3Months)
-                )
-                ->badge((int) $counts->last_3_month),
-
             'last_month' => Tab::make('Bulan Lalu')
                 ->modifyQueryUsing(
                     fn($query) =>

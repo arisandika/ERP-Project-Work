@@ -190,10 +190,12 @@ class QuotationResource extends Resource
                         ->schema([
                             TextInput::make('subtotal')
                                 ->label('Subtotal')
+                                ->numeric()
+                                ->prefix('IDR')
+                                ->required()
+                                ->minValue(0)
                                 ->disabled()
                                 ->dehydrated()
-                                ->prefix('IDR')
-                                ->numeric()
                                 ->formatStateUsing(fn($state) => (int) $state),
 
                             TextInput::make('promo_code_input')
@@ -223,10 +225,11 @@ class QuotationResource extends Resource
 
                             TextInput::make('discount_amount')
                                 ->label('Potongan')
+                                ->numeric()
+                                ->prefix('IDR')
+                                ->minValue(0)
                                 ->disabled()
                                 ->dehydrated()
-                                ->prefix('IDR')
-                                ->numeric()
                                 ->formatStateUsing(fn($state) => (int) $state),
 
                             TextInput::make('tax')
@@ -241,11 +244,13 @@ class QuotationResource extends Resource
 
                             TextInput::make('grand_total')
                                 ->label('Total')
+                                ->numeric()
+                                ->prefix('IDR')
+                                ->required()
+                                ->minValue(0)
                                 ->disabled()
                                 ->dehydrated()
-                                ->prefix('IDR')
                                 ->extraInputAttributes(['style' => 'font-weight: bold;'])
-                                ->numeric()
                                 ->formatStateUsing(fn($state) => (int) $state),
                         ]),
                 ]),
@@ -790,19 +795,23 @@ class QuotationResource extends Resource
             TextInput::make('unit_price')
                 ->label('Harga Satuan')
                 ->numeric()
+                ->prefix('IDR')
+                ->required()
+                ->minValue(0)
                 ->disabled()
                 ->dehydrated()
-                ->prefix('IDR')
                 ->formatStateUsing(fn($state) => (int) $state)
                 ->reactive()
                 ->afterStateUpdated(fn(Set $set, Get $get) => self::updateItemTotal($get, $set)),
 
             TextInput::make('line_total')
                 ->label('Subtotal')
-                ->disabled()
-                ->dehydrated()
                 ->numeric()
                 ->prefix('IDR')
+                ->required()
+                ->minValue(0)
+                ->disabled()
+                ->dehydrated()
                 ->extraInputAttributes(['style' => 'font-weight: bold;'])
                 ->formatStateUsing(fn($state) => (int) $state),
         ];

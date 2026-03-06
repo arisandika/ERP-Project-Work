@@ -210,8 +210,9 @@ class InvoiceResource extends Resource
                             TextInput::make('unit_price')
                                 ->label('Harga Satuan')
                                 ->numeric()
-                                ->required()
                                 ->prefix('IDR')
+                                ->required()
+                                ->minValue(0)
                                 ->reactive()
                                 ->afterStateUpdated(
                                     fn($state, callable $set, callable $get) =>
@@ -221,9 +222,11 @@ class InvoiceResource extends Resource
                             TextInput::make('line_total')
                                 ->label('Subtotal')
                                 ->numeric()
+                                ->prefix('IDR')
+                                ->required()
+                                ->minValue(0)
                                 ->dehydrated()
                                 ->disabled()
-                                ->prefix('IDR')
                                 ->extraInputAttributes(['style' => 'font-weight: bold;']),
                         ]),
                     ])
@@ -239,10 +242,12 @@ class InvoiceResource extends Resource
                 Grid::make(4)->schema([
                     TextInput::make('subtotal')
                         ->label('Subtotal')
-                        ->disabled()
-                        ->dehydrated()
+                        ->numeric()
                         ->prefix('IDR')
-                        ->numeric(),
+                        ->required()
+                        ->minValue(0)
+                        ->disabled()
+                        ->dehydrated(),
 
                     TextInput::make('discount')
                         ->label('Diskon (%)')
@@ -272,10 +277,12 @@ class InvoiceResource extends Resource
 
                     TextInput::make('grand_total')
                         ->label('Total')
+                        ->numeric()
+                        ->prefix('IDR')
+                        ->required()
+                        ->minValue(0)
                         ->disabled()
                         ->dehydrated()
-                        ->prefix('IDR')
-                        ->numeric()
                         ->extraInputAttributes(['style' => 'font-weight: bold;']),
                 ]),
 

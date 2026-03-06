@@ -47,7 +47,8 @@ class ServiceResource extends Resource
                                     ->label('Harga')
                                     ->numeric()
                                     ->prefix('IDR')
-                                    ->required(),
+                                    ->required()
+                                    ->minValue(0),
 
                                 Forms\Components\Select::make('category_id')
                                     ->label('Kategori')

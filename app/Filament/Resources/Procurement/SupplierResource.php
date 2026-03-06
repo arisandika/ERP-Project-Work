@@ -48,7 +48,7 @@ class SupplierResource extends Resource
                     ->description('Data untuk keperluan korespondensi dan penagihan.')
                     ->schema([
                         Forms\Components\TextInput::make('phone')
-                            ->label('Nomor Telepon / WA')
+                            ->label('No. WhatsApp')
                             ->tel()
                             ->maxLength(255)
                             ->prefixIcon('heroicon-o-phone'),
@@ -84,10 +84,10 @@ class SupplierResource extends Resource
                     ->placeholder('–'),
 
                 Tables\Columns\TextColumn::make('phone')
-                    ->label('No. Telepon')
+                    ->label('No. WhatsApp')
                     ->searchable()
                     ->copyable()
-                    ->copyMessage('Nomor telepon disalin')
+                    ->copyMessage('No. WhatsApp disalin')
                     ->icon('heroicon-m-phone')
                     ->placeholder('–'),
 

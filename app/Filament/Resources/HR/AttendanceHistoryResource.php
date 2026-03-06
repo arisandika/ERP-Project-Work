@@ -202,7 +202,6 @@ class AttendanceHistoryResource extends Resource
                     ->schema([
                         TextEntry::make('employee.full_name')
                             ->label('Nama Karyawan')
-                            ->color('primary')
                             ->weight('semibold')
                             ->icon('heroicon-o-user')
                             ->placeholder('—'),

@@ -12,6 +12,7 @@ use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
+use Illuminate\Support\Carbon;
 
 class TicketStatusesRelationManager extends RelationManager
 {
@@ -31,48 +32,53 @@ class TicketStatusesRelationManager extends RelationManager
     public function form(Form $form): Form
     {
         return $form
-            ->components([
-                Forms\Components\TextInput::make('name')
-                    ->label('Status Ticket')
-                    ->required()
-                    ->maxLength(255),
+            ->schema([
+                Forms\Components\Section::make('Informasi Status Ticket')
+                    ->schema([
+                        Forms\Components\TextInput::make('name')
+                            ->label('Status Ticket')
+                            ->required()
+                            ->maxLength(255),
 
-                Forms\Components\ColorPicker::make('color')
-                    ->label('Warna')
-                    ->required()
-                    ->default('#3490dc')
-                    ->helperText('Pilih warna untuk status ini'),
+                        Forms\Components\ColorPicker::make('color')
+                            ->label('Warna')
+                            ->required()
+                            ->default('#3490dc')
+                            ->helperText('Pilih warna untuk status ini'),
 
-                Forms\Components\TextInput::make('sort_order')
-                    ->label('Urutan')
-                    ->numeric()
-                    ->default(1)
-                    ->helperText('Tentukan urutan tampilan di project board (nilai yang lebih rendah ditampilkan terlebih dahulu)'),
+                        Forms\Components\TextInput::make('sort_order')
+                            ->label('Urutan')
+                            ->numeric()
+                            ->default(1)
+                            ->helperText('Tentukan urutan tampilan di project board (nilai yang lebih rendah ditampilkan terlebih dahulu)'),
 
-                Forms\Components\Toggle::make('is_completed')
-                    ->label('Tandai sebagai completed')
-                    ->helperText('Hanya satu status per project yang dapat ditandai sebagai completed')
-                    ->default(false)
-                    ->reactive()
-                    ->afterStateUpdated(function ($state, $get, $set, $record) {
-                        if ($state) {
-                            // Check if another status in this project is already marked as completed
-                            $projectId = $this->getOwnerRecord()->id;
-                            $existingCompleted = TicketStatus::where('project_id', $projectId)
-                                ->where('is_completed', true)
-                                ->when($record, fn($query) => $query->where('id', '!=', $record->id))
-                                ->first();
+                        Forms\Components\Toggle::make('is_completed')
+                            ->label('Tandai sebagai completed')
+                            ->helperText('Hanya satu status per project yang dapat ditandai sebagai completed')
+                            ->default(false)
+                            ->inline(false)
+                            ->reactive()
+                            ->afterStateUpdated(function ($state, $get, $set, $record) {
+                                if ($state) {
+                                    // Check if another status in this project is already marked as completed
+                                    $projectId = $this->getOwnerRecord()->id;
+                                    $existingCompleted = TicketStatus::where('project_id', $projectId)
+                                        ->where('is_completed', true)
+                                        ->when($record, fn($query) => $query->where('id', '!=', $record->id))
+                                        ->first();
 
-                            if ($existingCompleted) {
-                                $set('is_completed', false);
-                                Notification::make()
-                                    ->warning()
-                                    ->title('Tidak dapat menandai sebagai completed')
-                                    ->body("Status '{$existingCompleted->name}' sudah ditandai sebagai selesai untuk project ini. Hanya satu status yang dapat ditandai sebagai selesai")
-                                    ->send();
-                            }
-                        }
-                    }),
+                                    if ($existingCompleted) {
+                                        $set('is_completed', false);
+                                        Notification::make()
+                                            ->warning()
+                                            ->title('Tidak dapat menandai sebagai completed')
+                                            ->body("Status '{$existingCompleted->name}' sudah ditandai sebagai selesai untuk project ini. Hanya satu status yang dapat ditandai sebagai selesai")
+                                            ->send();
+                                    }
+                                }
+                            }),
+                    ])
+                    ->columns(2)
             ]);
     }
 
@@ -83,7 +89,8 @@ class TicketStatusesRelationManager extends RelationManager
             ->heading('Status Ticket')
             ->columns([
                 Tables\Columns\TextColumn::make('name')
-                    ->label('Status Ticket'),
+                    ->weight('semibold')
+                    ->placeholder('—'),
 
                 Tables\Columns\ColorColumn::make('color')
                     ->label('Warna'),
@@ -112,14 +119,47 @@ class TicketStatusesRelationManager extends RelationManager
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
             ])
-            ->defaultSort('sort_order')
-            ->reorderable('sort_order')
             ->filters([
-                //
-            ])
-            ->headerActions([
-                Tables\Actions\CreateAction::make()
-                    ->label('Tambah Status'),
+                Tables\Filters\Filter::make('created_at')
+                    ->form([
+                        Forms\Components\DatePicker::make('created_from')
+                            ->label('Dibuat Dari')
+                            ->required()
+                            ->displayFormat('d M Y')
+                            ->native(false)
+                            ->prefixIcon('heroicon-o-calendar-days'),
+
+                        Forms\Components\DatePicker::make('created_until')
+                            ->label('Dibuat Hingga')
+                            ->required()
+                            ->displayFormat('d M Y')
+                            ->native(false)
+                            ->prefixIcon('heroicon-o-calendar-days'),
+                    ])
+                    ->query(function (Builder $query, array $data): Builder {
+                        return $query
+                            ->when(
+                                $data['created_from'],
+                                fn(Builder $query, $date): Builder => $query->whereDate('created_at', '>=', $date),
+                            )
+                            ->when(
+                                $data['created_until'],
+                                fn(Builder $query, $date): Builder => $query->whereDate('created_at', '<=', $date),
+                            );
+                    })
+                    ->indicateUsing(function (array $data): array {
+                        $indicators = [];
+
+                        if ($data['created_from'] ?? null) {
+                            $indicators[] = 'Created from ' . Carbon::parse($data['created_from'])->toFormattedDateString();
+                        }
+
+                        if ($data['created_until'] ?? null) {
+                            $indicators[] = 'Created until ' . Carbon::parse($data['created_until'])->toFormattedDateString();
+                        }
+
+                        return $indicators;
+                    }),
             ])
             ->actions([
                 Tables\Actions\EditAction::make(),
@@ -129,6 +169,18 @@ class TicketStatusesRelationManager extends RelationManager
                 Tables\Actions\BulkActionGroup::make([
                     Tables\Actions\DeleteBulkAction::make(),
                 ]),
-            ]);
+            ])
+            ->defaultSort('created_at', 'desc')
+            ->headerActions([
+                Tables\Actions\CreateAction::make()
+                    ->label('Tambah Status'),
+            ])
+            ->defaultSort('sort_order')
+            ->reorderable('sort_order');
+    }
+
+    public function isReadOnly(): bool
+    {
+        return false;
     }
 }

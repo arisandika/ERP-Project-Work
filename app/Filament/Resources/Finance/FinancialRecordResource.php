@@ -77,10 +77,10 @@ class FinancialRecordResource extends Resource
                                     ->prefixIcon('heroicon-o-tag'),
 
                                 Forms\Components\TextInput::make('amount')
-                                    ->label('Nominal')
                                     ->numeric()
                                     ->prefix('IDR')
-                                    ->required(),
+                                    ->required()
+                                    ->minValue(0),
 
                                 Forms\Components\Textarea::make('description')
                                     ->label('Keterangan')
@@ -316,7 +316,6 @@ class FinancialRecordResource extends Resource
                     ->schema([
                         TextEntry::make('employee.full_name')
                             ->label('Dibuat Oleh')
-                            ->color('primary')
                             ->weight('semibold')
                             ->icon('heroicon-o-user')
                             ->placeholder('—'),
@@ -369,10 +368,8 @@ class FinancialRecordResource extends Resource
                     ->columns(2)
                     ->visible(fn($record) => filled($record->reimburse_id))
                     ->schema([
-
                         TextEntry::make('reimbursement.employee.full_name')
                             ->label('Pemilik Reimburse')
-                            ->color('primary')
                             ->weight('semibold')
                             ->icon('heroicon-o-user')
                             ->placeholder('—'),
@@ -420,7 +417,6 @@ class FinancialRecordResource extends Resource
 
                         TextEntry::make('reimbursement.approver.full_name')
                             ->label('Disetujui Oleh')
-                            ->color('primary')
                             ->weight('semibold')
                             ->icon('heroicon-o-user')
                             ->placeholder('—'),
@@ -438,7 +434,8 @@ class FinancialRecordResource extends Resource
                                 'style' => 'width: 100%; height: auto; object-fit: cover;',
                                 'class' => 'w-full rounded-2xl'
                             ]),
-                    ]),
+                    ])
+                    ->columns(2),
 
                 Section::make('Pengelolaan Data')
                     ->columns(2)

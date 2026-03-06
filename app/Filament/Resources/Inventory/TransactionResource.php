@@ -64,7 +64,8 @@ class TransactionResource extends Resource
                                 : null
                             )
                             ->afterStateHydrated(function ($state, callable $get, callable $set) use ($calculateTotal) {
-                                if (!$state) return;
+                                if (!$state)
+                                    return;
                                 $product = Product::find($state);
                                 $set('price', $product?->purchase_price ?? 0);
                                 $set('is_serialized', $product?->is_serialized ?? false);
@@ -130,11 +131,12 @@ class TransactionResource extends Resource
                             ->helperText('Gunakan Barcode Scanner. Pastikan 1 SN per baris. Jumlah scan harus sama dengan Qty Mutasi.')
                             ->rows(8)
                             ->columnSpanFull()
-                            ->visible(fn (Forms\Get $get): bool => $get('is_serialized') === true)
-                            ->required(fn (Forms\Get $get): bool => $get('is_serialized') === true)
+                            ->visible(fn(Forms\Get $get): bool => $get('is_serialized') === true)
+                            ->required(fn(Forms\Get $get): bool => $get('is_serialized') === true)
                             ->rules([
-                                fn (Forms\Get $get): Closure => function (string $attribute, $value, Closure $fail) use ($get) {
-                                    if (!$get('is_serialized')) return;
+                                fn(Forms\Get $get): Closure => function (string $attribute, $value, Closure $fail) use ($get) {
+                                    if (!$get('is_serialized'))
+                                        return;
                                     $sns = array_filter(array_map('trim', explode("\n", $value)));
                                     $qty = (int) $get('quantity');
                                     if (count($sns) !== $qty) {
@@ -148,13 +150,18 @@ class TransactionResource extends Resource
 
                         Forms\Components\TextInput::make('price')
                             ->label('Harga Beli per Unit')
+                            ->numeric()
                             ->prefix('IDR')
-                            ->disabled()
+                            ->required()
+                            ->minValue(0)
                             ->dehydrated(true),
 
                         Forms\Components\TextInput::make('total_price')
                             ->label('Total Harga')
+                            ->numeric()
                             ->prefix('IDR')
+                            ->required()
+                            ->minValue(0)
                             ->disabled()
                             ->dehydrated(true)
                             ->helperText('Total = Harga × Jumlah'),
@@ -170,10 +177,12 @@ class TransactionResource extends Resource
                             ->label('Stock Siap Jual Saat Ini')
                             ->reactive()
                             ->content(function (callable $get, $record) {
-                                if ($record) return $record->stock_before . ' unit';
+                                if ($record)
+                                    return $record->stock_before . ' unit';
                                 $productId = $get('product_id');
                                 $warehouseId = $get('warehouse_id');
-                                if (!$productId || !$warehouseId) return '-';
+                                if (!$productId || !$warehouseId)
+                                    return '-';
                                 $stock = ProductStock::query()
                                     ->where('product_id', $productId)
                                     ->where('warehouse_id', $warehouseId)
@@ -190,12 +199,14 @@ class TransactionResource extends Resource
                             ->label('Estimasi Stock Setelah Transaksi')
                             ->reactive()
                             ->content(function (callable $get, $record) {
-                                if ($record) return $record->stock_after . ' unit';
+                                if ($record)
+                                    return $record->stock_after . ' unit';
                                 $productId = $get('product_id');
                                 $warehouseId = $get('warehouse_id');
                                 $qty = max(1, (int) $get('quantity'));
                                 $mutationType = $get('mutation_type');
-                                if (!$productId || !$warehouseId) return '-';
+                                if (!$productId || !$warehouseId)
+                                    return '-';
                                 $currentStock = ProductStock::query()
                                     ->where('product_id', $productId)
                                     ->where('warehouse_id', $warehouseId)
@@ -322,7 +333,10 @@ class TransactionResource extends Resource
             ->defaultSort('transaction_date', 'desc');
     }
 
-    public static function getRelations(): array { return []; }
+    public static function getRelations(): array
+    {
+        return [];
+    }
 
     public static function getPages(): array
     {
@@ -333,6 +347,12 @@ class TransactionResource extends Resource
         ];
     }
 
-    public static function canEdit($record): bool { return false; }
-    public static function canDelete($record): bool { return false; }
+    public static function canEdit($record): bool
+    {
+        return false;
+    }
+    public static function canDelete($record): bool
+    {
+        return false;
+    }
 }

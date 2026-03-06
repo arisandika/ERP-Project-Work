@@ -92,12 +92,9 @@ class ReimbursementApprovalResource extends Resource
                     Forms\Components\TextInput::make('amount')
                         ->label('Nominal')
                         ->numeric()
-                        ->required()
                         ->prefix('IDR')
+                        ->required()
                         ->minValue(0)
-                        ->step(1000)
-                        ->placeholder('Contoh: 50000')
-                        ->prefixIcon('heroicon-o-banknotes')
                         ->disabled(),
 
                     Forms\Components\Textarea::make('description')
@@ -324,7 +321,6 @@ class ReimbursementApprovalResource extends Resource
                     ->schema([
                         TextEntry::make('employee.full_name')
                             ->label('Nama Karyawan')
-                            ->color('primary')
                             ->weight('semibold')
                             ->icon('heroicon-o-user')
                             ->placeholder('—'),
@@ -384,7 +380,6 @@ class ReimbursementApprovalResource extends Resource
 
                         TextEntry::make('approver.full_name')
                             ->label('Disetujui Oleh')
-                            ->color('primary')
                             ->weight('semibold')
                             ->icon('heroicon-o-user')
                             ->placeholder('—'),

@@ -172,7 +172,8 @@ class DealsRelationManager extends RelationManager
                                     ->label('Estimasi Nilai')
                                     ->numeric()
                                     ->prefix('IDR')
-                                    ->required(),
+                                    ->required()
+                                    ->minValue(0),
 
                                 Forms\Components\Select::make('status')
                                     ->label('Status')
@@ -306,7 +307,7 @@ class DealsRelationManager extends RelationManager
                             $desc = $lead->email ?? '-';
                             // Jika lead terhapus, kita bisa kasih warning warna merah di description
                             if ($lead->trashed()) {
-                                return new HtmlString("<span class='text-danger-600 font-bold'>Lead Terhapus</span> • {$desc}");
+                                return new HtmlString("<span class='font-bold text-danger-600'>Lead Terhapus</span> • {$desc}");
                             }
                             return $desc;
                         }
