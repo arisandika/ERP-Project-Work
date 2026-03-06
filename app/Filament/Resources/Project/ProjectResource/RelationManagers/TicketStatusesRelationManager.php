@@ -49,8 +49,47 @@ class TicketStatusesRelationManager extends RelationManager
                         Forms\Components\TextInput::make('sort_order')
                             ->label('Urutan')
                             ->numeric()
-                            ->default(1)
-                            ->helperText('Tentukan urutan tampilan di project board (nilai yang lebih rendah ditampilkan terlebih dahulu)'),
+                            ->required()
+                            ->default(function ($livewire) {
+
+                                $lastOrder = $livewire->getOwnerRecord()
+                                    ->ticketStatuses()
+                                    ->max('sort_order');
+
+                                return $lastOrder ? $lastOrder + 1 : 1;
+                            })
+                            ->live(onBlur: true)
+                            ->afterStateUpdated(function ($state, $set, $livewire, ?Model $record) {
+                                if (blank($state))
+                                    return;
+
+                                $projectId = $livewire->getOwnerRecord()->id;
+
+                                $isTaken = function ($val) use ($projectId, $record) {
+                                    return TicketStatus::where('nx_project_id', $projectId)
+                                        ->where('sort_order', $val)
+                                        ->when($record, fn($q) => $q->where('id', '!=', $record->id))
+                                        ->exists();
+                                };
+
+                                if ($isTaken($state)) {
+                                    $originalState = $state;
+
+                                    while ($isTaken($state)) {
+                                        $state++;
+                                    }
+
+                                    $set('sort_order', $state);
+
+                                    Notification::make()
+                                        ->title('Urutan Disesuaikan')
+                                        ->body("Urutan {$originalState} sudah digunakan. Otomatis dialihkan ke urutan tersedia berikutnya ({$state}).")
+                                        ->info()
+                                        ->duration(3000)
+                                        ->send();
+                                }
+                            })
+                            ->helperText('Tentukan urutan tampilan (otomatis menyesuaikan jika nomor sudah terpakai).'),
 
                         Forms\Components\Toggle::make('is_completed')
                             ->label('Tandai sebagai completed')

@@ -258,8 +258,17 @@ class TicketsRelationManager extends RelationManager
                             ->toArray();
                     }),
 
+                Tables\Filters\SelectFilter::make('epic_id')
+                    ->label('Epic')
+                    ->options(function () {
+                        $projectId = $this->getOwnerRecord()->id;
+                        return Epic::where('project_id', $projectId)
+                            ->pluck('name', 'id')
+                            ->toArray();
+                    }),
+
                 Tables\Filters\SelectFilter::make('assignees')
-                    ->label('Member Ditugaskan')
+                    ->label('Ditugaskan')
                     ->relationship('assignees', 'full_name')
                     ->multiple()
                     ->searchable()
@@ -270,15 +279,6 @@ class TicketsRelationManager extends RelationManager
                     ->relationship('creator', 'full_name')
                     ->searchable()
                     ->preload(),
-
-                Tables\Filters\SelectFilter::make('epic_id')
-                    ->label('Epic')
-                    ->options(function () {
-                        $projectId = $this->getOwnerRecord()->id;
-                        return Epic::where('project_id', $projectId)
-                            ->pluck('name', 'id')
-                            ->toArray();
-                    }),
 
                 Tables\Filters\Filter::make('created_at')
                     ->form([

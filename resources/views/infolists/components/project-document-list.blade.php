@@ -51,7 +51,7 @@
 
             <a href="{{ $url }}" 
                target="_blank"
-               class="relative flex items-center p-3 space-x-3 transition-all duration-200 border shadow-sm group rounded-xl bg-main-light border-border-light hover:bg-secondary-light hover:border-main-primary/30 dark:bg-main-dark dark:border-border-dark dark:hover:bg-secondary-dark dark:hover:border-main-primary/30">
+               class="relative flex items-center gap-3 p-3 transition-all duration-200 border shadow-sm group rounded-xl bg-secondary-light border-border-light hover:bg-main-light hover:border-main-primary/30 dark:bg-secondary-dark dark:border-border-dark dark:hover:bg-main-dark dark:hover:border-main-primary/30">
                 
                 {{-- Icon Container --}}
                 <div class="flex-shrink-0 p-2 transition-colors rounded-lg bg-secondary-light dark:bg-secondary-dark group-hover:bg-white dark:group-hover:bg-accent-dark">

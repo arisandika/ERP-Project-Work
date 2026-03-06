@@ -76,12 +76,64 @@ class MembersRelationManager extends RelationManager
                     ->label('Departemen')
                     ->sortable()
                     ->placeholder('—'),
+
+                Tables\Columns\TextColumn::make('pivot.created_at')
+                    ->label('Ditambahkan Pada')
+                    ->dateTime('d M Y H:i')
+                    ->sortable()
+                    ->toggleable(isToggledHiddenByDefault: false),
+
+                Tables\Columns\TextColumn::make('pivot.updated_at')
+                    ->label('Diperbarui Pada')
+                    ->dateTime('d M Y H:i')
+                    ->sortable()
+                    ->toggleable(isToggledHiddenByDefault: true),
             ])
             ->filters([
                 Tables\Filters\SelectFilter::make('department_id')
                     ->label('Departemen')
                     ->relationship('department', 'name')
                     ->native(false),
+
+                Tables\Filters\Filter::make('joined_at')
+                    ->label('Tanggal Ditambahkan')
+                    ->form([
+                        Forms\Components\DatePicker::make('created_from')
+                            ->label('Ditambahkan Pada')
+                            ->displayFormat('d M Y')
+                            ->native(false)
+                            ->prefixIcon('heroicon-o-calendar-days'),
+
+                        Forms\Components\DatePicker::make('created_until')
+                            ->label('Ditambahkan Hingga')
+                            ->displayFormat('d M Y')
+                            ->native(false)
+                            ->prefixIcon('heroicon-o-calendar-days'),
+                    ])
+                    ->query(function (Builder $query, array $data): Builder {
+                        return $query
+                            ->when(
+                                $data['created_from'],
+                                fn(Builder $query, $date): Builder => $query->whereDate('nx_project_members.created_at', '>=', $date),
+                            )
+                            ->when(
+                                $data['created_until'],
+                                fn(Builder $query, $date): Builder => $query->whereDate('nx_project_members.created_at', '<=', $date),
+                            );
+                    })
+                    ->indicateUsing(function (array $data): array {
+                        $indicators = [];
+
+                        if ($data['created_from'] ?? null) {
+                            $indicators[] = 'Ditambahkan Pada ' . Carbon::parse($data['created_from'])->toFormattedDateString();
+                        }
+
+                        if ($data['created_until'] ?? null) {
+                            $indicators[] = 'Ditambahkan Hingga ' . Carbon::parse($data['created_until'])->toFormattedDateString();
+                        }
+
+                        return $indicators;
+                    }),
             ])
             ->actions([
                 Tables\Actions\DetachAction::make()

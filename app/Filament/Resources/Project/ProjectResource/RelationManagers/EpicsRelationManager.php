@@ -5,6 +5,7 @@ namespace App\Filament\Resources\Project\ProjectResource\RelationManagers;
 use App\Models\Project\Epic;
 use Filament\Forms;
 use Filament\Forms\Form;
+use Filament\Notifications\Notification;
 use Filament\Resources\RelationManagers\RelationManager;
 use Filament\Tables;
 use Filament\Tables\Table;
@@ -42,8 +43,46 @@ class EpicsRelationManager extends RelationManager
                         Forms\Components\TextInput::make('sort_order')
                             ->label('Urutan')
                             ->numeric()
-                            ->default(1)
-                            ->helperText('Nilai yang lebih rendah ditampilkan terlebih dahulu'),
+                            ->required()
+                            ->default(function ($livewire) {
+                                $lastOrder = $livewire->getOwnerRecord()
+                                    ->epics()
+                                    ->max('sort_order');
+
+                                return $lastOrder ? $lastOrder + 1 : 1;
+                            })
+                            ->live(onBlur: true)
+                            ->afterStateUpdated(function ($state, $set, $livewire, ?Model $record) {
+                                if (blank($state))
+                                    return;
+
+                                $project = $livewire->getOwnerRecord();
+
+                                $isTaken = function ($val) use ($project, $record) {
+                                    return $project->epics()
+                                        ->where('sort_order', $val)
+                                        ->when($record, fn($q) => $q->where('id', '!=', $record->id))
+                                        ->exists();
+                                };
+
+                                if ($isTaken($state)) {
+                                    $originalState = $state;
+
+                                    while ($isTaken($state)) {
+                                        $state++;
+                                    }
+
+                                    $set('sort_order', $state);
+
+                                    Notification::make()
+                                        ->title('Urutan Disesuaikan')
+                                        ->body("Urutan {$originalState} sudah dipakai Epic lain. Otomatis diganti ke {$state}.")
+                                        ->info()
+                                        ->duration(3000)
+                                        ->send();
+                                }
+                            })
+                            ->helperText('Otomatis menyesuaikan jika nomor sudah terpakai'),
 
                         Forms\Components\DatePicker::make('start_date')
                             ->label('Tanggal Mulai')
@@ -193,7 +232,9 @@ class EpicsRelationManager extends RelationManager
             ->headerActions([
                 Tables\Actions\CreateAction::make()
                     ->label('Tambah Epic'),
-            ]);
+            ])
+            ->defaultSort('sort_order')
+            ->reorderable('sort_order');
     }
 
     public function isReadOnly(): bool
