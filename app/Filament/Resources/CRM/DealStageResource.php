@@ -80,7 +80,7 @@ class DealStageResource extends Resource
                     ->label('Nama Stage')
                     ->searchable()
                     ->sortable()
-                    ->weight('bold'),
+                    ->weight('semibold'),
 
                 Tables\Columns\TextColumn::make('probability')
                     ->label('Probabilitas')

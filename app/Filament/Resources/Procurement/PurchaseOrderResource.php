@@ -210,7 +210,7 @@ class PurchaseOrderResource extends Resource
                     ->label('Nomor PO')
                     ->searchable()
                     ->sortable()
-                    ->weight('bold')
+                    ->weight('semibold')
                     ->copyable(),
 
                 Tables\Columns\TextColumn::make('supplier.name')
@@ -239,7 +239,7 @@ class PurchaseOrderResource extends Resource
                     ->label('Total Nilai')
                     ->money('IDR')
                     ->sortable()
-                    ->weight('bold'),
+                    ->weight('semibold'),
             ])
             ->filters([
                 Tables\Filters\SelectFilter::make('status')

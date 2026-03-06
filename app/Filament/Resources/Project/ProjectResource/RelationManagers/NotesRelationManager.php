@@ -4,6 +4,10 @@ namespace App\Filament\Resources\Project\ProjectResource\RelationManagers;
 
 use Filament\Forms;
 use Filament\Forms\Form;
+use Filament\Infolists\Components\Group;
+use Filament\Infolists\Components\Section;
+use Filament\Infolists\Components\TextEntry;
+use Filament\Infolists\Infolist;
 use Filament\Resources\RelationManagers\RelationManager;
 use Filament\Tables;
 use Filament\Tables\Table;
@@ -151,6 +155,8 @@ class NotesRelationManager extends RelationManager
                     }),
             ])
             ->actions([
+                Tables\Actions\ViewAction::make()
+                    ->modalHeading('Lihat Catatan'),
                 Tables\Actions\EditAction::make(),
                 Tables\Actions\DeleteAction::make(),
             ])
@@ -163,6 +169,48 @@ class NotesRelationManager extends RelationManager
             ->headerActions([
                 Tables\Actions\CreateAction::make()
                     ->label('Tambah Catatan'),
+            ]);
+    }
+
+    public function infolist(Infolist $infolist): Infolist
+    {
+        return $infolist
+            ->schema([
+                Section::make('Informasi Catatan')
+                    ->schema([
+                        TextEntry::make('title')
+                            ->label('Judul Catatan')
+                            ->weight('semibold')
+                            ->placeholder('—')
+                            ->columnSpanFull(),
+
+                        TextEntry::make('creator.full_name')
+                            ->label('Dibuat Oleh')
+                            ->weight('semibold')
+                            ->icon('heroicon-o-user')
+                            ->placeholder('—'),
+
+                        TextEntry::make('created_at')
+                            ->label('Dibuat Pada')
+                            ->dateTime('d M Y H:i'),
+
+                        TextEntry::make('updated_at')
+                            ->label('Diperbarui Pada')
+                            ->dateTime('d M Y H:i'),
+                    ])
+                    ->columnSpanFull()
+                    ->columns(3),
+
+                Section::make('Isi Catatan')
+                    ->schema([
+                        TextEntry::make('content')
+                            ->hiddenLabel()
+                            ->html()
+                            ->prose()
+                            ->columnSpanFull()
+                            ->placeholder('Tidak ada konten catatan.'),
+                    ])
+                    ->collapsible(),
             ]);
     }
 

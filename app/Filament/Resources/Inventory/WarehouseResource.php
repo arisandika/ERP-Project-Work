@@ -93,7 +93,7 @@ class WarehouseResource extends Resource
                     ->label('Nama Gudang')
                     ->searchable()
                     ->sortable()
-                    ->weight('bold'),
+                    ->weight('semibold'),
 
                 Tables\Columns\TextColumn::make('location')
                     ->label('Lokasi')

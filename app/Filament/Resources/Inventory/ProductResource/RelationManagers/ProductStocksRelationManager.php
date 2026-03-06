@@ -125,7 +125,7 @@ class ProductStocksRelationManager extends RelationManager
                         $record->qty_available + $record->qty_reserved + $record->qty_on_delivery
                     )
                     ->numeric()
-                    ->weight('bold'),
+                    ->weight('semibold'),
 
                 Tables\Columns\TextColumn::make('updated_at')
                     ->label('Terakhir Update')

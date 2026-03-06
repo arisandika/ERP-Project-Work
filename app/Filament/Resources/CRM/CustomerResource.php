@@ -158,7 +158,7 @@ class CustomerResource extends Resource
                     ->label('Nama Customer')
                     ->searchable()
                     ->sortable()
-                    ->weight('bold')
+                    ->weight('semibold')
                     ->description(fn(Customer $record) => $record->customer_type === 'company' ? 'PIC: ' . $record->pic_name : null),
 
                 Tables\Columns\TextColumn::make('phone')

@@ -265,7 +265,7 @@ class QuotationResource extends Resource
                     ->label('No. Penawaran')
                     ->sortable()
                     ->searchable()
-                    ->weight('bold'),
+                    ->weight('semibold'),
 
                 Tables\Columns\TextColumn::make('client_name')
                     ->label('Lead')

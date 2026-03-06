@@ -5,6 +5,9 @@ namespace App\Filament\Resources\Project\ProjectResource\RelationManagers;
 use App\Models\Project\Epic;
 use Filament\Forms;
 use Filament\Forms\Form;
+use Filament\Infolists\Components\Section;
+use Filament\Infolists\Components\TextEntry;
+use Filament\Infolists\Infolist;
 use Filament\Notifications\Notification;
 use Filament\Resources\RelationManagers\RelationManager;
 use Filament\Tables;
@@ -157,8 +160,8 @@ class EpicsRelationManager extends RelationManager
                     ->placeholder('—'),
 
                 Tables\Columns\TextColumn::make('tickets_count')
+                    ->label('Ticket')
                     ->counts('tickets')
-                    ->label('Tickets')
                     ->badge()
                     ->color(fn(int $state): string => $state > 0 ? 'info' : 'gray')
                     ->sortable()
@@ -220,6 +223,8 @@ class EpicsRelationManager extends RelationManager
                     }),
             ])
             ->actions([
+                Tables\Actions\ViewAction::make()
+                    ->modalHeading('Lihat Epic'),
                 Tables\Actions\EditAction::make(),
                 Tables\Actions\DeleteAction::make(),
             ])
@@ -235,6 +240,85 @@ class EpicsRelationManager extends RelationManager
             ])
             ->defaultSort('sort_order')
             ->reorderable('sort_order');
+    }
+
+    public function infolist(Infolist $infolist): Infolist
+    {
+        return $infolist
+            ->schema([
+                Section::make('Informasi Epic')
+                    ->description('Detail durasi dan urutan pengerjaan Epic.')
+                    ->columns(3)
+                    ->schema([
+                        TextEntry::make('name')
+                            ->label('Nama Epic')
+                            ->weight('semibold')
+                            ->placeholder('—')
+                            ->columnSpan('2'),
+
+                        TextEntry::make('sort_order')
+                            ->label('Urutan Tampil')
+                            ->formatStateUsing(fn($state): string => 'Urutan ke-' . $state)
+                            ->placeholder('—'),
+
+                        TextEntry::make('start_date')
+                            ->label('Tanggal Mulai')
+                            ->date('d M Y')
+                            ->placeholder('—'),
+
+                        TextEntry::make('end_date')
+                            ->label('Tanggal Selesai')
+                            ->date('d M Y')
+                            ->placeholder('—')
+                            ->color(fn($state) => $state < now() ? 'danger' : 'success'),
+
+                        TextEntry::make('duration')
+                            ->label('Durasi Pengerjaan')
+                            ->getStateUsing(function ($record) {
+                                if (!$record->start_date || !$record->end_date)
+                                    return '-';
+                                return $record->start_date->diffInDays($record->end_date) . ' Hari';
+                            }),
+                    ]),
+
+                Section::make('Statistik Ticket')
+                    ->description('Ringkasan jumlah ticket yang terhubung dengan Epic ini.')
+                    ->columns(2)
+                    ->schema([
+                        TextEntry::make('tickets_count')
+                            ->label('Total Ticket')
+                            ->getStateUsing(fn($record) => $record->tickets()->count())
+                            ->formatStateUsing(fn($state) => $state . ' Ticket'),
+
+                        TextEntry::make('last_ticket_update')
+                            ->label('Aktivitas Terakhir')
+                            ->getStateUsing(fn($record) => $record->tickets()->latest('updated_at')->first()?->updated_at)
+                            ->since()
+                            ->placeholder('Belum ada aktivitas'),
+                    ]),
+
+                Section::make('Deskripsi Epic')
+                    ->schema([
+                        TextEntry::make('description')
+                            ->hiddenLabel()
+                            ->html()
+                            ->prose()
+                            ->placeholder('Tidak ada deskripsi detail.'),
+                    ])
+                    ->collapsible(),
+
+                Section::make('Pengelolaan Data')
+                    ->columns(2)
+                    ->schema([
+                        TextEntry::make('created_at')
+                            ->label('Dibuat Pada')
+                            ->dateTime('d M Y H:i'),
+
+                        TextEntry::make('updated_at')
+                            ->label('Diperbarui Pada')
+                            ->dateTime('d M Y H:i'),
+                    ]),
+            ]);
     }
 
     public function isReadOnly(): bool

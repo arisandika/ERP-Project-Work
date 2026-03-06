@@ -21,13 +21,13 @@ class StocksRelationManager extends RelationManager
                     ->label('Kode Product')
                     ->searchable()
                     ->sortable()
-                    ->weight('bold'),
+                    ->weight('semibold'),
 
                 Tables\Columns\TextColumn::make('product.product_name')
                     ->label('Nama Product')
                     ->searchable()
                     ->sortable()
-                    ->weight('bold'),
+                    ->weight('semibold'),
 
                 Tables\Columns\TextColumn::make('product.category.name')
                     ->label('Kategori')

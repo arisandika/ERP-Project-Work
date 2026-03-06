@@ -32,7 +32,7 @@ class StockReportResource extends Resource
                     ->label('Kode Product')
                     ->searchable()
                     ->sortable()
-                    ->weight('bold'),
+                    ->weight('semibold'),
 
                 Tables\Columns\TextColumn::make('product_name')
                     ->label('Nama Product')
@@ -104,7 +104,7 @@ class StockReportResource extends Resource
                         $record->productStocks()->sum('qty_on_delivery')
                     )
                     ->numeric()
-                    ->weight('bold')
+                    ->weight('semibold')
                     ->icon('heroicon-m-archive-box')
                     ->suffix(' Unit'),
 

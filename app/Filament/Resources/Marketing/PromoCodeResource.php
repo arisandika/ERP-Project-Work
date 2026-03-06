@@ -126,7 +126,7 @@ class PromoCodeResource extends Resource
             ->columns([
                 TextColumn::make('code')
                     ->label('Kode Promo')
-                    ->weight('bold')
+                    ->weight('semibold')
                     ->copyable()
                     ->searchable()
                     ->sortable(),

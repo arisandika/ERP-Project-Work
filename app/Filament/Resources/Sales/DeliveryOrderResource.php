@@ -248,7 +248,7 @@ class DeliveryOrderResource extends Resource
     {
         return $table
             ->columns([
-                Tables\Columns\TextColumn::make('do_number')->label('No. Surat Jalan')->sortable()->searchable()->weight('bold'),
+                Tables\Columns\TextColumn::make('do_number')->label('No. Surat Jalan')->sortable()->searchable()->weight('semibold'),
                 Tables\Columns\TextColumn::make('salesOrder.order_number')->label('Ref. Pesanan')->sortable()->searchable(),
                 Tables\Columns\TextColumn::make('customer.name')->label('Customer')->sortable()->searchable(),
                 Tables\Columns\TextColumn::make('do_date')->label('Tanggal')->date('d M Y H:i'),

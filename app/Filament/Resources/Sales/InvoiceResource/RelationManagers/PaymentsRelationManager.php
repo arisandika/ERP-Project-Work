@@ -32,7 +32,7 @@ class PaymentsRelationManager extends RelationManager
                     ->label('No. Pembayaran')
                     ->sortable()
                     ->searchable()
-                    ->weight('bold'),
+                    ->weight('semibold'),
                 Tables\Columns\TextColumn::make('payment_date')
                     ->label('Tanggal Pembayaran')
                     ->dateTime('d M Y H:i')

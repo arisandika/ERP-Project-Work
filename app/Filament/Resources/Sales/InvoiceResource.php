@@ -313,7 +313,7 @@ class InvoiceResource extends Resource
                     ->label('No. Invoice')
                     ->sortable()
                     ->searchable()
-                    ->weight('bold'),
+                    ->weight('semibold'),
 
                 Tables\Columns\TextColumn::make('customer.name')
                     ->label('Customer')

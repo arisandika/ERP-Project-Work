@@ -9,6 +9,9 @@ use Filament\Forms;
 use Filament\Forms\Components\Radio;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Form;
+use Filament\Infolists\Components\Section;
+use Filament\Infolists\Components\TextEntry;
+use Filament\Infolists\Infolist;
 use Filament\Notifications\Notification;
 use Filament\Resources\RelationManagers\RelationManager;
 use Filament\Tables;
@@ -100,7 +103,6 @@ class TicketsRelationManager extends RelationManager
                                 titleAttribute: 'full_name',
                                 modifyQueryUsing: function ($query) {
                                     $projectId = $this->getOwnerRecord()->id;
-                                    // Only show project members
                                     return $query->whereHas('projects', function ($query) use ($projectId) {
                                         $query->where('nx_projects.id', $projectId);
                                     });
@@ -113,7 +115,6 @@ class TicketsRelationManager extends RelationManager
                                     return $record->assignees->pluck('id')->toArray();
                                 }
 
-                                // Auto-assign current user if they're a project member
                                 $project = $this->getOwnerRecord();
                                 $isCurrentUserMember = $project->members()
                                     ->where('nx_employees.id', auth()->user()->employee->id)
@@ -211,10 +212,9 @@ class TicketsRelationManager extends RelationManager
                     ->label('Ditugaskan')
                     ->badge()
                     ->color('gray')
-                    ->weight('semibold')
                     ->icon('heroicon-o-user')
-                    ->separator(',')
-                    ->expandableLimitedList()
+                    ->listWithLineBreaks()
+                    ->placeholder('Belum ada member ditugaskan')
                     ->searchable(),
 
                 Tables\Columns\TextColumn::make('start_date')
@@ -322,6 +322,8 @@ class TicketsRelationManager extends RelationManager
                     }),
             ])
             ->actions([
+                Tables\Actions\ViewAction::make()
+                    ->modalHeading('Lihat Ticket'),
                 Tables\Actions\EditAction::make(),
                 Tables\Actions\DeleteAction::make(),
             ])
@@ -457,6 +459,119 @@ class TicketsRelationManager extends RelationManager
             ->headerActions([
                 Tables\Actions\CreateAction::make()
                     ->label('Tambah Ticket'),
+            ]);
+    }
+
+    public function infolist(Infolist $infolist): Infolist
+    {
+        return $infolist
+            ->schema([
+                Section::make('Informasi Ticket')
+                    ->description('Detail status dan identitas ticket.')
+                    ->columns(3)
+                    ->schema([
+                        TextEntry::make('name')
+                            ->label('Judul Ticket')
+                            ->weight('semibold')
+                            ->placeholder('—')
+                            ->columnSpan('2'),
+
+                        TextEntry::make('uuid')
+                            ->label('Ticket ID')
+                            ->weight('semibold')
+                            ->placeholder('—')
+                            ->copyable(),
+
+                        TextEntry::make('status.name')
+                            ->label('Status Pengerjaan')
+                            ->badge()
+                            ->color(fn($state) => match ($state) {
+                                'To Do' => 'warning',
+                                'In Progress' => 'info',
+                                'Review' => 'primary',
+                                'Done' => 'success',
+                                default => 'gray',
+                            })
+                            ->formatStateUsing(fn(string $state): string => ucwords(str_replace('_', ' ', $state))),
+
+                        TextEntry::make('priority.name')
+                            ->label('Prioritas')
+                            ->badge()
+                            ->color(fn($state) => match ($state) {
+                                'High' => 'danger',
+                                'Medium' => 'warning',
+                                'Low' => 'success',
+                                default => 'gray',
+                            }),
+
+                        TextEntry::make('epic.name')
+                            ->label('Epic')
+                            ->placeholder('—'),
+                    ]),
+
+                Section::make('Jadwal Pengerjaan')
+                    ->description('Timeline target penyelesaian ticket.')
+                    ->columns(3)
+                    ->schema([
+                        TextEntry::make('start_date')
+                            ->label('Tanggal Mulai')
+                            ->date('d M Y'),
+
+                        TextEntry::make('due_date')
+                            ->label('Tanggal Selesai')
+                            ->date('d M Y')
+                            ->color(fn($record) => $record->due_date < now() && $record->status?->name !== 'Done' ? 'danger' : 'gray'),
+
+                        TextEntry::make('remaining_days')
+                            ->label('Sisa Waktu')
+                            ->getStateUsing(function ($record) {
+                                if (!$record->due_date || $record->status?->name === 'Done')
+                                    return 'Selesai';
+                                $days = now()->diffInDays($record->due_date, false);
+                                return $days < 0 ? abs((int) $days) . ' hari terlambat' : (int) $days . ' hari lagi';
+                            })
+                            ->color(fn($state) => str_contains($state, 'terlambat') ? 'danger' : 'success'),
+                    ]),
+
+                Section::make('Member Ticket')
+                    ->columns(2)
+                    ->schema([
+                        TextEntry::make('assignees.full_name')
+                            ->label('Ditugaskan Kepada')
+                            ->badge()
+                            ->color('gray')
+                            ->icon('heroicon-o-user')
+                            ->listWithLineBreaks()
+                            ->placeholder('Belum ada member ditugaskan'),
+
+                        TextEntry::make('creator.full_name')
+                            ->label('Dibuat Oleh')
+                            ->weight('semibold')
+                            ->icon('heroicon-o-user')
+                            ->placeholder('—'),
+                    ]),
+
+                Section::make('Deskripsi Ticket')
+                    ->schema([
+                        TextEntry::make('description')
+                            ->hiddenLabel()
+                            ->html()
+                            ->prose()
+                            ->placeholder('Tidak ada deskripsi.'),
+                    ])
+                    ->collapsible(),
+
+                Section::make('Pengelolaan Data')
+                    ->columns(2)
+                    ->schema([
+                        TextEntry::make('created_at')
+                            ->label('Dibuat Pada')
+                            ->dateTime('d M Y H:i'),
+
+                        TextEntry::make('updated_at')
+                            ->label('Diperbarui Pada')
+                            ->dateTime('d M Y H:i'),
+                    ]),
             ]);
     }
 

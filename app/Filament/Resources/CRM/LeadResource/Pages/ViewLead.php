@@ -43,7 +43,7 @@ class ViewLead extends ViewRecord
                             ->schema([
                                 TextEntry::make('name')
                                     ->label('Nama Lead')
-                                    ->weight('bold')
+                                    ->weight('semibold')
                                     ->size('lg')
                                     ->copyable()
                                     ->icon('heroicon-o-user')

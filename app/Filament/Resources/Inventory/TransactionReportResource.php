@@ -33,7 +33,7 @@ class TransactionReportResource extends Resource
                     ->searchable()
                     ->sortable()
                     ->placeholder('–')
-                    ->weight('bold'),
+                    ->weight('semibold'),
 
                 Tables\Columns\TextColumn::make('no_reference')
                     ->label('Ref. Sales')
@@ -50,7 +50,7 @@ class TransactionReportResource extends Resource
                     ->label('Kode Product')
                     ->searchable()
                     ->sortable()
-                    ->weight('bold'),
+                    ->weight('semibold'),
 
                 Tables\Columns\TextColumn::make('product.product_name')
                     ->label('Nama Product')
