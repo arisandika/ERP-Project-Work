@@ -143,15 +143,17 @@ class ProjectResource extends Resource
                             ->preload()
                             ->live()
                             ->afterStateUpdated(function ($state, callable $set) {
-
                                 $salesOrder = \App\Models\Sales\SalesOrder::find($state);
 
                                 if (!$salesOrder) {
+                                    $set('customer_name', null);
+                                    $set('sales_pic_name', null);
+                                    $set('contract_value', null);
                                     return;
                                 }
 
                                 $set('customer_name', $salesOrder->customer?->name);
-                                $set('sales_pic_name', $salesOrder->employee?->name);
+                                $set('sales_pic_name', $salesOrder->employee?->full_name);
                                 $set('contract_value', $salesOrder->grand_total);
                             }),
 
@@ -159,12 +161,14 @@ class ProjectResource extends Resource
                             ->label('Customer')
                             ->disabled()
                             ->dehydrated(false)
+                            ->formatStateUsing(fn($record) => $record?->salesOrder?->customer?->name)
                             ->prefixIcon('heroicon-o-user-circle'),
 
-                        Forms\Components\TextInput::make('salesOrder.employee.full_name')
+                        Forms\Components\TextInput::make('sales_pic_name')
                             ->label('Sales PIC')
                             ->disabled()
                             ->dehydrated(false)
+                            ->formatStateUsing(fn($record) => $record?->salesOrder?->employee?->full_name)
                             ->prefixIcon('heroicon-o-user'),
 
                         Forms\Components\TextInput::make('contract_value')
@@ -174,10 +178,10 @@ class ProjectResource extends Resource
                             ->required()
                             ->minValue(0)
                             ->disabled()
-                            ->dehydrated(false),
-
+                            ->dehydrated(false)
+                            ->formatStateUsing(fn($record) => $record?->salesOrder?->grand_total),
                     ])
-                    ->columns(3),
+                    ->columns(2),
 
                 Forms\Components\Section::make('Estimasi Budget Project')
                     ->schema([
