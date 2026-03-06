@@ -131,7 +131,7 @@ class ProjectResource extends Resource
                             ->dehydrated(true),
                     ])->columns(2),
 
-                Forms\Components\Section::make('Kontrak Project')
+                Forms\Components\Section::make('Informasi Kontrak Project')
                     ->schema([
                         Forms\Components\Select::make('nx_sales_order_id')
                             ->label('Sales Order')
@@ -200,19 +200,35 @@ class ProjectResource extends Resource
 
                 Forms\Components\Section::make('Dokumen Project')
                     ->schema([
-                        Forms\Components\FileUpload::make('documents')
-                            ->label('Upload Dokumen Project (Multiple)')
-                            ->multiple()
-                            ->directory('project-documents')
-                            ->disk('public')
-                            ->acceptedFileTypes([
-                                'application/pdf',
-                                'image/png',
-                                'image/jpeg',
-                                'application/msword',
-                                'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+                        Forms\Components\Repeater::make('documents')
+                            ->relationship()
+                            ->label('Daftar Dokumen')
+                            ->schema([
+                                Forms\Components\TextInput::make('document_name')
+                                    ->label('Nama Dokumen')
+                                    ->required()
+                                    ->placeholder('Contoh: BAST Termin 1'),
+
+                                Forms\Components\Select::make('document_type')
+                                    ->label('Jenis Dokumen')
+                                    ->options([
+                                        'contract' => 'Kontrak',
+                                        'bast' => 'BAST',
+                                        'technical' => 'Teknis',
+                                        'invoice' => 'Invoice',
+                                        'other' => 'Lainnya',
+                                    ])
+                                    ->required(),
+
+                                Forms\Components\FileUpload::make('file_path')
+                                    ->label('File')
+                                    ->disk('public')
+                                    ->directory('project-documents')
+                                    ->required()
+                                    ->columnSpanFull(),
                             ])
-                            ->helperText('Upload kontrak, BAST, dokumen teknis, dll')
+                            ->columns(2)
+                            ->addActionLabel('Tambah Dokumen')
                             ->columnSpanFull(),
                     ])
             ]);
