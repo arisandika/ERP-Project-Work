@@ -480,7 +480,6 @@ class EmployeeResource extends Resource
 
                         TextEntry::make('full_name')
                             ->label('Nama Lengkap')
-                            ->color('primary')
                             ->weight('semibold')
                             ->icon('heroicon-o-user')
                             ->placeholder('—'),

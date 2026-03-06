@@ -217,7 +217,7 @@ class ViewDeal extends ViewRecord
                                 ->color('warning'),
 
                             TextEntry::make('lead_phone_manual')
-                                ->label('Nomor Telepon')
+                                ->label('No. WhatsApp')
                                 ->icon('heroicon-o-phone')
                                 ->getStateUsing(fn(Deal $record) => $record->lead()->withTrashed()->first()?->phone)
                                 ->url(function ($record) {

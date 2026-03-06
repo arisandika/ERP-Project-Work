@@ -9,6 +9,7 @@ use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
+use Illuminate\Support\Carbon;
 
 class NotesRelationManager extends RelationManager
 {
@@ -24,45 +25,49 @@ class NotesRelationManager extends RelationManager
     {
         return $form
             ->schema([
-                Forms\Components\TextInput::make('title')
-                    ->label('Title')
-                    ->required()
-                    ->maxLength(255),
+                Forms\Components\Section::make('Informasi Notes')
+                    ->schema([
+                        Forms\Components\TextInput::make('title')
+                            ->label('Title')
+                            ->required()
+                            ->maxLength(255),
 
-                Forms\Components\DatePicker::make('note_date')
-                    ->label('Tanggal Catatan')
-                    ->default(now())
-                    ->prefixIcon('heroicon-o-calendar-days')
-                    ->required()
-                    ->displayFormat('d M Y')
-                    ->native(false),
+                        Forms\Components\DatePicker::make('note_date')
+                            ->label('Tanggal Catatan')
+                            ->default(now())
+                            ->prefixIcon('heroicon-o-calendar-days')
+                            ->required()
+                            ->displayFormat('d M Y')
+                            ->native(false),
 
-                Forms\Components\RichEditor::make('content')
-                    ->label('Catatan')
-                    ->columnSpanFull()
-                    ->toolbarButtons([
-                        'attachFiles',
-                        'blockquote',
-                        'bold',
-                        'bulletList',
-                        'codeBlock',
-                        'h2',
-                        'h3',
-                        'italic',
-                        'link',
-                        'orderedList',
-                        'redo',
-                        'strike',
-                        'underline',
-                        'undo',
+                        Forms\Components\RichEditor::make('content')
+                            ->label('Catatan')
+                            ->columnSpanFull()
+                            ->toolbarButtons([
+                                'attachFiles',
+                                'blockquote',
+                                'bold',
+                                'bulletList',
+                                'codeBlock',
+                                'h2',
+                                'h3',
+                                'italic',
+                                'link',
+                                'orderedList',
+                                'redo',
+                                'strike',
+                                'underline',
+                                'undo',
+                            ])
+                            ->fileAttachmentsDisk('public')
+                            ->fileAttachmentsDirectory('attachments')
+                            ->fileAttachmentsVisibility('public')
+                            ->helperText('Tuliskan catatan dan lampirkan file atau gambar disini'),
+
+                        Forms\Components\Hidden::make('created_by')
+                            ->default(auth()->user()->employee->id),
                     ])
-                    ->fileAttachmentsDisk('public')
-                    ->fileAttachmentsDirectory('attachments')
-                    ->fileAttachmentsVisibility('public')
-                    ->helperText('Tuliskan catatan dan lampirkan file atau gambar disini'),
-
-                Forms\Components\Hidden::make('created_by')
-                    ->default(auth()->user()->employee->id),
+                    ->columns(2)
             ]);
     }
 
@@ -76,17 +81,16 @@ class NotesRelationManager extends RelationManager
                     ->label('Title')
                     ->searchable()
                     ->sortable()
-                    ->weight('medium'),
-
-                Tables\Columns\TextColumn::make('note_date')
-                    ->label('Tanggal Catatan')
-                    ->dateTime('d M Y H:i')
-                    ->sortable()
-                    ->toggleable(isToggledHiddenByDefault: true),
+                    ->weight('semibold')
+                    ->placeholder('—'),
 
                 Tables\Columns\TextColumn::make('creator.full_name')
                     ->label('Dibuat Oleh')
-                    ->sortable(),
+                    ->searchable()
+                    ->sortable()
+                    ->weight('semibold')
+                    ->icon('heroicon-o-user')
+                    ->placeholder('—'),
 
                 Tables\Columns\TextColumn::make('created_at')
                     ->label('Dibuat Pada')
@@ -104,13 +108,49 @@ class NotesRelationManager extends RelationManager
                 Tables\Filters\Filter::make('recent')
                     ->query(fn($query) => $query->where('created_at', '>=', now()->subDays(30)))
                     ->label('Recent (30 days)'),
-            ])
-            ->headerActions([
-                Tables\Actions\CreateAction::make()
-                    ->label('Tambah Catatan'),
+
+                Tables\Filters\Filter::make('created_at')
+                    ->form([
+                        Forms\Components\DatePicker::make('created_from')
+                            ->label('Dibuat Dari')
+                            ->required()
+                            ->displayFormat('d M Y')
+                            ->native(false)
+                            ->prefixIcon('heroicon-o-calendar-days'),
+
+                        Forms\Components\DatePicker::make('created_until')
+                            ->label('Dibuat Hingga')
+                            ->required()
+                            ->displayFormat('d M Y')
+                            ->native(false)
+                            ->prefixIcon('heroicon-o-calendar-days'),
+                    ])
+                    ->query(function (Builder $query, array $data): Builder {
+                        return $query
+                            ->when(
+                                $data['created_from'],
+                                fn(Builder $query, $date): Builder => $query->whereDate('created_at', '>=', $date),
+                            )
+                            ->when(
+                                $data['created_until'],
+                                fn(Builder $query, $date): Builder => $query->whereDate('created_at', '<=', $date),
+                            );
+                    })
+                    ->indicateUsing(function (array $data): array {
+                        $indicators = [];
+
+                        if ($data['created_from'] ?? null) {
+                            $indicators[] = 'Created from ' . Carbon::parse($data['created_from'])->toFormattedDateString();
+                        }
+
+                        if ($data['created_until'] ?? null) {
+                            $indicators[] = 'Created until ' . Carbon::parse($data['created_until'])->toFormattedDateString();
+                        }
+
+                        return $indicators;
+                    }),
             ])
             ->actions([
-                Tables\Actions\ViewAction::make(),
                 Tables\Actions\EditAction::make(),
                 Tables\Actions\DeleteAction::make(),
             ])
@@ -119,6 +159,15 @@ class NotesRelationManager extends RelationManager
                     Tables\Actions\DeleteBulkAction::make(),
                 ]),
             ])
-            ->defaultSort('created_at', 'desc');
+            ->defaultSort('created_at', 'desc')
+            ->headerActions([
+                Tables\Actions\CreateAction::make()
+                    ->label('Tambah Catatan'),
+            ]);
+    }
+
+    public function isReadOnly(): bool
+    {
+        return false;
     }
 }

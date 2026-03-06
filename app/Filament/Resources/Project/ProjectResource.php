@@ -131,75 +131,90 @@ class ProjectResource extends Resource
                             ->dehydrated(true),
                     ])->columns(2),
 
-                Forms\Components\Section::make('Informasi Billing & Invoice')
+                Forms\Components\Section::make('Kontrak Project')
                     ->schema([
-                        Forms\Components\Grid::make(2)->schema([
+                        Forms\Components\Select::make('nx_sales_order_id')
+                            ->label('Sales Order')
+                            ->relationship(
+                                name: 'salesOrder',
+                                titleAttribute: 'order_number'
+                            )
+                            ->searchable()
+                            ->preload()
+                            ->live()
+                            ->afterStateUpdated(function ($state, callable $set) {
 
-                            Forms\Components\Select::make('nx_invoice_id')
-                                ->label('Invoice Terkait')
-                                ->relationship(
-                                    name: 'invoice',
-                                    titleAttribute: 'invoice_number',
-                                    modifyQueryUsing: fn($query) =>
-                                    $query->whereIn('status', ['paid', 'partial'])
-                                )
-                                ->searchable()
-                                ->preload()
-                                ->live()
-                                ->afterStateUpdated(function ($state, callable $set) {
-                                    self::fillInvoiceDerivedFields($state, $set);
-                                })
-                                ->afterStateHydrated(function ($state, callable $set) {
-                                    self::fillInvoiceDerivedFields($state, $set);
-                                }),
+                                $salesOrder = \App\Models\Sales\SalesOrder::find($state);
 
-                            Forms\Components\TextInput::make('sales_invoice_number')
-                                ->label('No. Sales Invoice')
-                                ->disabled()
-                                ->dehydrated(),
+                                if (!$salesOrder) {
+                                    return;
+                                }
 
-                            Forms\Components\TextInput::make('customer')
-                                ->label('Customer')
-                                ->disabled()
-                                ->reactive()
-                                ->prefixIcon('heroicon-o-user-circle'),
+                                $set('customer_name', $salesOrder->customer?->name);
+                                $set('sales_pic_name', $salesOrder->employee?->name);
+                                $set('contract_value', $salesOrder->grand_total);
+                            }),
 
-                            Forms\Components\Select::make('billing_status')
-                                ->label('Status Billing')
-                                ->options([
-                                    'draft' => 'Draft',
-                                    'sent' => 'Terkirim',
-                                    'partial' => 'Terbayar Sebagian',
-                                    'paid' => 'Lunas',
-                                    'cancelled' => 'Dibatalkan',
-                                ])
-                                ->prefixIcon('heroicon-o-adjustments-vertical')
-                                ->disabled()
-                                ->reactive(),
+                        Forms\Components\TextInput::make('customer_name')
+                            ->label('Customer')
+                            ->disabled()
+                            ->dehydrated(false)
+                            ->prefixIcon('heroicon-o-user-circle'),
 
-                            Forms\Components\DatePicker::make('due_date')
-                                ->label('Jatuh Tempo')
-                                ->disabled()
-                                ->reactive()
-                                ->prefixIcon('heroicon-o-calendar-days')
-                                ->displayFormat('d M Y')
-                                ->native(false),
+                        Forms\Components\TextInput::make('salesOrder.employee.full_name')
+                            ->label('Sales PIC')
+                            ->disabled()
+                            ->dehydrated(false)
+                            ->prefixIcon('heroicon-o-user'),
 
-                            Forms\Components\TextInput::make('grand_total')
-                                ->label('Nilai Kontrak')
-                                ->prefix('IDR')
-                                ->disabled()
-                                ->reactive(),
+                        Forms\Components\TextInput::make('contract_value')
+                            ->label('Nilai Kontrak')
+                            ->numeric()
+                            ->prefix('IDR')
+                            ->required()
+                            ->minValue(0)
+                            ->disabled()
+                            ->dehydrated(false),
 
-                            Forms\Components\TextInput::make('sales_pic')
-                                ->label('Sales PIC')
-                                ->disabled()
-                                ->reactive()
-                                ->prefixIcon('heroicon-o-user'),
+                    ])
+                    ->columns(3),
 
-                        ]),
+                Forms\Components\Section::make('Estimasi Budget Project')
+                    ->schema([
+                        Forms\Components\TextInput::make('estimated_cost')
+                            ->label('Estimasi Biaya Project')
+                            ->numeric()
+                            ->prefix('IDR')
+                            ->required()
+                            ->minValue(0)
+                            ->helperText('Estimasi biaya operasional project'),
+
+                        Forms\Components\TextInput::make('actual_cost')
+                            ->label('Pengeluaran Aktual')
+                            ->numeric()
+                            ->prefix('IDR')
+                            ->minValue(0)
+                            ->helperText('Total pengeluaran aktual project'),
                     ])
                     ->columns(2),
+
+                Forms\Components\Section::make('Dokumen Project')
+                    ->schema([
+                        Forms\Components\FileUpload::make('documents')
+                            ->label('Upload Dokumen Project (Multiple)')
+                            ->multiple()
+                            ->directory('project-documents')
+                            ->disk('public')
+                            ->acceptedFileTypes([
+                                'application/pdf',
+                                'image/png',
+                                'image/jpeg',
+                                'application/msword',
+                                'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+                            ])
+                            ->helperText('Upload kontrak, BAST, dokumen teknis, dll')
+                            ->columnSpanFull(),
+                    ])
             ]);
     }
 
@@ -345,13 +360,18 @@ class ProjectResource extends Resource
                     }),
             ])
             ->actions([
-                Tables\Actions\ViewAction::make(),
+                Tables\Actions\ViewAction::make()
+                    ->modalHeading('Lihat Departemen'),
                 Tables\Actions\EditAction::make(),
                 Tables\Actions\DeleteAction::make(),
+                // Tables\Actions\ForceDeleteAction::make(),
+                Tables\Actions\RestoreAction::make(),
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([
                     Tables\Actions\DeleteBulkAction::make(),
+                    // Tables\Actions\ForceDeleteBulkAction::make(),
+                    Tables\Actions\RestoreBulkAction::make(),
                 ]),
             ])
             ->defaultSort('created_at', 'desc');
@@ -378,32 +398,11 @@ class ProjectResource extends Resource
         ];
     }
 
-    protected static function fillInvoiceDerivedFields(
-        ?int $invoiceId,
-        callable $set
-    ): void {
-        if (!$invoiceId) {
-            $set('sales_invoice_number', null);
-            $set('customer', null);
-            $set('billing_status', null);
-            $set('due_date', null);
-            $set('grand_total', null);
-            $set('sales_pic', null);
-            return;
-        }
-
-        $invoice = Invoice::with(['customer', 'employee'])->find($invoiceId);
-
-        if (!$invoice) {
-            return;
-        }
-
-        $set('sales_invoice_number', $invoice->invoice_number);
-        $set('billing_status', $invoice->status);
-        $set('due_date', $invoice->due_date);
-        $set('grand_total', $invoice->grand_total);
-        $set('sales_pic', $invoice->employee?->full_name);
-        $set('customer', $invoice->customer?->name);
+    public static function getEloquentQuery(): Builder
+    {
+        return parent::getEloquentQuery()
+            ->withoutGlobalScopes([
+                SoftDeletingScope::class,
+            ]);
     }
-
 }

@@ -259,8 +259,9 @@ class SalesOrderResource extends Resource
                             TextInput::make('unit_price')
                                 ->label('Harga Satuan')
                                 ->numeric()
-                                ->required()
                                 ->prefix('IDR')
+                                ->required()
+                                ->minValue(0)
                                 ->formatStateUsing(fn($state) => (int) $state)
                                 ->readOnly(fn(Get $get) => filled($get('../../nx_quotation_id')))
                                 ->reactive()
@@ -271,10 +272,12 @@ class SalesOrderResource extends Resource
 
                             TextInput::make('line_total')
                                 ->label('Subtotal')
-                                ->disabled()
-                                ->dehydrated()
                                 ->numeric()
                                 ->prefix('IDR')
+                                ->required()
+                                ->minValue(0)
+                                ->disabled()
+                                ->dehydrated()
                                 ->extraInputAttributes(['style' => 'font-weight: bold;'])
                                 ->formatStateUsing(fn($state) => (int) $state),
                         ]),
@@ -293,9 +296,12 @@ class SalesOrderResource extends Resource
                 Grid::make(4)->schema([
                     TextInput::make('subtotal')
                         ->label('Subtotal')
+                        ->numeric()
+                        ->prefix('IDR')
+                        ->required()
+                        ->minValue(0)
                         ->readOnly()
                         ->dehydrated()
-                        ->prefix('IDR')
                         ->formatStateUsing(fn($state) => (int) $state),
 
                     TextInput::make('promo_code_input')
@@ -346,9 +352,11 @@ class SalesOrderResource extends Resource
 
                     TextInput::make('discount_amount')
                         ->label('Potongan')
+                        ->numeric()
+                        ->prefix('IDR')
+                        ->minValue(0)
                         ->readOnly()
                         ->dehydrated()
-                        ->prefix('IDR')
                         ->formatStateUsing(fn($state) => (int) $state),
 
                     TextInput::make('tax')
@@ -371,9 +379,12 @@ class SalesOrderResource extends Resource
 
                     TextInput::make('grand_total')
                         ->label('Total')
+                        ->numeric()
+                        ->prefix('IDR')
+                        ->required()
+                        ->minValue(0)
                         ->readOnly()
                         ->dehydrated()
-                        ->prefix('IDR')
                         ->extraInputAttributes(['style' => 'font-weight: bold;'])
                         ->formatStateUsing(fn($state) => (int) $state),
                 ]),

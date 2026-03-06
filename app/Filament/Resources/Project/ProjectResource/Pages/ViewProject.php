@@ -6,7 +6,7 @@ use App\Filament\Pages\Project\ProjectBoard;
 use App\Filament\Resources\Project\ProjectResource;
 use Filament\Actions;
 use Filament\Actions\Action;
-use Filament\Infolists\Components\Grid;
+use Filament\Infolists\Components\RepeatableEntry;
 use Filament\Infolists\Components\Section;
 use Filament\Infolists\Components\TextEntry;
 use Filament\Infolists\Infolist;
@@ -26,7 +26,7 @@ class ViewProject extends ViewRecord
                 ->label('Project Board')
                 ->icon('heroicon-o-view-columns')
                 ->color('warning')
-                ->url(fn () => ProjectBoard::getUrl(['project_id' => $this->record->id]))
+                ->url(fn() => ProjectBoard::getUrl(['project_id' => $this->record->id]))
             ,
             Action::make('external_access')
                 ->label('External Dashboard')
@@ -72,145 +72,224 @@ class ViewProject extends ViewRecord
         return $infolist
             ->schema([
                 Section::make('Informasi Project')
+                    ->description('Detail informasi dasar project.')
+                    ->columns(2)
                     ->schema([
-                        Grid::make(2)
-                            ->schema([
-                                TextEntry::make('name')
-                                    ->label('Nama Project')
-                                    ->weight('bold')
-                                    ->size('lg'),
-                                TextEntry::make('ticket_prefix')
-                                    ->label('Prefix Ticket')
-                                    ->badge()
-                                    ->color('primary'),
-                                TextEntry::make('start_date')
-                                    ->label('Tanggal Mulai')
-                                    ->date('d M Y')
-                                    ->placeholder('Not set'),
-                                TextEntry::make('end_date')
-                                    ->label('Tanggal Selesai')
-                                    ->date('d M Y')
-                                    ->placeholder('Not set'),
-                                TextEntry::make('remaining_days')
-                                    ->label('Sisa Hari')
-                                    ->getStateUsing(function ($record): ?string {
-                                        if (!$record->end_date) {
-                                            return 'Not set';
-                                        }
-                                        return $record->remaining_days . ' hari';
-                                    })
-                                    ->badge()
-                                    ->color(
-                                        fn($record): string =>
-                                        !$record->end_date ? 'gray' :
-                                        ($record->remaining_days <= 0 ? 'danger' :
-                                            ($record->remaining_days <= 7 ? 'warning' : 'success'))
-                                    ),
-                                TextEntry::make('pinned_date')
-                                    ->label('Pinned Status')
-                                    ->getStateUsing(function ($record): string {
-                                        return $record->pinned_date ? 'Pinned on ' . $record->pinned_date->format('d M Y') : 'Not pinned';
-                                    })
-                                    ->badge()
-                                    ->color(fn($record): string => $record->pinned_date ? 'success' : 'gray'),
-                            ]),
-                    ])
-                    ->columns(1),
+                        TextEntry::make('name')
+                            ->label('Nama Project')
+                            ->weight('bold')
+                            ->size('lg')
+                            ->placeholder('—'),
+
+                        TextEntry::make('ticket_prefix')
+                            ->label('Prefix Ticket')
+                            ->badge()
+                            ->color('primary')
+                            ->placeholder('—'),
+
+                        TextEntry::make('start_date')
+                            ->label('Tanggal Mulai')
+                            ->date('D, d M Y')
+                            ->placeholder('—'),
+
+                        TextEntry::make('end_date')
+                            ->label('Tanggal Selesai')
+                            ->date('D, d M Y')
+                            ->placeholder('—'),
+
+                        TextEntry::make('remaining_days')
+                            ->label('Sisa Hari')
+                            ->getStateUsing(function ($record): ?string {
+                                if (!$record->end_date) {
+                                    return '—';
+                                }
+
+                                return $record->remaining_days . ' hari';
+                            })
+                            ->color(
+                                fn($record): string =>
+                                !$record->end_date ? 'gray' :
+                                ($record->remaining_days <= 0 ? 'danger' :
+                                    ($record->remaining_days <= 7 ? 'warning' : 'success'))
+                            ),
+
+                        TextEntry::make('pinned_date')
+                            ->label('Status Pin')
+                            ->getStateUsing(
+                                fn($record) =>
+                                $record->pinned_date
+                                ? 'Pinned ' . $record->pinned_date->format('d M Y')
+                                : 'Tidak di-pin'
+                            )
+                            ->badge()
+                            ->color(fn($record) => $record->pinned_date ? 'success' : 'gray'),
+                    ]),
 
                 Section::make('Statistik Project')
+                    ->description('Ringkasan aktivitas project.')
+                    ->columns(4)
                     ->schema([
-                        Grid::make(4)
-                            ->schema([
-                                TextEntry::make('members_count')
-                                    ->label('Total Member')
-                                    ->getStateUsing(fn($record) => $record->members()->count())
-                                    ->badge()
-                                    ->color('info'),
-                                TextEntry::make('tickets_count')
-                                    ->label('Total Ticket')
-                                    ->getStateUsing(fn($record) => $record->tickets()->count())
-                                    ->badge()
-                                    ->color('primary'),
-                                TextEntry::make('epics_count')
-                                    ->label('Total Epic')
-                                    ->getStateUsing(fn($record) => $record->epics()->count())
-                                    ->badge()
-                                    ->color('warning'),
-                                TextEntry::make('statuses_count')
-                                    ->label('Status Ticket')
-                                    ->getStateUsing(fn($record) => $record->ticketStatuses()->count())
-                                    ->badge()
-                                    ->color('success'),
-                            ]),
+                        TextEntry::make('members_count')
+                            ->label('Total Member')
+                            ->getStateUsing(fn($record) => $record->members()->count())
+                            ->formatStateUsing(fn($state) => $state . ' Member')
+                            ->placeholder('—'),
+
+                        TextEntry::make('tickets_count')
+                            ->label('Total Ticket')
+                            ->getStateUsing(fn($record) => $record->tickets()->count())
+                            ->formatStateUsing(fn($state) => $state . ' Ticket')
+                            ->placeholder('—'),
+
+                        TextEntry::make('epics_count')
+                            ->label('Total Epic')
+                            ->getStateUsing(fn($record) => $record->epics()->count())
+                            ->formatStateUsing(fn($state): string => $state . ' Epic')
+                            ->placeholder('—'),
+
+                        TextEntry::make('statuses_count')
+                            ->label('Status Ticket')
+                            ->getStateUsing(fn($record) => $record->ticketStatuses()->count())
+                            ->formatStateUsing(fn($state): string => $state . ' Status Ticket')
+                            ->placeholder('—'),
                     ]),
 
                 Section::make('Deskripsi Project')
+                    ->description('Penjelasan lengkap mengenai project.')
                     ->schema([
                         TextEntry::make('description')
                             ->hiddenLabel()
                             ->html()
                             ->prose()
-                            ->columnSpanFull()
-                            ->placeholder('No description provided'),
-                    ])
-                    ->columnSpanFull(),
+                            ->placeholder('Tidak ada deskripsi')
+                            ->columnSpanFull(),
+                    ]),
 
-                Section::make('Informasi Billing & Invoice')
+                Section::make('Informasi Kontrak/Sales Order')
+                    ->description('Project ini berasal dari Sales Order.')
+                    ->columns(2)
                     ->schema([
-                        Grid::make(2)->schema([
+                        TextEntry::make('salesOrder.order_number')
+                            ->label('Nomor Sales Order')
+                            ->weight('semibold')
+                            ->placeholder('—'),
 
-                            TextEntry::make('invoice.invoice_number')
-                                ->label('No. Sales Invoice')
-                                ->weight('bold')
-                                ->placeholder('Belum ditautkan'),
+                        TextEntry::make('salesOrder.status')
+                            ->label('Status Order')
+                            ->badge()
+                            ->color(fn(?string $state) => match ($state) {
+                                'draft' => 'gray',
+                                'confirmed' => 'info',
+                                'completed' => 'success',
+                                'cancelled' => 'danger',
 
-                            TextEntry::make('invoice.status')
-                                ->label('Status Billing')
-                                ->badge()
-                                ->color(fn(?string $state) => match ($state) {
-                                    'paid' => 'success',
-                                    'partial' => 'warning',
-                                    'draft' => 'gray',
-                                    'cancelled' => 'danger',
-                                    default => 'gray',
-                                })
-                                ->formatStateUsing(fn(?string $state): string => match ($state) {
-                                    'draft' => 'Draft',
-                                    'sent' => 'Terkirim',
-                                    'partial' => 'Terbayar Sebagian',
-                                    'paid' => 'Lunas',
-                                    'cancelled' => 'Dibatalkan',
-                                    default => ucwords($state ?? '-'),
-                                })
-                                ->placeholder('—'),
+                                default => 'warning',
+                            })
+                            ->formatStateUsing(fn(string $state): string => match ($state) {
+                                'draft' => 'Draft',
+                                'processing' => 'Sedang Diproses',
+                                'confirmed' => 'Dikonfirmasi',
+                                'shipped' => 'Dalam Pengiriman',
+                                'completed' => 'Selesai',
+                                'cancelled' => 'Dibatalkan',
 
-                            TextEntry::make('invoice.customer.name')
-                                ->label('Customer')
-                                ->placeholder('—'),
+                                default => ucwords(
+                                    str_replace('_', ' ', $state)
+                                ),
+                            }),
 
-                            TextEntry::make('invoice.employee.full_name')
-                                ->label('Sales PIC')
-                                ->placeholder('—'),
+                        TextEntry::make('salesOrder.customer.name')
+                            ->label('Customer')
+                            ->weight('semibold')
+                            ->icon('heroicon-o-user-group')
+                            ->placeholder('—'),
 
-                            TextEntry::make('invoice.invoice_date')
-                                ->label('Tanggal Invoice')
-                                ->date('d M Y')
-                                ->placeholder('—'),
+                        TextEntry::make('salesOrder.employee.full_name')
+                            ->label('Sales PIC')
+                            ->weight('semibold')
+                            ->icon('heroicon-o-user')
+                            ->placeholder('—'),
 
-                            TextEntry::make('invoice.due_date')
-                                ->label('Jatuh Tempo')
-                                ->date('d M Y')
-                                ->placeholder('—'),
+                        TextEntry::make('salesOrder.order_date')
+                            ->label('Tanggal Order')
+                            ->date('D, d M Y')
+                            ->placeholder('—'),
 
-                            TextEntry::make('invoice.grand_total')
-                                ->label('Nilai Kontrak')
-                                ->money('IDR')
-                                ->placeholder('—'),
+                        TextEntry::make('salesOrder.grand_total')
+                            ->label('Nilai Kontrak')
+                            ->money('IDR')
+                            ->weight('semibold')
+                            ->color('success')
+                            ->placeholder('—'),
+                    ]),
 
-                        ]),
-                    ])
-                    ->collapsible()
-                    ->persistCollapsed(),
+                Section::make('Budget Project')
+                    ->description('Perbandingan estimasi biaya dengan pengeluaran aktual.')
+                    ->columns(3)
+                    ->schema([
+                        TextEntry::make('estimated_cost')
+                            ->label('Estimasi Biaya')
+                            ->money('IDR')
+                            ->weight('semibold')
+                            ->placeholder('—'),
+
+                        TextEntry::make('actual_cost')
+                            ->label('Pengeluaran Aktual')
+                            ->money('IDR')
+                            ->color('danger')
+                            ->weight('semibold')
+                            ->placeholder('—'),
+
+                        TextEntry::make('cost_difference')
+                            ->label('Selisih Budget')
+                            ->getStateUsing(
+                                fn($record) =>
+                                ($record->estimated_cost ?? 0) - ($record->actual_cost ?? 0)
+                            )
+                            ->money('IDR')
+                            ->color(
+                                fn($state) =>
+                                $state >= 0 ? 'success' : 'danger'
+                            )
+                            ->weight('bold')
+                            ->placeholder('—'),
+                    ]),
+
+                Section::make('Dokumen Project')
+                    ->description('Dokumen kontrak, BAST, dan file teknis project.')
+                    ->schema([
+                        RepeatableEntry::make('documents')
+                            ->label('Dokumen Pendukung')
+                            ->schema([
+
+                                TextEntry::make('document_name')
+                                    ->label('Nama Dokumen')
+                                    ->weight('semibold')
+                                    ->placeholder('—'),
+
+                                TextEntry::make('document_type')
+                                    ->label('Jenis Dokumen')
+                                    ->badge()
+                                    ->color(fn($state) => match ($state) {
+                                        'contract' => 'primary',
+                                        'bast' => 'success',
+                                        'technical' => 'warning',
+                                        default => 'gray',
+                                    })
+                                    ->formatStateUsing(
+                                        fn($state) =>
+                                        ucwords(str_replace('_', ' ', $state))
+                                    ),
+
+                                TextEntry::make('file_path')
+                                    ->label('File')
+                                    ->url(fn($state) => asset('storage/' . $state))
+                                    ->openUrlInNewTab()
+                                    ->color('primary'),
+
+                            ])
+                            ->columns(3)
+                    ]),
 
                 Section::make('Pengelolaan Data')
                     ->columns(2)
@@ -222,9 +301,12 @@ class ViewProject extends ViewRecord
                         TextEntry::make('updated_at')
                             ->label('Diperbarui Pada')
                             ->dateTime('d M Y H:i'),
-                    ])
-                    ->collapsible()
-                    ->persistCollapsed()
+
+                        TextEntry::make('deleted_at')
+                            ->label('Dihapus Pada')
+                            ->dateTime('d M Y H:i')
+                            ->visible(fn($record) => $record->trashed()),
+                    ]),
             ]);
     }
 }

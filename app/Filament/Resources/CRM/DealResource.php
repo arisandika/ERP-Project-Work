@@ -175,7 +175,8 @@ class DealResource extends Resource
                                     ->label('Estimasi Nilai')
                                     ->numeric()
                                     ->prefix('IDR')
-                                    ->required(),
+                                    ->required()
+                                    ->minValue(0),
 
                                 Forms\Components\Select::make('status')
                                     ->label('Status')

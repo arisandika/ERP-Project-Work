@@ -4,16 +4,18 @@ namespace App\Models\Project;
 
 use App\Models\HR\Employee;
 use App\Models\Sales\Invoice;
+use App\Models\Sales\SalesOrder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
+use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Carbon;
 
 class Project extends Model
 {
-    use HasFactory;
+    use SoftDeletes, HasFactory;
 
     protected $table = 'nx_projects';
 
@@ -27,8 +29,9 @@ class Project extends Model
         'pinned_date',
 
         // billing
-        'nx_invoice_id',
-        'sales_invoice_number',
+        'nx_sales_order_id',
+        'estimated_cost',
+        'actual_cost',
     ];
 
     protected $casts = [
@@ -136,13 +139,13 @@ class Project extends Model
         return ExternalAccess::generateForProject($this->id);
     }
 
-    public function invoice()
+    public function salesOrder()
     {
-        return $this->belongsTo(Invoice::class, 'nx_invoice_id');
+        return $this->belongsTo(SalesOrder::class, 'nx_sales_order_id');
     }
 
-    public function salesPic()
+    public function documents()
     {
-        return $this->belongsTo(Employee::class, 'sales_pic_id');
+        return $this->hasMany(ProjectDocument::class, 'nx_project_id');
     }
 }

@@ -312,7 +312,6 @@ class LeaveApprovalResource extends Resource
                     ->schema([
                         TextEntry::make('employee.full_name')
                             ->label('Nama Karyawan')
-                            ->color('primary')
                             ->weight('semibold')
                             ->icon('heroicon-o-user')
                             ->placeholder('—'),
@@ -379,7 +378,6 @@ class LeaveApprovalResource extends Resource
 
                         TextEntry::make('approver.full_name')
                             ->label('Disetujui Oleh')
-                            ->color('primary')
                             ->weight('semibold')
                             ->icon('heroicon-o-user')
                             ->placeholder('—'),

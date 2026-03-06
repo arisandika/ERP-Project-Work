@@ -160,6 +160,8 @@ class PackageResource extends Resource
                                     ->label('Harga Satuan')
                                     ->numeric()
                                     ->prefix('IDR')
+                                    ->required()
+                                    ->minValue(0)
                                     ->disabled()
                                     ->dehydrated(),
 
@@ -167,6 +169,8 @@ class PackageResource extends Resource
                                     ->label('Subtotal')
                                     ->numeric()
                                     ->prefix('IDR')
+                                    ->required()
+                                    ->minValue(0)
                                     ->disabled()
                                     ->dehydrated(),
                             ])
@@ -186,8 +190,11 @@ class PackageResource extends Resource
                             ->label('Total Harga Paket')
                             ->numeric()
                             ->prefix('IDR')
+                            ->required()
+                            ->minValue(0)
                             ->disabled()
                             ->dehydrated(),
+
                         Forms\Components\Toggle::make('is_active')
                             ->label('Status Paket')
                             ->default(true)
@@ -285,7 +292,7 @@ class PackageResource extends Resource
 
                         return $indicators;
                     }),
-                    
+
                 Tables\Filters\TrashedFilter::make()
                     ->label('Deleted Status')
                     ->native(false),

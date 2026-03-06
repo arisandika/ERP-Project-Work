@@ -43,7 +43,7 @@ class CreateEmployee extends CreateRecord
                 'address'          => $data['address'] ?? null,
                 'photo'            => $data['photo'] ?? null,
 
-                                                                        // Personal information
+                // Personal information
                 'national_id'      => $data['national_id'] ?? null,     // NIK
                 'identity_number'  => $data['identity_number'] ?? null, // Nomor KTP
                 'birth_place'      => $data['birth_place'] ?? null,

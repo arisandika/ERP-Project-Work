@@ -63,141 +63,142 @@ class LeaveRequestResource extends Resource
 
     public static function form(Form $form): Form
     {
-        return $form->schema([
-            Forms\Components\Section::make('Data Pengajuan Cuti')
-                ->description('Isi data berikut untuk mengajukan cuti.')
-                ->schema([
-                    Forms\Components\Select::make('leave_id')
-                        ->label('Jenis Cuti')
-                        ->relationship(
-                            'leave',
-                            'leave_type',
-                            modifyQueryUsing: function ($query) {
-                                $employee = auth()->user()?->employee;
+        return $form
+            ->schema([
+                Forms\Components\Section::make('Data Pengajuan Cuti')
+                    ->description('Isi data berikut untuk mengajukan cuti.')
+                    ->schema([
+                        Forms\Components\Select::make('leave_id')
+                            ->label('Jenis Cuti')
+                            ->relationship(
+                                'leave',
+                                'leave_type',
+                                modifyQueryUsing: function ($query) {
+                                    $employee = auth()->user()?->employee;
 
-                                // Jika bukan perempuan, sembunyikan cuti khusus wanita
-                                if ($employee && $employee->gender !== 'Perempuan') {
-                                    $query->where('is_female_only', false);
+                                    // Jika bukan perempuan, sembunyikan cuti khusus wanita
+                                    if ($employee && $employee->gender !== 'Perempuan') {
+                                        $query->where('is_female_only', false);
+                                    }
+
+                                    // Jika bukan laki-laki, sembunyikan cuti khusus laki-laki
+                                    if ($employee && $employee->gender !== 'Laki-laki') {
+                                        $query->where('is_male_only', false);
+                                    }
+
+                                    return $query;
                                 }
+                            )
+                            ->required()
+                            ->searchable()
+                            ->preload()
+                            ->native(false)
+                            ->prefixIcon('heroicon-o-arrow-right-start-on-rectangle'),
 
-                                // Jika bukan laki-laki, sembunyikan cuti khusus laki-laki
-                                if ($employee && $employee->gender !== 'Laki-laki') {
-                                    $query->where('is_male_only', false);
-                                }
+                        Forms\Components\DatePicker::make('start_date')
+                            ->label('Tanggal Mulai')
+                            ->required()
+                            ->displayFormat('d M Y')
+                            ->native(false)
+                            ->prefixIcon('heroicon-o-calendar-days')
+                            ->closeOnDateSelection()
+                            ->reactive()
+                            ->afterStateUpdated(function (callable $set, $get) {
+                                $start = $get('start_date');
+                                $end = $get('end_date');
 
-                                return $query;
-                            }
-                        )
-                        ->required()
-                        ->searchable()
-                        ->preload()
-                        ->native(false)
-                        ->prefixIcon('heroicon-o-arrow-right-start-on-rectangle'),
+                                if ($start && $end) {
+                                    $startDate = Carbon::parse($start);
+                                    $endDate = Carbon::parse($end);
 
-                    Forms\Components\DatePicker::make('start_date')
-                        ->label('Tanggal Mulai')
-                        ->required()
-                        ->displayFormat('d M Y')
-                        ->native(false)
-                        ->prefixIcon('heroicon-o-calendar-days')
-                        ->closeOnDateSelection()
-                        ->reactive()
-                        ->afterStateUpdated(function (callable $set, $get) {
-                            $start = $get('start_date');
-                            $end = $get('end_date');
+                                    if ($startDate->gt($endDate)) {
+                                        $set('total_days', null);
+                                        return;
+                                    }
 
-                            if ($start && $end) {
-                                $startDate = Carbon::parse($start);
-                                $endDate = Carbon::parse($end);
+                                    if ($startDate->isSameDay($endDate)) {
+                                        $set('total_days', $startDate->isWeekend() ? 0 : 1);
+                                        return;
+                                    }
 
-                                if ($startDate->gt($endDate)) {
+                                    $workingDays = $startDate->diffInDaysFiltered(
+                                        fn(Carbon $date) => !$date->isWeekend(),
+                                        $endDate
+                                    );
+
+                                    $set('total_days', $workingDays + 1);
+                                } else {
                                     $set('total_days', null);
-                                    return;
                                 }
+                            }),
 
-                                if ($startDate->isSameDay($endDate)) {
-                                    $set('total_days', $startDate->isWeekend() ? 0 : 1);
-                                    return;
-                                }
+                        Forms\Components\DatePicker::make('end_date')
+                            ->label('Tanggal Selesai')
+                            ->required()
+                            ->displayFormat('d M Y')
+                            ->native(false)
+                            ->prefixIcon('heroicon-o-calendar-days')
+                            ->closeOnDateSelection()
+                            ->reactive()
+                            ->afterStateUpdated(function (callable $set, $state, $get) {
+                                $start = $get('start_date');
+                                $end = $state;
 
-                                $workingDays = $startDate->diffInDaysFiltered(
-                                    fn(Carbon $date) => !$date->isWeekend(),
-                                    $endDate
-                                );
+                                if ($start && $end) {
+                                    $startDate = Carbon::parse($start);
+                                    $endDate = Carbon::parse($end);
 
-                                $set('total_days', $workingDays + 1);
-                            } else {
-                                $set('total_days', null);
-                            }
-                        }),
+                                    if ($startDate->gt($endDate)) {
+                                        $set('total_days', null);
+                                        return;
+                                    }
 
-                    Forms\Components\DatePicker::make('end_date')
-                        ->label('Tanggal Selesai')
-                        ->required()
-                        ->displayFormat('d M Y')
-                        ->native(false)
-                        ->prefixIcon('heroicon-o-calendar-days')
-                        ->closeOnDateSelection()
-                        ->reactive()
-                        ->afterStateUpdated(function (callable $set, $state, $get) {
-                            $start = $get('start_date');
-                            $end = $state;
+                                    if ($startDate->isSameDay($endDate)) {
+                                        $set('total_days', $startDate->isWeekend() ? 0 : 1);
+                                        return;
+                                    }
 
-                            if ($start && $end) {
-                                $startDate = Carbon::parse($start);
-                                $endDate = Carbon::parse($end);
+                                    $workingDays = $startDate->diffInDaysFiltered(
+                                        fn(Carbon $date) => !$date->isWeekend(),
+                                        $endDate
+                                    );
 
-                                if ($startDate->gt($endDate)) {
+                                    $set('total_days', $workingDays + 1);
+                                } else {
                                     $set('total_days', null);
-                                    return;
                                 }
+                            }),
 
-                                if ($startDate->isSameDay($endDate)) {
-                                    $set('total_days', $startDate->isWeekend() ? 0 : 1);
-                                    return;
-                                }
+                        Forms\Components\TextInput::make('total_days')
+                            ->label('Durasi Cuti (Hari Kerja)')
+                            ->prefixIcon('heroicon-o-clock')
+                            ->disabled()
+                            ->dehydrated(false)
+                            ->reactive(),
 
-                                $workingDays = $startDate->diffInDaysFiltered(
-                                    fn(Carbon $date) => !$date->isWeekend(),
-                                    $endDate
-                                );
+                        Forms\Components\Textarea::make('reason')
+                            ->label('Alasan Cuti')
+                            ->placeholder('Tuliskan alasan pengajuan cuti...')
+                            ->rows(3)
+                            ->maxLength(500),
 
-                                $set('total_days', $workingDays + 1);
-                            } else {
-                                $set('total_days', null);
-                            }
-                        }),
-
-                    Forms\Components\TextInput::make('total_days')
-                        ->label('Durasi Cuti (Hari Kerja)')
-                        ->prefixIcon('heroicon-o-clock')
-                        ->disabled()
-                        ->dehydrated(false)
-                        ->reactive(),
-
-                    Forms\Components\Textarea::make('reason')
-                        ->label('Alasan Cuti')
-                        ->placeholder('Tuliskan alasan pengajuan cuti...')
-                        ->rows(3)
-                        ->maxLength(500),
-
-                    Forms\Components\FileUpload::make('leave_proof')
-                        ->label('Bukti Cuti/Sakit')
-                        ->image()
-                        ->directory('leave-proofs')
-                        ->imageEditor()
-                        ->previewable()
-                        ->maxSize(2048) // 2MB
-                        ->acceptedFileTypes([
-                            'image/jpeg',
-                            'image/png',
-                            'image/jpg',
-                            'image/webp'
-                        ])
-                        ->helperText('Upload bukti seperti surat dokter atau dokumen pendukung (opsional)'),
-                ])
-                ->columns(2),
-        ]);
+                        Forms\Components\FileUpload::make('leave_proof')
+                            ->label('Bukti Cuti/Sakit')
+                            ->image()
+                            ->directory('leave-proofs')
+                            ->imageEditor()
+                            ->previewable()
+                            ->maxSize(2048) // 2MB
+                            ->acceptedFileTypes([
+                                'image/jpeg',
+                                'image/png',
+                                'image/jpg',
+                                'image/webp'
+                            ])
+                            ->helperText('Upload bukti seperti surat dokter atau dokumen pendukung (opsional)'),
+                    ])
+                    ->columns(2),
+            ]);
     }
 
     public static function table(Table $table): Table
@@ -276,12 +277,6 @@ class LeaveRequestResource extends Resource
                             return 'danger';
                         return '';
                     })
-                    ->placeholder('—'),
-
-                Tables\Columns\TextColumn::make('created_at')
-                    ->label('Dibuat Pada')
-                    ->dateTime('d M Y H:i')
-                    ->sortable()
                     ->placeholder('—'),
 
                 Tables\Columns\TextColumn::make('created_at')
@@ -437,7 +432,6 @@ class LeaveRequestResource extends Resource
                     ->schema([
                         TextEntry::make('employee.full_name')
                             ->label('Nama Karyawan')
-                            ->color('primary')
                             ->weight('semibold')
                             ->icon('heroicon-o-user')
                             ->placeholder('—'),
@@ -504,7 +498,6 @@ class LeaveRequestResource extends Resource
 
                         TextEntry::make('approver.full_name')
                             ->label('Disetujui Oleh')
-                            ->color('primary')
                             ->weight('semibold')
                             ->icon('heroicon-o-user')
                             ->placeholder('—'),

@@ -84,17 +84,17 @@ class ProductResource extends Resource
 
                         Forms\Components\TextInput::make('purchase_price')
                             ->label('Harga Beli')
-                            ->required()
                             ->numeric()
                             ->prefix('IDR')
-                            ->step(0.01),
+                            ->required()
+                            ->minValue(0),
 
                         Forms\Components\TextInput::make('selling_price')
                             ->label('Harga Jual')
-                            ->required()
                             ->numeric()
                             ->prefix('IDR')
-                            ->step(0.01),
+                            ->required()
+                            ->minValue(0),
 
                         Forms\Components\Section::make('Pengaturan Lanjutan')
                             ->description('Atur identitas unit dan visibilitas katalog')
@@ -228,7 +228,8 @@ class ProductResource extends Resource
                 Tables\Columns\TextColumn::make('total_stock')
                     ->label('Total Stock Fisik')
                     // REVISI: Menggabungkan total dari 3 kolom untuk physical stock
-                    ->getStateUsing(fn($record) =>
+                    ->getStateUsing(
+                        fn($record) =>
                         $record->productStocks()->sum('qty_available') +
                         $record->productStocks()->sum('qty_reserved') +
                         $record->productStocks()->sum('qty_on_delivery')
