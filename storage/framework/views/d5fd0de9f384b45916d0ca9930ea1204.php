@@ -37,7 +37,7 @@ unset($__defined_vars, $__key, $__value); ?>
 <div <?php echo e($attributes->class(['fi-ta-filters grid gap-y-4'])); ?>>
     <div class="flex items-center justify-between">
         <h4
-            class="text-base font-semibold leading-6 text-gray-950 dark:text-white"
+            class="text-base font-semibold leading-6 text-black dark:text-white"
         >
             <?php echo e(__('filament-tables::table.filters.heading')); ?>
 

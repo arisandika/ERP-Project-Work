@@ -44,7 +44,7 @@ unset($__defined_vars, $__key, $__value); ?>
     $hasAlpineHiddenClasses = filled($alpineHidden);
     $hasAlpineSelectedClasses = filled($alpineSelected);
 
-    $stripedClasses = 'bg-gray-50 dark:bg-white/5';
+    $stripedClasses = 'bg-main-light dark:bg-white/5';
 ?>
 
 <tr
@@ -60,7 +60,7 @@ unset($__defined_vars, $__key, $__value); ?>
     <?php endif; ?>
     <?php echo e($attributes->class([
             'fi-ta-row [@media(hover:hover)]:transition [@media(hover:hover)]:duration-75',
-            'hover:bg-gray-50 dark:hover:bg-white/5' => $recordAction || $recordUrl,
+            'hover:bg-main-light dark:hover:bg-white/5' => $recordAction || $recordUrl,
             $stripedClasses => $striped,
         ])); ?>
 

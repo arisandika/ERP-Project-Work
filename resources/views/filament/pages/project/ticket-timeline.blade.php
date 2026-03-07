@@ -7,11 +7,11 @@
                 <x-filament::section>
                     
                     <div class="mb-5">
-                        <h2 class="text-lg font-semibold text-gray-900 dark:text-white">
+                        <h2 class="text-lg font-semibold text-black dark:text-white">
                             Pilih Project
                         </h2>
                         <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">
-                            Pilih project untuk melihat timeline
+                            Pilih project untuk melihat ticket timeline
                         </p>
                     </div>
 
@@ -27,7 +27,7 @@
                             </div>
                             <input type="text" wire:model.live.debounce.300ms="searchProject"
                                 placeholder="Cari project berdasarkan nama atau prefix..."
-                                class="block w-full pl-10 pr-3 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:ring-2 focus:ring-primary-500 focus:border-transparent" />
+                                class="block w-full pl-10 pr-3 py-2.5 border border-border-light dark:border-border-dark rounded-full bg-main-light dark:bg-accent-dark text-black dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:ring-2 focus:ring-main-primary focus:border-transparent outline-none" />
                             @if($searchProject)
                                 <button wire:click="$set('searchProject', '')"
                                     class="absolute inset-y-0 right-0 flex items-center pr-3 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300">
@@ -56,14 +56,14 @@
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                     d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
                             </svg>
-                            <h3 class="mb-1 text-base font-medium text-gray-900 dark:text-white">Project tidak ditemukan</h3>
+                            <h3 class="mb-1 text-base font-medium text-black dark:text-white">Project tidak ditemukan</h3>
                             <p class="text-sm text-gray-500 dark:text-gray-400">Coba ubah kata kunci pencarian</p>
                         </div>
                     @else
-                        <div class="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+                        <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
                             @foreach($this->filteredProjects as $project)
                                 <button wire:click="selectProject({{ $project->id }})"
-                                    class="relative p-4 overflow-hidden text-left transition-all bg-white border border-gray-200 rounded-lg dark:bg-gray-800 dark:border-gray-700 hover:shadow-md"
+                                    class="relative p-4 overflow-hidden text-left transition-all border rounded-2xl bg-main-light border-border-light dark:bg-accent-dark dark:border-border-dark hover:shadow-md hover:bg-main-light dark:hover:bg-main-dark"
                                     style="border-left: 4px solid {{ $project->color ?? '#6B7280' }};">
                                     {{-- Pin Icon Badge --}}
                                     @if($project->is_pinned)
@@ -98,7 +98,7 @@
                                     @endif
 
                                     {{-- Project Name --}}
-                                    <h3 class="text-base font-semibold text-gray-900 dark:text-white line-clamp-2">
+                                    <h3 class="text-base font-semibold text-black dark:text-white line-clamp-2">
                                         {{ $project->name }}
                                     </h3>
                                 </button>
@@ -114,7 +114,7 @@
             <div class="flex flex-col items-end justify-between gap-3 md:items-center md:flex-row" x-data="{ open: false }">
                 <div class="relative">
                     <button @click="open = !open" @click.away="open = false"
-                        class="inline-flex items-center gap-2 px-4 py-2.5 text-sm font-medium text-gray-900 dark:text-white bg-white dark:bg-gray-800 border-2 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+                        class="inline-flex items-center gap-2 px-4 py-3 text-sm font-medium text-black transition-colors border-2 dark:text-white bg-secondary-light dark:bg-accent-dark rounded-2xl hover:bg-main-light dark:hover:bg-main-dark"
                         style="border-color: {{ $selectedProject->color ?? '#D1D5DB' }};">
                         @if($selectedProject->ticket_prefix)
                             @php
@@ -152,7 +152,7 @@
                             </div>
                             @foreach($this->filteredProjects as $project)
                                 <button wire:click="selectProject({{ $project->id }})" @click="open = false"
-                                    class="w-full flex items-center gap-3 px-3 py-2 rounded-md hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors text-left {{ $project->id === $selectedProject->id ? 'bg-gray-50 dark:bg-gray-700' : '' }}">
+                                    class="w-full flex items-center gap-3 px-3 py-2 rounded-md hover:bg-main-light dark:hover:bg-gray-700 transition-colors text-left {{ $project->id === $selectedProject->id ? 'bg-main-light dark:bg-gray-700' : '' }}">
                                     @if($project->is_pinned)
                                         <div class="flex items-center justify-center w-5 h-5 rounded-full shrink-0"
                                             style="background-color: {{ $project->color ?? '#6B7280' }};" title="Disematkan">
@@ -178,7 +178,7 @@
                                             {{ $project->ticket_prefix }}
                                         </span>
                                     @endif
-                                    <div class="flex-1 min-w-0 text-sm font-medium text-gray-900 truncate dark:text-white">
+                                    <div class="flex-1 min-w-0 text-sm font-medium text-black truncate dark:text-white">
                                         {{ $project->name }}
                                     </div>
                                     @if($project->id === $selectedProject->id)

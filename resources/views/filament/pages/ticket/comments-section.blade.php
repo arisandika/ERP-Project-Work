@@ -41,7 +41,7 @@
                         </div>
                         <div class="flex-1 min-w-0">
                             <div class="flex flex-col mb-2 sm:flex-row sm:justify-between sm:items-center">
-                                <div class="text-sm font-medium text-gray-900 dark:text-gray-100">
+                                <div class="text-sm font-medium text-black dark:text-white">
                                     {{ $comment->employee->full_name ?? 'Unknown User' }}
                                 </div>
                                 <div class="flex items-center gap-x-2">

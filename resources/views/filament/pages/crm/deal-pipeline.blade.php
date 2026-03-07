@@ -328,7 +328,7 @@
             @if(!$this->canMoveDeals())
                 <div class="flex justify-center mb-4">
                     <div
-                        class="inline-flex items-center gap-2 px-4 py-2 border rounded-lg bg-amber-50 dark:bg-amber-900/20 border-amber-200 dark:border-border-dark text-amber-800 dark:text-amber-200">
+                        class="inline-flex items-center gap-2 px-4 py-2 border rounded-2xl bg-amber-50 dark:bg-amber-900/20 border-amber-200 dark:border-border-dark text-amber-800 dark:text-amber-200">
                         <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24"
                             stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -350,7 +350,7 @@
                         <div
                             class="flex-shrink-0 px-4 py-3 border-b border-border-light bg-secondary-light rounded-t-xl dark:border-border-dark dark:bg-secondary-dark">
                             <div class="flex items-center justify-between mb-1">
-                                <h3 class="flex items-center gap-2 font-semibold text-gray-900 dark:text-white">
+                                <h3 class="flex items-center gap-2 font-semibold text-black dark:text-white">
                                     <span>{{ $stage->name }}</span>
                                     <span
                                         class="inline-flex items-center justify-center flex-shrink-0 w-6 h-6 text-xs font-medium rounded-full text-main-primary bg-main-primary/10 ring-1 ring-main-primary/30">
@@ -375,12 +375,12 @@
                                         x-transition:leave="transition ease-in duration-75"
                                         x-transition:leave-start="transform opacity-100 scale-100"
                                         x-transition:leave-end="transform opacity-0 scale-95"
-                                        class="absolute left-0 z-50 border rounded-lg shadow-lg border-border-light bg-secondary-light top-8 w-52 dark:bg-secondary-dark dark:border-border-dark"
+                                        class="absolute left-0 z-50 border shadow-lg rounded-2xl border-border-light bg-secondary-light top-8 w-52 dark:bg-secondary-dark dark:border-border-dark"
                                         style="display: none; transform: translateX(-100%);">
                                         <div class="p-2">
                                             <div
                                                 class="flex items-center justify-between px-3 py-2 border-b border-border-light dark:border-border-dark">
-                                                <span class="text-sm font-medium text-gray-900 dark:text-white">Urutkan
+                                                <span class="text-sm font-medium text-black dark:text-white">Urutkan
                                                     list</span>
                                                 <button @click="open = false"
                                                     class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300">
@@ -470,13 +470,13 @@
                                 @endphp
     
                                 <div wire:key="deal-{{ $stage->id }}-{{ $deal->id }}"
-                                    class="relative p-3 bg-secondary-light border border-l-4 border-border-light rounded-lg cursor-move deal-card dark:bg-secondary-dark dark:border-border-dark {{ $borderColor }}"
+                                    class="relative p-3 bg-secondary-light border border-l-4 border-border-light rounded-2xl cursor-move deal-card dark:bg-secondary-dark dark:border-border-dark {{ $borderColor }}"
                                     data-deal-id="{{ $deal->id }}" x-show="{{ $index }} < visibleDeals"
                                     x-transition:enter="transition ease-out duration-200"
                                     x-transition:enter-start="opacity-0 transform scale-95"
                                     x-transition:enter-end="opacity-100 transform scale-100">
                                     
-                                    <div class="flex items-center justify-between mb-2">
+                                    <div class="flex items-center justify-between mb-3">
                                         <span
                                             class="text-xs font-mono font-medium text-gray-600 dark:text-gray-300 px-1.5 py-0.5 bg-accent-light dark:bg-accent-dark rounded truncate">
                                             {{ $deal->deal_number }}
@@ -494,11 +494,11 @@
                                         </span>
                                     </div>
 
-                                    <h4 class="mb-1 text-[15px] font-semibold text-gray-900 dark:text-white line-clamp-2">
+                                    <h4 class="mb-1 text-[15px] font-semibold text-black dark:text-white line-clamp-2">
                                         {{ $deal->customer?->name ?? $deal->lead?->name ?? 'Unknown Client' }}
                                     </h4>
 
-                                    <div class="mb-1 text-lg font-bold {{ $valueColor }}">
+                                    <div class="mb-2 text-lg font-bold {{ $valueColor }}">
                                         Rp {{ number_format($deal->estimated_value, 0, ',', '.') }}
                                     </div>
 
@@ -546,12 +546,12 @@
                                     </div>
 
                                     <div
-                                        class="flex items-center justify-between gap-3 pt-3 mt-4 border-t border-gray-100 dark:border-border-dark">
+                                        class="flex items-center justify-between gap-3 pt-3 mt-4 border-t border-gray-300 dark:border-border-dark">
 
                                         @if($this->canMoveDeals())
                                             <div class="relative flex-1 min-w-0" x-data="{ open: false }">
                                                 <button @click="open = !open" @click.away="open = false" type="button"
-                                                    class="flex items-center justify-between w-full px-2.5 py-1.5 text-xs font-medium text-gray-700 transition-all bg-main-light border border-border-light rounded-lg shadow-sm hover:bg-accent-light dark:bg-accent-dark dark:border-border-dark dark:text-gray-300 dark:hover:bg-secondary-dark">
+                                                    class="flex items-center justify-between w-full px-2.5 py-1.5 text-xs font-medium text-gray-700 transition-all bg-main-light border border-border-light rounded-2xl shadow-sm hover:bg-accent-light dark:bg-accent-dark dark:border-border-dark dark:text-gray-300 dark:hover:bg-secondary-dark">
                                                     <div class="flex items-center gap-2 overflow-hidden">
                                                         <span class="truncate">{{ $stage->name }}</span>
                                                     </div>
@@ -566,13 +566,13 @@
                                                 <div x-show="open" x-transition:enter="transition ease-out duration-100"
                                                     x-transition:enter-start="opacity-0 scale-95 translate-y-2"
                                                     x-transition:enter-end="opacity-100 scale-100 translate-y-0"
-                                                    class="absolute left-0 top-full mt-1 z-40 w-full min-w-[150px] overflow-y-auto origin-top bg-secondary-light border border-border-light rounded-lg shadow-xl dark:bg-secondary-dark dark:border-border-dark max-h-48 no-scrollbar"
+                                                    class="absolute left-0 top-full mt-1 z-40 w-full min-w-[150px] overflow-y-auto origin-top bg-secondary-light border border-border-light rounded-2xl shadow-xl dark:bg-secondary-dark dark:border-border-dark max-h-48 no-scrollbar"
                                                     style="display: none;">
                                                     <div class="p-1">
                                                         @foreach($this->dealStages as $stageOption)
                                                             <button type="button"
                                                                 wire:click="moveDeal({{ $deal->id }}, {{ $stageOption->id }})"
-                                                                @click="open = false" class="flex items-center w-full gap-2 px-3 py-2 text-sm text-left rounded-md transition-colors group
+                                                                @click="open = false" class="flex items-center w-full gap-2 px-3 py-2 text-sm text-left rounded-lg transition-colors group
                                                         {{ $stageOption->id === $stage->id
                                         ? 'bg-main-light text-main-primary dark:bg-accent-dark'
                                         : 'text-gray-700 hover:bg-accent-light dark:text-gray-200 dark:hover:bg-accent-dark' 
@@ -609,7 +609,7 @@
                                                     <div x-show="openQuotations" x-transition:enter="transition ease-out duration-100"
                                                         x-transition:enter-start="opacity-0 scale-95"
                                                         x-transition:enter-end="opacity-100 scale-100"
-                                                        class="absolute right-[-120%] z-[999] w-64 p-2 mt-2 origin-top-right bg-secondary-light border border-border-light rounded-lg shadow-xl dark:bg-secondary-dark dark:border-border-dark"
+                                                        class="absolute right-[-120%] z-[999] w-64 p-2 mt-2 origin-top-right bg-secondary-light border border-border-light rounded-2xl shadow-xl dark:bg-secondary-dark dark:border-border-dark"
                                                         style="display: none;">
                                                         <div
                                                             class="px-2 py-1.5 mb-2 text-xs font-semibold tracking-wider text-gray-500 uppercase border-b dark:text-gray-400 dark:border-border-dark">
@@ -623,7 +623,7 @@
                                                                     class="block px-2 py-2 transition-colors rounded-md hover:bg-accent-light dark:hover:bg-accent-dark">
                                                                     <div class="flex items-center justify-between mb-1">
                                                                         <span
-                                                                            class="text-xs font-medium text-gray-900 truncate dark:text-gray-100"
+                                                                            class="text-xs font-medium text-black truncate dark:text-white"
                                                                             title="{{ $quotation->quotation_number }}">
                                                                             {{ $quotation->quotation_number }}
                                                                         </span>
@@ -637,7 +637,7 @@
                                                                             };
                                                                         @endphp
                                                                         <span
-                                                                            class="text-[9px] font-semibold px-1.5 py-0.5 rounded-md uppercase tracking-wider {{ $statusColor }}">
+                                                                            class="text-[9px] font-semibold px-1.5 py-0.5 rounded-md tracking-wider {{ $statusColor }}">
                                                                             {{ $quotation->status }}
                                                                         </span>
                                                                     </div>
@@ -661,7 +661,7 @@
                                         container.scrollTop = scrollPos;
                                     }, 0);
                                     return false;
-                                " class="flex items-center justify-center w-8 h-8 transition-colors border rounded-full shadow-sm border-border-light bg-main-light hover:bg-accent-light dark:bg-accent-dark dark:border-border-dark dark:hover:bg-secondary-dark text-primary-600 dark:text-primary-500"
+                                " class="flex items-center justify-center w-8 h-8 transition-colors border rounded-full shadow-sm border-border-light bg-main-light hover:bg-accent-light dark:bg-accent-dark dark:border-border-dark dark:hover:bg-secondary-dark text-main-primary"
                                                 title="Lihat detail Deal">
                                                 <x-heroicon-o-eye class="w-4 h-4" />
                                             </a>
@@ -672,7 +672,7 @@
     
                             @if ($stage->deals->isEmpty())
                                 <div
-                                    class="flex items-center justify-center h-24 text-sm italic text-gray-500 border border-gray-300 border-dashed rounded-lg dark:text-gray-400 dark:border-border-dark">
+                                    class="flex items-center justify-center h-24 text-sm italic text-gray-500 border border-gray-300 border-dashed rounded-2xl dark:text-gray-400 dark:border-border-dark">
                                     Tidak ada deal di stage ini
                                 </div>
                             @else

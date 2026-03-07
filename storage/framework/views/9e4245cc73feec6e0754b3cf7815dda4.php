@@ -67,7 +67,7 @@ unset($__defined_vars, $__key, $__value); ?>
         <?php endif; ?><?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if ENDBLOCK]><![endif]--><?php endif; ?>
 
         <h1
-            class="fi-header-heading text-2xl font-bold tracking-tight text-gray-950 dark:text-white sm:text-3xl"
+            class="fi-header-heading text-2xl font-bold tracking-tight text-black dark:text-white sm:text-3xl"
         >
             <?php echo e($heading); ?>
 

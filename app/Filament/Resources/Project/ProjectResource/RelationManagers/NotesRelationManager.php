@@ -199,7 +199,7 @@ class NotesRelationManager extends RelationManager
                             ->dateTime('d M Y H:i'),
                     ])
                     ->columnSpanFull()
-                    ->columns(3),
+                    ->columns(2),
 
                 Section::make('Isi Catatan')
                     ->schema([

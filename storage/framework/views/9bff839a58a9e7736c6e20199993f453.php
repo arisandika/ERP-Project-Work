@@ -82,7 +82,7 @@ unset($__defined_vars, $__key, $__value); ?>
         ]); ?>"
     >
         <span
-            class="fi-ta-header-cell-label text-sm font-semibold text-gray-950 dark:text-white"
+            class="fi-ta-header-cell-label text-sm font-semibold text-black dark:text-white"
         >
             <?php echo e($slot); ?>
 
@@ -99,7 +99,7 @@ unset($__defined_vars, $__key, $__value); ?>
                     }
                 ,'icon' => $activelySorted && $sortDirection === 'asc' ? 'heroicon-m-chevron-up' : 'heroicon-m-chevron-down','class' => \Illuminate\Support\Arr::toCssClasses([
                     'fi-ta-header-cell-sort-icon h-5 w-5 shrink-0 transition duration-75',
-                    'text-gray-950 dark:text-white' => $activelySorted,
+                    'text-black dark:text-white' => $activelySorted,
                     'text-gray-400 dark:text-gray-500 group-hover:text-gray-500 group-focus-visible:text-gray-500 dark:group-hover:text-gray-400 dark:group-focus-visible:text-gray-400' => ! $activelySorted,
                 ])]] + (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag ? $attributes->all() : [])); ?>
 <?php $component->withName('filament::icon'); ?>
@@ -116,7 +116,7 @@ unset($__defined_vars, $__key, $__value); ?>
                     }
                 ),'icon' => \Illuminate\View\Compilers\BladeCompiler::sanitizeComponentAttribute($activelySorted && $sortDirection === 'asc' ? 'heroicon-m-chevron-up' : 'heroicon-m-chevron-down'),'class' => \Illuminate\View\Compilers\BladeCompiler::sanitizeComponentAttribute(\Illuminate\Support\Arr::toCssClasses([
                     'fi-ta-header-cell-sort-icon h-5 w-5 shrink-0 transition duration-75',
-                    'text-gray-950 dark:text-white' => $activelySorted,
+                    'text-black dark:text-white' => $activelySorted,
                     'text-gray-400 dark:text-gray-500 group-hover:text-gray-500 group-focus-visible:text-gray-500 dark:group-hover:text-gray-400 dark:group-focus-visible:text-gray-400' => ! $activelySorted,
                 ]))]); ?>
 <?php echo $__env->renderComponent(); ?>

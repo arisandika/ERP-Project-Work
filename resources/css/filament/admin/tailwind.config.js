@@ -14,7 +14,7 @@ export default {
                 "main-primary": "#1c9cf0",
                 "main-secondary": "#1d91de",
 
-                "main-light": "#ffffff",
+                "main-light": "#fff",
                 "main-dark": "#000", // 'main-dark': '#1c2433',
 
                 "secondary-light": "#f7f8f8",

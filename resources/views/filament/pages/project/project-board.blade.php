@@ -5,11 +5,11 @@
         <div class="mb-6">
             <x-filament::section>
                 <div class="mb-5">
-                    <h2 class="text-lg font-semibold text-gray-900 dark:text-white">
+                    <h2 class="text-lg font-semibold text-black dark:text-white">
                         Pilih Project
                     </h2>
                     <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">
-                        Pilih project untuk melihat board
+                        Pilih project untuk melihat project board
                     </p>
                 </div>
 
@@ -25,7 +25,7 @@
                             type="text"
                             wire:model.live.debounce.300ms="searchProject"
                             placeholder="Cari project berdasarkan nama atau prefix..."
-                            class="block w-full pl-10 pr-3 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                            class="block w-full pl-10 pr-3 py-2.5 border border-border-light dark:border-border-dark rounded-full bg-main-light dark:bg-accent-dark text-black dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:ring-2 focus:ring-main-primary focus:border-transparent outline-none"
                         />
                         @if($searchProject)
                             <button
@@ -54,15 +54,15 @@
                         <svg class="w-12 h-12 mb-3 text-gray-400 dark:text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
                         </svg>
-                        <h3 class="mb-1 text-base font-medium text-gray-900 dark:text-white">Project tidak ditemukan</h3>
+                        <h3 class="mb-1 text-base font-medium text-black dark:text-white">Project tidak ditemukan</h3>
                         <p class="text-sm text-gray-500 dark:text-gray-400">Coba ubah kata kunci pencarian</p>
                     </div>
                 @else
-                    <div class="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+                    <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
                         @foreach($this->filteredProjects as $project)
                             <button
                                 wire:click="selectProject({{ $project->id }})"
-                                class="relative p-4 overflow-hidden text-left transition-all bg-white border border-gray-200 rounded-lg dark:bg-gray-800 dark:border-gray-700 hover:shadow-md"
+                                class="relative p-4 overflow-hidden text-left transition-all border rounded-2xl bg-main-light border-border-light dark:bg-accent-dark dark:border-border-dark hover:shadow-md hover:bg-main-light dark:hover:bg-main-dark"
                                 style="border-left: 4px solid {{ $project->color ?? '#6B7280' }};"
                             >
                                 {{-- Pin Icon Badge --}}
@@ -99,7 +99,7 @@
                                 @endif
 
                                 {{-- Project Name --}}
-                                <h3 class="text-base font-semibold text-gray-900 dark:text-white line-clamp-2">
+                                <h3 class="text-base font-semibold text-black dark:text-white line-clamp-2">
                                     {{ $project->name }}
                                 </h3>
                             </button>
@@ -115,7 +115,7 @@
                 <button
                     @click="open = !open"
                     @click.away="open = false"
-                    class="inline-flex items-center gap-2 px-4 py-2.5 text-sm font-medium text-gray-900 dark:text-white bg-white dark:bg-gray-800 border-2 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+                    class="inline-flex items-center gap-2 px-4 py-3 text-sm font-medium text-black transition-colors border-2 dark:text-white bg-secondary-light dark:bg-accent-dark rounded-2xl hover:bg-main-light dark:hover:bg-main-dark"
                     style="border-color: {{ $selectedProject->color ?? '#D1D5DB' }};"
                 >
                     @if($selectedProject->ticket_prefix)
@@ -148,7 +148,7 @@
                     x-transition:leave="transition ease-in duration-75"
                     x-transition:leave-start="opacity-100 scale-100"
                     x-transition:leave-end="opacity-0 scale-95"
-                    class="absolute left-0 z-50 mt-2 overflow-y-auto bg-white border border-gray-200 rounded-lg shadow-lg top-full w-80 dark:bg-gray-800 dark:border-gray-700 max-h-96"
+                    class="absolute left-0 z-50 mt-2 overflow-y-auto bg-white border border-gray-200 shadow-lg rounded-2xl top-full w-80 dark:bg-gray-800 dark:border-gray-700 max-h-96"
                     style="display: none;"
                 >
                     <div class="p-2">
@@ -159,7 +159,7 @@
                             <button
                                 wire:click="selectProject({{ $project->id }})"
                                 @click="open = false"
-                                class="w-full flex items-center gap-3 px-3 py-2 rounded-md hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors text-left {{ $project->id === $selectedProject->id ? 'bg-gray-50 dark:bg-gray-700' : '' }}"
+                                class="w-full flex items-center gap-3 px-3 py-2 rounded-md hover:bg-main-light dark:hover:bg-gray-700 transition-colors text-left {{ $project->id === $selectedProject->id ? 'bg-main-light dark:bg-gray-700' : '' }}"
                             >
                                 @if($project->ticket_prefix)
                                     @php
@@ -176,7 +176,7 @@
                                         {{ $project->ticket_prefix }}
                                     </span>
                                 @endif
-                                <div class="flex-1 min-w-0 text-sm font-medium text-gray-900 truncate dark:text-white">
+                                <div class="flex-1 min-w-0 text-sm font-medium text-black truncate dark:text-white">
                                     {{ $project->name }}
                                 </div>
                                 @if($project->id === $selectedProject->id)
@@ -430,9 +430,9 @@
                                         touch.clientX <= rect.right &&
                                         touch.clientY >= rect.top &&
                                         touch.clientY <= rect.bottom) {
-                                        column.classList.add('bg-primary-50', 'dark:bg-primary-950');
+                                        column.classList.add('bg-main-primary/10', 'dark:bg-main-light/10');
                                     } else {
-                                        column.classList.remove('bg-primary-50', 'dark:bg-primary-950');
+                                        column.classList.remove('bg-main-primary/10', 'dark:bg-main-light/10');
                                     }
                                 });
                             });
@@ -458,7 +458,7 @@
                                         touch.clientY <= rect.bottom) {
                                         targetColumn = column;
                                     }
-                                    column.classList.remove('bg-primary-50', 'dark:bg-primary-950');
+                                    column.classList.remove('bg-main-primary/10', 'dark:bg-main-light/10');
                                 });
 
                                 if (targetColumn && targetColumn !== originalColumn) {
@@ -481,7 +481,7 @@
                                 this.draggingTicket = null;
 
                                 document.querySelectorAll('.status-column').forEach(column => {
-                                    column.classList.remove('bg-primary-50', 'dark:bg-primary-950');
+                                    column.classList.remove('bg-main-primary/10', 'dark:bg-main-light/10');
                                 });
                             });
                         });
@@ -491,16 +491,16 @@
                             column.addEventListener('dragover', (e) => {
                                 e.preventDefault();
                                 e.dataTransfer.dropEffect = 'move';
-                                column.classList.add('bg-primary-50', 'dark:bg-primary-950');
+                                column.classList.add('bg-main-primary/10', 'dark:bg-main-light/10');
                             });
 
                             column.addEventListener('dragleave', () => {
-                                column.classList.remove('bg-primary-50', 'dark:bg-primary-950');
+                                column.classList.remove('bg-main-primary/10', 'dark:bg-main-light/10');
                             });
 
                             column.addEventListener('drop', (e) => {
                                 e.preventDefault();
-                                column.classList.remove('bg-primary-50', 'dark:bg-primary-950');
+                                column.classList.remove('bg-main-primary/10', 'dark:bg-main-light/10');
 
                                 if (this.draggingTicket) {
                                     const statusId = column.getAttribute('data-status-id');
@@ -523,7 +523,7 @@
                 {{-- View Only Mode Indicator --}}
                 @if(!$this->canMoveTickets())
                     <div class="flex justify-center mb-4">
-                        <div class="inline-flex items-center gap-2 px-4 py-2 border rounded-lg bg-amber-50 dark:bg-amber-900/20 border-amber-200 dark:border-amber-800 text-amber-800 dark:text-amber-200">
+                        <div class="inline-flex items-center gap-2 px-4 py-2 border rounded-2xl bg-amber-50 dark:bg-amber-900/20 border-amber-200 dark:border-amber-800 text-amber-800 dark:text-amber-200">
                             <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
@@ -538,7 +538,7 @@
                     @foreach ($this->ticketStatuses as $status)
                         <div
                             wire:key="status-column-{{ $status->id }}"
-                            class="status-column rounded-xl border border-gray-200 dark:border-gray-700 flex flex-col bg-gray-50 dark:bg-gray-900 w-[calc(85vw-2rem)] min-w-[280px] max-w-[350px] h-[700px] sm:w-[calc((100vw-6rem)/2)] sm:h-[750px] lg:w-[calc((100vw-8rem)/3)] lg:h-[800px] xl:w-[calc((100vw-10rem)/4)] xl:h-[850px]"
+                            class="stage-column rounded-xl border border-border-light dark:border-border-dark flex flex-col bg-main-light dark:bg-main-dark w-[calc(85vw-2rem)] min-w-[300px] max-w-[380px] h-[700px] sm:w-[calc((100vw-6rem)/2)] sm:h-[750px] lg:w-[calc((100vw-8rem)/3)] lg:h-[800px] xl:w-[calc((100vw-10rem)/4)] xl:h-[850px]"
                             data-status-id="{{ $status->id }}"
                         >
                             <div
@@ -546,9 +546,9 @@
                                 style="background-color: {{ $status->color ?? '#f3f4f6' }};"
                             >
                                 <div class="flex items-center justify-between">
-                                    <h3 class="flex items-center gap-2 font-semibold text-gray-900 dark:text-white" style="color: white; text-shadow: 0px 0px 1px rgba(0,0,0,0.5);">
+                                    <h3 class="flex items-center gap-2 font-semibold text-black dark:text-white" style="color: white; text-shadow: 0px 0px 1px rgba(0,0,0,0.5);">
                                         <span>{{ $status->name }}</span>
-                                        <span class="inline-flex items-center justify-center flex-shrink-0 w-6 h-6 text-xs font-medium rounded-full text-primary-700 bg-primary-100 dark:text-gray-100 dark:bg-gray-800">{{ $status->tickets->count() }}</span>
+                                        <span class="inline-flex items-center justify-center flex-shrink-0 w-6 h-6 text-xs font-medium rounded-full text-primary-700 bg-primary-100 dark:text-white dark:bg-gray-800">{{ $status->tickets->count() }}</span>
                                         @if($status->is_completed)
                                             <div class="flex items-center justify-center w-6 h-6 bg-green-500 border-2 border-white rounded-full shadow-lg" title="Completed Status">
                                                 <svg class="w-3 h-3 font-bold text-white" fill="currentColor" viewBox="0 0 20 20">
@@ -560,14 +560,12 @@
 
                                     <!-- Sort Menu Dropdown -->
                                     <div class="relative" x-data="{ open: false }">
-                                        <button
-                                            @click="open = !open"
-                                            @click.away="open = false"
-                                            class="p-1 transition-colors rounded hover:bg-black hover:bg-opacity-20"
-                                            style="color: white;"
-                                        >
-                                            <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-                                                <path d="M10 6a2 2 0 110-4 2 2 0 010 4zM10 12a2 2 0 110-4 2 2 0 010 4zM10 18a2 2 0 110-4 2 2 0 010 4z"></path>
+                                        <button @click="open = !open" @click.away="open = false"
+                                            class="p-1 text-white transition-colors rounded">
+                                            <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                                                <path
+                                                    d="M10 6a2 2 0 110-4 2 2 0 010 4zM10 12a2 2 0 110-4 2 2 0 010 4zM10 18a2 2 0 110-4 2 2 0 010 4z">
+                                                </path>
                                             </svg>
                                         </button>
 
@@ -579,15 +577,19 @@
                                             x-transition:leave="transition ease-in duration-75"
                                             x-transition:leave-start="transform opacity-100 scale-100"
                                             x-transition:leave-end="transform opacity-0 scale-95"
-                                            class="absolute left-0 z-50 bg-white border border-gray-200 rounded-lg shadow-lg top-8 w-52 dark:bg-gray-800 dark:border-gray-700"
+                                            class="absolute left-0 z-50 border shadow-lg rounded-2xl border-border-light bg-secondary-light top-8 w-52 dark:bg-secondary-dark dark:border-border-dark"
                                             style="display: none; transform: translateX(-100%);"
                                         >
                                             <div class="p-2">
-                                                <div class="flex items-center justify-between px-3 py-2 border-b border-gray-200 dark:border-gray-700">
-                                                    <span class="text-sm font-medium text-gray-900 dark:text-white">Urutkan list</span>
-                                                    <button @click="open = false" class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300">
+                                                <div
+                                                    class="flex items-center justify-between px-3 py-2 border-b border-border-light dark:border-border-dark">
+                                                    <span class="text-sm font-medium text-black dark:text-white">Urutkan
+                                                        list</span>
+                                                    <button @click="open = false"
+                                                        class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300">
                                                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                                d="M6 18L18 6M6 6l12 12"></path>
                                                         </svg>
                                                     </button>
                                                 </div>
@@ -596,35 +598,35 @@
                                                     <button
                                                         wire:click="setSortOrder({{ $status->id }}, 'date_created_newest')"
                                                         @click="open = false"
-                                                        class="w-full px-3 py-2 text-sm text-left text-gray-700 rounded dark:text-white"
+                                                        class="w-full px-3 py-2 text-sm text-left text-gray-700 rounded dark:text-white hover:bg-accent-light dark:hover:bg-accent-dark"
                                                     >
                                                         Tanggal dibuat (terbaru dulu)
                                                     </button>
                                                     <button
                                                         wire:click="setSortOrder({{ $status->id }}, 'date_created_oldest')"
                                                         @click="open = false"
-                                                        class="w-full px-3 py-2 text-sm text-left text-gray-700 rounded dark:text-white"
+                                                        class="w-full px-3 py-2 text-sm text-left text-gray-700 rounded dark:text-white hover:bg-accent-light dark:hover:bg-accent-dark"
                                                     >
                                                         Tanggal dibuat (terlama dulu)
                                                     </button>
                                                     <button
                                                         wire:click="setSortOrder({{ $status->id }}, 'card_name_alphabetical')"
                                                         @click="open = false"
-                                                        class="w-full px-3 py-2 text-sm text-left text-gray-700 rounded dark:text-white"
+                                                        class="w-full px-3 py-2 text-sm text-left text-gray-700 rounded dark:text-white hover:bg-accent-light dark:hover:bg-accent-dark"
                                                     >
                                                         Nama kartu (A–Z)
                                                     </button>
                                                     <button
                                                         wire:click="setSortOrder({{ $status->id }}, 'due_date')"
                                                         @click="open = false"
-                                                        class="w-full px-3 py-2 text-sm text-left text-gray-700 rounded dark:text-white"
+                                                        class="w-full px-3 py-2 text-sm text-left text-gray-700 rounded dark:text-white hover:bg-accent-light dark:hover:bg-accent-dark"
                                                     >
                                                         Jatuh tempo
                                                     </button>
                                                     <button
                                                         wire:click="setSortOrder({{ $status->id }}, 'priority')"
                                                         @click="open = false"
-                                                        class="w-full px-3 py-2 text-sm text-left text-gray-700 rounded dark:text-white"
+                                                        class="w-full px-3 py-2 text-sm text-left text-gray-700 rounded dark:text-white hover:bg-accent-light dark:hover:bg-accent-dark"
                                                     >
                                                         Prioritas
                                                     </button>
@@ -639,7 +641,7 @@
                                 @foreach ($status->tickets as $index => $ticket)
                                     <div
                                         wire:key="ticket-{{ $status->id }}-{{ $ticket->id }}"
-                                        class="relative p-3 bg-white border border-gray-200 rounded-lg shadow-sm cursor-move ticket-card dark:bg-gray-800 dark:border-gray-700"
+                                        class="relative p-3 border border-l-4 cursor-move rounded-2xl bg-secondary-light border-border-light dark:bg-secondary-dark dark:border-border-dark ticket-card"
                                         data-ticket-id="{{ $ticket->id }}"
                                         style="border-left: 4px solid {{ $ticket->priority->color }};"
                                         x-show="{{ $index }} < visibleTickets"
@@ -648,26 +650,27 @@
                                         x-transition:enter-end="opacity-100 transform scale-100"
                                     >
                                         <div class="flex items-center justify-between mb-3">
-                                            <span class="text-xs font-mono text-gray-500 dark:text-gray-400 px-1.5 py-0.5 bg-gray-100 dark:bg-gray-700 rounded truncate">
+                                            <span class="text-xs font-mono font-medium text-gray-600 dark:text-gray-300 px-1.5 py-0.5 bg-accent-light dark:bg-accent-dark rounded truncate">
                                                 {{ $ticket->uuid }}
                                             </span>
-                                            @if ($ticket->due_date)
-                                                <span class="inline-flex items-center text-xs whitespace-nowrap {{ $ticket->due_date->isPast() ? 'text-red-800 dark:text-red-300' : 'text-gray-800 dark:text-gray-300' }}">
-                                                    <x-heroicon-m-calendar class="w-3 h-3 mr-1" />
-                                                    {{ $ticket->due_date->format('d M y') }}
-                                                </span>
-                                            @endif
                                         </div>
 
-                                        <h4 class="mb-2 text-[15px] font-medium text-gray-900 dark:text-white">{{ $ticket->name }}</h4>
+                                        <h4 class="mb-2 text-[15px] font-semibold text-black dark:text-white line-clamp-2">{{ $ticket->name }}</h4>
 
                                         @if ($ticket->description)
                                             <p class="mb-3 text-sm text-gray-500 dark:text-gray-400 line-clamp-2">
-                                                {{ \Illuminate\Support\Str::limit(strip_tags($ticket->description), 100) }} Lorem ipsum dolor sit amet consectetur adipisicing elit. Ratione, repudiandae.
+                                                {{ \Illuminate\Support\Str::limit(strip_tags($ticket->description), 100) }}
                                             </p>
                                         @endif
+
+                                        @if ($ticket->due_date)
+                                            <span class="inline-flex items-center text-xs whitespace-nowrap {{ $ticket->due_date->isPast() ? 'text-red-600 dark:text-red-400' : 'text-gray-500 dark:text-gray-400' }}">
+                                                <x-heroicon-m-calendar class="w-3 h-3 mr-1" />
+                                                {{ $ticket->due_date->format('d M y') }}
+                                            </span>
+                                        @endif
                                         
-                                        <div class="flex items-center justify-between gap-3 pt-3 mt-4 border-t border-gray-100 dark:border-gray-700">
+                                        <div class="flex items-center justify-between gap-3 pt-3 mt-4 border-t border-gray-300 dark:border-border-dark">
                                             
                                             @if($this->canMoveTickets())
                                                 <div class="relative flex-1 min-w-0" x-data="{ open: false }">
@@ -676,7 +679,7 @@
                                                         @click="open = !open"
                                                         @click.away="open = false"
                                                         type="button"
-                                                        class="flex items-center justify-between w-full px-2.5 py-1.5 text-xs font-medium text-gray-700 transition-all bg-white border border-gray-200 rounded-lg shadow-sm hover:bg-gray-50 hover:border-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:text-gray-200 dark:hover:bg-gray-600"
+                                                        class="flex items-center justify-between w-full px-2.5 py-1.5 text-xs font-medium text-gray-700 transition-all bg-main-light border border-border-light rounded-2xl shadow-sm hover:bg-accent-light dark:bg-accent-dark dark:border-border-dark dark:text-gray-300 dark:hover:bg-secondary-dark"
                                                     >
                                                         <div class="flex items-center gap-2 overflow-hidden">
                                                             <div class="flex-shrink-0 w-2 h-2 rounded-full shadow-sm" style="background-color: {{ $status->color ?? '#9CA3AF' }};"></div>
@@ -693,7 +696,7 @@
                                                         x-transition:enter="transition ease-out duration-100"
                                                         x-transition:enter-start="opacity-0 scale-95 -translate-y-2"
                                                         x-transition:enter-end="opacity-100 scale-100 translate-y-0"
-                                                        class="absolute left-0 z-30 w-full min-w-[150px] mt-1 overflow-y-auto origin-top bg-white border border-gray-200 rounded-lg shadow-xl dark:bg-gray-800 dark:border-gray-700 max-h-48"
+                                                        class="absolute left-0 top-full mt-1 z-40 w-full min-w-[150px] overflow-y-auto origin-top bg-secondary-light border border-border-light rounded-2xl shadow-xl dark:bg-secondary-dark dark:border-border-dark max-h-48 no-scrollbar"
                                                         style="display: none;"
                                                     >
                                                         <div class="p-1">
@@ -702,10 +705,10 @@
                                                                     type="button"
                                                                     wire:click="moveTicket({{ $ticket->id }}, {{ $statusOption->id }})"
                                                                     @click="open = false"
-                                                                    class="flex items-center w-full gap-2 px-3 py-2 text-sm text-left rounded-md transition-colors group
+                                                                    class="flex items-center w-full gap-2 px-3 py-2 text-sm text-left rounded-lg transition-colors group
                                                                     {{ $statusOption->id === $status->id 
-                                                                        ? 'bg-primary-50 text-primary-700 dark:bg-primary-900/20 dark:text-primary-400 font-semibold' 
-                                                                        : 'text-gray-700 hover:bg-gray-100 dark:text-gray-200 dark:hover:bg-gray-700' 
+                                                                        ? 'bg-main-light text-main-primary dark:bg-accent-dark'
+                                        : 'text-gray-700 hover:bg-accent-light dark:text-gray-200 dark:hover:bg-accent-dark' 
                                                                     }}"
                                                                 >
                                                                     <div class="flex-shrink-0 w-2 h-2 rounded-full" style="background-color: {{ $statusOption->color ?? '#9CA3AF' }};"></div>
@@ -730,7 +733,7 @@
                                                         <button
                                                             @click="open = !open"
                                                             @click.away="open = false"
-                                                            class="flex items-center justify-center w-8 h-8 transition-colors bg-white border border-gray-200 rounded-full shadow-sm hover:bg-gray-50 dark:bg-gray-800 dark:border-gray-700 dark:hover:bg-gray-700 text-primary-600 dark:text-primary-500"
+                                                            class="relative flex items-center justify-center w-8 h-8 transition-colors border rounded-full shadow-sm border-border-light bg-main-light hover:bg-accent-light dark:bg-accent-dark dark:border-border-dark dark:hover:bg-secondary-dark text-main-primary"
                                                             title="Lihat semua {{ $ticket->assignees->count() }} assignees"
                                                         >
                                                             <x-heroicon-o-user class="w-4 h-4" />
@@ -741,16 +744,16 @@
                                                             x-transition:enter="transition ease-out duration-100"
                                                             x-transition:enter-start="opacity-0 scale-95"
                                                             x-transition:enter-end="opacity-100 scale-100"
-                                                            class="absolute right-0 z-40 w-64 p-2 mt-2 origin-top-right bg-white border border-gray-200 rounded-lg shadow-xl md:w-56 dark:bg-gray-800 dark:border-gray-700"
+                                                            class="absolute right-[-120%] z-[999] w-64 p-2 mt-2 origin-top-right bg-secondary-light border border-border-light rounded-2xl shadow-xl dark:bg-secondary-dark dark:border-border-dark"
                                                             style="display: none;"
                                                         >
-                                                            <div class="px-2 py-1.5 mb-2 text-xs font-semibold tracking-wider text-gray-500 uppercase border-b dark:text-gray-400 dark:border-gray-700">
+                                                            <div class="px-2 py-1.5 mb-2 text-xs font-semibold tracking-wider text-gray-500 uppercase border-b dark:text-gray-400 dark:border-border-dark">
                                                                 {{ $ticket->assignees->count() }} Ditugaskan
                                                             </div>
                                                             
                                                             <div class="flex flex-col gap-1 overflow-y-auto max-h-48 custom-scrollbar">
                                                                 @foreach($ticket->assignees as $assignee)
-                                                                    <div class="flex items-center gap-2 px-2 py-1.5 rounded-md hover:bg-gray-50 dark:hover:bg-gray-700">
+                                                                    <div class="flex items-center gap-2 px-2 py-1.5 rounded-md hover:bg-accent-light dark:hover:bg-accent-dark">
                                                                         <span class="flex items-center justify-center flex-shrink-0 w-6 h-6 text-xs text-white rounded-full bg-primary-500">
                                                                             {{ substr($assignee->full_name, 0, 1) }}
                                                                         </span>
@@ -762,13 +765,11 @@
                                                             </div>
 
                                                             @if($ticket->creator) 
-                                                                <div class="my-2 border-t border-gray-200 dark:border-gray-700"></div>
-
-                                                                <div class="px-2 py-1 text-xs font-semibold tracking-wider text-gray-500 uppercase dark:text-gray-400">
+                                                                <div class="mt-2 px-2 py-1.5 mb-2 text-xs font-semibold tracking-wider text-gray-500 uppercase border-b dark:text-gray-400 dark:border-border-dark">
                                                                     Dibuat oleh
                                                                 </div>
 
-                                                                <div class="flex items-center gap-2 px-2 py-1.5 rounded-md hover:bg-gray-50 dark:hover:bg-gray-700">
+                                                                <div class="flex items-center gap-2 px-2 py-1.5 rounded-md hover:bg-accent-light dark:hover:bg-accent-dark">
                                                                     <span class="flex items-center justify-center flex-shrink-0 w-6 h-6 text-xs text-white rounded-full bg-slate-500">
                                                                         {{ substr($ticket->creator->full_name ?? 'Admin', 0, 1) }}
                                                                     </span>
@@ -801,7 +802,7 @@
                                                         }, 0);
                                                         return false;
                                                     "
-                                                    class="flex items-center justify-center w-8 h-8 transition-colors bg-white border border-gray-200 rounded-full shadow-sm hover:bg-gray-50 dark:bg-gray-800 dark:border-gray-700 dark:hover:bg-gray-700 text-primary-600 dark:text-primary-500"
+                                                    class="flex items-center justify-center w-8 h-8 transition-colors bg-white border border-gray-200 rounded-full shadow-sm hover:bg-main-light dark:bg-gray-800 dark:border-gray-700 dark:hover:bg-gray-700 text-main-primary"
                                                     title="Lihat detail ticket"
                                                 >
                                                     <x-heroicon-o-eye class="w-4 h-4" />
@@ -813,7 +814,7 @@
                                 @endforeach
 
                                 @if ($status->tickets->isEmpty())
-                                    <div class="flex items-center justify-center h-24 text-sm italic text-gray-500 border border-gray-300 border-dashed rounded-lg dark:text-gray-400 dark:border-gray-700">
+                                    <div class="flex items-center justify-center h-24 text-sm italic text-gray-500 border border-gray-300 border-dashed rounded-2xl dark:text-gray-400 dark:border-gray-700">
                                         Tidak ada ticket di status ini
                                     </div>
                                 @else

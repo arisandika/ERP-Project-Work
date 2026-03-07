@@ -159,7 +159,7 @@
                                     <?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if BLOCK]><![endif]--><?php endif; ?><?php if(filled($itemLabel)): ?>
                                         <h4
                                             class="<?php echo \Illuminate\Support\Arr::toCssClasses([
-                                                'text-sm font-medium text-gray-950 dark:text-white',
+                                                'text-sm font-medium text-black dark:text-white',
                                                 'truncate' => $isItemLabelTruncated(),
                                             ]); ?>"
                                         >

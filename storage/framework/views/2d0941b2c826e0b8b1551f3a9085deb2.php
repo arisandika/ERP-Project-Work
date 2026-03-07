@@ -60,7 +60,7 @@
 
             <a href="<?php echo e($url); ?>" 
                target="_blank"
-               class="relative flex items-center gap-3 p-3 transition-all duration-200 border shadow-sm group rounded-xl bg-secondary-light border-border-light hover:bg-main-light hover:border-main-primary/30 dark:bg-secondary-dark dark:border-border-dark dark:hover:bg-main-dark dark:hover:border-main-primary/30">
+               class="relative flex items-center gap-3 p-3 transition-all duration-200 border shadow-sm group rounded-xl bg-secondary-light border-border-light hover:bg-main-light hover:border-main-primary dark:bg-secondary-dark dark:border-border-dark dark:hover:bg-main-dark dark:hover:border-main-primary">
                 
                 
                 <div class="flex-shrink-0 p-2 transition-colors rounded-lg bg-secondary-light dark:bg-secondary-dark group-hover:bg-white dark:group-hover:bg-accent-dark">
@@ -88,7 +88,7 @@
 
                 
                 <div class="flex-1 min-w-0">
-                    <p class="text-sm font-semibold text-gray-900 truncate transition-colors dark:text-gray-100 group-hover:text-main-primary">
+                    <p class="text-sm font-semibold text-black truncate transition-colors dark:text-white group-hover:text-main-primary">
                         <?php echo e($docName); ?>
 
                     </p>

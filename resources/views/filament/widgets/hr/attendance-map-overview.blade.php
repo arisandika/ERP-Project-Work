@@ -10,7 +10,7 @@
 
         <div class="grid grid-cols-1 gap-4 mb-6 md:gap-3 md:grid-cols-2">
             <div class="grid gap-y-2">
-                <label for="filter-date" class="text-sm font-medium leading-6 text-gray-950 dark:text-white">
+                <label for="filter-date" class="text-sm font-medium leading-6 text-black dark:text-white">
                     Tanggal <sup class="text-danger-600 dark:text-danger-400">*</sup>
                 </label>
                 <div
@@ -19,12 +19,12 @@
                         <x-heroicon-o-calendar class="w-5 h-5 text-gray-400 dark:text-gray-500" />
                     </div>
                     <input id="filter-date" type="date" value="{{ request('date', now()->toDateString()) }}"
-                        class="w-full border-none bg-transparent px-3 py-1.5 text-sm text-gray-950 outline-none dark:text-white" />
+                        class="w-full border-none bg-transparent px-3 py-1.5 text-sm text-black outline-none dark:text-white" />
                 </div>
             </div>
 
             <div class="grid gap-y-2">
-                <label for="filter-office" class="text-sm font-medium leading-6 text-gray-950 dark:text-white">
+                <label for="filter-office" class="text-sm font-medium leading-6 text-black dark:text-white">
                     Kantor Cabang <sup class="text-danger-600 dark:text-danger-400">*</sup>
                 </label>
                 <div
@@ -33,7 +33,7 @@
                         <x-heroicon-o-building-office class="w-5 h-5 text-gray-400 dark:text-gray-500" />
                     </div>
                     <select id="filter-office"
-                        class="w-full border-none bg-transparent px-3 py-1.5 text-sm text-gray-950 outline-none dark:text-white [&_optgroup]:bg-main-light [&_optgroup]:dark:bg-main-dark [&_option]:bg-main-light [&_option]:dark:bg-main-dark">
+                        class="w-full border-none bg-transparent px-3 py-1.5 text-sm text-black outline-none dark:text-white [&_optgroup]:bg-main-light [&_optgroup]:dark:bg-main-dark [&_option]:bg-main-light [&_option]:dark:bg-main-dark">
                         <option value="">Semua Kantor</option>
                         @foreach(\App\Models\HR\Office::all() as $office)
                             <option value="{{ $office->id }}">{{ $office->name }}</option>

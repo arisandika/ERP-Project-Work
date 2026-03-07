@@ -53,7 +53,7 @@ unset($__defined_vars, $__key, $__value); ?>
                 </tr>
             <?php endif; ?><?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if ENDBLOCK]><![endif]--><?php endif; ?>
 
-            <tr class="bg-gray-50 dark:bg-white/5">
+            <tr class="bg-main-light dark:bg-white/5">
                 <?php echo e($header); ?>
 
             </tr>
@@ -73,7 +73,7 @@ unset($__defined_vars, $__key, $__value); ?>
     </tbody>
 
     <?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if BLOCK]><![endif]--><?php endif; ?><?php if($footer): ?>
-        <tfoot class="bg-gray-50 dark:bg-white/5">
+        <tfoot class="bg-main-light dark:bg-white/5">
             <tr>
                 <?php echo e($footer); ?>
 

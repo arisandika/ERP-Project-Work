@@ -46,7 +46,7 @@
                     <div>
                         <div>
                             <span
-                                class="text-base font-medium text-gray-900 dark:text-white">{{ $history->status->name }}</span>
+                                class="text-base font-medium text-black dark:text-white">{{ $history->status->name }}</span>
                         </div>
 
                         <div class="flex items-center mt-1 text-xs text-gray-400 gap-x-1">

@@ -11,7 +11,7 @@
         body { font-family: 'Inter', sans-serif; }
     </style>
 </head>
-<body class="bg-gray-50 min-h-screen pb-10">
+<body class="bg-main-light min-h-screen pb-10">
 
     <!-- Header / Navbar -->
     <div class="bg-blue-900 text-white shadow-md">
@@ -47,7 +47,7 @@
 
         <!-- Card Informasi DO -->
         <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden mb-6">
-            <div class="border-b border-gray-100 bg-gray-50 px-5 py-4 flex justify-between items-center">
+            <div class="border-b border-gray-100 bg-main-light px-5 py-4 flex justify-between items-center">
                 <div>
                     <p class="text-xs text-gray-500 font-medium uppercase mb-1">No. Surat Jalan</p>
                     <h2 class="text-lg font-bold text-gray-800">{{ $do->do_number }}</h2>
@@ -72,15 +72,15 @@
             <div class="p-5 grid grid-cols-2 gap-4 text-sm">
                 <div>
                     <p class="text-gray-500 mb-1">Tanggal Kirim</p>
-                    <p class="font-medium text-gray-900">{{ \Carbon\Carbon::parse($do->do_date)->format('d F Y') }}</p>
+                    <p class="font-medium text-black">{{ \Carbon\Carbon::parse($do->do_date)->format('d F Y') }}</p>
                 </div>
                 <div>
                     <p class="text-gray-500 mb-1">Pengirim / PIC</p>
-                    <p class="font-medium text-gray-900">{{ $do->employee->full_name ?? '-' }}</p>
+                    <p class="font-medium text-black">{{ $do->employee->full_name ?? '-' }}</p>
                 </div>
                 <div class="col-span-2 mt-2">
                     <p class="text-gray-500 mb-1">Dikirim Kepada</p>
-                    <div class="bg-gray-50 p-3 rounded border border-gray-100">
+                    <div class="bg-main-light p-3 rounded border border-gray-100">
                         <p class="font-bold text-gray-800">{{ $do->customer->name ?? 'UMUM' }}</p>
                         <p class="text-gray-600 mt-1">{{ $do->customer->address ?? '-' }}</p>
                     </div>
@@ -105,7 +105,7 @@
                     </div>
                     <div class="text-right">
                         <p class="text-xs text-gray-500 mb-1">Qty</p>
-                        <p class="font-bold text-lg text-gray-900">
+                        <p class="font-bold text-lg text-black">
                             {{ $item->qty }}
                             <span class="text-xs font-normal text-gray-500">{{ $item->uom ?? 'Pcs' }}</span>
                         </p>

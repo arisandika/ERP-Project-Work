@@ -4,18 +4,25 @@ namespace App\Filament\Resources\Project;
 
 use App\Filament\Resources\Project\TicketResource\Pages;
 use App\Filament\Resources\Project\TicketResource\RelationManagers;
+use App\Models\HR\Employee;
 use App\Models\Project\Epic;
 use App\Models\Project\Project;
 use App\Models\Project\Ticket;
 use App\Models\Project\TicketPriority;
 use App\Models\Project\TicketStatus;
 use Filament\Forms;
+use Filament\Forms\Components\Radio;
+use Filament\Forms\Components\Select;
 use Filament\Forms\Form;
+use Filament\Notifications\Notification;
+use Filament\Resources\RelationManagers\RelationManager;
 use Filament\Resources\Resource;
 use Filament\Tables;
+use Filament\Tables\Actions\BulkAction;
 use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
 use Illuminate\Support\Carbon;
 
@@ -27,11 +34,11 @@ class TicketResource extends Resource
 
     protected static ?string $navigationGroup = 'Manajemen Project';
 
-    protected static ?int $navigationSort = 5;
+    protected static ?int $navigationSort = 4;
 
     protected static ?string $slug = 'pm/tickets';
 
-    protected static ?string $pluralModelLabel = 'Tickets';
+    protected static ?string $pluralModelLabel = 'Ticket';
 
     public static function getNavigationBadge(): ?string
     {
@@ -45,158 +52,162 @@ class TicketResource extends Resource
 
         return $form
             ->schema([
-                Forms\Components\Select::make('project_id')
-                    ->label('Pilih Project')
-                    ->options(function () {
-                        if (auth()->user()->hasRole(['super_admin'])) {
-                            return Project::pluck('name', 'id')->toArray();
-                        }
+                Forms\Components\Section::make('Informasi Ticket')
+                    ->schema([
+                        Forms\Components\Select::make('project_id')
+                            ->label('Pilih Project')
+                            ->options(function () {
+                                if (auth()->user()->hasRole(['super_admin'])) {
+                                    return Project::pluck('name', 'id')->toArray();
+                                }
 
-                        return auth()->user()
-                            ->employee
-                            ->projects()
-                            ->pluck('name', 'nx_projects.id')
-                            ->toArray();
-                    })
-                    ->default(fn() => request()->query('project_id'))
-                    ->afterStateHydrated(function ($state, callable $set) {
-                        if (!$state && request()->query('project_id')) {
-                            $set('project_id', request()->query('project_id'));
-                        }
-                    })
-                    ->disabled(fn() => request()->has('project_id'))
-                    ->required()
-                    ->searchable()
-                    ->preload()
-                    ->live()
-                    ->afterStateUpdated(function (Forms\Set $set) {
-                        $set('ticket_status_id', null);
-                        $set('assignees', []);
-                        $set('epic_id', null);
-                    }),
+                                return auth()->user()
+                                    ->employee
+                                    ->projects()
+                                    ->pluck('name', 'nx_projects.id')
+                                    ->toArray();
+                            })
+                            ->default(fn() => request()->query('project_id'))
+                            ->afterStateHydrated(function ($state, callable $set) {
+                                if (!$state && request()->query('project_id')) {
+                                    $set('project_id', request()->query('project_id'));
+                                }
+                            })
+                            ->disabled(fn() => request()->has('project_id'))
+                            ->required()
+                            ->searchable()
+                            ->preload()
+                            ->live()
+                            ->afterStateUpdated(function (Forms\Set $set) {
+                                $set('ticket_status_id', null);
+                                $set('assignees', []);
+                                $set('epic_id', null);
+                            }),
 
-                Forms\Components\TextInput::make('name')
-                    ->label('Nama Ticket')
-                    ->required()
-                    ->maxLength(255),
+                        Forms\Components\TextInput::make('name')
+                            ->label('Nama Ticket')
+                            ->required()
+                            ->maxLength(255),
 
-                Forms\Components\Select::make('epic_id')
-                    ->label('Epic')
-                    ->options(function (Forms\Get $get) {
-                        $projectId = $get('project_id');
+                        Forms\Components\Select::make('epic_id')
+                            ->label('Epic')
+                            ->options(function (Forms\Get $get) {
+                                $projectId = $get('project_id');
 
-                        if (!$projectId) {
-                            return [];
-                        }
+                                if (!$projectId) {
+                                    return [];
+                                }
 
-                        return Epic::where('project_id', $projectId)
-                            ->pluck('name', 'id')
-                            ->toArray();
-                    })
-                    ->required()
-                    ->searchable()
-                    ->preload()
-                    ->hidden(fn(Forms\Get $get): bool => !$get('project_id')),
+                                return Epic::where('project_id', $projectId)
+                                    ->pluck('name', 'id')
+                                    ->toArray();
+                            })
+                            ->required()
+                            ->searchable()
+                            ->preload()
+                            ->hidden(fn(Forms\Get $get): bool => !$get('project_id')),
 
-                Forms\Components\Select::make('ticket_status_id')
-                    ->label('Status')
-                    ->options(function (Forms\Get $get) {
-                        $projectId = $get('project_id');
+                        Forms\Components\Select::make('ticket_status_id')
+                            ->label('Status')
+                            ->options(function (Forms\Get $get) {
+                                $projectId = $get('project_id');
 
-                        if (!$projectId) {
-                            return [];
-                        }
+                                if (!$projectId) {
+                                    return [];
+                                }
 
-                        return TicketStatus::where('project_id', $projectId)
-                            ->pluck('name', 'id')
-                            ->toArray();
-                    })
-                    ->default($statusId)
-                    ->required()
-                    ->searchable()
-                    ->preload(),
+                                return TicketStatus::where('project_id', $projectId)
+                                    ->pluck('name', 'id')
+                                    ->toArray();
+                            })
+                            ->default($statusId)
+                            ->required()
+                            ->searchable()
+                            ->preload(),
 
-                Forms\Components\Select::make('priority_id')
-                    ->label('Prioritas Ticket')
-                    ->options(TicketPriority::pluck('name', 'id')->toArray())
-                    ->searchable()
-                    ->preload()
-                    ->nullable(),
+                        Forms\Components\Select::make('priority_id')
+                            ->label('Prioritas Ticket')
+                            ->options(TicketPriority::pluck('name', 'id')->toArray())
+                            ->searchable()
+                            ->preload()
+                            ->nullable(),
 
-                Forms\Components\DatePicker::make('start_date')
-                    ->label('Tanggal Mulai')
-                    ->default(now())
-                    ->prefixIcon('heroicon-o-calendar-days')
-                    ->required()
-                    ->displayFormat('d M Y')
-                    ->native(false),
+                        Forms\Components\DatePicker::make('start_date')
+                            ->label('Tanggal Mulai')
+                            ->default(now())
+                            ->prefixIcon('heroicon-o-calendar-days')
+                            ->required()
+                            ->displayFormat('d M Y')
+                            ->native(false),
 
-                Forms\Components\DatePicker::make('due_date')
-                    ->label('Tanggal Selesai')
-                    ->required()
-                    ->displayFormat('d M Y')
-                    ->native(false)
-                    ->prefixIcon('heroicon-o-calendar-days'),
+                        Forms\Components\DatePicker::make('due_date')
+                            ->label('Tanggal Selesai')
+                            ->required()
+                            ->displayFormat('d M Y')
+                            ->native(false)
+                            ->prefixIcon('heroicon-o-calendar-days'),
 
-                Forms\Components\Select::make('assignees')
-                    ->label('Ditugaskan Kepada')
-                    ->multiple()
-                    ->relationship(
-                        name: 'assignees',
-                        titleAttribute: 'full_name',
-                        modifyQueryUsing: function (Builder $query, Forms\Get $get) {
-                            $projectId = $get('project_id');
+                        Forms\Components\Select::make('assignees')
+                            ->label('Ditugaskan Kepada')
+                            ->multiple()
+                            ->relationship(
+                                name: 'assignees',
+                                titleAttribute: 'full_name',
+                                modifyQueryUsing: function (Builder $query, Forms\Get $get) {
+                                    $projectId = $get('project_id');
 
-                            if (!$projectId) {
-                                return $query->whereRaw('1 = 0');
-                            }
+                                    if (!$projectId) {
+                                        return $query->whereRaw('1 = 0');
+                                    }
 
-                            return $query->whereHas('projects', function (Builder $query) use ($projectId) {
-                                $query->where('nx_projects.id', $projectId);
-                            });
-                        }
-                    )
-                    ->searchable()
-                    ->preload()
-                    ->default(function ($record) {
-                        if ($record && $record->exists) {
-                            return $record->assignees->pluck('id')->toArray();
-                        }
+                                    return $query->whereHas('projects', function (Builder $query) use ($projectId) {
+                                        $query->where('nx_projects.id', $projectId);
+                                    });
+                                }
+                            )
+                            ->searchable()
+                            ->preload()
+                            ->default(function ($record) {
+                                if ($record && $record->exists) {
+                                    return $record->assignees->pluck('id')->toArray();
+                                }
 
-                        return [];
-                    })
-                    ->helperText(
-                        'Pilih beberapa member untuk ditugaskan Ticket ini. Hanya anggota project yang dapat ditugaskan.'
-                    ),
+                                return [];
+                            })
+                            ->helperText(
+                                'Pilih beberapa member untuk ditugaskan Ticket ini. Hanya anggota project yang dapat ditugaskan.'
+                            ),
 
-                Forms\Components\Select::make('created_by')
-                    ->label('Dibuat Oleh')
-                    ->relationship('creator', 'full_name')
-                    ->disabled()
-                    ->hidden(fn($record) => $record === null),
+                        Forms\Components\Select::make('created_by')
+                            ->label('Dibuat Oleh')
+                            ->relationship('creator', 'full_name')
+                            ->disabled()
+                            ->hidden(fn($record) => $record === null),
 
-                Forms\Components\RichEditor::make('description')
-                    ->label('Deskripsi Ticket')
-                    ->columnSpanFull()
-                    ->toolbarButtons([
-                        'attachFiles',
-                        'blockquote',
-                        'bold',
-                        'bulletList',
-                        'codeBlock',
-                        'h2',
-                        'h3',
-                        'italic',
-                        'link',
-                        'orderedList',
-                        'redo',
-                        'strike',
-                        'underline',
-                        'undo',
+                        Forms\Components\RichEditor::make('description')
+                            ->label('Deskripsi Ticket')
+                            ->columnSpanFull()
+                            ->toolbarButtons([
+                                'attachFiles',
+                                'blockquote',
+                                'bold',
+                                'bulletList',
+                                'codeBlock',
+                                'h2',
+                                'h3',
+                                'italic',
+                                'link',
+                                'orderedList',
+                                'redo',
+                                'strike',
+                                'underline',
+                                'undo',
+                            ])
+                            ->fileAttachmentsDisk('public')
+                            ->fileAttachmentsDirectory('attachments')
+                            ->fileAttachmentsVisibility('public'),
                     ])
-                    ->fileAttachmentsDisk('public')
-                    ->fileAttachmentsDirectory('attachments')
-                    ->fileAttachmentsVisibility('public'),
+                    ->columns(2)
             ]);
     }
 
@@ -208,17 +219,20 @@ class TicketResource extends Resource
                     ->label('Ticket ID')
                     ->searchable()
                     ->sortable()
+                    ->weight('semibold')
+                    ->placeholder('—')
                     ->copyable(),
-
-                Tables\Columns\TextColumn::make('project.name')
-                    ->label('Project')
-                    ->sortable()
-                    ->searchable(),
 
                 Tables\Columns\TextColumn::make('name')
                     ->label('Nama Ticket')
                     ->searchable()
                     ->sortable(),
+
+                Tables\Columns\TextColumn::make('epic.name')
+                    ->label('Epic')
+                    ->placeholder('No Epic')
+                    ->sortable()
+                    ->searchable(),
 
                 Tables\Columns\TextColumn::make('status.name')
                     ->label('Status')
@@ -234,7 +248,7 @@ class TicketResource extends Resource
                     ->formatStateUsing(fn(string $state): string => ucwords(str_replace('_', ' ', $state))),
 
                 Tables\Columns\TextColumn::make('priority.name')
-                    ->label('Priority')
+                    ->label('Prioritas')
                     ->badge()
                     ->color(fn(string $state): string => match ($state) {
                         'High' => 'danger',
@@ -246,24 +260,14 @@ class TicketResource extends Resource
                     ->default('—')
                     ->placeholder('No Priority'),
 
-                Tables\Columns\TextColumn::make('epic.name')
-                    ->label('Epic')
-                    ->badge()
-                    ->color('warning')
-                    ->placeholder('No Epic')
-                    ->sortable()
-                    ->searchable(),
-
                 Tables\Columns\TextColumn::make('assignees.full_name')
                     ->label('Ditugaskan')
                     ->badge()
-                    ->separator(',')
-                    ->expandableLimitedList()
+                    ->color('gray')
+                    ->icon('heroicon-o-user')
+                    ->listWithLineBreaks()
+                    ->placeholder('Belum ada member ditugaskan')
                     ->searchable(),
-
-                Tables\Columns\TextColumn::make('creator.full_name')
-                    ->label('Dibuat Oleh')
-                    ->sortable(),
 
                 Tables\Columns\TextColumn::make('start_date')
                     ->label('Tanggal Mulai')
@@ -274,6 +278,14 @@ class TicketResource extends Resource
                     ->label('Tanggal Selesai')
                     ->dateTime('d M Y')
                     ->sortable(),
+
+                Tables\Columns\TextColumn::make('creator.full_name')
+                    ->label('Dibuat Oleh')
+                    ->searchable()
+                    ->sortable()
+                    ->weight('semibold')
+                    ->icon('heroicon-o-user')
+                    ->placeholder('—'),
 
                 Tables\Columns\TextColumn::make('created_at')
                     ->label('Dibuat Pada')
@@ -302,11 +314,11 @@ class TicketResource extends Resource
 
                 SelectFilter::make('ticket_status_id')
                     ->label('Status')
-                    ->options(function () {
-                        $projectId = request()->input('tableFilters.project_id');
+                    ->options(function (\Livewire\Component $livewire) {
+                        $projectId = data_get($livewire, 'tableFilters.project_id.value');
 
                         if (!$projectId) {
-                            return [];
+                            return TicketStatus::pluck('name', 'id')->toArray();
                         }
 
                         return TicketStatus::where('project_id', $projectId)
@@ -318,11 +330,11 @@ class TicketResource extends Resource
 
                 SelectFilter::make('epic_id')
                     ->label('Epic')
-                    ->options(function () {
-                        $projectId = request()->input('tableFilters.project_id');
+                    ->options(function (\Livewire\Component $livewire) {
+                        $projectId = data_get($livewire, 'tableFilters.project_id.value');
 
                         if (!$projectId) {
-                            return [];
+                            return Epic::pluck('name', 'id')->toArray();
                         }
 
                         return Epic::where('project_id', $projectId)
@@ -332,23 +344,15 @@ class TicketResource extends Resource
                     ->searchable()
                     ->preload(),
 
-                SelectFilter::make('priority_id')
-                    ->label('Priority')
-                    ->options(TicketPriority::pluck('name', 'id')->toArray())
-                    ->searchable()
-                    ->preload(),
-
-                // Filter by assignees
-                SelectFilter::make('assignees')
-                    ->label('Assignee')
+                Tables\Filters\SelectFilter::make('assignees')
+                    ->label('Ditugaskan')
                     ->relationship('assignees', 'full_name')
                     ->multiple()
                     ->searchable()
                     ->preload(),
 
-                // Filter by creator
-                SelectFilter::make('created_by')
-                    ->label('Created By')
+                Tables\Filters\SelectFilter::make('created_by')
+                    ->label('Dibuat Oleh')
                     ->relationship('creator', 'full_name')
                     ->searchable()
                     ->preload(),
@@ -357,14 +361,12 @@ class TicketResource extends Resource
                     ->form([
                         Forms\Components\DatePicker::make('created_from')
                             ->label('Dibuat Dari')
-                            ->required()
                             ->displayFormat('d M Y')
                             ->native(false)
                             ->prefixIcon('heroicon-o-calendar-days'),
 
                         Forms\Components\DatePicker::make('created_until')
                             ->label('Dibuat Hingga')
-                            ->required()
                             ->displayFormat('d M Y')
                             ->native(false)
                             ->prefixIcon('heroicon-o-calendar-days'),
@@ -401,6 +403,142 @@ class TicketResource extends Resource
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([
                     Tables\Actions\DeleteBulkAction::make(),
+
+                    Tables\Actions\BulkAction::make('updateStatus')
+                        ->label('Update Status')
+                        ->icon('heroicon-o-arrow-path')
+                        ->form([
+                            Forms\Components\Select::make('ticket_status_id')
+                                ->label('Status')
+                                ->options(function (\Livewire\Component $livewire) {
+                                    if (method_exists($livewire, 'getOwnerRecord')) {
+                                        $projectId = $livewire->getOwnerRecord()->id;
+                                        return TicketStatus::where('project_id', $projectId)
+                                            ->pluck('name', 'id')
+                                            ->toArray();
+                                    }
+
+                                    return TicketStatus::pluck('name', 'id')->toArray();
+                                })
+                                ->searchable()
+                                ->preload()
+                                ->required(),
+                        ])
+                        ->action(function (array $data, Collection $records) {
+                            foreach ($records as $record) {
+                                $record->update([
+                                    'ticket_status_id' => $data['ticket_status_id'],
+                                ]);
+                            }
+
+                            Notification::make()
+                                ->success()
+                                ->title('Status updated')
+                                ->body(count($records) . ' tickets have been updated.')
+                                ->send();
+                        }),
+
+                    Tables\Actions\BulkAction::make('assignUsers')
+                        ->label('Tugaskan Member')
+                        ->icon('heroicon-o-user-plus')
+                        ->form([
+                            Forms\Components\Select::make('assignees')
+                                ->label('Member')
+                                ->multiple()
+                                ->options(function (\Livewire\Component $livewire) {
+                                    if (method_exists($livewire, 'getOwnerRecord')) {
+                                        return $livewire->getOwnerRecord()
+                                            ->members()
+                                            ->pluck('full_name', 'nx_employees.id')
+                                            ->toArray();
+                                    }
+
+                                    return Employee::pluck('full_name', 'id')->toArray();
+                                })
+                                ->searchable()
+                                ->preload()
+                                ->required(),
+
+                            Forms\Components\Radio::make('assignment_mode')
+                                ->label('Mode Penugasan')
+                                ->options([
+                                    'replace' => 'Akan mengganti semua member',
+                                    'add' => 'Tambahkan member baru',
+                                ])
+                                ->default('add')
+                                ->required(),
+                        ])
+                        ->action(function (array $data, Collection $records) {
+                            foreach ($records as $record) {
+                                if ($data['assignment_mode'] === 'replace') {
+                                    $record->assignees()->sync($data['assignees']);
+                                } else {
+                                    $record->assignees()->syncWithoutDetaching($data['assignees']);
+                                }
+                            }
+
+                            Notification::make()
+                                ->success()
+                                ->title('Users assigned')
+                                ->body(count($records) . ' ticket berhasil diperbarui dengan member ditugaskan')
+                                ->send();
+                        }),
+
+                    Tables\Actions\BulkAction::make('updatePriority')
+                        ->label('Update Prioritas')
+                        ->icon('heroicon-o-flag')
+                        ->form([
+                            Forms\Components\Select::make('priority_id')
+                                ->label('Prioritas')
+                                ->options(TicketPriority::pluck('name', 'id')->toArray())
+                                ->nullable(),
+                        ])
+                        ->action(function (array $data, Collection $records) {
+                            foreach ($records as $record) {
+                                $record->update([
+                                    'priority_id' => $data['priority_id'],
+                                ]);
+                            }
+                        }),
+
+                    Tables\Actions\BulkAction::make('assignToEpic')
+                        ->label('Tandai ke Epic')
+                        ->icon('heroicon-o-bookmark')
+                        ->form([
+                            Forms\Components\Select::make('epic_id')
+                                ->label('Epic')
+                                ->options(function (\Livewire\Component $livewire) {
+                                    if (method_exists($livewire, 'getOwnerRecord')) {
+                                        $projectId = $livewire->getOwnerRecord()->id;
+                                        return Epic::where('project_id', $projectId)
+                                            ->pluck('name', 'id')
+                                            ->toArray();
+                                    }
+
+                                    return Epic::pluck('name', 'id')->toArray();
+                                })
+                                ->searchable()
+                                ->preload()
+                                ->nullable()
+                                ->helperText('Pilih Epic yang akan dikaitkan dengan ticket, biarkan kosong jika ingin menghapus dari Epic saat ini'),
+                        ])
+                        ->action(function (array $data, Collection $records) {
+                            foreach ($records as $record) {
+                                $record->update([
+                                    'epic_id' => $data['epic_id'],
+                                ]);
+                            }
+
+                            $epicName = $data['epic_id']
+                                ? Epic::find($data['epic_id'])->name
+                                : 'No Epic';
+
+                            Notification::make()
+                                ->success()
+                                ->title('Epic assignment updated')
+                                ->body(count($records) . ' ticket berhasil ditugaskan untuk: ' . $epicName)
+                                ->send();
+                        }),
                 ]),
             ])
             ->defaultSort('created_at', 'desc');

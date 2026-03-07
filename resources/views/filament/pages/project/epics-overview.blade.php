@@ -9,11 +9,11 @@
         <div class="mb-6">
             <x-filament::section>
                 <div class="mb-5">
-                    <h2 class="text-lg font-semibold text-gray-900 dark:text-white">
+                    <h2 class="text-lg font-semibold text-black dark:text-white">
                         Pilih Project
                     </h2>
                     <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">
-                        Pilih project untuk melihat daftar epic yang ada di dalamnya
+                        Pilih project untuk melihat daftar epic
                     </p>
                 </div>
 
@@ -29,12 +29,12 @@
                             type="text"
                             wire:model.live.debounce.300ms="searchProject"
                             placeholder="Cari project berdasarkan nama atau prefix..."
-                            class="block w-full pl-10 pr-3 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                            class="block w-full pl-10 pr-3 py-2.5 border border-border-light dark:border-border-dark rounded-full bg-main-light dark:bg-accent-dark text-black dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:ring-2 focus:ring-main-primary focus:border-transparent outline-none"
                         />
                         @if($searchProject)
                             <button
                                 wire:click="$set('searchProject', '')"
-                                class="absolute inset-y-0 right-0 flex items-center pr-3 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+                                class="absolute inset-y-0 right-0 flex items-center pr-3 text-gray-400 hover:text-black dark:hover:text-white"
                             >
                                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
@@ -50,7 +50,7 @@
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                 d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 002 2z" />
                         </svg>
-                        <h3 class="mb-2 text-lg font-medium text-white">Tidak ada project yang tersedia</h3>
+                        <h3 class="mb-2 text-lg font-medium text-black dark:text-white">Tidak ada project yang tersedia</h3>
                         <p class="text-sm">Kamu belum memiliki akses ke project mana pun</p>
                     </div>
                 @elseif($this->filteredProjects->isEmpty())
@@ -58,15 +58,15 @@
                         <svg class="w-12 h-12 mb-3 text-gray-400 dark:text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
                         </svg>
-                        <h3 class="mb-1 text-base font-medium text-gray-900 dark:text-white">Project tidak ditemukan</h3>
+                        <h3 class="mb-1 text-base font-medium text-black dark:text-white">Project tidak ditemukan</h3>
                         <p class="text-sm text-gray-500 dark:text-gray-400">Coba ubah kata kunci pencarian</p>
                     </div>
                 @else
-                    <div class="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+                    <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
                         @foreach($this->filteredProjects as $project)
                             <button
                                 wire:click="$set('selectedProjectId', {{ $project->id }})"
-                                class="relative p-4 overflow-hidden text-left transition-all bg-white border border-gray-200 rounded-lg dark:bg-gray-800 dark:border-gray-700 hover:shadow-md"
+                                class="relative p-4 overflow-hidden text-left transition-all border rounded-2xl bg-main-light border-border-light dark:bg-accent-dark dark:border-border-dark hover:shadow-md hover:bg-main-light dark:hover:bg-main-dark"
                                 style="border-left: 4px solid {{ $project->color ?? '#6B7280' }};"
                             >
                                 {{-- Pin Icon Badge --}}
@@ -100,7 +100,7 @@
                                 @endif
 
                                 {{-- Project Name --}}
-                                <h3 class="text-base font-semibold text-gray-900 dark:text-white line-clamp-2">
+                                <h3 class="text-base font-semibold text-black dark:text-white line-clamp-2">
                                     {{ $project->name }}
                                 </h3>
                             </button>
@@ -116,8 +116,8 @@
                 <button
                     @click="open = !open"
                     @click.away="open = false"
-                    class="inline-flex items-center gap-2 px-4 py-2.5 text-sm font-medium text-gray-900 dark:text-white bg-white dark:bg-gray-800 border-2 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
-                    style="border-color: {{ $selectedProject->color ?? '#D1D5DB' }};"
+                    class="inline-flex items-center gap-2 px-4 py-3 text-sm font-medium text-black transition-colors border-2 dark:text-white bg-secondary-light dark:bg-accent-dark rounded-2xl hover:bg-main-light dark:hover:bg-main-dark"
+                    style="border-color: {{ $selectedProject->color ?? '#d9dbdc' }};"
                 >
                     @if($selectedProject->ticket_prefix)
                         @php
@@ -149,7 +149,7 @@
                     x-transition:leave="transition ease-in duration-75"
                     x-transition:leave-start="opacity-100 scale-100"
                     x-transition:leave-end="opacity-0 scale-95"
-                    class="absolute left-0 z-50 mt-2 overflow-y-auto bg-white border border-gray-200 rounded-lg shadow-lg top-full w-80 dark:bg-gray-800 dark:border-gray-700 max-h-96"
+                    class="absolute left-0 z-50 mt-2 overflow-y-auto border shadow-lg rounded-2xl bg-secondary-light border-border-light top-full w-80 dark:bg-secondary-dark dark:border-border-dark max-h-96"
                     style="display: none;"
                 >
                     <div class="p-2">
@@ -160,7 +160,7 @@
                             <button
                                 wire:click="$set('selectedProjectId', {{ $project->id }})"
                                 @click="open = false"
-                                class="w-full flex items-center gap-3 px-3 py-2 rounded-md hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors text-left {{ $project->id === $selectedProjectId ? 'bg-gray-50 dark:bg-gray-700' : '' }}"
+                                class="w-full flex items-center gap-3 px-3 py-2 rounded-2xl hover:bg-main-light dark:hover:bg-main-dark transition-colors text-left {{ $project->id === $selectedProjectId ? 'bg-main-light dark:bg-main-dark' : '' }}"
                             >
                                 @if($project->is_pinned)
                                     <div class="flex items-center justify-center w-5 h-5 rounded-full shrink-0"
@@ -186,11 +186,11 @@
                                         {{ $project->ticket_prefix }}
                                     </span>
                                 @endif
-                                <div class="flex-1 min-w-0 text-sm font-medium text-gray-900 truncate dark:text-white">
+                                <div class="flex-1 min-w-0 text-sm font-medium text-black truncate dark:text-white">
                                     {{ $project->name }}
                                 </div>
                                 @if($project->id === $selectedProjectId)
-                                    <svg class="flex-shrink-0 w-4 h-4" style="color: {{ $project->color ?? '#3B82F6' }};" fill="currentColor" viewBox="0 0 20 20">
+                                    <svg class="flex-shrink-0 w-4 h-4" style="color: {{ $project->color ?? '#1c9cf0' }};" fill="currentColor" viewBox="0 0 20 20">
                                         <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path>
                                     </svg>
                                 @endif
@@ -200,7 +200,7 @@
                 </div>
             </div>
 
-            <a href="{{ url()->previous() }}" class="inline-flex items-center w-20 gap-2 px-3 py-2 text-sm font-medium text-gray-700 transition-colors bg-gray-100 rounded-lg hover:bg-gray-200 dark:bg-gray-700 dark:text-gray-200 dark:hover:bg-gray-600">
+            <a href="{{ url()->previous() }}" class="inline-flex items-center w-20 gap-2 px-3 py-2 text-sm font-medium text-black transition-colors rounded-2xl dark:text-white bg-secondary-light hover:bg-main-light dark:bg-secondary-dark ring-1 ring-border-light dark:ring-border-dark dark:hover:bg-main-dark">
                 <x-heroicon-s-arrow-left class="w-4 h-4" />
                 Back
             </a>
@@ -215,14 +215,14 @@
 
             <div class="w-full space-y-3">
                 @foreach($epics as $epic)
-                    <div class="overflow-hidden bg-white border border-gray-200 rounded-lg dark:bg-gray-800 dark:border-gray-700">
+                    <div class="overflow-hidden border rounded-2xl bg-secondary-light border-border-light dark:bg-secondary-dark dark:border-border-dark">
                         <div
-                            class="flex flex-col items-center justify-between gap-2 px-4 py-3 border-b border-gray-200 cursor-pointer md:flex-row bg-gray-50 dark:bg-gray-700 dark:border-gray-600"
+                            class="flex flex-col items-center justify-between gap-2 px-4 py-3 border-b cursor-pointer border-border-light md:flex-row bg-accent-light dark:bg-accent-dark dark:border-border-dark"
                             wire:click="toggleEpic({{ $epic->id }})"
                         >
                             <div class="flex items-center space-x-4">
                                 <div>
-                                    <h3 class="text-base font-medium text-gray-900 dark:text-gray-100">{{ $epic->name }}</h3>
+                                    <h3 class="text-base font-medium text-black dark:text-white">{{ $epic->name }}</h3>
                                     <div class="hidden text-sm text-gray-500 dark:text-gray-400 md:block">
                                         {{ $epic->start_date ? $epic->start_date->format('M d, Y') : '-' }} -
                                         {{ $epic->end_date ? $epic->end_date->format('M d, Y') : '-' }}
@@ -230,12 +230,12 @@
                                 </div>
                             </div>
                             <div class="flex items-center space-x-4">
-                                <div class="px-3 py-1 text-sm text-gray-900 bg-gray-200 rounded-full dark:bg-gray-600 dark:text-gray-300">
+                                <div class="px-3 py-1 text-sm text-black rounded-full bg-secondary-light ring-1 ring-border-light dark:bg-secondary-dark dark:ring-border-dark dark:text-gray-400">
                                     {{ $epic->tickets->count() }} tickets
                                 </div>
-                                <button class="text-gray-400 hover:text-primary-500 focus:outline-none">
+                                <button class="text-gray-400 transition-colors hover:text-main-primary focus:outline-none">
                                     @if($this->isExpanded($epic->id))
-                                        <x-heroicon-s-chevron-down class="w-5 h-5 text-primary-500 dark:text-primary-400" />
+                                        <x-heroicon-s-chevron-down class="w-5 h-5 text-main-primary" />
                                     @else
                                         <x-heroicon-s-chevron-right class="w-5 h-5 dark:text-gray-400" />
                                     @endif
@@ -249,8 +249,8 @@
                                 <!-- Epic Description -->
                                 @if($epic->description)
                                     <div class="mb-4">
-                                        <h4 class="mb-2 text-sm font-semibold text-gray-900 dark:text-gray-300">Deskripsi Epic</h4>
-                                        <div class="p-3 text-sm text-gray-900 rounded-md bg-gray-50 dark:bg-gray-700 dark:text-gray-300">
+                                        <h4 class="mb-2 text-sm font-semibold text-black dark:text-white">Deskripsi Epic</h4>
+                                        <div class="py-4 text-sm text-black rounded-2xl bg-secondary-light dark:bg-secondary-dark dark:text-gray-400">
                                             {!! $epic->description !!}
                                         </div>
                                     </div>
@@ -259,49 +259,49 @@
                                 <!-- Tickets -->
                                 <div class="w-full">
                                     <div class="flex items-center justify-between mb-2">
-                                        <h4 class="text-sm font-semibold text-gray-900 dark:text-gray-300">Daftar Ticket</h4>
-                                        <a href="{{ route('filament.admin.resources.pm.tickets.create', ['epic_id' => $epic->id]) }}" class="text-sm font-semibold text-primary-600 dark:text-primary-400 hover:text-primary-800 dark:hover:text-primary-300">
+                                        <h4 class="text-sm font-semibold text-black dark:text-white">Daftar Ticket</h4>
+                                        <a href="{{ route('filament.admin.resources.pm.tickets.create',['epic_id' => $epic->id]) }}" class="text-sm font-semibold text-main-primary hover:text-main-primary/80">
                                             <x-heroicon-s-plus class="inline-block w-4 h-4 mr-1" />
                                             Tambah Ticket
                                         </a>
                                     </div>
 
                                     @if($epic->tickets->isEmpty())
-                                        <div class="w-full p-4 text-sm text-center text-gray-500 border border-gray-300 border-dashed rounded-md dark:text-gray-400 bg-gray-50 dark:bg-gray-700 dark:border-gray-600">
+                                        <div class="w-full p-4 text-sm text-center text-gray-500 border border-dashed rounded-2xl border-border-light dark:text-gray-400 bg-main-light dark:bg-main-dark dark:border-border-dark">
                                             Belum ada ticket untuk epic ini
                                         </div>
                                     @else
-                                        <div class="w-full overflow-x-auto border border-gray-200 rounded-md dark:border-gray-700">
-                                            <table class="w-full divide-y divide-gray-200 dark:divide-gray-700">
-                                                <thead class="bg-gray-50 dark:bg-gray-700">
+                                        <div class="w-full overflow-x-auto border rounded-2xl border-border-light dark:border-border-dark">
+                                            <table class="w-full divide-y divide-border-light dark:divide-border-dark">
+                                                <thead class="bg-accent-light dark:bg-accent-dark">
                                                     <tr>
-                                                        <th scope="col" class="p-3 text-sm font-medium tracking-wider text-left text-gray-500 uppercase dark:text-gray-400">ID</th>
-                                                        <th scope="col" class="p-3 text-sm font-medium tracking-wider text-left text-gray-500 uppercase dark:text-gray-400">Ticket</th>
-                                                        <th scope="col" class="p-3 text-sm font-medium tracking-wider text-left text-gray-500 uppercase dark:text-gray-400">Status</th>
-                                                        <th scope="col" class="hidden p-3 text-sm font-medium tracking-wider text-left text-gray-500 uppercase dark:text-gray-400 sm:table-cell">Ditugaskan</th>
-                                                        <th scope="col" class="hidden p-3 text-sm font-medium tracking-wider text-left text-gray-500 uppercase dark:text-gray-400 md:table-cell">Tanggal Selesai</th>
+                                                        <th scope="col" class="p-4 text-sm font-semibold text-left text-black dark:text-white">ID</th>
+                                                        <th scope="col" class="p-4 text-sm font-semibold text-left text-black dark:text-white">Ticket</th>
+                                                        <th scope="col" class="p-4 text-sm font-semibold text-left text-black dark:text-white">Status</th>
+                                                        <th scope="col" class="hidden p-4 text-sm font-semibold text-left text-black dark:text-white sm:table-cell">Ditugaskan</th>
+                                                        <th scope="col" class="hidden p-4 text-sm font-semibold text-left text-black dark:text-white md:table-cell">Tanggal Selesai</th>
                                                         <th scope="col" class="relative px-3 py-2">
                                                             <span class="sr-only">Actions</span>
                                                         </th>
                                                     </tr>
                                                 </thead>
-                                                <tbody class="bg-white divide-y divide-gray-200 dark:bg-gray-800 dark:divide-gray-700">
+                                                <tbody class="divide-y bg-secondary-light divide-border-light dark:bg-secondary-dark dark:divide-border-dark">
                                                     @foreach($epic->tickets as $ticket)
-                                                        <tr class="hover:bg-gray-50 dark:hover:bg-gray-700">
-                                                            <td class="p-3 text-sm font-medium text-gray-900 whitespace-nowrap dark:text-gray-100">
+                                                        <tr class="transition-colors hover:bg-main-light dark:hover:bg-main-dark">
+                                                            <td class="p-4 text-sm font-medium text-black whitespace-nowrap dark:text-white">
                                                                 {{ $ticket->uuid }}
                                                             </td>
-                                                            <td class="p-3 text-sm text-gray-900 dark:text-gray-100">
+                                                            <td class="p-4 text-sm text-black dark:text-white">
                                                                 {{ $ticket->name }}
                                                             </td>
-                                                            <td class="p-3 text-sm whitespace-nowrap">
+                                                            <td class="p-4 text-sm whitespace-nowrap">
                                                                 <span class="inline-flex rounded-full px-2 py-0.5 text-xs font-semibold
                                                                     {{ match($ticket->status->name ?? '') {
-                                                                        'To Do' => 'bg-yellow-100 dark:bg-yellow-900 text-yellow-800 dark:text-yellow-200',
+                                                                        'To Do' => 'bg-yellow-100 dark:bg-yellow-900/20 text-yellow-600 dark:text-yellow-400',
                                                                         'In Progress' => 'bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200',
                                                                         'Review' => 'bg-purple-100 dark:bg-purple-900 text-purple-800 dark:text-purple-200',
                                                                         'Done' => 'bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200',
-                                                                        default => 'bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-200',
+                                                                        default => 'bg-secondary-light dark:bg-secondary-dark ring-1 ring-border-light dark:ring-border-dark text-black dark:text-white',
                                                                     } }}">
                                                                     {{ $ticket->status->name ?? 'No Status' }}
                                                                 </span>
@@ -316,7 +316,7 @@
                                                                         @foreach($ticket->assignees->take(2) as $assignee)
                                                                             <x-filament::badge
                                                                                 color="primary"
-                                                                                icon="heroicon-m-user"
+                                                                                icon="heroicon-o-user"
                                                                                 size="sm"
                                                                             >
                                                                                 {{ $assignee->name }}
@@ -338,9 +338,8 @@
                                                             <td class="hidden p-3 text-sm text-gray-500 whitespace-nowrap dark:text-gray-400 md:table-cell">
                                                                 {{ $ticket->due_date ? $ticket->due_date->format('d M Y') : '-' }}
                                                             </td>
-                                                            <td class="p-3 text-sm font-medium text-right whitespace-nowrap">
-
-                                                                <a href="{{ route('filament.admin.resources.pm.tickets.view', ['record' => $ticket->id]) }}" target="_blank" class="text-primary-600 dark:text-primary-400 hover:text-primary-900 dark:hover:text-primary-300">
+                                                            <td class="p-4 text-sm font-medium text-right whitespace-nowrap">
+                                                                <a href="{{ route('filament.admin.resources.pm.tickets.view',['record' => $ticket->id]) }}" target="_blank" class="text-sm transition-colors text-main-primary hover:text-main-primary/80">
                                                                     View
                                                                 </a>
                                                             </td>
@@ -360,10 +359,10 @@
     @elseif($selectedProjectId && $epics->isEmpty())
         {{-- No Epics Found State --}}
         <div class="flex flex-col items-center justify-center h-64 gap-4 text-gray-500 dark:text-gray-400">
-            <div class="flex items-center justify-center p-6 bg-gray-100 rounded-full dark:bg-gray-800">
+            <div class="flex items-center justify-center p-6 rounded-full bg-secondary-light ring-1 ring-border-light dark:bg-secondary-dark dark:ring-border-dark">
                 <x-heroicon-o-flag class="w-16 h-16 text-gray-400 dark:text-gray-500" />
             </div>
-            <h2 class="text-xl font-medium text-gray-600 dark:text-gray-300">Belum ada epic di project ini</h2>
+            <h2 class="text-xl font-medium text-gray-600 dark:text-gray-400">Belum ada epic di project ini</h2>
             <p class="text-sm text-gray-500 dark:text-gray-400">
                 Project ini belum memiliki epic. Buat epic untuk mengelola ticket-nya
             </p>
