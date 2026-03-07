@@ -6,6 +6,7 @@ use App\Models\Inventory\Product;
 use App\Models\Inventory\ProductStock;
 use App\Models\Inventory\StockTransaction;
 use App\Models\Inventory\Warehouse;
+use App\Models\Inventory\SerialNumber; // TAMBAHAN: Untuk query validasi SN
 use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Resources\Resource;
@@ -14,6 +15,7 @@ use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Carbon;
 use Closure;
+use Filament\Notifications\Notification; // TAMBAHAN: Untuk notifikasi scan
 
 class TransactionResource extends Resource
 {
@@ -76,11 +78,15 @@ class TransactionResource extends Resource
                                     $set('price', 0);
                                     $set('total_price', 0);
                                     $set('is_serialized', false);
+                                    // Reset pilihan SN jika produk diganti
+                                    $set('affected_sns', []);
                                     return;
                                 }
                                 $product = Product::find($state);
                                 $set('price', $product?->purchase_price ?? 0);
                                 $set('is_serialized', (bool) ($product?->is_serialized ?? false));
+                                // Reset pilihan SN jika produk diganti
+                                $set('affected_sns', []);
                                 $calculateTotal($get, $set);
                             }),
 
@@ -101,7 +107,7 @@ class TransactionResource extends Resource
                                 'reserve' => 'Dipesan (Reserved)',
                                 'delivery' => 'Pengiriman (Keluar)',
                                 'complete' => 'Selesai Terjual',
-                                'cancel' => 'Batal (Masuk Kembali)', // Tambahan biar komplit
+                                'cancel' => 'Batal (Masuk Kembali)',
                                 'adjustment_out' => 'Koreksi Stok Keluar',
                             ])
                             ->default('stock_in')
@@ -126,27 +132,26 @@ class TransactionResource extends Resource
 
                         Forms\Components\Hidden::make('is_serialized'),
 
-                        Forms\Components\Textarea::make('scanned_sns')
-                            ->label('Scan Serial Number (SN)')
-                            ->helperText('Gunakan Barcode Scanner. Pastikan 1 SN per baris. Jumlah scan harus sama dengan Qty Mutasi.')
-                            ->rows(8)
-                            ->columnSpanFull()
-                            ->visible(fn(Forms\Get $get): bool => $get('is_serialized') === true)
-                            ->required(fn(Forms\Get $get): bool => $get('is_serialized') === true)
-                            ->rules([
-                                fn(Forms\Get $get): Closure => function (string $attribute, $value, Closure $fail) use ($get) {
-                                    if (!$get('is_serialized'))
-                                        return;
-                                    $sns = array_filter(array_map('trim', explode("\n", $value)));
-                                    $qty = (int) $get('quantity');
-                                    if (count($sns) !== $qty) {
-                                        $fail("ERROR: Jumlah SN yang discan (" . count($sns) . ") TIDAK SAMA dengan Qty Mutasi ({$qty}).");
-                                    }
-                                    if (count($sns) !== count(array_unique($sns))) {
-                                        $fail("ERROR: Terdapat Serial Number yang duplikat dalam hasil scan Anda.");
-                                    }
-                                },
-                            ]),
+                        Forms\Components\Select::make('affected_sns')
+                            ->label('Daftar Serial Number Terpilih')
+                            ->multiple()
+                            ->searchable()
+                            ->placeholder('Atau ketik manual SN di sini...')
+                            ->visible(fn (Forms\Get $get): bool => $get('is_serialized') === true && in_array($get('mutation_type'), ['adjustment_out', 'delivery', 'reserve']))
+                            ->required(fn (Forms\Get $get): bool => $get('is_serialized') === true && in_array($get('mutation_type'), ['adjustment_out', 'delivery', 'reserve']))
+                            ->options(function (Forms\Get $get) {
+                                $productId = $get('product_id');
+                                $warehouseId = $get('warehouse_id');
+                                if (!$productId || !$warehouseId) return [];
+
+                                return SerialNumber::query()
+                                    ->where('product_id', $productId)
+                                    ->where('warehouse_id', $warehouseId)
+                                    ->where('status', SerialNumber::STATUS_AVAILABLE)
+                                    ->pluck('serial_number', 'serial_number');
+                            })
+                            ->reactive()
+                            ->afterStateUpdated(fn ($state, callable $set) => $set('quantity', count($state ?? []))),
 
                         Forms\Components\TextInput::make('price')
                             ->label('Harga Beli per Unit')
@@ -232,8 +237,7 @@ class TransactionResource extends Resource
                     ->placeholder('–')
                     ->weight('semibold'),
 
-                // Diubah untuk sinkronisasi dengan command simulator kita (yang masukin no_reference)
-                Tables\Columns\TextColumn::make('no_reference')
+                Tables\Columns\TextColumn::make('reference_number')
                     ->label('Referensi')
                     ->searchable()
                     ->sortable()
@@ -264,13 +268,12 @@ class TransactionResource extends Resource
                     ->color('info')
                     ->icon('heroicon-o-building-office'),
 
-                // ===== INI BAGIAN YANG DIUBAH (LEBIH CLEAN & JELAS) =====
                 Tables\Columns\TextColumn::make('type')
                     ->label('Status')
                     ->badge()
                     ->color(fn(string $state): string => match ($state) {
                         'masuk' => 'success',
-                        'keluar' => 'danger', // Keluar jadi merah biar gampang dibedain
+                        'keluar' => 'danger',
                         default => 'gray',
                     })
                     ->formatStateUsing(fn(string $state): string => strtoupper("STOCK " . $state)),
@@ -280,19 +283,18 @@ class TransactionResource extends Resource
                     ->formatStateUsing(fn(string $state): string => strtoupper(str_replace('_', ' ', $state)))
                     ->color('gray')
                     ->size('sm'),
-                // ========================================================
 
                 Tables\Columns\TextColumn::make('quantity')
                     ->label('Qty')
                     ->sortable()
                     ->badge()
-                    ->color('primary') // Warnanya diganti primary biar ga bentrok ijonya sama stock_in
+                    ->color('primary')
                     ->icon('heroicon-m-cube')
                     ->suffix(' Unit'),
 
                 Tables\Columns\TextColumn::make('creator.name')
                     ->label('Input Oleh')
-                    ->toggleable(isToggledHiddenByDefault: true), // Disembunyikan by default biar tabel ga kepanjangan
+                    ->toggleable(isToggledHiddenByDefault: true),
 
                 Tables\Columns\TextColumn::make('notes')
                     ->label('Catatan')
@@ -319,7 +321,6 @@ class TransactionResource extends Resource
                 Tables\Filters\SelectFilter::make('product_id')->relationship('product', 'product_name')->searchable(),
                 Tables\Filters\SelectFilter::make('warehouse_id')->relationship('warehouse', 'warehouse_name'),
 
-                // Filter diubah berdasarkan tipe Masuk / Keluar
                 Tables\Filters\SelectFilter::make('type')
                     ->label('Arah Stok (In/Out)')
                     ->options([

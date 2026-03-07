@@ -119,23 +119,33 @@ class EditDeliveryOrder extends EditRecord
     }
 
     // 3. SETELAH DATA TERSIMPAN, UPDATE STATUS SERIAL NUMBER-NYA
+    // === REVISI: SESUAIKAN DENGAN KONSTANTA STATE MACHINE ===
     protected function afterSave(): void
     {
         $record = $this->record;
 
-        if ($record->status === 'on_delivery' && !empty($this->temporarySns)) {
+        // JIKA STATUS SURAT JALAN BERUBAH JADI ON_DELIVERY ATAU DELIVERED
+        if (in_array($record->status, ['on_delivery', 'delivered']) && !empty($this->temporarySns)) {
+
             DB::transaction(function () use ($record) {
+                // Tentukan status SN berdasarkan status Surat Jalan
+                $targetSnStatus = $record->status === 'delivered'
+                    ? SerialNumber::STATUS_SOLD
+                    : SerialNumber::STATUS_ON_DELIVERY;
+
                 foreach ($this->temporarySns as $productId => $sns) {
                     SerialNumber::whereIn('serial_number', $sns)
                         ->where('product_id', $productId)
                         ->update([
-                            'status' => 'ON_DELIVERY',
-                            // 'client_id' => $record->nx_customer_id // Opsional kalau ada relasi ke klien
+                            'status' => $targetSnStatus,
+                            'customer_id' => $record->nx_customer_id, // Lacak klien yang beli
+                            'outbound_date' => now()->toDateString(), // Lacak tgl keluarnya
                         ]);
                 }
             });
         }
     }
+    // ========================================================
 
     private function generateTransactionCode(): string {
         $roman = ['I','II','III','IV','V','VI','VII','VIII','IX','X','XI','XII'][now()->month - 1];

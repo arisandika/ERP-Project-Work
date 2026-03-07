@@ -5,11 +5,14 @@ namespace App\Filament\Resources\Procurement;
 use App\Filament\Resources\Procurement\PurchaseOrderResource\Pages;
 use App\Models\Inventory\Product;
 use App\Models\Procurement\PurchaseOrder;
+use App\Services\Procurement\PurchaseOrderReceiptService;
 use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
+use Filament\Notifications\Notification;
+use Illuminate\Support\Facades\Log;
 
 class PurchaseOrderResource extends Resource
 {
@@ -32,18 +35,22 @@ class PurchaseOrderResource extends Resource
 
     public static function updateTotals(Forms\Get $get, Forms\Set $set): void
     {
-        $items = $get('items') ?? [];
+        $isInsideRepeater = $get('items') === null;
+
+        $prefix = $isInsideRepeater ? '../../' : '';
+
+        $items = $get($prefix . 'items') ?? [];
         $subtotal = 0;
 
         foreach ($items as $item) {
             $subtotal += (float) ($item['total_price'] ?? 0);
         }
 
-        $tax = (float) ($get('tax_amount') ?? 0);
-        $discount = (float) ($get('discount_amount') ?? 0);
+        $tax = (float) ($get($prefix . 'tax_amount') ?? 0);
+        $discount = (float) ($get($prefix . 'discount_amount') ?? 0);
 
-        $set('subtotal', $subtotal);
-        $set('grand_total', $subtotal + $tax - $discount);
+        $set($prefix . 'subtotal', $subtotal);
+        $set($prefix . 'grand_total', $subtotal + $tax - $discount);
     }
 
     public static function form(Form $form): Form
@@ -102,7 +109,8 @@ class PurchaseOrderResource extends Resource
                                         ->preload()
                                         ->required()
                                         ->disableOptionsWhenSelectedInSiblingRepeaterItems()
-                                        ->reactive()
+                                        // --- REVISI 2: Panggil updateTotals ---
+                                        ->live(debounce: 500)
                                         ->afterStateUpdated(function ($state, Forms\Set $set, Forms\Get $get) {
                                             $product = Product::find($state);
                                             $price = $product?->purchase_price ?? 0;
@@ -110,6 +118,9 @@ class PurchaseOrderResource extends Resource
 
                                             $set('unit_price', $price);
                                             $set('total_price', $price * $qty);
+
+                                            // Sinkronisasi Global
+                                            self::updateTotals($get, $set);
                                         }),
 
                                     Forms\Components\TextInput::make('quantity')
@@ -118,20 +129,28 @@ class PurchaseOrderResource extends Resource
                                         ->default(0)
                                         ->minValue(1)
                                         ->required()
-                                        ->reactive()
+                                        // --- REVISI 3: Panggil updateTotals ---
+                                        ->live(debounce: 500)
                                         ->afterStateUpdated(function ($state, Forms\Set $set, Forms\Get $get) {
                                             $price = (float) ($get('unit_price') ?? 0);
                                             $set('total_price', $price * (int) $state);
+
+                                            // Sinkronisasi Global
+                                            self::updateTotals($get, $set);
                                         }),
 
                                     Forms\Components\TextInput::make('unit_price')
                                         ->label('Harga Satuan')
                                         ->numeric()
                                         ->required()
-                                        ->reactive()
+                                        // --- REVISI 4: Panggil updateTotals ---
+                                        ->live(debounce: 500)
                                         ->afterStateUpdated(function ($state, Forms\Set $set, Forms\Get $get) {
                                             $qty = (int) ($get('quantity') ?? 1);
                                             $set('total_price', (float) $state * $qty);
+
+                                            // Sinkronisasi Global
+                                            self::updateTotals($get, $set);
                                         }),
 
                                     Forms\Components\TextInput::make('total_price')
@@ -252,11 +271,9 @@ class PurchaseOrderResource extends Resource
                     ]),
             ])
             ->actions([
-                // 1. Tombol Edit (Hanya bisa jika masih Draft atau Sent)
                 Tables\Actions\EditAction::make()
                     ->visible(fn ($record) => in_array($record->status, ['draft', 'sent'])),
 
-                // 2. Tombol Kirim Dokumen (Ubah draf jadi Sent)
                 Tables\Actions\Action::make('mark_as_sent')
                     ->label('Kirim ke Supplier')
                     ->icon('heroicon-o-paper-airplane')
@@ -265,20 +282,19 @@ class PurchaseOrderResource extends Resource
                     ->requiresConfirmation()
                     ->action(function (PurchaseOrder $record) {
                         $record->update(['status' => 'sent']);
-                        \Filament\Notifications\Notification::make()
+                        Notification::make()
                             ->title('PO Berhasil Dikirim')
                             ->success()
                             ->send();
                     }),
 
-                // 3. Tombol Terima Barang (Goods Receipt)
                 Tables\Actions\Action::make('receive_goods')
                     ->label('Terima Barang')
                     ->icon('heroicon-o-truck')
                     ->color('success')
                     ->visible(fn ($record) => in_array($record->status, ['sent', 'partial']))
                     ->form(function (PurchaseOrder $record) {
-                        $schema = [
+                        return [
                             Forms\Components\Select::make('warehouse_id')
                                 ->label('Masuk ke Gudang Mana?')
                                 ->options(\App\Models\Inventory\Warehouse::where('is_active', true)->pluck('warehouse_name', 'id'))
@@ -289,89 +305,75 @@ class PurchaseOrderResource extends Resource
                                 ->default(now())
                                 ->required(),
 
-                            Forms\Components\Section::make('Ceklis Barang Fisik')
-                                ->description('Masukkan jumlah kuantitas yang benar-benar Anda terima dari kurir hari ini.')
+                            Forms\Components\Section::make('Ceklis Barang Fisik & Input SN')
+                                ->description('Masukkan kuantitas. Jika barang memiliki SN, wajib scan SN sesuai jumlah kuantitas.')
                                 ->schema(
                                     $record->items->map(function ($item) {
                                         $sisa = $item->quantity - $item->quantity_received;
-                                        return Forms\Components\TextInput::make("item_{$item->id}")
-                                            ->label($item->product->product_name . ' (Pesanan: '.$item->quantity.', Sisa: '.$sisa.')')
-                                            ->numeric()
-                                            ->default($sisa > 0 ? $sisa : 0)
-                                            ->maxValue($sisa)
-                                            ->minValue(0)
-                                            ->disabled($sisa == 0);
+                                        $isSerialized = $item->product->is_serialized ?? false;
+
+                                        return Forms\Components\Group::make()->schema([
+                                            Forms\Components\TextInput::make("qty_{$item->id}")
+                                                ->label($item->product->product_name . ' (Sisa: '.$sisa.')')
+                                                ->numeric()
+                                                ->default($sisa > 0 ? $sisa : 0)
+                                                ->maxValue($sisa)
+                                                ->minValue(0)
+                                                ->disabled($sisa == 0)
+                                                ->live(debounce: 500),
+
+                                            Forms\Components\Textarea::make("sn_{$item->id}")
+                                                ->label('Scan Serial Number (Pisahkan dengan Enter)')
+                                                ->visible($isSerialized)
+                                                ->required(fn (Forms\Get $get) => $isSerialized && (int) $get("qty_{$item->id}") > 0)
+                                                ->disabled($sisa == 0)
+                                                ->rows(3)
+                                                ->helperText('Jumlah SN harus sama dengan Qty.')
+                                                ->rules([
+                                                    function (Forms\Get $get) use ($item) {
+                                                        return function (string $attribute, $value, \Closure $fail) use ($get, $item) {
+                                                            $qty = (int) $get("qty_{$item->id}");
+                                                            if ($qty === 0) return;
+
+                                                            $sns = array_filter(array_map('trim', explode("\n", $value)));
+
+                                                            if (count($sns) !== $qty) {
+                                                                $fail("Anda menginput {$qty} barang, tapi scan ".count($sns)." SN. Harus seimbang!");
+                                                            }
+
+                                                            if (count($sns) !== count(array_unique($sns))) {
+                                                                $fail("Terdapat duplikat Serial Number dalam inputan Anda.");
+                                                            }
+                                                        };
+                                                    },
+                                                ]),
+                                        ])->columns($isSerialized ? 2 : 1);
                                     })->toArray()
-                                )->columns(2),
+                                )->columns(1),
                         ];
-                        return $schema;
                     })
                     ->action(function (array $data, PurchaseOrder $record) {
-                        \Illuminate\Support\Facades\DB::transaction(function () use ($data, $record) {
-                            $warehouseId = $data['warehouse_id'];
-                            $receiptDate = $data['receipt_date'];
-                            $allCompleted = true;
+                        try {
+                            $service = app(PurchaseOrderReceiptService::class);
+                            $service->processReceipt($record, $data, auth()->id());
 
-                            // --- LOGIKA Transaction Code ---
-                            $romanMonths = ['I','II','III','IV','V','VI','VII','VIII','IX','X','XI','XII'];
-                            $monthRoman = $romanMonths[now()->month - 1];
-                            $year = now()->year;
-                            $company = 'NEX';
-                            $code = 'ST-IN'; // PO masuk gudang pasti ST-IN
-                            $prefixLike = "%/{$code}/{$company}/{$monthRoman}/{$year}";
+                            Notification::make()
+                                ->title('Barang Diterima & Masuk Gudang!')
+                                ->success()
+                                ->send();
 
-                            $last = \App\Models\Inventory\StockTransaction::where('transaction_code', 'like', $prefixLike)
-                                ->orderByDesc('id')
-                                ->value('transaction_code');
+                        } catch (\Exception $e) {
+                            Log::error('Error pada Goods Receipt: ' . $e->getMessage(), [
+                                'po_id' => $record->id,
+                                'user_id' => auth()->id()
+                            ]);
 
-                            $seq = 1;
-                            if ($last) {
-                                $parts = explode('/', $last);
-                                $seq = ((int) $parts[0]) + 1;
-                            }
-                            // --------------------------------------------------------
-
-                            foreach ($record->items as $item) {
-                                $inputKey = "item_{$item->id}";
-                                $receivedNow = (int) ($data[$inputKey] ?? 0);
-
-                                if ($receivedNow > 0) {
-                                    $item->quantity_received += $receivedNow;
-                                    $item->save();
-
-                                    // Merangkai nomor: 001/ST-IN/NEX/III/2026
-                                    $seqStr = str_pad((string) $seq, 3, '0', STR_PAD_LEFT);
-                                    $txCode = "{$seqStr}/{$code}/{$company}/{$monthRoman}/{$year}";
-
-                                    \App\Models\Inventory\StockTransaction::create([
-                                        'product_id' => $item->product_id,
-                                        'warehouse_id' => $warehouseId,
-                                        'transaction_code' => $txCode,
-                                        'reference_number' => $record->po_number,
-                                        'mutation_type' => 'stock_in',
-                                        'transaction_date' => $receiptDate,
-                                        'quantity' => $receivedNow,
-                                        'price' => $item->unit_price,
-                                        'notes' => 'Penerimaan otomatis dari ' . $record->po_number,
-                                        'created_by' => auth()->id() ?? 1,
-                                    ]);
-
-                                    $seq++;
-                                }
-
-                                if ($item->quantity_received < $item->quantity) {
-                                    $allCompleted = false;
-                                }
-                            }
-
-                            $record->status = $allCompleted ? 'completed' : 'partial';
-                            $record->save();
-                        });
-
-                        \Filament\Notifications\Notification::make()
-                            ->title('Barang Diterima & Masuk Gudang!')
-                            ->success()
-                            ->send();
+                            Notification::make()
+                                ->title('Gagal memproses penerimaan barang')
+                                ->body('Terjadi kesalahan sistem, silakan coba lagi atau hubungi IT.')
+                                ->danger()
+                                ->send();
+                        }
                     })
             ])
             ->bulkActions([

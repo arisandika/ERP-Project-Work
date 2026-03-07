@@ -83,10 +83,8 @@ class DeliveryOrderResource extends Resource
                         ->disabled(fn($record) => $record && $record->exists)
                         ->afterStateUpdated(function ($state, callable $set) {
                             if (!$state) return;
-
                             $so = SalesOrder::with('items')->find($state);
                             if (!$so) return;
-
                             $set('nx_customer_id', $so->nx_customer_id);
 
                             $existingDOs = DeliveryOrder::with('items')
@@ -96,17 +94,8 @@ class DeliveryOrderResource extends Resource
 
                             $items = $so->items->map(function ($item) use ($existingDOs) {
                                 $qtyOrder = floatval($item->qty ?? 0);
-                                $qtyShipped = $existingDOs->flatMap->items
-                                    ->where('item_id', $item->item_id)
-                                    ->sum('qty');
-
+                                $qtyShipped = $existingDOs->flatMap->items->where('item_id', $item->item_id)->sum('qty');
                                 $qtyRemainingQuota = max($qtyOrder - $qtyShipped, 0);
-
-                                $isSerialized = false;
-                                if ($item->item_type === 'product') {
-                                    $product = Product::find($item->item_id);
-                                    $isSerialized = $product ? $product->is_serialized : false;
-                                }
 
                                 return [
                                     'item_type' => $item->item_type,
@@ -116,7 +105,6 @@ class DeliveryOrderResource extends Resource
                                     'qty_ordered' => $qtyRemainingQuota,
                                     'qty' => 0,
                                     'qty_remaining' => $qtyRemainingQuota,
-                                    'is_serialized' => $isSerialized,
                                 ];
                             })->values()->toArray();
 
@@ -127,67 +115,27 @@ class DeliveryOrderResource extends Resource
                 ]),
 
                 Grid::make(2)->schema([
-                    Select::make('nx_customer_id')
-                        ->label('Customer')
-                        ->relationship('customer', 'name')
-                        ->searchable()
-                        ->disabled()
-                        ->dehydrated()
-                        ->required()
-                        ->prefixIcon('heroicon-o-user-circle'),
-
-                    Select::make('nx_employee_id')
-                        ->label('Ditugaskan Kepada')
-                        ->relationship('employee', 'full_name')
-                        ->default(fn() => auth()->user()->employee?->id)
-                        ->disabled()
-                        ->dehydrated()
-                        ->required()
-                        ->prefixIcon('heroicon-o-user'),
-
-                    Select::make('status')
-                        ->label('Status')
-                        ->options([
-                            'draft' => 'Draft',
-                            'ready' => 'Siap Kirim',
-                            'on_delivery' => 'Dalam Pengiriman',
-                            'delivered' => 'Terkirim',
-                            'cancelled' => 'Dibatalkan',
-                        ])
-                        ->default('draft')
-                        ->required()
-                        ->prefixIcon('heroicon-o-adjustments-vertical'),
-
-                    Textarea::make('notes')
-                        ->label('Catatan Tambahan')
-                        ->rows(3),
+                    Select::make('nx_customer_id')->label('Customer')->relationship('customer', 'name')->disabled()->dehydrated()->required()->prefixIcon('heroicon-o-user-circle'),
+                    Select::make('nx_employee_id')->label('Ditugaskan Kepada')->relationship('employee', 'full_name')->default(fn() => auth()->user()->employee?->id)->disabled()->dehydrated()->required()->prefixIcon('heroicon-o-user'),
+                    Select::make('status')->label('Status')
+                        ->options(['draft' => 'Draft', 'ready' => 'Siap Kirim', 'on_delivery' => 'Dalam Pengiriman', 'delivered' => 'Terkirim', 'cancelled' => 'Dibatalkan'])
+                        ->default('draft')->required()->prefixIcon('heroicon-o-adjustments-vertical'),
+                    Textarea::make('notes')->label('Catatan Tambahan')->rows(3),
                 ]),
             ]),
 
+            // FORM EDIT BERSIH TANPA SCANNER
             Section::make('Daftar Item Surat Jalan')->schema([
                 Repeater::make('items')
                     ->relationship()
                     ->schema([
                         Hidden::make('item_type')->default('product'),
                         Hidden::make('item_id'),
-                        Hidden::make('is_serialized'),
 
                         Grid::make(2)->schema([
-                            TextInput::make('item_code')
-                                ->label('Kode Product')
-                                ->disabled()
-                                ->dehydrated(true),
-
-                            TextInput::make('item_name')
-                                ->label('Nama Product')
-                                ->disabled()
-                                ->dehydrated(true),
-
-                            TextInput::make('qty_ordered')
-                                ->label('Sisa Jatah')
-                                ->numeric()
-                                ->disabled()
-                                ->dehydrated(),
+                            TextInput::make('item_code')->label('Kode Product')->disabled()->dehydrated(true),
+                            TextInput::make('item_name')->label('Nama Product')->disabled()->dehydrated(true),
+                            TextInput::make('qty_ordered')->label('Sisa Jatah')->numeric()->disabled()->dehydrated(),
 
                             TextInput::make('qty')
                                 ->label('Kirim Sekarang')
@@ -203,38 +151,7 @@ class DeliveryOrderResource extends Resource
                                     $set('qty_remaining', max($quota - $kirim, 0));
                                 }),
 
-                            TextInput::make('qty_remaining')
-                                ->label('Sisa Nanti')
-                                ->numeric()
-                                ->disabled()
-                                ->dehydrated(),
-
-                            Textarea::make('scanned_sns')
-                                ->label('Scan Serial Number')
-                                ->rows(5)
-                                ->columnSpanFull()
-                                ->visible(fn (Get $get): bool => $get('is_serialized') === true && (float) $get('qty') > 0)
-                                ->required(fn (Get $get): bool => $get('is_serialized') === true && (float) $get('qty') > 0)
-                                ->rules([
-                                    fn (Get $get): Closure => function (string $attribute, $value, Closure $fail) use ($get) {
-                                        if (!$get('is_serialized') || (float) $get('qty') <= 0) return;
-                                        $sns = array_filter(array_map('trim', explode("\n", $value)));
-                                        $qtyKirim = (int) $get('qty');
-                                        if (count($sns) !== $qtyKirim) {
-                                            $fail("ERROR: Scan " . count($sns) . " SN, tapi kirim {$qtyKirim} unit.");
-                                            return;
-                                        }
-                                        if (count($sns) !== count(array_unique($sns))) {
-                                            $fail("ERROR: Ada SN Duplikat!");
-                                            return;
-                                        }
-                                        foreach ($sns as $sn) {
-                                            $snRecord = SerialNumber::where('serial_number', $sn)->first();
-                                            if (!$snRecord) $fail("SN {$sn} tidak terdaftar.");
-                                            elseif ($snRecord->status !== 'AVAILABLE') $fail("SN {$sn} status {$snRecord->status}.");
-                                        }
-                                    },
-                                ]),
+                            TextInput::make('qty_remaining')->label('Sisa Nanti')->numeric()->disabled()->dehydrated(),
                         ]),
                     ])
                     ->addable(false)
@@ -262,69 +179,178 @@ class DeliveryOrderResource extends Resource
                     }),
             ])
             ->actions([
-                Action::make('kirim_barang')
-                ->label('Kirim Barang')
-                ->icon('heroicon-o-paper-airplane')
-                ->color('warning')
-                ->visible(fn(DeliveryOrder $record) => in_array($record->status, ['draft', 'ready']))
-                ->requiresConfirmation()
-                ->modalHeading('Konfirmasi Pengiriman')
-                ->modalDescription('Apakah Anda yakin barang sudah dimuat ke kendaraan? Stok Reserved akan dipindahkan ke On Delivery.')
-                ->action(function (DeliveryOrder $record): void {
-                    DB::transaction(function () use ($record) {
-                        $warehouseUtamaId = Warehouse::where('warehouse_name', 'Gudang Utama')->value('id') ?? 1;
-
-                        StockTransaction::$autoUpdateStock = false;
+                // === ACTION SUPER: PROSES, SCAN, POTONG STOK, DAN CETAK DO ===
+                Action::make('proses_dan_cetak')
+                    ->label('Proses & Cetak DO')
+                    ->icon('heroicon-o-printer')
+                    ->color('warning')
+                    ->visible(fn(DeliveryOrder $record) => in_array($record->status, ['draft', 'ready']))
+                    ->modalHeading('Scan Barang & Cetak Surat Jalan')
+                    ->modalDescription('Lakukan scan untuk barang berserial. Setelah dikonfirmasi, stok akan dipotong dan PDF akan otomatis terbuka.')
+                    ->form(function (DeliveryOrder $record) {
+                        $schema = [];
 
                         foreach ($record->items as $item) {
-                            if ($item->item_type === 'product' && $item->qty > 0) {
-                                $stockUtama = ProductStock::where('product_id', $item->item_id)
-                                    ->where('warehouse_id', $warehouseUtamaId)
-                                    ->lockForUpdate()
-                                    ->first();
+                            if ($item->item_type === 'product') {
+                                $product = \App\Models\Inventory\Product::find($item->item_id);
+                                $isSerialized = $product ? (bool) $product->is_serialized : false;
+                                $qtyKirim = (float) $item->qty;
 
-                                if (!$stockUtama || $stockUtama->qty_reserved < $item->qty) {
-                                    throw new \Exception("Stok Reserved untuk {$item->item_name} tidak mencukupi!");
+                                if ($isSerialized && $qtyKirim > 0) {
+                                    $schema[] = Forms\Components\Section::make("Scan: {$item->item_name} (Butuh {$qtyKirim} Unit)")
+                                        ->schema([
+                                            Forms\Components\ViewField::make("camera_sn_{$item->id}")
+                                                ->label('Scanner Kamera')
+                                                ->view('filament.forms.components.camera-scanner')
+                                                ->live()
+                                                ->afterStateUpdated(function (?string $state, Forms\Set $set, Get $get) use ($item) {
+                                                    if (blank($state)) return;
+                                                    $scannedSn = trim($state);
+                                                    $currentText = $get("scanned_sns_{$item->id}") ?? '';
+                                                    $currentArray = array_filter(array_map('trim', explode("\n", $currentText)));
+
+                                                    if (!in_array($scannedSn, $currentArray)) {
+                                                        $isValid = \App\Models\Inventory\SerialNumber::where('serial_number', $scannedSn)
+                                                            ->where('status', \App\Models\Inventory\SerialNumber::STATUS_AVAILABLE)
+                                                            ->where('product_id', $item->item_id)
+                                                            ->exists();
+
+                                                        if($isValid) {
+                                                            $currentArray[] = $scannedSn;
+                                                            $set("scanned_sns_{$item->id}", implode("\n", $currentArray));
+                                                            Notification::make()->title("SN {$scannedSn} Valid.")->success()->send();
+                                                        } else {
+                                                            Notification::make()->title("SN {$scannedSn} tidak tersedia di gudang.")->danger()->send();
+                                                        }
+                                                    } else {
+                                                        Notification::make()->title("SN {$scannedSn} sudah di-scan!")->warning()->send();
+                                                    }
+                                                    $set("camera_sn_{$item->id}", null);
+                                                }),
+
+                                            Textarea::make("scanned_sns_{$item->id}")
+                                                ->label('Daftar SN Terkumpul')
+                                                ->rows(4)
+                                                ->required()
+                                                ->rules([
+                                                    fn () => function (string $attribute, $value, Closure $fail) use ($qtyKirim) {
+                                                        $sns = array_filter(array_map('trim', explode("\n", $value)));
+                                                        if (count($sns) !== (int) $qtyKirim) {
+                                                            $fail("Barang ini butuh {$qtyKirim} SN, tapi Anda baru men-scan " . count($sns) . " SN.");
+                                                        }
+                                                    },
+                                                ]),
+                                        ]);
                                 }
-
-                                // A. PINDAH STOK DARI RESERVED KE ON DELIVERY
-                                $stockReservedBefore = $stockUtama->qty_reserved;
-                                $stockUtama->decrement('qty_reserved', $item->qty);
-                                $stockUtama->increment('qty_on_delivery', $item->qty); // TAMBAHKAN INI
-
-                                // B. CATAT HISTORY TRANSAKSI (KELUAR)
-                                StockTransaction::create([
-                                    'transaction_code' => "ST-OUT/" . rand(100,999) . "/" . now()->format('Ymd'),
-                                    'transaction_date' => now(),
-                                    'product_id'       => $item->item_id,
-                                    'warehouse_id'     => $warehouseUtamaId,
-                                    'mutation_type'    => 'delivery',
-                                    'type'             => 'keluar',
-                                    'quantity'         => $item->qty,
-                                    'stock_before'     => $stockReservedBefore,
-                                    'stock_after'      => $stockReservedBefore - $item->qty,
-                                    'price'            => 0,
-                                    'total_price'      => 0,
-                                    'reference_id'     => $record->id,
-                                    'reference_type'   => DeliveryOrder::class,
-                                    'no_reference'     => $record->do_number,
-                                    'notes'            => 'Pengiriman Fisik Keluar Gudang (via Table Action)',
-                                    'created_by'       => auth()->id(),
-                                ]);
                             }
                         }
 
-                        StockTransaction::$autoUpdateStock = true;
-
-                        // Update status dokumen
-                        $record->update(['status' => 'on_delivery']);
-                        if ($record->salesOrder) {
-                            $record->salesOrder->update(['status' => 'shipped']);
+                        if (empty($schema)) {
+                            $schema[] = Forms\Components\Placeholder::make('info')
+                                ->content('Tidak ada barang berserial yang dikirim pada Surat Jalan ini. Anda bisa langsung klik tombol Submit di bawah.');
                         }
-                    });
 
-                    Notification::make()->title('Barang resmi dikirim!')->success()->send();
-                }),
+                        return $schema;
+                    })
+                    ->action(function (DeliveryOrder $record, array $data) {
+                        DB::transaction(function () use ($record, $data) {
+                            $warehouseUtamaId = Warehouse::where('warehouse_name', 'Gudang Utama')->value('id') ?? 1;
+                            $now = now();
+
+                            StockTransaction::$autoUpdateStock = false;
+
+                            foreach ($record->items as $item) {
+                                if ($item->item_type === 'product' && (float) $item->qty > 0) {
+                                    $stockUtama = ProductStock::where('product_id', $item->item_id)
+                                        ->where('warehouse_id', $warehouseUtamaId)
+                                        ->lockForUpdate()
+                                        ->first();
+
+                                    $totalStok = ($stockUtama ? $stockUtama->qty_available : 0) + ($stockUtama ? $stockUtama->qty_reserved : 0);
+                                    if (!$stockUtama || $totalStok < $item->qty) {
+                                        throw new \Exception("Total stok gabungan untuk {$item->item_name} tidak mencukupi!");
+                                    }
+
+                                    // A. PEMOTONGAN STOK HYBRID
+                                    $stockReservedBefore = $stockUtama->qty_reserved;
+                                    $potongDariReserved = min($stockUtama->qty_reserved, $item->qty);
+                                    $sisaKekurangan = $item->qty - $potongDariReserved;
+
+                                    if ($potongDariReserved > 0) { $stockUtama->decrement('qty_reserved', $potongDariReserved); }
+                                    if ($sisaKekurangan > 0) { $stockUtama->decrement('qty_available', $sisaKekurangan); }
+                                    $stockUtama->increment('qty_on_delivery', $item->qty);
+
+                                    // === REVISI TRANSACTION CODE DENGAN BULAN ROMAWI ===
+                                    $roman = ['I','II','III','IV','V','VI','VII','VIII','IX','X','XI','XII'][$now->month - 1];
+                                    $prefix = "%/ST-OUT/NEX/{$roman}/" . $now->year;
+
+                                    $last = StockTransaction::where('transaction_code', 'like', $prefix)
+                                        ->orderByDesc('id')
+                                        ->value('transaction_code');
+
+                                    $seq = $last ? ((int) explode('/', $last)[0]) + 1 : 1;
+                                    $trxCode = str_pad((string) $seq, 3, '0', STR_PAD_LEFT) . "/ST-OUT/NEX/{$roman}/" . $now->year;
+
+                                    // B. CATAT HISTORY TRANSAKSI
+                                    StockTransaction::create([
+                                        'transaction_code' => $trxCode,
+                                        'transaction_date' => $now,
+                                        'product_id'       => $item->item_id,
+                                        'warehouse_id'     => $warehouseUtamaId,
+                                        'mutation_type'    => 'delivery',
+                                        'type'             => 'keluar',
+                                        'quantity'         => $item->qty,
+                                        'stock_before'     => $stockReservedBefore + $stockUtama->qty_available,
+                                        'stock_after'      => ($stockReservedBefore + $stockUtama->qty_available) - $item->qty,
+                                        'price'            => 0,
+                                        'total_price'      => 0,
+                                        'reference_id'     => $record->id,
+                                        'reference_type'   => DeliveryOrder::class,
+                                        'no_reference'     => $record->do_number,
+                                        'notes'            => 'Pengiriman Fisik Keluar Gudang',
+                                        'created_by'       => auth()->id(),
+                                    ]);
+
+                                    // C. SIMPAN HASIL SCAN KE TABEL ITEMS & UPDATE STATUS SN
+                                    $product = \App\Models\Inventory\Product::find($item->item_id);
+                                    if ($product && $product->is_serialized && isset($data["scanned_sns_{$item->id}"])) {
+
+                                        // Ubah teks berbaris dari textarea menjadi string yang dipisah koma
+                                        $snsArray = array_filter(array_map('trim', explode("\n", $data["scanned_sns_{$item->id}"])));
+                                        $snString = implode(', ', $snsArray);
+
+                                        // Simpan SN ke database items (Agar bisa dirender di PDF)
+                                        $item->update(['scanned_sns' => $snString]);
+
+                                        // Update status SN di tabel Serial Number
+                                        if (!empty($snsArray)) {
+                                            SerialNumber::whereIn('serial_number', $snsArray)
+                                                ->where('product_id', $item->item_id)
+                                                ->update([
+                                                    'status' => SerialNumber::STATUS_ON_DELIVERY,
+                                                    'customer_id' => $record->nx_customer_id,
+                                                    'outbound_date' => $now->toDateString(),
+                                                ]);
+                                        }
+                                    }
+                                }
+                            }
+
+                            StockTransaction::$autoUpdateStock = true;
+
+                            // Update Status Dokumen
+                            $record->update(['status' => 'on_delivery']);
+                            if ($record->salesOrder) {
+                                $record->salesOrder->update(['status' => 'shipped']);
+                            }
+                        });
+
+                        Notification::make()->title('Surat Jalan Diproses & Siap Cetak!')->success()->send();
+
+                        // ALIHKAN BROWSER KE TAB BARU UNTUK CETAK PDF
+                        return redirect()->route('print.delivery-order', $record);
+                    }),
+                // ==========================================================
 
                 Action::make('upload_proof')
                     ->label('Upload Bukti')
@@ -336,16 +362,31 @@ class DeliveryOrderResource extends Resource
                         Textarea::make('proof_notes')->label('Catatan Penerima')->rows(2),
                     ])
                     ->action(function (DeliveryOrder $record, array $data): void {
-                        $record->update([
-                            'proof_image' => $data['proof_image'],
-                            'proof_notes' => $data['proof_notes'],
-                            'status' => 'delivered',
-                        ]);
-                        if ($record->salesOrder) $record->salesOrder->update(['status' => 'completed']);
+                        DB::transaction(function () use ($record, $data) {
+                            $record->update([
+                                'proof_image' => $data['proof_image'],
+                                'proof_notes' => $data['proof_notes'],
+                                'status' => 'delivered',
+                            ]);
+                            if ($record->salesOrder) $record->salesOrder->update(['status' => 'completed']);
+
+                            SerialNumber::where('customer_id', $record->nx_customer_id)
+                                ->where('status', SerialNumber::STATUS_ON_DELIVERY)
+                                ->whereIn('product_id', $record->items->pluck('item_id'))
+                                ->update(['status' => SerialNumber::STATUS_SOLD]);
+                        });
                         Notification::make()->title('Delivered!')->success()->send();
                     }),
 
-                Action::make('print')->label('Cetak')->icon('heroicon-o-printer')->color('success')->url(fn(DeliveryOrder $record) => route('print.delivery-order', $record))->openUrlInNewTab(),
+                // Tombol Print Ulang (Muncul setelah dokumen berstatus On Delivery / Delivered)
+                Action::make('print')
+                    ->label('Print Ulang')
+                    ->icon('heroicon-o-printer')
+                    ->color('success')
+                    ->visible(fn(DeliveryOrder $record) => in_array($record->status, ['on_delivery', 'delivered']))
+                    ->url(fn(DeliveryOrder $record) => route('print.delivery-order', $record))
+                    ->openUrlInNewTab(),
+
                 Tables\Actions\EditAction::make(),
                 Tables\Actions\DeleteAction::make(),
                 Tables\Actions\RestoreAction::make(),
