@@ -538,7 +538,7 @@
                     @foreach ($this->ticketStatuses as $status)
                         <div
                             wire:key="status-column-{{ $status->id }}"
-                            class="stage-column rounded-xl border border-border-light dark:border-border-dark flex flex-col bg-main-light dark:bg-main-dark w-[calc(85vw-2rem)] min-w-[300px] max-w-[380px] h-[700px] sm:w-[calc((100vw-6rem)/2)] sm:h-[750px] lg:w-[calc((100vw-8rem)/3)] lg:h-[800px] xl:w-[calc((100vw-10rem)/4)] xl:h-[850px]"
+                            class="status-column rounded-xl border border-border-light dark:border-border-dark flex flex-col bg-main-light dark:bg-main-dark w-[calc(85vw-2rem)] min-w-[300px] max-w-[380px] h-[700px] sm:w-[calc((100vw-6rem)/2)] sm:h-[750px] lg:w-[calc((100vw-8rem)/3)] lg:h-[800px] xl:w-[calc((100vw-10rem)/4)] xl:h-[850px]"
                             data-status-id="{{ $status->id }}"
                         >
                             <div
