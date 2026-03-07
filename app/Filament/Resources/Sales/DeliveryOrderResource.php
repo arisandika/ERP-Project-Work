@@ -280,9 +280,20 @@ class DeliveryOrderResource extends Resource
                                     if ($sisaKekurangan > 0) { $stockUtama->decrement('qty_available', $sisaKekurangan); }
                                     $stockUtama->increment('qty_on_delivery', $item->qty);
 
+                                    // === REVISI TRANSACTION CODE DENGAN BULAN ROMAWI ===
+                                    $roman = ['I','II','III','IV','V','VI','VII','VIII','IX','X','XI','XII'][$now->month - 1];
+                                    $prefix = "%/ST-OUT/NEX/{$roman}/" . $now->year;
+
+                                    $last = StockTransaction::where('transaction_code', 'like', $prefix)
+                                        ->orderByDesc('id')
+                                        ->value('transaction_code');
+
+                                    $seq = $last ? ((int) explode('/', $last)[0]) + 1 : 1;
+                                    $trxCode = str_pad((string) $seq, 3, '0', STR_PAD_LEFT) . "/ST-OUT/NEX/{$roman}/" . $now->year;
+
                                     // B. CATAT HISTORY TRANSAKSI
                                     StockTransaction::create([
-                                        'transaction_code' => "ST-OUT/" . rand(100,999) . "/" . $now->format('Ymd'),
+                                        'transaction_code' => $trxCode,
                                         'transaction_date' => $now,
                                         'product_id'       => $item->item_id,
                                         'warehouse_id'     => $warehouseUtamaId,
