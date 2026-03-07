@@ -152,7 +152,7 @@
                             </div>
                             @foreach($this->filteredProjects as $project)
                                 <button wire:click="selectProject({{ $project->id }})" @click="open = false"
-                                    class="w-full flex items-center gap-3 px-3 py-2 rounded-md hover:bg-main-light dark:hover:bg-gray-700 transition-colors text-left {{ $project->id === $selectedProject->id ? 'bg-main-light dark:bg-gray-700' : '' }}">
+                                    class="w-full flex items-center gap-3 px-3 py-2 rounded-xl hover:bg-main-light dark:hover:bg-main-dark transition-colors text-left {{ $project->id === $selectedProject->id ? 'bg-main-light dark:bg-main-dark' : '' }}">
                                     @if($project->is_pinned)
                                         <div class="flex items-center justify-center w-5 h-5 rounded-full shrink-0"
                                             style="background-color: {{ $project->color ?? '#6B7280' }};" title="Disematkan">
