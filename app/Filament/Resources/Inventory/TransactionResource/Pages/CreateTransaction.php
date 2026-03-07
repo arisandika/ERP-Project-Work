@@ -52,10 +52,16 @@ class CreateTransaction extends CreateRecord
         // 1. Generate kode transaksi yang dinamis berdasarkan jenis mutasinya
         $data['transaction_code'] = $this->generateTransactionCode($data['mutation_type']);
 
-        // 2. Ambil data SN dari form (jika ada), lalu hapus agar tidak bikin error tabel stock_transactions
+        // 2a. Tangkap SN dari Textarea (Untuk Inbound / Barang Masuk)
         if (isset($data['scanned_sns'])) {
             $this->temporarySns = array_filter(array_map('trim', explode("\n", $data['scanned_sns'])));
             unset($data['scanned_sns']);
+        }
+
+        // 2b. Tangkap SN dari Select Multiple (Untuk Outbound / Koreksi Keluar) - INI YANG BARU
+        if (isset($data['affected_sns'])) {
+            $this->temporarySns = $data['affected_sns']; // Ini sudah berbentuk array
+            unset($data['affected_sns']);
         }
 
         // 3. Hapus juga field hidden is_serialized
@@ -83,7 +89,7 @@ class CreateTransaction extends CreateRecord
                             'product_id'   => $transaction->product_id,
                             'warehouse_id' => $transaction->warehouse_id,
                             'serial_number'=> $sn,
-                            'status'       => 'AVAILABLE',
+                            'status'       => SerialNumber::STATUS_AVAILABLE, // Gunakan Konstanta Model
                             'inbound_date' => $transaction->transaction_date ?? $now->toDateString(),
                             'created_at'   => $now,
                             'updated_at'   => $now,
@@ -92,22 +98,30 @@ class CreateTransaction extends CreateRecord
                     SerialNumber::insert($insertData);
                 }
 
-                // SKENARIO 2: BARANG KELUAR / DIKIRIM (Update SN Lama jadi Terjual/Keluar)
+                // SKENARIO 2: BARANG KELUAR / DIKIRIM / KOREKSI (Update SN Lama) - INI YANG DIREVISI
                 else {
+                    // Tentukan status akhir berdasarkan tipe mutasi
+                    $targetStatus = match ($transaction->mutation_type) {
+                        'adjustment_out' => SerialNumber::STATUS_DEFECTIVE, // Atau STATUS_LOST sesuai preferensi
+                        'delivery', 'stock_out' => SerialNumber::STATUS_ON_DELIVERY, // Atau STATUS_SOLD
+                        'reserve' => SerialNumber::STATUS_RESERVED,
+                        default => SerialNumber::STATUS_SOLD,
+                    };
+
                     $updatedCount = SerialNumber::where('product_id', $transaction->product_id)
                         ->where('warehouse_id', $transaction->warehouse_id)
                         ->whereIn('serial_number', $this->temporarySns)
-                        ->where('status', 'AVAILABLE') // Pastikan hanya update yang available
+                        ->where('status', SerialNumber::STATUS_AVAILABLE) // Hanya update yang available
                         ->update([
-                            'status' => 'SOLD_OR_OUT', // Sesuaikan dengan Enum di tabel Anda
+                            'status' => $targetStatus,
                             'outbound_date' => $transaction->transaction_date ?? $now->toDateString(),
                             'updated_at' => $now
                         ]);
 
-                    // Validasi Keamanan: Jika admin men-scan SN yang tidak ada di sistem
+                    // Validasi Keamanan: Jika admin men-scan/memilih SN yang statusnya sudah tidak available
                     if ($updatedCount !== count($this->temporarySns)) {
                         DB::rollBack();
-                        throw new Exception("Sebagian Serial Number yang di-scan tidak ditemukan di gudang ini, atau sudah berstatus terjual.");
+                        throw new Exception("Sebagian Serial Number yang dipilih tidak ditemukan atau sudah tidak tersedia di gudang ini.");
                     }
                 }
             });
@@ -141,7 +155,9 @@ class CreateTransaction extends CreateRecord
 
         $prefixLike = "%/{$code}/{$company}/{$monthRoman}/{$year}";
 
-        $last = StockTransaction::where('transaction_code', 'like', $prefixLike)
+        // PERBAIKAN: Hapus kata "clone" di sini
+        $last = StockTransaction::query()
+            ->where('transaction_code', 'like', $prefixLike)
             ->orderByDesc('id')
             ->value('transaction_code');
 
