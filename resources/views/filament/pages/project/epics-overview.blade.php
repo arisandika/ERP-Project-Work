@@ -160,7 +160,7 @@
                             <button
                                 wire:click="$set('selectedProjectId', {{ $project->id }})"
                                 @click="open = false"
-                                class="w-full flex items-center gap-3 px-3 py-2 rounded-2xl hover:bg-main-light dark:hover:bg-main-dark transition-colors text-left {{ $project->id === $selectedProjectId ? 'bg-main-light dark:bg-main-dark' : '' }}"
+                                class="w-full flex items-center gap-3 px-3 py-2 rounded-xl hover:bg-main-light dark:hover:bg-main-dark transition-colors text-left {{ $project->id === $selectedProjectId ? 'bg-main-light dark:bg-main-dark' : '' }}"
                             >
                                 @if($project->is_pinned)
                                     <div class="flex items-center justify-center w-5 h-5 rounded-full shrink-0"

@@ -159,7 +159,7 @@
                             <button
                                 wire:click="selectProject({{ $project->id }})"
                                 @click="open = false"
-                                class="w-full flex items-center gap-3 px-3 py-2 rounded-md hover:bg-main-light dark:hover:bg-gray-700 transition-colors text-left {{ $project->id === $selectedProject->id ? 'bg-main-light dark:bg-gray-700' : '' }}"
+                                class="w-full flex items-center gap-3 px-3 py-2 rounded-xl hover:bg-main-light dark:hover:bg-main-dark transition-colors text-left {{ $project->id === $selectedProject->id ? 'bg-main-light dark:bg-main-dark' : '' }}"
                             >
                                 @if($project->ticket_prefix)
                                     @php
