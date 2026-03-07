@@ -380,7 +380,7 @@
                         </nav>
         
                         <!-- Mobile Dropdown Navigation -->
-                        <div class="px-4 py-3 sm:hidden">
+                        <div class="p-4 sm:hidden">
                             <div class="relative">
                                 <button type="button" onclick="toggleMobileTabDropdown()"
                                     class="w-full px-4 py-2 text-left rounded-full cursor-pointer ring-border-light ring-1 bg-secondary-light dark:bg-secondary-dark dark:ring-border-dark dark:text-gray-200 focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
@@ -403,10 +403,10 @@
                                 </button>
         
                                 <div id="mobile-tab-dropdown"
-                                    class="absolute left-0 right-0 z-10 hidden mt-1 rounded-md shadow-2xl ring-1 ring-border-light bg-secondary-light dark:bg-secondary-dark dark:border-border-dark">
+                                    class="absolute left-0 right-0 z-10 hidden mt-1 rounded-md shadow-2xl ring-1 ring-border-light bg-secondary-light dark:bg-secondary-dark dark:ring-border-dark">
                                     <div class="py-1">
                                         <button onclick="switchMobileTab('tasks')"
-                                            class="w-full px-4 py-2 text-left mobile-tab-option hover:bg-gray-100 dark:hover:bg-gray-700 dark:text-gray-200 focus:bg-gray-100 dark:focus:bg-gray-700 focus:outline-none"
+                                            class="w-full px-4 py-2 text-left rounded-md mobile-tab-option hover:bg-main-light dark:hover:bg-main-dark dark:text-gray-200 focus:bg-main-light dark:focus:bg-main-dark focus:outline-none"
                                             data-tab="tasks">
                                             <span class="flex items-center space-x-2">
                                                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -419,7 +419,7 @@
                                         </button>
         
                                         <button onclick="switchMobileTab('activity')"
-                                            class="w-full px-4 py-2 text-left mobile-tab-option hover:bg-gray-100 dark:hover:bg-gray-700 dark:text-gray-200 focus:bg-gray-100 dark:focus:bg-gray-700 focus:outline-none"
+                                            class="w-full px-4 py-2 text-left rounded-md mobile-tab-option hover:bg-main-light dark:hover:bg-main-dark dark:text-gray-200 focus:bg-main-light dark:focus:bg-main-dark focus:outline-none"
                                             data-tab="activity">
                                             <span class="flex items-center space-x-2">
                                                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -510,7 +510,7 @@
                             <div class="overflow-x-auto border-t ring-border-light dark:border-border-dark rounded-b-2xl">
                                 <!-- Desktop Table -->
                                 <table class="hidden min-w-full divide-y divide-border-light sm:table dark:divide-border-dark">
-                                    <thead class="bg-secondary-light dark:bg-secondary-dark">
+                                    <thead class="bg-accent-light dark:bg-accent-dark">
                                         <tr>
                                             <th
                                                 class="p-4 text-sm font-semibold text-left text-main-dark lg:px-6 dark:text-main-light">
@@ -663,7 +663,7 @@
         
                             <!-- Pagination -->
                             <?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if BLOCK]><![endif]--><?php endif; ?><?php if($this->tickets->hasPages()): ?>
-                                <div class="p-4 border-t ring-border-light lg:px-6 dark:border-border-dark"
+                                <div class="px-6 py-4 bg-secondary-light dark:bg-secondary-dark rounded-b-2xl custom-pagination"
                                     id="tasks-pagination-section">
                                     <?php echo e($this->tickets->links()); ?>
 
@@ -745,11 +745,12 @@
                                         <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); if ($__empty_1): ?>
                                             <div class="py-4 text-sm text-gray-600">Belum ada aktivitas.</div>
                                         <?php endif; ?><?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if ENDBLOCK]><![endif]--><?php endif; ?>
+                                        </div>
                                     </div>
         
                                     <!-- Recent Activities Pagination -->
                                     <?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if BLOCK]><![endif]--><?php endif; ?><?php if($this->recentActivities->hasPages()): ?>
-                                        <div class="pt-4 mt-6 border-t ring-border-light dark:border-border-dark">
+                                        <div class="px-6 py-4 bg-secondary-light dark:bg-secondary-dark rounded-b-2xl custom-pagination">
                                             <?php echo e($this->recentActivities->links()); ?>
 
                                         </div>

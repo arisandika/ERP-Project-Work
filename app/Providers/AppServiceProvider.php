@@ -10,6 +10,7 @@ use App\Observers\LeaveRequestObserver;
 use App\Observers\ReimbursementRequestObserver;
 use Filament\Support\Colors\Color;
 use Filament\Support\Facades\FilamentColor;
+use Illuminate\Pagination\Paginator;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\App;
 use Illuminate\Support\ServiceProvider;
@@ -61,7 +62,5 @@ class AppServiceProvider extends ServiceProvider
         SalesOrder::observe(SalesOrderObserver::class);
 
         ReimbursementRequest::observe(ReimbursementRequestObserver::class);
-
-
     }
 }
