@@ -30,7 +30,7 @@ class EpicsOverview extends Page
 
     protected ?string $subheading = 'Kelola dan pantau epic project beserta ticket dan progresnya';
 
-    protected static ?int $navigationSort = 7;
+    protected static ?int $navigationSort = 6;
 
     public Collection $epics;
 

@@ -50,7 +50,7 @@ unset($__defined_vars, $__key, $__value); ?>
         class="fi-ta-empty-state-content mx-auto grid max-w-lg justify-items-center text-center"
     >
         <div
-            class="fi-ta-empty-state-icon-ctn mb-4 rounded-full bg-gray-100 p-3 dark:bg-gray-500/20"
+            class="fi-ta-empty-state-icon-ctn mb-4 rounded-full bg-gray-100 p-3 dark:bg-main-light0/20"
         >
             <?php if (isset($component)) { $__componentOriginalbfc641e0710ce04e5fe02876ffc6f950 = $component; } ?>
 <?php if (isset($attributes)) { $__attributesOriginalbfc641e0710ce04e5fe02876ffc6f950 = $attributes; } ?>

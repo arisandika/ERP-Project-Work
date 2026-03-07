@@ -5,7 +5,7 @@
         <div class="mb-6">
             <x-filament::section>
                 <div class="mb-5">
-                    <h2 class="text-lg font-semibold text-gray-900 dark:text-white">
+                    <h2 class="text-lg font-semibold text-black dark:text-white">
                         Select Project
                     </h2>
                     <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">
@@ -25,7 +25,7 @@
                             type="text"
                             wire:model.live.debounce.300ms="searchProject"
                             placeholder="Search projects by name or prefix..."
-                            class="block w-full pl-10 pr-3 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                            class="block w-full pl-10 pr-3 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-black dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:ring-2 focus:ring-primary-500 focus:border-transparent"
                         />
                         @if($searchProject)
                             <button
@@ -42,7 +42,7 @@
 
                 @if($projects->isEmpty())
                     <div class="flex flex-col items-center justify-center py-12 text-gray-500 dark:text-gray-400">
-                        <h3 class="mb-1 text-base font-medium text-gray-900 dark:text-white">No Projects Available</h3>
+                        <h3 class="mb-1 text-base font-medium text-black dark:text-white">No Projects Available</h3>
                         <p class="text-sm text-gray-500 dark:text-gray-400">You don't have access to any projects yet.</p>
                     </div>
                 @elseif($this->filteredProjects->isEmpty())
@@ -50,7 +50,7 @@
                         <svg class="w-12 h-12 mb-3 text-gray-400 dark:text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
                         </svg>
-                        <h3 class="mb-1 text-base font-medium text-gray-900 dark:text-white">No Projects Found</h3>
+                        <h3 class="mb-1 text-base font-medium text-black dark:text-white">No Projects Found</h3>
                         <p class="text-sm text-gray-500 dark:text-gray-400">Try adjusting your search terms</p>
                     </div>
                 @else
@@ -95,7 +95,7 @@
                                 @endif
 
                                 {{-- Project Name --}}
-                                <h3 class="text-base font-semibold text-gray-900 dark:text-white line-clamp-2">
+                                <h3 class="text-base font-semibold text-black dark:text-white line-clamp-2">
                                     {{ $project->name }}
                                 </h3>
                             </button>
@@ -111,7 +111,7 @@
                 <button
                     @click="open = !open"
                     @click.away="open = false"
-                    class="inline-flex items-center gap-2 px-4 py-2.5 text-sm font-medium text-gray-900 dark:text-white bg-white dark:bg-gray-800 border-2 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+                    class="inline-flex items-center gap-2 px-4 py-3 text-sm font-medium text-black transition-colors border-2 dark:text-white bg-secondary-light dark:bg-accent-dark rounded-2xl hover:bg-main-light dark:hover:bg-main-dark"
                     style="border-color: {{ $selectedProject->color ?? '#D1D5DB' }};"
                 >
                     @if($selectedProject->ticket_prefix)
@@ -155,7 +155,7 @@
                             <button
                                 wire:click="selectProject({{ $project->id }})"
                                 @click="open = false"
-                                class="w-full flex items-center gap-3 px-3 py-2 rounded-md hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors text-left {{ $project->id === $selectedProject->id ? 'bg-gray-50 dark:bg-gray-700' : '' }}"
+                                class="w-full flex items-center gap-3 px-3 py-2 rounded-md hover:bg-main-light dark:hover:bg-gray-700 transition-colors text-left {{ $project->id === $selectedProject->id ? 'bg-main-light dark:bg-gray-700' : '' }}"
                             >
                                 @if($project->ticket_prefix)
                                     @php
@@ -172,7 +172,7 @@
                                         {{ $project->ticket_prefix }}
                                     </span>
                                 @endif
-                                <div class="flex-1 min-w-0 text-sm font-medium text-gray-900 truncate dark:text-white">
+                                <div class="flex-1 min-w-0 text-sm font-medium text-black truncate dark:text-white">
                                     {{ $project->name }}
                                 </div>
                                 @if($project->id === $selectedProject->id)
@@ -533,7 +533,7 @@
                 @foreach ($this->ticketStatuses as $status)
                     <div
                         wire:key="status-column-{{ $status->id }}"
-                        class="status-column rounded-xl border border-gray-200 dark:border-gray-700 flex flex-col bg-gray-50 dark:bg-gray-900 w-[calc(85vw-2rem)] min-w-[280px] max-w-[350px] h-[700px] sm:w-[calc((100vw-6rem)/2)] sm:h-[750px] lg:w-[calc((100vw-8rem)/3)] lg:h-[800px] xl:w-[calc((100vw-10rem)/4)] xl:h-[850px]"
+                        class="status-column rounded-xl border border-gray-200 dark:border-gray-700 flex flex-col bg-main-light dark:bg-gray-900 w-[calc(85vw-2rem)] min-w-[280px] max-w-[350px] h-[700px] sm:w-[calc((100vw-6rem)/2)] sm:h-[750px] lg:w-[calc((100vw-8rem)/3)] lg:h-[800px] xl:w-[calc((100vw-10rem)/4)] xl:h-[850px]"
                         data-status-id="{{ $status->id }}"
                     >
                         <div
@@ -579,7 +579,7 @@
                                     >
                                         <div class="p-2">
                                             <div class="flex items-center justify-between px-3 py-2 border-b border-gray-200 dark:border-gray-700">
-                                                <span class="text-sm font-medium text-gray-900 dark:text-white">Sort list</span>
+                                                <span class="text-sm font-medium text-black dark:text-white">Sort list</span>
                                                 <button @click="open = false" class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300">
                                                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
@@ -659,7 +659,7 @@
                                         </div>
                                     </div>
 
-                                    <h4 class="mb-2 font-medium text-gray-900 dark:text-white">{{ $ticket->name }}</h4>
+                                    <h4 class="mb-2 font-medium text-black dark:text-white">{{ $ticket->name }}</h4>
 
                                     @if ($ticket->description)
                                         <p class="mb-3 text-sm text-gray-500 dark:text-gray-400 line-clamp-2">

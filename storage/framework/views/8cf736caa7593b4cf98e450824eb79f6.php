@@ -475,7 +475,7 @@
 
                     <?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if BLOCK]><![endif]--><?php endif; ?><?php if($isSelectionEnabled || count($sortableColumns)): ?>
                         <div
-                            class="flex items-center gap-4 gap-x-6 bg-gray-50 px-4 dark:bg-white/5 sm:px-6"
+                            class="flex items-center gap-4 gap-x-6 bg-main-light px-4 dark:bg-white/5 sm:px-6"
                         >
                             <?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if BLOCK]><![endif]--><?php endif; ?><?php if($isSelectionEnabled && (! $isReordering)): ?>
                                 <?php if (isset($component)) { $__componentOriginal36f68fca2c6625d1435d035c49146213 = $component; } ?>
@@ -829,8 +829,8 @@
                                 <?php endif; ?>
                                 class="<?php echo \Illuminate\Support\Arr::toCssClasses([
                                     'fi-ta-record relative h-full bg-white transition duration-75 dark:bg-gray-900',
-                                    'hover:bg-gray-50 dark:hover:bg-white/5' => ($recordUrl || $recordAction) && (! $contentGrid),
-                                    'hover:bg-gray-50 dark:hover:bg-white/10 dark:hover:ring-white/20' => ($recordUrl || $recordAction) && $contentGrid,
+                                    'hover:bg-main-light dark:hover:bg-white/5' => ($recordUrl || $recordAction) && (! $contentGrid),
+                                    'hover:bg-main-light dark:hover:bg-white/10 dark:hover:ring-white/20' => ($recordUrl || $recordAction) && $contentGrid,
                                     'rounded-xl shadow-sm ring-1 ring-gray-950/5 dark:bg-white/5 dark:ring-white/10' => $contentGrid,
                                     ...$getRecordClasses($record),
                                 ]); ?>"
@@ -840,7 +840,7 @@
                                         isGroupCollapsed(
                                             <?php echo e(\Illuminate\Support\Js::from($recordGroupTitle)); ?>,
                                         ),
-                                    <?php echo e(($contentGrid ? '\'bg-gray-50 dark:bg-white/10 dark:ring-white/20\'' : '\'bg-gray-50 dark:bg-white/5 before:absolute before:start-0 before:inset-y-0 before:w-0.5 before:bg-primary-600 dark:before:bg-primary-500\'') . ': isRecordSelected(\'' . $recordKey . '\')'); ?>,
+                                    <?php echo e(($contentGrid ? '\'bg-main-light dark:bg-white/10 dark:ring-white/20\'' : '\'bg-main-light dark:bg-white/5 before:absolute before:start-0 before:inset-y-0 before:w-0.5 before:bg-primary-600 dark:before:bg-primary-500\'') . ': isRecordSelected(\'' . $recordKey . '\')'); ?>,
                                     <?php echo e($contentGrid ? '\'bg-white dark:bg-white/5 dark:ring-white/10\': ! isRecordSelected(\'' . $recordKey . '\')' : '\'\':\'\''); ?>,
                                 }"
                             >
@@ -1266,7 +1266,7 @@
                                                 ]); ?>"
                                             >
                                                 <span
-                                                    class="text-sm font-semibold text-gray-950 dark:text-white"
+                                                    class="text-sm font-semibold text-black dark:text-white"
                                                 >
                                                     <?php echo e($columnGroup->getLabel()); ?>
 
@@ -1775,7 +1775,7 @@
                                         <?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if BLOCK]><![endif]--><?php endif; ?><?php if($isSelectionEnabled && $recordCheckboxPosition === RecordCheckboxPosition::BeforeCells): ?>
                                             <?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if BLOCK]><![endif]--><?php endif; ?><?php if(count($actions) && $actionsPosition === ActionsPosition::BeforeCells): ?>
                                                 <td
-                                                    class="bg-gray-50 dark:bg-white/5"
+                                                    class="bg-main-light dark:bg-white/5"
                                                 ></td>
                                             <?php endif; ?><?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if ENDBLOCK]><![endif]--><?php endif; ?>
 

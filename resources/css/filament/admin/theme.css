@@ -83,7 +83,7 @@
 }
 
 .fi-btn {
-    @apply px-4 py-2.5 rounded-full !important;
+    @apply px-4 py-2.5 rounded-full hover:bg-main-primary/90 dark:hover:bg-main-primary/90 !important;
 }
 
 .fi-ta-ctn {
@@ -321,7 +321,7 @@ textarea {
 }
 
 select.grow.cursor-pointer {
-    @apply rounded-full bg-accent-light dark:bg-accent-dark px-3 py-1.5 text-sm text-gray-950 outline-none dark:text-white [&_optgroup]:bg-accent-light [&_optgroup]:dark:bg-accent-dark [&_option]:bg-accent-light [&_option]:dark:bg-accent-dark !important;
+    @apply rounded-full bg-accent-light dark:bg-accent-dark px-3 py-1.5 text-sm text-black outline-none dark:text-white [&_optgroup]:bg-accent-light [&_optgroup]:dark:bg-accent-dark [&_option]:bg-accent-light [&_option]:dark:bg-accent-dark !important;
 }
 
 .fi-fo-date-time-picker-panel {

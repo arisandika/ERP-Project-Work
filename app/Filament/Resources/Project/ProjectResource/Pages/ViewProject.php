@@ -31,7 +31,7 @@ class ViewProject extends ViewRecord
                 ->label('External Dashboard')
                 ->icon('heroicon-o-globe-alt')
                 ->color('success')
-                ->visible(fn() => auth()->user()->hasRole('super_admin'))
+                // ->visible(fn() => auth()->user()->hasRole('super_admin'))
                 ->modalHeading('Akses External Dashboard')
                 ->modalDescription('Bagikan kredensial ini ke user eksternal atau client untuk mengakses dashboard project ini')
                 ->modalContent(function () {

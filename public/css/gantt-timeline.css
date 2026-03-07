@@ -1,11 +1,10 @@
 /* Light mode - Task bars dengan warna biru */
 .gantt_task_line {
-    background-color: #3b82f6 !important;
-    border-color: #2563eb !important;
+    background-color: #3b83f6b9 !important;
 }
 
 .gantt_task_progress {
-    background-color: #2563eb !important;
+    background-color: #60be8a !important;
 }
 
 .gantt_task_line.overdue {
@@ -16,32 +15,24 @@
     background-color: #dc2626 !important;
 }
 
-.gantt_task_scale {
-    height: 80px !important;
-    background-color: #f9fafb;
-    color: #000;
+.gantt_selected .gantt_cell {
+    background: #3b82f633 !important;
 }
 
-.gantt_scale_line {
-    height: 40px !important;
-    background-color: #f9fafb;
-    color: #000;
+.gantt_selected .gantt_task_cell {
+    background: #3b82f633 !important;
 }
 
-.gantt_grid_scale {
-    display: flex;
-    align-items: center;
-    height: 80px !important;
-    background-color: #f9fafb;
-    color: #000;
+.gantt_grid_scale .gantt_grid_head_cell,
+.gantt_task .gantt_task_scale .gantt_scale_cell {
+    font-weight: 700;
 }
 
-.gantt_grid_head_cell {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    height: 100%;
-    background-color: #f9fafb;
+/* Light mode support */
+.gantt_container {
+    background: #fff !important;
+    overflow: hidden;
+    border-color: #cacbcc !important;
 }
 
 .gantt_scale_cell {
@@ -49,113 +40,251 @@
     justify-content: center;
     align-items: center;
     height: 100%;
+    background: #e5e5e6 !important;
+    color: black !important;
+    border-color: #cacbcc !important;
 }
 
-.gantt_grid_scale .gantt_grid_head_cell,
-.gantt_task .gantt_task_scale .gantt_scale_cell {
-    /* font-size: 12px; */
-    font-weight: 700;
+.gantt_layout_cell {
+    border-color: #cacbcc !important;
 }
 
-.gantt_container {
-    /* border-radius: 8px; */
+.gantt_scale_line {
+    height: 40px !important;
+    border-color: #cacbcc !important;
+}
+
+.gantt_task_cell {
+    border-color: #cacbcc !important;
+}
+
+/* Light mode - Grid area */
+.gantt_grid {
+    background: #fff !important;
+    border-color: #cacbcc !important;
+}
+
+.gantt_grid_scale {
+    display: flex;
+    align-items: center;
+    height: 80px !important;
+    background: #e5e5e6 !important;
+    border-color: #cacbcc !important;
+}
+
+.gantt_grid_head_cell {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100%;
+    background: #e5e5e6 !important;
+    color: black !important;
+    border-color: #cacbcc !important;
+}
+
+.gantt_row {
+    background: #fff !important;
+    border-color: #cacbcc !important;
+}
+
+.gantt_row:nth-child(odd) {
+    background: #fff !important;
+}
+
+.gantt_cell {
+    color: black !important;
+    border-color: #cacbcc !important;
+}
+
+/* Light mode - Task area */
+.gantt_task {
+    background: #fff !important;
+    border-color: #cacbcc !important;
+}
+
+.gantt_task_scale {
+    height: 80px !important;
+    background: #e5e5e6 !important;
+    border-color: #cacbcc !important;
+}
+
+.gantt_task_row {
+    background: #fff !important;
+    border-color: #cacbcc !important;
+}
+
+.gantt_task_row:nth-child(odd) {
+    background: #fff !important;
+}
+
+.gantt_task_content {
+    padding: 0px 10px !important;
+    color: white !important;
+    font-size: 13px !important;
+    font-weight: 500;
+}
+
+/* Light mode - Tooltip */
+.gantt_tooltip {
+    background: #e5e5e6 !important;
+    color: black !important;
+    border: 1px solid #cacbcc !important;
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.3) !important;
+}
+
+/* Light mode - Scrollbars */
+.gantt_layout_cell::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+}
+
+.gantt_layout_cell::-webkit-scrollbar-track {
+    background: #fff;
+}
+
+.gantt_layout_cell::-webkit-scrollbar-thumb {
+    background: #cdcdcd;
+    border-radius: 4px;
+}
+
+.gantt_layout_cell::-webkit-scrollbar-thumb:hover {
+    background: #80838bc7;
+}
+
+/* Light mode - Today line */
+.gantt_today {
+    background: rgba(239 68 68 / 0.3) !important;
+}
+
+/* Light mode - Weekend styling */
+.gantt_task_cell.week_end {
+    background: rgba(55 65 81 / 0.3) !important;
+}
+
+/* Light mode - Links */
+.gantt_link_line {
+    stroke: rgb(156 163 175) !important;
+}
+
+.gantt_link_arrow {
+    fill: rgb(156 163 175) !important;
+}
+
+/* Add these styles to your existing gantt-timeline.css file */
+.gantt-task-text,
+.gantt-task-text-truncated {
+    display: block;
+    width: 100%;
     overflow: hidden;
+    cursor: help;
+}
+
+.gantt-task-text-truncated {
+    text-overflow: ellipsis;
+}
+
+.gantt-task-row {
+    position: relative;
+}
+
+/* Ensure tooltips are visible */
+.gantt_grid_data .gantt_cell {
+    overflow: visible;
+}
+
+/* Style for task name column */
+.gantt_grid_data .gantt_cell[data-column="text"] {
+    padding: 8px 12px;
+    line-height: 1.4;
 }
 
 /* Dark mode support */
 .dark .gantt_container {
-    background: #111827 !important;
-    /* color: white !important; */
-    border-color: rgb(55 65 81) !important;
+    background: #000 !important;
+    overflow: hidden;
+    border-color: #454649 !important;
 }
 
 .dark .gantt_scale_cell {
-    background: rgb(17 24 39) !important;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100%;
+    background: #232428 !important;
     color: white !important;
-    border-color: rgb(55 65 81) !important;
+    border-color: #454649 !important;
 }
 
 .dark .gantt_layout_cell {
-    border-color: rgb(55 65 81) !important;
+    border-color: #454649 !important;
 }
 
 .dark .gantt_scale_line {
-    border-color: rgb(55 65 81) !important;
+    height: 40px !important;
+    border-color: #454649 !important;
 }
 
 .dark .gantt_task_cell {
-    border-color: rgb(55 65 81) !important;
+    border-color: #454649 !important;
 }
 
 /* Dark mode - Grid area */
 .dark .gantt_grid {
-    background: #111827 !important;
-    border-color: rgb(55 65 81) !important;
+    background: #000 !important;
+    border-color: #454649 !important;
 }
 
 .dark .gantt_grid_scale {
-    background: rgb(17 24 39) !important;
-    border-color: rgb(55 65 81) !important;
+    display: flex;
+    align-items: center;
+    height: 80px !important;
+    background: #232428 !important;
+    border-color: #454649 !important;
 }
 
 .dark .gantt_grid_head_cell {
-    background: #1d2432 !important;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100%;
+    background: #232428 !important;
     color: white !important;
-    border-color: rgb(55 65 81) !important;
+    border-color: #454649 !important;
 }
 
 .dark .gantt_row {
-    background: #111827 !important;
-    border-color: rgb(55 65 81) !important;
+    background: #000 !important;
+    border-color: #454649 !important;
 }
 
 .dark .gantt_row:nth-child(odd) {
-    background: #111827 !important;
-}
-
-.dark .gantt_row.gantt_selected {
-    background: rgb(59 130 246) !important;
+    background: #000 !important;
 }
 
 .dark .gantt_cell {
     color: white !important;
-    border-color: rgb(55 65 81) !important;
+    border-color: #454649 !important;
 }
 
 /* Dark mode - Task area */
 .dark .gantt_task {
-    background: #111827 !important;
-    border-color: rgb(55 65 81) !important;
+    background: #000 !important;
+    border-color: #454649 !important;
 }
 
 .dark .gantt_task_scale {
-    background: rgb(17 24 39) !important;
-    border-color: rgb(55 65 81) !important;
-}
-
-.dark .gantt_scale_cell {
-    background: #1d2432 !important;
-    color: white !important;
-    border-color: rgb(55 65 81) !important;
+    height: 80px !important;
+    background: #232428 !important;
+    border-color: #454649 !important;
 }
 
 .dark .gantt_task_row {
-    background: #111827 !important;
-    border-color: rgb(55 65 81) !important;
+    background: #000 !important;
+    border-color: #454649 !important;
 }
 
 .dark .gantt_task_row:nth-child(odd) {
-    background: #111827 !important;
-}
-
-/* Dark mode - Task bars tetap biru */
-.dark .gantt_task_line {
-    background: rgb(59 130 246) !important;
-    border-color: rgb(37 99 235) !important;
-}
-
-.dark .gantt_task_progress {
-    background: rgb(37 99 235) !important;
+    background: #000 !important;
 }
 
 .dark .gantt_task_content {
@@ -163,21 +292,11 @@
     font-weight: 500;
 }
 
-/* Dark mode - Overdue tasks */
-.dark .gantt_task_line.overdue {
-    background: rgb(239 68 68) !important;
-    border-color: rgb(220 38 38) !important;
-}
-
-.dark .gantt_task_progress.overdue {
-    background: rgb(220 38 38) !important;
-}
-
 /* Dark mode - Tooltip */
 .dark .gantt_tooltip {
-    background: rgb(17 24 39) !important;
+    background: #232428 !important;
     color: white !important;
-    border: 1px solid rgb(55 65 81) !important;
+    border: 1px solid #454649 !important;
     box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.3) !important;
 }
 
@@ -188,7 +307,7 @@
 }
 
 .dark .gantt_layout_cell::-webkit-scrollbar-track {
-    background: #111827;
+    background: #000;
 }
 
 .dark .gantt_layout_cell::-webkit-scrollbar-thumb {
@@ -217,55 +336,4 @@
 
 .dark .gantt_link_arrow {
     fill: rgb(156 163 175) !important;
-}
-
-/* Dark mode - Selection */
-.dark .gantt_selected .gantt_cell {
-    background: rgba(59 130 246 / 0.2) !important;
-}
-
-.dark .gantt_selected .gantt_task_cell {
-    background: rgba(59 130 246 / 0.1) !important;
-}
-
-/* Responsive adjustments */
-@media (max-width: 768px) {
-    .gantt_container {
-        /* font-size: 12px; */
-    }
-    
-    .gantt_grid_head_cell,
-    .gantt_scale_cell {
-        /* font-size: 11px; */
-    }
-}
-
-
-/* Add these styles to your existing gantt-timeline.css file */
-.gantt-task-text,
-.gantt-task-text-truncated {
-    display: block;
-    width: 100%;
-    overflow: hidden;
-    white-space: nowrap;
-    cursor: help;
-}
-
-.gantt-task-text-truncated {
-    text-overflow: ellipsis;
-}
-
-.gantt-task-row {
-    position: relative;
-}
-
-/* Ensure tooltips are visible */
-.gantt_grid_data .gantt_cell {
-    overflow: visible;
-}
-
-/* Style for task name column */
-.gantt_grid_data .gantt_cell[data-column="text"] {
-    padding: 8px 12px;
-    line-height: 1.4;
 }

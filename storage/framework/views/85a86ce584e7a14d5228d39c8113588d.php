@@ -166,7 +166,7 @@
                         x-model="displayText"
                         <?php if($id = $getId()): ?> id="<?php echo e($id); ?>" <?php endif; ?>
                         class="<?php echo \Illuminate\Support\Arr::toCssClasses([
-                            'fi-fo-date-time-picker-display-text-input w-full border-none bg-transparent px-3 py-1.5 text-base text-gray-950 outline-none transition duration-75 placeholder:text-gray-400 focus:ring-0 disabled:text-gray-500 disabled:[-webkit-text-fill-color:theme(colors.gray.500)] dark:text-white dark:placeholder:text-gray-500 dark:disabled:text-gray-400 dark:disabled:[-webkit-text-fill-color:theme(colors.gray.400)] sm:text-sm sm:leading-6',
+                            'fi-fo-date-time-picker-display-text-input w-full border-none bg-transparent px-3 py-1.5 text-base text-black outline-none transition duration-75 placeholder:text-gray-400 focus:ring-0 disabled:text-gray-500 disabled:[-webkit-text-fill-color:theme(colors.gray.500)] dark:text-white dark:placeholder:text-gray-500 dark:disabled:text-gray-400 dark:disabled:[-webkit-text-fill-color:theme(colors.gray.400)] sm:text-sm sm:leading-6',
                         ]); ?>"
                     />
                 </button>
@@ -186,7 +186,7 @@
                             <div class="flex items-center justify-between">
                                 <select
                                     x-model="focusedMonth"
-                                    class="grow cursor-pointer border-none bg-transparent p-0 text-sm font-medium text-gray-950 focus:ring-0 dark:bg-gray-900 dark:text-white"
+                                    class="grow cursor-pointer border-none bg-transparent p-0 text-sm font-medium text-black focus:ring-0 dark:bg-gray-900 dark:text-white"
                                 >
                                     <template
                                         x-for="(month, index) in months"
@@ -202,7 +202,7 @@
                                     type="number"
                                     inputmode="numeric"
                                     x-model.debounce="focusedYear"
-                                    class="w-16 border-none bg-transparent p-0 text-right text-sm text-gray-950 focus:ring-0 dark:text-white"
+                                    class="w-16 border-none bg-transparent p-0 text-right text-sm text-black focus:ring-0 dark:text-white"
                                 />
                             </div>
 
@@ -240,18 +240,18 @@
                                         role="option"
                                         x-bind:aria-selected="focusedDate.date() === day"
                                         x-bind:class="{
-                                            'text-gray-950 dark:text-white': ! dayIsToday(day) && ! dayIsSelected(day),
+                                            'text-black dark:text-white': ! dayIsToday(day) && ! dayIsSelected(day),
                                             'cursor-pointer': ! dayIsDisabled(day),
                                             'text-primary-600 dark:text-primary-400':
                                                 dayIsToday(day) &&
                                                 ! dayIsSelected(day) &&
                                                 focusedDate.date() !== day &&
                                                 ! dayIsDisabled(day),
-                                            'bg-gray-50 dark:bg-white/5':
+                                            'bg-main-light dark:bg-white/5':
                                                 focusedDate.date() === day &&
                                                 ! dayIsSelected(day) &&
                                                 ! dayIsDisabled(day),
-                                            'text-primary-600 bg-gray-50 dark:bg-white/5 dark:text-primary-400':
+                                            'text-primary-600 bg-main-light dark:bg-white/5 dark:text-primary-400':
                                                 dayIsSelected(day),
                                             'pointer-events-none': dayIsDisabled(day),
                                             'opacity-50': dayIsDisabled(day),
@@ -273,7 +273,7 @@
                                     type="number"
                                     inputmode="numeric"
                                     x-model.debounce="hour"
-                                    class="me-1 w-10 border-none bg-transparent p-0 text-center text-sm text-gray-950 focus:ring-0 dark:text-white"
+                                    class="me-1 w-10 border-none bg-transparent p-0 text-center text-sm text-black focus:ring-0 dark:text-white"
                                 />
 
                                 <span
@@ -289,7 +289,7 @@
                                     type="number"
                                     inputmode="numeric"
                                     x-model.debounce="minute"
-                                    class="me-1 w-10 border-none bg-transparent p-0 text-center text-sm text-gray-950 focus:ring-0 dark:text-white"
+                                    class="me-1 w-10 border-none bg-transparent p-0 text-center text-sm text-black focus:ring-0 dark:text-white"
                                 />
 
                                 <?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if BLOCK]><![endif]--><?php endif; ?><?php if($hasSeconds()): ?>
@@ -306,7 +306,7 @@
                                         type="number"
                                         inputmode="numeric"
                                         x-model.debounce="second"
-                                        class="me-1 w-10 border-none bg-transparent p-0 text-center text-sm text-gray-950 focus:ring-0 dark:text-white"
+                                        class="me-1 w-10 border-none bg-transparent p-0 text-center text-sm text-black focus:ring-0 dark:text-white"
                                     />
                                 <?php endif; ?><?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if ENDBLOCK]><![endif]--><?php endif; ?>
                             </div>

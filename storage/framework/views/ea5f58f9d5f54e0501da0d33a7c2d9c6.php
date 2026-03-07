@@ -33,7 +33,7 @@ foreach ($attributes->all() as $__key => $__value) {
 unset($__defined_vars, $__key, $__value); ?>
 
 <div
-    <?php echo e($attributes->class(['fi-ta-filter-indicators flex items-start justify-between gap-x-3 bg-gray-50 px-3 py-1.5 dark:bg-white/5 sm:px-6'])); ?>
+    <?php echo e($attributes->class(['fi-ta-filter-indicators flex items-start justify-between gap-x-3 bg-main-light px-3 py-1.5 dark:bg-white/5 sm:px-6'])); ?>
 
 >
     <div class="flex flex-col gap-x-3 gap-y-1 sm:flex-row">

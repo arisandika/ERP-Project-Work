@@ -44,7 +44,7 @@
         <div
             <?php echo e($attributes->class([
                     $getLogoClasses($isDarkMode),
-                    'text-xl font-bold leading-5 tracking-tight text-gray-950 dark:text-white',
+                    'text-xl font-bold leading-5 tracking-tight text-black dark:text-white',
                 ])); ?>
 
         >

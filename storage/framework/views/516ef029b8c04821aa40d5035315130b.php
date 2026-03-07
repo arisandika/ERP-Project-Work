@@ -149,7 +149,7 @@ unset($__defined_vars, $__key, $__value); ?>
                 <div
                     class="<?php echo \Illuminate\Support\Arr::toCssClasses([
                         'relative h-1.5 w-1.5 rounded-full',
-                        'bg-gray-400 dark:bg-gray-500' => ! $active,
+                        'bg-gray-400 dark:bg-main-light0' => ! $active,
                         'bg-primary-600 dark:bg-primary-400' => $active,
                     ]); ?>"
                 ></div>

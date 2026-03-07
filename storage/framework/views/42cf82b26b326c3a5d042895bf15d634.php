@@ -1,5 +1,5 @@
 <h4
-    <?php echo e($attributes->class(['fi-ta-empty-state-heading text-base font-semibold leading-6 text-gray-950 dark:text-white'])); ?>
+    <?php echo e($attributes->class(['fi-ta-empty-state-heading text-base font-semibold leading-6 text-black dark:text-white'])); ?>
 
 >
     <?php echo e($slot); ?>

@@ -51,7 +51,7 @@ unset($__defined_vars, $__key, $__value); ?>
     <?php endif; ?>
     <?php echo e($attributes
             ->class([
-                'fi-checkbox-input rounded border-none bg-white shadow-sm ring-1 transition duration-75 checked:ring-0 focus:ring-2 focus:ring-offset-0 disabled:pointer-events-none disabled:bg-gray-50 disabled:text-gray-50 disabled:checked:bg-gray-400 disabled:checked:text-gray-400 dark:bg-white/5 dark:disabled:bg-transparent dark:disabled:checked:bg-gray-600',
+                'fi-checkbox-input rounded border-none bg-white shadow-sm ring-1 transition duration-75 checked:ring-0 focus:ring-2 focus:ring-offset-0 disabled:pointer-events-none disabled:bg-main-light disabled:text-gray-50 disabled:checked:bg-gray-400 disabled:checked:text-gray-400 dark:bg-white/5 dark:disabled:bg-transparent dark:disabled:checked:bg-gray-600',
                 $validInputClasses => (! $hasAlpineValidClasses) && $valid,
                 $invalidInputClasses => (! $hasAlpineValidClasses) && (! $valid),
             ])); ?>

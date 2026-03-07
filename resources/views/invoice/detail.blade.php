@@ -19,6 +19,9 @@
     <!-- Alpine.js -->
     <script defer src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"></script>
 
+    <!-- Livewire Styles -->
+    @livewireStyles
+
     <script>
         tailwind.config = {
             darkMode: 'class',
@@ -26,6 +29,25 @@
                 extend: {
                     fontFamily: {
                         sans: ['Poppins', 'sans-serif'],
+                    },
+                    colors: {
+                        "main-primary": "#1c9cf0",
+                        "main-secondary": "#1d91de",
+
+                        "main-light": "#ffffff",
+                        "main-dark": "#000", // 'main-dark': '#1c2433',
+
+                        "secondary-light": "#f7f8f8",
+                        "secondary-dark": "#17181c", // 'secondary-dark': '#2a303f',
+
+                        "accent-light": "#e5e5e6",
+                        "accent-dark": "#232428", // 'accent-dark': '#2a3656',
+
+                        "border-light": "#d9dbdc",
+                        "border-dark": "#454649", // 'border-dark': '#3d4354',
+
+                        "main-accent": "#9da1a640",
+                        "secondary-accent": "#334c82",
                     },
                 }
             }
@@ -39,7 +61,8 @@
     </style>
 </head>
 
-<body class="px-4 antialiased transition-colors duration-300 bg-gray-50 text-gray-950 dark:bg-gray-950 dark:text-white md:px-0">
+<body
+    class="px-4 antialiased text-black transition-colors duration-300 bg-main-light dark:bg-main-dark dark:text-white md:px-0">
 
     <div x-data="{
         darkMode: localStorage.getItem('theme') === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches),
@@ -60,7 +83,7 @@
         <!-- Theme Toggle -->
         <div class="absolute top-4 right-4">
             <button @click="toggleTheme()"
-                class="p-2 text-gray-500 transition-colors duration-200 bg-white border border-gray-200 rounded-lg shadow-sm hover:bg-gray-50 hover:text-gray-700 dark:bg-gray-900 dark:text-gray-400 dark:border-gray-700 dark:hover:text-white dark:hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-gray-200 dark:focus:ring-gray-700">
+                class="p-2 text-gray-500 transition-colors duration-200 rounded-full shadow-sm ring-1 ring-border-light dark:ring-border-dark bg-secondary-light hover:bg-main-light dark:bg-secondary-dark dark:text-gray-400 dark:hover:bg-main-dark focus:outline-none focus:ring-2 focus:ring-border-light dark:focus:ring-border-dark">
                 <svg x-show="darkMode" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                         d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z">
@@ -76,21 +99,19 @@
         </div>
 
         <main
-            class="w-full max-w-lg px-6 py-12 mx-auto my-16 bg-white shadow-sm ring-1 ring-gray-950/5 dark:bg-gray-900 dark:ring-white/10 rounded-xl sm:px-12">
+            class="w-full max-w-lg px-6 py-12 mx-auto my-16 shadow-sm bg-secondary-light fi-simple-main ring-1 ring-border-light dark:bg-secondary-dark dark:ring-border-dark rounded-2xl sm:px-12">
 
             <div class="fi-simple-page">
-                <!-- Logic Status PHP -->
                 @php
                     $status = strtolower((string) ($invoice->status ?? 'unknown'));
                     $isPaid = in_array($status, ['paid', 'lunas', 'settled'], true);
                     $statusLabel = $isPaid ? 'LUNAS' : 'BELUM LUNAS';
                     $statusClass = $isPaid
                         ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400 ring-1 ring-green-600/20'
-                        : 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400 ring-1 ring-yellow-600/20';
+                        : 'text-red-700 dark:text-red-400 bg-red-50 dark:bg-red-900/30 ring-1 ring-red-200 dark:ring-red-900/50';
                 @endphp
 
                 <section class="grid auto-cols-fr gap-y-8">
-                    <!-- Header: Logo & Status Icon -->
                     <header class="flex flex-col items-center fi-simple-header">
                         <div style="height: 1.5rem;" class="flex mb-8 fi-logo">
                             <div class="flex items-center">
@@ -99,14 +120,15 @@
 
                         </div>
                         <h1
-                            class="text-2xl font-bold tracking-tight text-center fi-simple-header-heading text-gray-950 dark:text-white">
+                            class="text-2xl font-bold tracking-tight text-center fi-simple-header-heading text-black dark:text-white">
                             Dokumen Valid
                         </h1>
-                        <p class="mt-2 text-sm text-center text-gray-500 fi-simple-header-subheading dark:text-gray-400">
+                        <p
+                            class="mt-2 text-sm text-center text-gray-500 fi-simple-header-subheading dark:text-gray-400">
                             Dokumen berhasil diverifikasi
                         </p>
                         <div
-                            class="flex items-center justify-center w-16 h-16 mt-4 bg-green-100 rounded-full dark:bg-green-900/20 ring-4 ring-green-50 dark:ring-green-900/10">
+                            class="flex items-center justify-center w-16 h-16 mt-8 bg-green-100 rounded-full dark:bg-green-900/20 ring-4 ring-green-50 dark:ring-green-900/10">
                             <svg class="w-8 h-8 text-green-600 dark:text-green-400" fill="none" viewBox="0 0 24 24"
                                 stroke="currentColor">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5"
@@ -116,69 +138,65 @@
                     </header>
 
                     <div class="grid fi-form gap-y-6">
-                        <!-- Detail Invoice -->
                         <div
-                            class="p-4 rounded-lg bg-gray-50 dark:bg-white/5 ring-1 ring-gray-950/5 dark:ring-white/10">
+                            class="p-4 rounded-lg bg-main-light dark:bg-secondary-dark ring-1 ring-border-light dark:ring-border-dark">
                             <div class="space-y-4 text-sm">
-                                <!-- No Invoice -->
-                                <div class="flex justify-between pb-3 border-b border-gray-200 dark:border-gray-700">
+                                <div
+                                    class="flex justify-between pb-3 border-b border-border-light dark:border-border-dark">
                                     <span class="text-gray-500 dark:text-gray-400">No. Invoice</span>
                                     <span
-                                        class="font-bold text-gray-900 break-all dark:text-white">{{ $invoice->invoice_number }}</span>
+                                        class="font-bold text-black break-all dark:text-white">{{ $invoice->invoice_number }}</span>
                                 </div>
 
-                                <!-- Client -->
-                                <div class="flex justify-between pb-3 border-b border-gray-200 dark:border-gray-700">
+                                <div
+                                    class="flex justify-between pb-3 border-b border-border-light dark:border-border-dark">
                                     <span class="text-gray-500 dark:text-gray-400">Pelanggan</span>
                                     <span
-                                        class="font-semibold text-right text-gray-900 dark:text-white">{{ $invoice->customer->name ?? '-' }}</span>
+                                        class="font-semibold text-right text-black dark:text-white">{{ $invoice->customer->name ?? '-' }}</span>
                                 </div>
 
-                                <!-- Tanggal -->
                                 @if(!empty($invoice->invoice_date))
-                                    <div class="flex justify-between pb-3 border-b border-gray-200 dark:border-gray-700">
+                                    <div
+                                        class="flex justify-between pb-3 border-b border-border-light dark:border-border-dark">
                                         <span class="text-gray-500 dark:text-gray-400">Tanggal</span>
-                                        <span class="font-medium text-gray-900 dark:text-white">
+                                        <span class="font-medium text-black dark:text-white">
                                             {{ \Illuminate\Support\Carbon::parse($invoice->invoice_date)->format('d M Y') }}
                                         </span>
                                     </div>
                                 @endif
 
-                                <!-- Status -->
                                 <div
-                                    class="flex items-center justify-between pb-3 border-b border-gray-200 dark:border-gray-700">
+                                    class="flex items-center justify-between pb-3 border-b border-border-light dark:border-border-dark">
                                     <span class="text-gray-500 dark:text-gray-400">Status</span>
-                                    <span class="px-2.5 py-0.5 rounded-md text-xs font-bold {{ $statusClass }}">
+                                    <span class="px-2.5 py-0.5 rounded-md text-xs font-semibold {{ $statusClass }}">
                                         {{ $statusLabel }}
                                     </span>
                                 </div>
 
-                                <!-- Total -->
                                 <div class="flex items-center justify-between pt-1">
                                     <span class="text-gray-500 dark:text-gray-400">Total Tagihan</span>
-                                    <span class="text-lg font-bold text-blue-600 dark:text-blue-400">
+                                    <span class="text-lg font-bold text-main-primary">
                                         IDR {{ number_format((float) $invoice->grand_total, 0, ',', '.') }}
                                     </span>
                                 </div>
                             </div>
                         </div>
 
-                        <!-- Info Rekening (Conditional) -->
                         @if(!$isPaid)
                             <div
                                 class="p-4 rounded-lg bg-yellow-50 dark:bg-yellow-900/20 ring-1 ring-yellow-600/20 dark:ring-yellow-400/20">
                                 <div class="flex items-start gap-3">
-                                    <svg class="w-5 h-5 mt-0.5 text-yellow-600 dark:text-yellow-500 flex-shrink-0"
+                                    <svg class="w-5 h-5 mt-0.5 text-yellow-500 dark:text-yellow-500 flex-shrink-0"
                                         fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                             d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                                     </svg>
                                     <div>
                                         <p
-                                            class="mb-1 text-xs font-bold tracking-wide text-yellow-800 uppercase dark:text-yellow-400">
+                                            class="mb-1 text-xs font-semibold tracking-wide text-yellow-500 uppercase dark:text-yellow-400">
                                             Instruksi Pembayaran</p>
-                                        <p class="text-sm font-medium text-gray-900 dark:text-white">Bank BCA</p>
-                                        <p class="font-mono text-lg font-bold tracking-tight text-gray-900 dark:text-white">
+                                        <p class="text-sm font-medium text-black dark:text-white">Bank BCA</p>
+                                        <p class="font-mono text-lg font-bold tracking-tight text-black dark:text-white">
                                             555-000-1234</p>
                                         <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">a.n PT. Next Generation
                                             Solutions
@@ -188,21 +206,36 @@
                             </div>
                         @endif
 
-                        <!-- Buttons -->
-                        <div class="space-y-3">
-                            <!-- Tombol Download -->
+                        <div class="space-y-3" x-data="{ isDownloading: false }">
+
                             <a href="{{ route('invoice.download', ['record' => $invoice->id]) }}"
-                                class="relative inline-grid items-center justify-center w-full grid-flow-col gap-2 px-3 py-2 text-sm font-semibold text-white transition duration-75 bg-blue-600 rounded-lg shadow-sm outline-none fi-btn focus-visible:ring-2 fi-color-blue fi-btn-color-blue fi-size-md fi-btn-size-md hover:bg-blue-500 focus-visible:ring-blue-500/50 dark:bg-blue-600 dark:hover:bg-blue-500 dark:focus-visible:ring-blue-400/50 fi-ac-action fi-ac-btn-action">
-                                <svg class="w-5 h-5 transition-transform group-hover:-translate-y-0.5" fill="none"
-                                    stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                        d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path>
-                                </svg>
-                                <span>Download PDF</span>
+                                @click="isDownloading = true; setTimeout(() => isDownloading = false, 3000)"
+                                :class="{ 'opacity-75 cursor-wait pointer-events-none': isDownloading }"
+                                class="w-full fi-btn relative grid-flow-col items-center justify-center font-semibold outline-none transition duration-75 focus-visible:ring-2 rounded-full fi-color-main-primary fi-btn-color-primary fi-color-primary fi-size-md fi-btn-size-md gap-1.5 px-3 py-2.5 text-sm inline-grid shadow-sm bg-main-primary text-white hover:bg-main-primary/90 focus-visible:ring-main-primary/50 dark:bg-main-primary dark:hover:bg-main-primary/90 dark:focus-visible:ring-main-primary/50 fi-ac-action fi-ac-btn-action">
+
+                                <div x-show="!isDownloading" class="flex items-center gap-1.5">
+                                    <svg class="w-5 h-5 transition-transform group-hover:-translate-y-0.5" fill="none"
+                                        stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                            d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path>
+                                    </svg>
+                                    <span>Download PDF</span>
+                                </div>
+
+                                <div x-show="isDownloading" style="display: none;" class="flex items-center gap-2">
+                                    <svg class="w-5 h-5 animate-spin" xmlns="http://www.w3.org/2000/svg" fill="none"
+                                        viewBox="0 0 24 24">
+                                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor"
+                                            stroke-width="4"></circle>
+                                        <path class="opacity-75" fill="currentColor"
+                                            d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z">
+                                        </path>
+                                    </svg>
+                                </div>
                             </a>
 
                             <a href="https://www.nexicon.id"
-                                class="block w-full py-2 text-sm font-medium text-center text-gray-500 transition-colors hover:text-gray-900 dark:text-gray-400 dark:hover:text-white">
+                                class="block w-full py-2 text-sm font-medium text-center text-gray-500 transition-colors hover:text-black dark:text-gray-400 dark:hover:text-white">
                                 &larr; Kembali ke Website
                             </a>
                         </div>
@@ -210,7 +243,7 @@
 
                     <!-- Footer -->
                     <div class="text-center">
-                        <p class="text-xs text-gray-500 dark:text-gray-500">
+                        <p class="text-xs text-gray-500">
                             PT. NEXT GENERATION SOLUTIONS<br>
                             <a href="https://www.nexicon.id"
                                 class="font-medium transition-colors hover:text-blue-600 dark:hover:text-blue-400">www.nexicon.id</a>
@@ -222,7 +255,11 @@
             </div>
 
         </main>
+
     </div>
+
+    <!-- Livewire Scripts -->
+    @livewireScripts
 </body>
 
 </html>

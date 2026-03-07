@@ -176,7 +176,7 @@
                             'w-max' => $isBadge,
                             'cursor-pointer' => $itemIsCopyable,
                             match ($color) {
-                                null => 'text-gray-950 dark:text-white',
+                                null => 'text-black dark:text-white',
                                 'gray' => 'text-gray-500 dark:text-gray-400',
                                 default => 'text-custom-600 dark:text-custom-400',
                             } => $isBulleted,
@@ -261,7 +261,7 @@
                                             default => $size,
                                         },
                                         match ($color) {
-                                            null => 'text-gray-950 dark:text-white',
+                                            null => 'text-black dark:text-white',
                                             'gray' => 'text-gray-500 dark:text-gray-400',
                                             default => 'text-custom-600 dark:text-custom-400',
                                         },

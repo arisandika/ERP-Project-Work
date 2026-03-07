@@ -7,6 +7,8 @@
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>{{ $title ?? 'Client Project Dashboard' }}</title>
 
+    <link rel="icon" type="image/x-icon" href="https://www.nexicon.id/favicon.ico">
+
     <!-- Fonts -->
     <link rel="preconnect" href="https://fonts.bunny.net">
     <link href="https://fonts.bunny.net/css?family=poppins:400,500,600,700&display=swap" rel="stylesheet">
@@ -25,6 +27,25 @@
                     fontFamily: {
                         sans: ['Poppins', 'sans-serif'],
                     },
+                    colors: {
+                        "main-primary": "#1c9cf0",
+                        "main-secondary": "#1d91de",
+
+                        "main-light": "#ffffff",
+                        "main-dark": "#000", // 'main-dark': '#1c2433',
+
+                        "secondary-light": "#f7f8f8",
+                        "secondary-dark": "#17181c", // 'secondary-dark': '#2a303f',
+
+                        "accent-light": "#e5e5e6",
+                        "accent-dark": "#232428", // 'accent-dark': '#2a3656',
+
+                        "border-light": "#d9dbdc",
+                        "border-dark": "#454649", // 'border-dark': '#3d4354',
+
+                        "main-accent": "#9da1a640",
+                        "secondary-accent": "#334c82",
+                    },
                 }
             }
         }
@@ -37,7 +58,8 @@
     </style>
 </head>
 
-<body class="px-4 antialiased transition-colors duration-300 bg-gray-50 text-gray-950 dark:bg-gray-950 dark:text-white md:px-0"
+<body
+    class="antialiased text-black transition-colors duration-300 bg-main-light dark:bg-main-dark dark:text-white"
     x-data="{
         darkMode: localStorage.getItem('theme') === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches),
         toggleTheme() {
@@ -81,7 +103,7 @@
                     'text-red-600 bg-red-100': notif.type === 'error',
                     'text-blue-600 bg-blue-100': notif.type === 'info'
                 }"
-                class="flex items-center justify-between max-w-sm gap-4 px-4 py-3 font-medium rounded-lg shadow-lg pointer-events-auto min-w-">
+                class="flex items-center justify-between max-w-sm gap-4 px-4 py-2.5 font-medium shadow-lg pointer-events-auto rounded-2xl">
                 <div class="flex items-center gap-2">
                     <svg x-show="notif.type === 'success'" class="w-5 h-5" fill="none" stroke="currentColor"
                         viewBox="0 0 24 24">

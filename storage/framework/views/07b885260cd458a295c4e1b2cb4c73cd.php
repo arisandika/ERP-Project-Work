@@ -46,10 +46,10 @@ unset($__defined_vars, $__key, $__value); ?>
         content: <?php echo \Illuminate\Support\Js::from($label)->toHtml() ?>,
         theme: $store.theme,
     }"
-    class="fi-theme-switcher-btn flex justify-center rounded-md p-2 outline-none transition duration-75 hover:bg-gray-50 focus-visible:bg-gray-50 dark:hover:bg-white/5 dark:focus-visible:bg-white/5"
+    class="fi-theme-switcher-btn flex justify-center rounded-md p-2 outline-none transition duration-75 hover:bg-main-light focus-visible:bg-main-light dark:hover:bg-white/5 dark:focus-visible:bg-white/5"
     x-bind:class="
         theme === <?php echo \Illuminate\Support\Js::from($theme)->toHtml() ?>
-            ? 'fi-active bg-gray-50 text-primary-500 dark:bg-white/5 dark:text-primary-400'
+            ? 'fi-active bg-main-light text-primary-500 dark:bg-white/5 dark:text-primary-400'
             : 'text-gray-400 hover:text-gray-500 focus-visible:text-gray-500 dark:text-gray-500 dark:hover:text-gray-400 dark:focus-visible:text-gray-400'
     "
 >

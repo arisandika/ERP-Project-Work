@@ -54,7 +54,7 @@ unset($__defined_vars, $__key, $__value); ?>
         <div class="grid gap-y-1">
             <?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if BLOCK]><![endif]--><?php endif; ?><?php if($heading): ?>
                 <h3
-                    class="fi-ta-header-heading text-base font-semibold leading-6 text-gray-950 dark:text-white"
+                    class="fi-ta-header-heading text-base font-semibold leading-6 text-black dark:text-white"
                 >
                     <?php echo e($heading); ?>
 

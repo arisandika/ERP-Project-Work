@@ -45,7 +45,7 @@ unset($__defined_vars, $__key, $__value); ?>
     <?php echo e($prefix); ?>
 
 
-    <span class="text-sm font-medium leading-6 text-gray-950 dark:text-white">
+    <span class="text-sm font-medium leading-6 text-black dark:text-white">
         
         <?php echo e($slot); ?><?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if BLOCK]><![endif]--><?php endif; ?><?php if($required && (! $disabled)): ?><sup class="text-danger-600 dark:text-danger-400 font-medium">*</sup>
         <?php endif; ?><?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if ENDBLOCK]><![endif]--><?php endif; ?>

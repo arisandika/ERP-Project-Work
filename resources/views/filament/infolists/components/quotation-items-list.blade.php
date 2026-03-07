@@ -1,7 +1,7 @@
 {{-- resources/views/filament/infolists/components/quotation-items-list.blade.php --}}
 <div class="border border-gray-300 divide-y divide-gray-300 rounded-lg dark:border-white/10 dark:divide-white/10">
     {{-- Header Tabel --}}
-    <div class="flex text-sm font-medium text-gray-900 dark:text-white bg-gray-50 dark:bg-white/5">
+    <div class="flex text-sm font-medium text-black dark:text-white bg-main-light dark:bg-white/5">
         <div class="w-1/2 p-2">Nama Item</div>
         <div class="w-1/4 p-2 text-right">Jumlah</div>
         <div class="w-1/4 p-2 text-right">Harga Satuan</div>

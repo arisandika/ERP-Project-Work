@@ -22,7 +22,7 @@ class TicketPriorityResource extends Resource
 
     protected static ?string $navigationGroup = 'Manajemen Project';
 
-    protected static ?int $navigationSort = 8;
+    protected static ?int $navigationSort = 7;
 
     protected static ?string $slug = 'pm/ticket-priorities';
 
@@ -32,16 +32,20 @@ class TicketPriorityResource extends Resource
     {
         return $form
             ->schema([
-                Forms\Components\TextInput::make('name')
-                    ->label('Prioritas Ticket')
-                    ->required()
-                    ->maxLength(255)
-                    ->unique(ignoreRecord: true),
+                Forms\Components\Section::make('Informasi Prioritas Ticket')
+                    ->schema([
+                        Forms\Components\TextInput::make('name')
+                            ->label('Prioritas Ticket')
+                            ->required()
+                            ->maxLength(255)
+                            ->unique(ignoreRecord: true),
 
-                Forms\Components\ColorPicker::make('color')
-                    ->label('Warna Prioritas')
-                    ->required()
-                    ->default('#6B7280'),
+                        Forms\Components\ColorPicker::make('color')
+                            ->label('Warna Prioritas')
+                            ->required()
+                            ->default('#6B7280'),
+                    ])
+                    ->columns('2')
             ]);
     }
 
@@ -145,7 +149,7 @@ class TicketPriorityResource extends Resource
         return [
             'index' => Pages\ListTicketPriority::route('/'),
             'create' => Pages\CreateTicketPriority::route('/create'),
-            'view' => Pages\ViewTicketPriority::route('/{record}'),
+            // 'view' => Pages\ViewTicketPriority::route('/{record}'),
             'edit' => Pages\EditTicketPriority::route('/{record}/edit'),
         ];
     }

@@ -142,17 +142,17 @@ unset($__defined_vars, $__key, $__value); ?>
                 [
                     'fi-btn-outlined ring-1',
                     match ($color) {
-                        'gray' => 'text-gray-950 ring-gray-300 hover:bg-gray-400/10 focus-visible:ring-gray-400/40 dark:text-white dark:ring-gray-700',
+                        'gray' => 'text-black ring-gray-300 hover:bg-gray-400/10 focus-visible:ring-gray-400/40 dark:text-white dark:ring-gray-700',
                         default => 'text-custom-600 ring-custom-600 hover:bg-custom-400/10 dark:text-custom-400 dark:ring-custom-500',
                     },
                 ] :
                 [
                     'shadow-sm' => ! $grouped,
-                    'bg-white text-gray-950 hover:bg-gray-50 dark:bg-white/5 dark:text-white dark:hover:bg-white/10' => ($color === 'gray') || ($tag === 'label'),
+                    'bg-white text-black hover:bg-main-light dark:bg-white/5 dark:text-white dark:hover:bg-white/10' => ($color === 'gray') || ($tag === 'label'),
                     'ring-1 ring-gray-950/10 dark:ring-white/20' => (($color === 'gray') || ($tag === 'label')) && (! $grouped),
                     'bg-custom-600 text-white hover:bg-custom-500 focus-visible:ring-custom-500/50 dark:bg-custom-500 dark:hover:bg-custom-400 dark:focus-visible:ring-custom-400/50' => ($color !== 'gray') && ($tag !== 'label'),
                     '[input:checked+&]:bg-custom-600 [input:checked+&]:text-white [input:checked+&]:ring-0 [input:checked+&]:hover:bg-custom-500 dark:[input:checked+&]:bg-custom-500 dark:[input:checked+&]:hover:bg-custom-400 [input:checked:focus-visible+&]:ring-custom-500/50 dark:[input:checked:focus-visible+&]:ring-custom-400/50 [input:focus-visible+&]:z-10 [input:focus-visible+&]:ring-2 [input:focus-visible+&]:ring-gray-950/10 dark:[input:focus-visible+&]:ring-white/20' => ($color !== 'gray') && ($tag === 'label'),
-                    '[input:checked+&]:bg-gray-400 [input:checked+&]:text-white [input:checked+&]:ring-0 [input:checked+&]:hover:bg-gray-300 dark:[input:checked+&]:bg-gray-600 dark:[input:checked+&]:hover:bg-gray-500' => ($color === 'gray'),
+                    '[input:checked+&]:bg-gray-400 [input:checked+&]:text-white [input:checked+&]:ring-0 [input:checked+&]:hover:bg-gray-300 dark:[input:checked+&]:bg-gray-600 dark:[input:checked+&]:hover:bg-main-light0' => ($color === 'gray'),
                     ]
         ),
     ]);

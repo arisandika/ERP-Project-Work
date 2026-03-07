@@ -32,7 +32,7 @@ class TicketTimeline extends Page
 
     protected ?string $subheading = 'Lihat ticket project dalam tampilan timeline Gantt';
 
-    protected static ?int $navigationSort = 6;
+    protected static ?int $navigationSort = 5;
 
     public ?string $projectId = null;
     

@@ -146,7 +146,7 @@ unset($__defined_vars, $__key, $__value); ?>
                 ->class([
                     'fi-body',
                     'fi-panel-' . filament()->getId(),
-                    'min-h-screen bg-gray-50 font-normal text-gray-950 antialiased dark:bg-gray-950 dark:text-white',
+                    'min-h-screen bg-main-light font-normal text-black antialiased dark:bg-main-dark dark:text-white',
                 ])); ?>
 
     >

@@ -328,7 +328,7 @@ unset($__defined_vars, $__key, $__value); ?>
                                             class="<?php echo \Illuminate\Support\Arr::toCssClasses([
                                                 'rounded-full',
                                                 match ($iconColor) {
-                                                    'gray' => 'bg-gray-100 dark:bg-gray-500/20',
+                                                    'gray' => 'bg-gray-100 dark:bg-main-light0/20',
                                                     default => 'fi-color-custom bg-custom-100 dark:bg-custom-500/20',
                                                 },
                                                 is_string($iconColor) ? "fi-color-{$iconColor}" : null,

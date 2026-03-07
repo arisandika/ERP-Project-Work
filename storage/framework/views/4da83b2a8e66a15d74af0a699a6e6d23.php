@@ -81,7 +81,7 @@ unset($__defined_vars, $__key, $__value); ?>
     $hasAlpineClasses = $hasAlpineDisabledClasses || $hasAlpineValidClasses;
 
     $enabledWrapperClasses = 'bg-white dark:bg-white/5 [&:not(:has(.fi-ac-action:focus))]:focus-within:ring-2';
-    $disabledWrapperClasses = 'fi-disabled bg-gray-50 dark:bg-transparent';
+    $disabledWrapperClasses = 'fi-disabled bg-main-light dark:bg-transparent';
     $validWrapperClasses = 'ring-gray-950/10';
     $invalidWrapperClasses = 'fi-invalid ring-danger-600 dark:ring-danger-500';
     $enabledValidWrapperClasses = 'dark:ring-white/20 [&:not(:has(.fi-ac-action:focus))]:focus-within:ring-primary-600 dark:[&:not(:has(.fi-ac-action:focus))]:focus-within:ring-primary-500';
