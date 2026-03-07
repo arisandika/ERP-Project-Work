@@ -143,7 +143,7 @@
                         x-transition:enter-start="opacity-0 scale-95" x-transition:enter-end="opacity-100 scale-100"
                         x-transition:leave="transition ease-in duration-75" x-transition:leave-start="opacity-100 scale-100"
                         x-transition:leave-end="opacity-0 scale-95"
-                        class="absolute left-0 z-50 mt-2 overflow-y-auto bg-white border border-gray-200 rounded-lg shadow-lg top-full w-80 dark:bg-gray-800 dark:border-gray-700 max-h-96"
+                        class="absolute left-0 z-50 mt-2 overflow-y-auto border shadow-lg rounded-2xl bg-secondary-light border-border-light top-full w-80 dark:bg-secondary-dark dark:border-border-dark max-h-96"
                         style="display: none;">
                         <div class="p-2">
                             <div
