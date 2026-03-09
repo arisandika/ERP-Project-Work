@@ -4,6 +4,7 @@ namespace App\Filament\Resources\Marketing\SliderResource\Pages;
 
 use App\Filament\Resources\Marketing\SliderResource;
 use Filament\Actions;
+use Filament\Actions\Action;
 use Filament\Resources\Pages\ViewRecord;
 
 class ViewSlider extends ViewRecord
@@ -14,6 +15,15 @@ class ViewSlider extends ViewRecord
     {
         return [
             Actions\EditAction::make(),
+            Action::make('Kembali')
+                ->url(static::getResource()::getUrl()) 
+                ->button()
+                ->color('gray'),
         ];
+    }
+
+    public function getTitle(): string
+    {
+        return 'Lihat Slider';
     }
 }

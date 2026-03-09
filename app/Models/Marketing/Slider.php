@@ -5,27 +5,31 @@ namespace App\Models\Marketing;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Slider extends Model
 {
-    use HasFactory;
+    use SoftDeletes, HasFactory;
 
     protected $table = 'nx_sliders';
 
     protected $fillable = [
-        'name',
         'title',
         'description',
         'image_desktop',
         'image_mobile',
         'cta_text',
         'cta_url',
+        'start_date',
+        'end_date',
         'open_in_new_tab',
         'sort_order',
-        'is_active'
+        'is_active',
     ];
 
     protected $casts = [
+        'start_date' => 'datetime',
+        'end_date' => 'datetime',
         'is_active' => 'boolean',
         'open_in_new_tab' => 'boolean',
     ];

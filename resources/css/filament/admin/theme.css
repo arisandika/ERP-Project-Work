@@ -254,47 +254,6 @@ main.fi-simple-main {
     }
 }
 
-/*  */
-.fi-sidebar-nav::-webkit-scrollbar {
-    display: none;
-}
-
-.no-scrollbar::-webkit-scrollbar {
-    display: none;
-}
-
-.btn-wrapper .fi-btn {
-    @apply w-full;
-}
-
-.fi-simple-main-ctn {
-    @apply px-4 md:px-0;
-}
-
-.fi-simple-main {
-    @apply rounded-xl;
-}
-
-.fi-ta-text-item-label:has(.custom-badge) {
-    @apply flex flex-col gap-2;
-}
-
-.flex.max-w-max:has(.card-repeater) {
-    width: 100% !important;
-    max-width: unset !important;
-}
-
-.flex.max-w-max .fi-in-text-item {
-    width: 100% !important;
-    max-width: unset !important;
-}
-
-.flex.max-w-max .fi-in-text-item .text-sm {
-    width: 100% !important;
-    max-width: unset !important;
-}
-
-
 /* INPUT */
 textarea {
     @apply placeholder:text-gray-500 dark:placeholder:text-gray-400 !important;
@@ -326,4 +285,56 @@ select.grow.cursor-pointer {
 
 .fi-fo-date-time-picker-panel {
     @apply rounded-2xl bg-secondary-light dark:bg-secondary-dark shadow-none ring-1 ring-border-light dark:ring-border-dark !important;
+}
+
+/* CUSTOMIZE */
+.fi-sidebar-nav::-webkit-scrollbar {
+    display: none;
+}
+
+.no-scrollbar::-webkit-scrollbar {
+    display: none;
+}
+
+.btn-wrapper .fi-btn {
+    @apply w-full;
+}
+
+.fi-simple-main-ctn {
+    @apply px-4 md:px-0;
+}
+
+.fi-simple-main {
+    @apply rounded-xl;
+}
+
+.flex.max-w-max:has(.card-repeater) {
+    width: 100% !important;
+    max-width: unset !important;
+}
+
+.flex.max-w-max .fi-in-text-item {
+    width: 100% !important;
+    max-width: unset !important;
+}
+
+.flex.max-w-max .fi-in-text-item .text-sm {
+    width: 100% !important;
+    max-width: unset !important;
+}
+
+.custom-pagination nav {
+    @apply flex justify-between w-full mt-8 bg-secondary-light dark:bg-secondary-dark !important;
+
+    .hidden.sm\:flex.sm\:items-center.sm\:justify-between {
+        @apply md:flex md:justify-between md:w-full !important;
+    }
+
+    .rounded-l-md {
+        @apply rounded-l-lg !important;
+    }
+
+    .rounded-r-md {
+        @apply rounded-r-lg !important;
+    }
 }

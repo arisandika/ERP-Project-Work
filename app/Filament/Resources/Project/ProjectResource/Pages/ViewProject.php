@@ -73,7 +73,7 @@ class ViewProject extends ViewRecord
         return $infolist
             ->schema([
                 Section::make('Informasi Project')
-                    ->description('Detail informasi dasar project.')
+                    ->description('Detail informasi mengenai project')
                     ->columns(2)
                     ->schema([
                         TextEntry::make('name')
@@ -84,8 +84,6 @@ class ViewProject extends ViewRecord
 
                         TextEntry::make('ticket_prefix')
                             ->label('Prefix Ticket')
-                            ->badge()
-                            ->color('primary')
                             ->placeholder('—'),
 
                         TextEntry::make('start_date')
@@ -105,7 +103,7 @@ class ViewProject extends ViewRecord
                                     return '—';
                                 }
 
-                                return $record->remaining_days . ' hari';
+                                return $record->remaining_days . ' Hari';
                             })
                             ->color(
                                 fn($record): string =>
@@ -119,11 +117,9 @@ class ViewProject extends ViewRecord
                             ->getStateUsing(
                                 fn($record) =>
                                 $record->pinned_date
-                                ? 'Pinned ' . $record->pinned_date->format('d M Y')
+                                ? 'Di-pin pada ' . $record->pinned_date->format('d M Y')
                                 : 'Tidak di-pin'
-                            )
-                            ->badge()
-                            ->color(fn($record) => $record->pinned_date ? 'success' : 'gray'),
+                            ),
                     ]),
 
                 Section::make('Statistik Project')
@@ -171,7 +167,7 @@ class ViewProject extends ViewRecord
                     ->columns(2)
                     ->schema([
                         TextEntry::make('salesOrder.order_number')
-                            ->label('Nomor Sales Order')
+                            ->label('No. Sales Order')
                             ->weight('semibold')
                             ->placeholder('—'),
 

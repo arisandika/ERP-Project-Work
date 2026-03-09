@@ -181,8 +181,7 @@ class NotesRelationManager extends RelationManager
                         TextEntry::make('title')
                             ->label('Judul Catatan')
                             ->weight('semibold')
-                            ->placeholder('—')
-                            ->columnSpanFull(),
+                            ->placeholder('—'),
 
                         TextEntry::make('creator.full_name')
                             ->label('Dibuat Oleh')

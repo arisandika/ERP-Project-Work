@@ -16,17 +16,21 @@ use Filament\Actions\Concerns\InteractsWithActions;
 class TicketCommentForm extends Component implements HasForms, HasActions
 {
     use InteractsWithForms;
+
     use InteractsWithActions;
 
     public Ticket $ticket;
+
     public $newComment = '';
+
     public static function form(Form $form): Form
     {
         return $form
             ->schema([
                 RichEditor::make('newComment')
-                    ->label('Add a Comment')
-                    ->placeholder('Write your comment here...')
+                    ->label('Tambah komentar')
+                    ->required()
+                    ->placeholder('Tuliskan komentar disini...')
                     ->columnSpanFull()
                     ->toolbarButtons([
                         'attachFiles',
@@ -47,7 +51,6 @@ class TicketCommentForm extends Component implements HasForms, HasActions
                     ->fileAttachmentsDisk('public')
                     ->fileAttachmentsDirectory('attachments')
                     ->fileAttachmentsVisibility('public')
-                    ->required()
                     ->extraInputAttributes(['style' => 'min-height: 10rem;']),
             ]);
     }
@@ -67,7 +70,7 @@ class TicketCommentForm extends Component implements HasForms, HasActions
             ->update(['read_at' => now()]);
 
         Notification::make()
-            ->title('Comment added successfully')
+            ->title('Komentar berhasil dikirim')
             ->success()
             ->send();
 

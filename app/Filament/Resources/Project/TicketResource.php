@@ -3,7 +3,6 @@
 namespace App\Filament\Resources\Project;
 
 use App\Filament\Resources\Project\TicketResource\Pages;
-use App\Filament\Resources\Project\TicketResource\RelationManagers;
 use App\Models\HR\Employee;
 use App\Models\Project\Epic;
 use App\Models\Project\Project;
@@ -11,14 +10,10 @@ use App\Models\Project\Ticket;
 use App\Models\Project\TicketPriority;
 use App\Models\Project\TicketStatus;
 use Filament\Forms;
-use Filament\Forms\Components\Radio;
-use Filament\Forms\Components\Select;
 use Filament\Forms\Form;
 use Filament\Notifications\Notification;
-use Filament\Resources\RelationManagers\RelationManager;
 use Filament\Resources\Resource;
 use Filament\Tables;
-use Filament\Tables\Actions\BulkAction;
 use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
@@ -53,9 +48,15 @@ class TicketResource extends Resource
         return $form
             ->schema([
                 Forms\Components\Section::make('Informasi Ticket')
+                    ->description('Detail project, epic, status dan informasi ticket.')
                     ->schema([
+                        Forms\Components\TextInput::make('name')
+                            ->label('Nama Ticket')
+                            ->required()
+                            ->maxLength(255),
+
                         Forms\Components\Select::make('project_id')
-                            ->label('Pilih Project')
+                            ->label('Nama Project')
                             ->options(function () {
                                 if (auth()->user()->hasRole(['super_admin'])) {
                                     return Project::pluck('name', 'id')->toArray();
@@ -84,13 +85,8 @@ class TicketResource extends Resource
                                 $set('epic_id', null);
                             }),
 
-                        Forms\Components\TextInput::make('name')
-                            ->label('Nama Ticket')
-                            ->required()
-                            ->maxLength(255),
-
                         Forms\Components\Select::make('epic_id')
-                            ->label('Epic')
+                            ->label('Nama Epic')
                             ->options(function (Forms\Get $get) {
                                 $projectId = $get('project_id');
 
@@ -108,7 +104,7 @@ class TicketResource extends Resource
                             ->hidden(fn(Forms\Get $get): bool => !$get('project_id')),
 
                         Forms\Components\Select::make('ticket_status_id')
-                            ->label('Status')
+                            ->label('Status Pengerjaan')
                             ->options(function (Forms\Get $get) {
                                 $projectId = $get('project_id');
 
@@ -129,9 +125,15 @@ class TicketResource extends Resource
                             ->label('Prioritas Ticket')
                             ->options(TicketPriority::pluck('name', 'id')->toArray())
                             ->searchable()
+                            ->required()
                             ->preload()
                             ->nullable(),
+                    ])
+                    ->columns(2),
 
+                Forms\Components\Section::make('Jadwal Pengerjaan')
+                    ->description('Timeline target penyelesaian ticket.')
+                    ->schema([
                         Forms\Components\DatePicker::make('start_date')
                             ->label('Tanggal Mulai')
                             ->default(now())
@@ -146,7 +148,11 @@ class TicketResource extends Resource
                             ->displayFormat('d M Y')
                             ->native(false)
                             ->prefixIcon('heroicon-o-calendar-days'),
+                    ])
+                    ->columns(2),
 
+                Forms\Components\Section::make('Member Ticket')
+                    ->schema([
                         Forms\Components\Select::make('assignees')
                             ->label('Ditugaskan Kepada')
                             ->multiple()
@@ -183,7 +189,11 @@ class TicketResource extends Resource
                             ->relationship('creator', 'full_name')
                             ->disabled()
                             ->hidden(fn($record) => $record === null),
+                    ])
+                    ->columns(2),
 
+                Forms\Components\Section::make('Deskripsi Ticket')
+                    ->schema([
                         Forms\Components\RichEditor::make('description')
                             ->label('Deskripsi Ticket')
                             ->columnSpanFull()
@@ -206,8 +216,7 @@ class TicketResource extends Resource
                             ->fileAttachmentsDisk('public')
                             ->fileAttachmentsDirectory('attachments')
                             ->fileAttachmentsVisibility('public'),
-                    ])
-                    ->columns(2)
+                    ]),
             ]);
     }
 
@@ -229,10 +238,10 @@ class TicketResource extends Resource
                     ->sortable(),
 
                 Tables\Columns\TextColumn::make('epic.name')
-                    ->label('Epic')
-                    ->placeholder('No Epic')
+                    ->label('Nama Epic')
                     ->sortable()
-                    ->searchable(),
+                    ->searchable()
+                    ->placeholder('—'),
 
                 Tables\Columns\TextColumn::make('status.name')
                     ->label('Status')
@@ -248,7 +257,7 @@ class TicketResource extends Resource
                     ->formatStateUsing(fn(string $state): string => ucwords(str_replace('_', ' ', $state))),
 
                 Tables\Columns\TextColumn::make('priority.name')
-                    ->label('Prioritas')
+                    ->label('Prioritas Ticket')
                     ->badge()
                     ->color(fn(string $state): string => match ($state) {
                         'High' => 'danger',
@@ -265,9 +274,9 @@ class TicketResource extends Resource
                     ->badge()
                     ->color('gray')
                     ->icon('heroicon-o-user')
+                    ->searchable()
                     ->listWithLineBreaks()
-                    ->placeholder('Belum ada member ditugaskan')
-                    ->searchable(),
+                    ->placeholder('—'),
 
                 Tables\Columns\TextColumn::make('start_date')
                     ->label('Tanggal Mulai')
@@ -278,6 +287,43 @@ class TicketResource extends Resource
                     ->label('Tanggal Selesai')
                     ->dateTime('d M Y')
                     ->sortable(),
+
+                Tables\Columns\TextColumn::make('remaining_days')
+                    ->label('Sisa Hari')
+                    ->getStateUsing(function (Ticket $record): ?string {
+                        if (!$record->due_date) {
+                            return '—';
+                        }
+
+                        if ($record->status?->name === 'Done') {
+                            return 'Selesai';
+                        }
+
+                        if ($record->remaining_days < 0) {
+                            return 'Terlambat';
+                        }
+
+                        return $record->remaining_days . ' Hari';
+                    })
+                    ->color(function (Ticket $record): string {
+                        if (!$record->due_date) {
+                            return 'gray';
+                        }
+
+                        if ($record->status?->name === 'Done') {
+                            return 'success';
+                        }
+
+                        if ($record->remaining_days < 0) {
+                            return 'danger';
+                        }
+
+                        if ($record->remaining_days <= 7) {
+                            return 'warning';
+                        }
+
+                        return 'success';
+                    }),
 
                 Tables\Columns\TextColumn::make('creator.full_name')
                     ->label('Dibuat Oleh')
@@ -329,7 +375,7 @@ class TicketResource extends Resource
                     ->preload(),
 
                 SelectFilter::make('epic_id')
-                    ->label('Epic')
+                    ->label('Nama Epic')
                     ->options(function (\Livewire\Component $livewire) {
                         $projectId = data_get($livewire, 'tableFilters.project_id.value');
 
@@ -399,6 +445,7 @@ class TicketResource extends Resource
             ->actions([
                 Tables\Actions\ViewAction::make(),
                 Tables\Actions\EditAction::make(),
+                Tables\Actions\DeleteAction::make(),
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([
@@ -489,7 +536,7 @@ class TicketResource extends Resource
                         ->icon('heroicon-o-flag')
                         ->form([
                             Forms\Components\Select::make('priority_id')
-                                ->label('Prioritas')
+                                ->label('Prioritas Ticket')
                                 ->options(TicketPriority::pluck('name', 'id')->toArray())
                                 ->nullable(),
                         ])
@@ -506,7 +553,7 @@ class TicketResource extends Resource
                         ->icon('heroicon-o-bookmark')
                         ->form([
                             Forms\Components\Select::make('epic_id')
-                                ->label('Epic')
+                                ->label('Nama Epic')
                                 ->options(function (\Livewire\Component $livewire) {
                                     if (method_exists($livewire, 'getOwnerRecord')) {
                                         $projectId = $livewire->getOwnerRecord()->id;

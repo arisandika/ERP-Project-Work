@@ -16,12 +16,12 @@ $scrollIntoViewJsSnippet = ($scrollTo !== false)
             <div class="flex justify-between flex-1 sm:hidden">
                 <span>
                     <?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if BLOCK]><![endif]--><?php endif; ?><?php if($paginator->onFirstPage()): ?>
-                        <span class="relative inline-flex items-center px-4 py-2 text-sm font-medium leading-5 text-gray-500 border rounded-md cursor-default bg-main-light border-border-light dark:bg-secondary-dark dark:border-border-dark dark:text-gray-300 dark:focus:border-blue-700 dark:active:bg-main-dark dark:active:text-gray-300">
+                        <span class="relative inline-flex items-center px-4 py-2 text-sm font-medium leading-5 text-gray-500 border rounded-lg cursor-default bg-main-light border-border-light dark:bg-secondary-dark dark:border-border-dark dark:text-gray-300 dark:focus:border-blue-700 dark:active:bg-main-dark dark:active:text-gray-300">
                             <?php echo __('Sebelumnya'); ?>
 
                         </span>
                     <?php else: ?>
-                        <button type="button" wire:click="previousPage('<?php echo e($paginator->getPageName()); ?>')" x-on:click="<?php echo e($scrollIntoViewJsSnippet); ?>" wire:loading.attr="disabled" dusk="previousPage<?php echo e($paginator->getPageName() == 'page' ? '' : '.' . $paginator->getPageName()); ?>.before" class="relative inline-flex items-center px-4 py-2 text-sm font-medium leading-5 text-gray-700 transition duration-150 ease-in-out border rounded-md bg-main-light border-border-light hover:text-gray-500 focus:outline-none focus:ring ring-blue-300 focus:border-blue-300 active:bg-secondary-light active:text-gray-700 dark:bg-secondary-dark dark:border-border-dark dark:text-gray-300 dark:focus:border-blue-700 dark:active:bg-main-dark dark:active:text-gray-300">
+                        <button type="button" wire:click="previousPage('<?php echo e($paginator->getPageName()); ?>')" x-on:click="<?php echo e($scrollIntoViewJsSnippet); ?>" wire:loading.attr="disabled" dusk="previousPage<?php echo e($paginator->getPageName() == 'page' ? '' : '.' . $paginator->getPageName()); ?>.before" class="relative inline-flex items-center px-4 py-2 text-sm font-medium leading-5 text-gray-700 transition duration-150 ease-in-out border rounded-lg bg-main-light border-border-light hover:text-gray-500 focus:outline-none focus:ring ring-blue-300 focus:border-blue-300 active:bg-secondary-light active:text-gray-700 dark:bg-secondary-dark dark:border-border-dark dark:text-gray-300 dark:focus:border-blue-700 dark:active:bg-main-dark dark:active:text-gray-300">
                             <?php echo __('Sebelumnya'); ?>
 
                         </button>
@@ -30,12 +30,12 @@ $scrollIntoViewJsSnippet = ($scrollTo !== false)
 
                 <span>
                     <?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if BLOCK]><![endif]--><?php endif; ?><?php if($paginator->hasMorePages()): ?>
-                        <button type="button" wire:click="nextPage('<?php echo e($paginator->getPageName()); ?>')" x-on:click="<?php echo e($scrollIntoViewJsSnippet); ?>" wire:loading.attr="disabled" dusk="nextPage<?php echo e($paginator->getPageName() == 'page' ? '' : '.' . $paginator->getPageName()); ?>.before" class="relative inline-flex items-center px-4 py-2 ml-3 text-sm font-medium leading-5 text-gray-700 transition duration-150 ease-in-out border rounded-md bg-main-light border-border-light hover:text-gray-500 focus:outline-none focus:ring ring-blue-300 focus:border-blue-300 active:bg-secondary-light active:text-gray-700 dark:bg-secondary-dark dark:border-border-dark dark:text-gray-300 dark:focus:border-blue-700 dark:active:bg-main-dark dark:active:text-gray-300">
+                        <button type="button" wire:click="nextPage('<?php echo e($paginator->getPageName()); ?>')" x-on:click="<?php echo e($scrollIntoViewJsSnippet); ?>" wire:loading.attr="disabled" dusk="nextPage<?php echo e($paginator->getPageName() == 'page' ? '' : '.' . $paginator->getPageName()); ?>.before" class="relative inline-flex items-center px-4 py-2 ml-3 text-sm font-medium leading-5 text-gray-700 transition duration-150 ease-in-out border rounded-lg bg-main-light border-border-light hover:text-gray-500 focus:outline-none focus:ring ring-blue-300 focus:border-blue-300 active:bg-secondary-light active:text-gray-700 dark:bg-secondary-dark dark:border-border-dark dark:text-gray-300 dark:focus:border-blue-700 dark:active:bg-main-dark dark:active:text-gray-300">
                             <?php echo __('Selanjutnya'); ?>
 
                         </button>
                     <?php else: ?>
-                        <span class="relative inline-flex items-center px-4 py-2 ml-3 text-sm font-medium leading-5 text-gray-500 border rounded-md cursor-default bg-main-light border-border-light dark:text-gray-600 dark:bg-secondary-dark dark:border-border-dark">
+                        <span class="relative inline-flex items-center px-4 py-2 ml-3 text-sm font-medium leading-5 text-gray-500 border rounded-lg cursor-default bg-main-light border-border-light dark:text-gray-600 dark:bg-secondary-dark dark:border-border-dark">
                             <?php echo __('Selanjutnya'); ?>
 
                         </span>
@@ -57,7 +57,7 @@ $scrollIntoViewJsSnippet = ($scrollTo !== false)
                 </div>
 
                 <div>
-                    <span class="relative z-0 inline-flex rounded-md shadow-sm rtl:flex-row-reverse">
+                    <span class="relative z-0 inline-flex rounded-lg shadow-sm rtl:flex-row-reverse">
                         <span>
                             
                             <?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if BLOCK]><![endif]--><?php endif; ?><?php if($paginator->onFirstPage()): ?>

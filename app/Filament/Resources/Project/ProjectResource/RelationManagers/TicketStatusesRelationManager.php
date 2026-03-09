@@ -99,7 +99,6 @@ class TicketStatusesRelationManager extends RelationManager
                             ->reactive()
                             ->afterStateUpdated(function ($state, $get, $set, $record) {
                                 if ($state) {
-                                    // Check if another status in this project is already marked as completed
                                     $projectId = $this->getOwnerRecord()->id;
                                     $existingCompleted = TicketStatus::where('project_id', $projectId)
                                         ->where('is_completed', true)
@@ -136,6 +135,7 @@ class TicketStatusesRelationManager extends RelationManager
 
                 Tables\Columns\TextColumn::make('sort_order')
                     ->label('Urutan')
+                    ->alignCenter()
                     ->sortable(),
 
                 Tables\Columns\IconColumn::make('is_completed')

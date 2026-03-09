@@ -111,7 +111,7 @@
         </div>
     @else
         {{-- Project Switcher --}}
-        <div class="flex flex-col items-end justify-between gap-3 md:items-center md:flex-row" x-data="{ open: false }">
+        <div class="flex items-center justify-between gap-3" x-data="{ open: false }">
             <div class="relative">
                 <button
                     @click="open = !open"
@@ -200,9 +200,8 @@
                 </div>
             </div>
 
-            <a href="{{ url()->previous() }}" class="inline-flex items-center w-20 gap-2 px-3 py-2 text-sm font-medium text-black transition-colors rounded-2xl dark:text-white bg-secondary-light hover:bg-main-light dark:bg-secondary-dark ring-1 ring-border-light dark:ring-border-dark dark:hover:bg-main-dark">
-                <x-heroicon-s-arrow-left class="w-4 h-4" />
-                Back
+            <a href="{{ url()->previous() }}" class="items-center px-4 py-3 text-sm font-medium text-black transition-colors rounded-full dark:text-white bg-main-light hover:bg-secondary-light dark:bg-main-dark ring-1 ring-border-light dark:ring-border-dark dark:hover:bg-secondary-dark">
+                Kembali
             </a>
         </div>
     @endif
@@ -222,7 +221,7 @@
                         >
                             <div class="flex items-center space-x-4">
                                 <div>
-                                    <h3 class="text-base font-medium text-black dark:text-white">{{ $epic->name }}</h3>
+                                    <h3 class="text-sm font-semibold text-black dark:text-white">{{ $epic->name }}</h3>
                                     <div class="hidden text-sm text-gray-500 dark:text-gray-400 md:block">
                                         {{ $epic->start_date ? $epic->start_date->format('M d, Y') : '-' }} -
                                         {{ $epic->end_date ? $epic->end_date->format('M d, Y') : '-' }}
@@ -231,7 +230,7 @@
                             </div>
                             <div class="flex items-center space-x-4">
                                 <div class="px-3 py-1 text-sm text-black rounded-full bg-secondary-light ring-1 ring-border-light dark:bg-secondary-dark dark:ring-border-dark dark:text-gray-400">
-                                    {{ $epic->tickets->count() }} tickets
+                                    {{ $epic->tickets->count() }} Ticket
                                 </div>
                                 <button class="text-gray-400 transition-colors hover:text-main-primary focus:outline-none">
                                     @if($this->isExpanded($epic->id))
@@ -285,9 +284,9 @@
                                                         </th>
                                                     </tr>
                                                 </thead>
-                                                <tbody class="divide-y bg-secondary-light divide-border-light dark:bg-secondary-dark dark:divide-border-dark">
+                                                <tbody class="divide-y bg-main-light divide-border-light dark:bg-main-dark dark:divide-border-dark">
                                                     @foreach($epic->tickets as $ticket)
-                                                        <tr class="transition-colors hover:bg-main-light dark:hover:bg-main-dark">
+                                                        <tr class="transition-colors hover:bg-secondary-light dark:hover:bg-secondary-dark">
                                                             <td class="p-4 text-sm font-medium text-black whitespace-nowrap dark:text-white">
                                                                 {{ $ticket->uuid }}
                                                             </td>

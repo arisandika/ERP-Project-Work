@@ -1,4 +1,4 @@
-<div class="timeline-history">
+<div class="p-4 timeline-history">
 
     <style>
         .timeline-history .vertical-line {
@@ -7,7 +7,6 @@
             top: 5px;
             bottom: 5px;
             width: 2px;
-            background-color: #94a3b8;
         }
 
         .timeline-history .timeline-item {
@@ -22,42 +21,52 @@
 
         .timeline-history .timeline-dot {
             position: absolute;
-            left: -9px;
+            left: -5px;
             top: 5px;
-            width: 20px;
-            height: 20px;
-            border-radius: 50%;
-            background-color: #34d399;
         }
     </style>
 
     @php
-        $histories = $getRecord()->histories()->with(['employee', 'status'])->orderBy('created_at', 'desc')->get();
+        $histories = $getRecord()->histories()
+            ->with(['employee', 'status'])
+            ->orderBy('created_at', 'desc')
+            ->paginate(10, ['*'], 'history_page');
     @endphp
 
     <div class="relative">
-        <div class="vertical-line"></div>
+        <div class="vertical-line bg-border-light dark:bg-border-dark"></div>
 
         <div class="space-y-5">
-            @foreach($histories as $history)
+            @forelse($histories as $history)
                 <div class="timeline-item">
-                    <div class="timeline-dot"></div>
+                    <div class="w-3 h-3 rounded-full timeline-dot bg-main-primary ring-2 ring-main-primary/50">
+                    </div>
 
                     <div>
                         <div>
-                            <span
-                                class="text-base font-medium text-black dark:text-white">{{ $history->status->name }}</span>
+                            <span class="font-semibold"
+                                style="color: {{ $history->status->color ?? '#6B7280' }}">{{ $history->status->name }}</span>
                         </div>
 
                         <div class="flex items-center mt-1 text-xs text-gray-400 gap-x-1">
-                            <span>Updated by: {{ $history->employee->full_name ?? 'System' }}</span>
+                            <span>Diperbarui oleh {{ $history->employee->full_name ?? 'System' }}</span>
                             <span class="mx-1 text-gray-300">•</span>
                             <span>{{ $history->created_at->format('d M H:i') }}</span>
                         </div>
                     </div>
                 </div>
-            @endforeach
+            @empty
+                <div class="pl-6 text-sm text-gray-500">
+                    Belum ada riwayat status.
+                </div>
+            @endforelse
         </div>
     </div>
-    
+
+    @if ($histories->hasPages())
+        <div class="mt-8 bg-secondary-light dark:bg-secondary-dark rounded-b-2xl custom-pagination">
+            {{ $histories->links() }}
+        </div>
+    @endif
+
 </div>
