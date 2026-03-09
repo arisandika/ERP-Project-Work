@@ -189,6 +189,7 @@ class PopupBannerResource extends Resource
             ->columns([
                 Tables\Columns\ImageColumn::make('image_path')
                     ->label('Banner')
+                    ->height(60)
                     ->state(fn(PopupBanner $record) => $record->type === 'image' ? $record->image_path : null)
                     ->extraImgAttributes([
                         'loading' => 'lazy',
