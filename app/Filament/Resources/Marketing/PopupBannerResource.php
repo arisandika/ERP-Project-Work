@@ -195,7 +195,6 @@ class PopupBannerResource extends Resource
                         'class' => 'object-cover rounded-md shadow-sm w-24',
                         'alt' => 'Gambar Hilang',
                     ])
-                    ->square()
                     ->placeholder('—'),
 
                 Tables\Columns\TextColumn::make('title')
@@ -241,7 +240,6 @@ class PopupBannerResource extends Resource
                     ->label('Status Tayang')
                     ->badge()
                     ->state(function (PopupBanner $record) {
-
                         if (!$record->is_active) {
                             return 'Nonaktif';
                         }
@@ -388,10 +386,10 @@ class PopupBannerResource extends Resource
                         ImageEntry::make('image_path')
                             ->label('Banner')
                             ->visible(fn($record) => $record->type === 'image')
-                            ->placeholder('Tidak ada gambar')
+                            ->placeholder('Konten Jenis Teks')
                             ->extraImgAttributes([
-                                'style' => 'width:100%;object-fit:cover',
-                                'class' => 'rounded-xl shadow-sm',
+                                'style' => 'width: 100%; height: auto; object-fit: cover;',
+                                'class' => 'w-full rounded-2xl'
                             ]),
 
                         TextEntry::make('content_text')
