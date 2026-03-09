@@ -365,16 +365,16 @@ class SliderResource extends Resource
                             ->label('Versi Desktop')
                             ->placeholder('Tidak ada gambar')
                             ->extraImgAttributes([
-                                'style' => 'width:100%;max-height:250px;object-fit:cover',
-                                'class' => 'rounded-xl shadow-sm border border-gray-200',
+                                'style' => 'width: 100%; height: auto; object-fit: cover;',
+                                'class' => 'w-full rounded-2xl'
                             ]),
 
                         ImageEntry::make('image_mobile')
                             ->label('Versi Mobile')
                             ->placeholder('Otomatis menyesuaikan dari versi Desktop')
                             ->extraImgAttributes([
-                                'style' => 'width:100%;max-height:250px;object-fit:contain',
-                                'class' => 'rounded-xl shadow-sm border border-gray-200 bg-gray-50',
+                                'style' => 'width: 100%; height: auto; object-fit: cover;',
+                                'class' => 'w-full rounded-2xl'
                             ]),
                     ]),
 

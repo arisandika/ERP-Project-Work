@@ -242,12 +242,18 @@ class AttendanceResource extends Resource
                         ImageEntry::make('face_snapshot_in')
                             ->label('Foto Presensi Masuk')
                             ->placeholder('—')
-                            ->extraImgAttributes(['style' => 'width: 100%; height: auto; object-fit: cover;']),
+                            ->extraImgAttributes([
+                                'style' => 'width: 100%; height: auto; object-fit: cover;',
+                                'class' => 'w-full rounded-2xl'
+                            ]),
 
                         ImageEntry::make('face_snapshot_out')
                             ->label('Foto Presensi Keluar')
                             ->placeholder('—')
-                            ->extraImgAttributes(['style' => 'width: 100%; height: auto; object-fit: cover;']),
+                            ->extraImgAttributes([
+                                'style' => 'width: 100%; height: auto; object-fit: cover;',
+                                'class' => 'w-full rounded-2xl'
+                            ]),
                     ]),
 
                 Section::make('Pengelolaan Data')
