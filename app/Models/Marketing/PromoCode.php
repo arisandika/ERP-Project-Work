@@ -13,7 +13,16 @@ class PromoCode extends Model
 
     protected $table = 'nx_promo_codes';
 
-    protected $guarded = ['id'];
+    protected $fillable = [
+        'code',
+        'type',
+        'value',
+        'is_active',
+        'start_date',
+        'end_date',
+        'usage_limit',
+        'times_used',
+    ];
 
     protected $casts = [
         'is_active' => 'boolean',

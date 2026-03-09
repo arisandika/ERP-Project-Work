@@ -95,7 +95,7 @@
     <div class="px-4 py-6 mx-auto md:py-0 max-w-7xl lg:px-8">
         <div class="flex flex-col gap-4 sm:flex-row sm:justify-between sm:items-center sm:py-6">
             <div class="flex-1 min-w-0">
-                <p class="text-sm font-semibold text-gray-600 uppercase mt-b dark:text-gray-400">Overview Project</p>
+                <p class="mb-1 text-sm font-semibold text-gray-600 uppercase dark:text-gray-400">Project Overview</p>
                 <h1 class="text-2xl font-bold text-black sm:text-3xl dark:text-white"><?php echo e($project->name); ?>
 
                 </h1>
@@ -208,7 +208,7 @@
                     <!-- CUSTOMER INFO CARD -->
                             <?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if BLOCK]><![endif]--><?php endif; ?><?php if($project->salesOrder && $project->salesOrder->customer): ?>
                             <div class="overflow-hidden transition-colors shadow-sm ring-1 ring-border-light bg-secondary-light rounded-2xl dark:bg-secondary-dark dark:ring-border-dark">
-                                <div class="px-5 py-4 border-b border-border-light dark:border-border-dark bg-gray-50/50 dark:bg-white/5">
+                                <div class="px-5 py-4 border-b border-border-light dark:border-border-dark">
                                     <h3 class="text-base font-semibold text-black dark:text-white">Informasi Client</h3>
                                 </div>
                                 <div class="p-5 space-y-4">
@@ -269,7 +269,7 @@
         
                             <!-- 3. INTERNAL TEAM & ACCOUNT MANAGER (NEW) -->
                         <div class="overflow-hidden transition-colors shadow-sm ring-1 ring-border-light bg-secondary-light rounded-2xl dark:bg-secondary-dark dark:ring-border-dark">
-                            <div class="px-5 py-4 border-b border-border-light dark:border-border-dark bg-gray-50/50 dark:bg-white/5">
+                            <div class="px-5 py-4 border-b border-border-light dark:border-border-dark">
                                 <h3 class="text-base font-semibold text-black dark:text-white">Internal Team</h3>
                             </div>
                             
@@ -357,8 +357,8 @@
                                             d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2">
                                         </path>
                                     </svg>
-                                    <span class="hidden md:inline">Project Tasks</span>
-                                    <span class="md:hidden">Tasks</span>
+                                    <span class="hidden text-base md:inline">Project Tasks</span>
+                                    <span class="text-base md:hidden">Tasks</span>
                                 </span>
                             </button>
         
@@ -373,8 +373,8 @@
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                             d="M13 10V3L4 14h7v7l9-11h-7z"></path>
                                     </svg>
-                                    <span class="hidden md:inline">Recent Activity</span>
-                                    <span class="md:hidden">Activity</span>
+                                    <span class="hidden text-base md:inline">Recent Activity</span>
+                                    <span class="text-base md:hidden">Activity</span>
                                 </span>
                             </button>
                         </nav>
@@ -663,7 +663,7 @@
         
                             <!-- Pagination -->
                             <?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if BLOCK]><![endif]--><?php endif; ?><?php if($this->tickets->hasPages()): ?>
-                                <div class="px-6 py-4 bg-secondary-light dark:bg-secondary-dark rounded-b-2xl custom-pagination"
+                                <div class="px-6 mt-4 bg-secondary-light dark:bg-secondary-dark rounded-b-2xl custom-pagination"
                                     id="tasks-pagination-section">
                                     <?php echo e($this->tickets->links()); ?>
 
@@ -750,7 +750,7 @@
         
                                     <!-- Recent Activities Pagination -->
                                     <?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if BLOCK]><![endif]--><?php endif; ?><?php if($this->recentActivities->hasPages()): ?>
-                                        <div class="px-6 py-4 bg-secondary-light dark:bg-secondary-dark rounded-b-2xl custom-pagination">
+                                        <div class="px-6 mt-4 bg-secondary-light dark:bg-secondary-dark rounded-b-2xl custom-pagination">
                                             <?php echo e($this->recentActivities->links()); ?>
 
                                         </div>
@@ -762,9 +762,8 @@
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                                 d="M13 10V3L4 14h7v7l9-11h-7z"></path>
                                         </svg>
-                                            <p class="text-lg font-semibold text-black dark:text-white">No recent activity</p>
-                                            <p class="text-sm text-gray-600 dark:text-gray-400">Activities will appear here when
-                                                tasks are updated
+                                            <p class="text-lg font-semibold text-black dark:text-white">Tidak ada aktivitas terbaru</p>
+                                            <p class="text-sm text-gray-600 dark:text-gray-400">Aktivitas akan tampil disini jika ada perubahan status
                                             </p>
                                     </div>
                                 <?php endif; ?><?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if ENDBLOCK]><![endif]--><?php endif; ?>

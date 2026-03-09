@@ -6,18 +6,13 @@ use App\Filament\Resources\Marketing\PromoCodeResource\Pages;
 use App\Models\Marketing\PromoCode;
 use Filament\Forms;
 use Filament\Forms\Form;
-use Filament\Forms\Components\Grid;
-use Filament\Forms\Components\Section;
-use Filament\Forms\Components\Select;
-use Filament\Forms\Components\Toggle;
-use Filament\Forms\Components\TextInput;
-use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Get;
+use Filament\Infolists\Components\Section;
+use Filament\Infolists\Components\TextEntry;
+use Filament\Infolists\Infolist;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
-use Filament\Tables\Columns\TextColumn;
-use Filament\Tables\Columns\ToggleColumn;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
 use Illuminate\Support\Carbon;
@@ -45,11 +40,11 @@ class PromoCodeResource extends Resource
     {
         return $form
             ->schema([
-                Section::make('Informasi Dasar')
+                Forms\Components\Section::make('Informasi Kode Promo')
                     ->description('Tentukan kode dan nilai potongannya.')
                     ->schema([
-                        Grid::make(3)->schema([
-                            TextInput::make('code')
+                        Forms\Components\Grid::make(3)->schema([
+                            Forms\Components\TextInput::make('code')
                                 ->label('Kode Promo')
                                 ->required()
                                 ->unique(ignoreRecord: true)
@@ -58,8 +53,7 @@ class PromoCodeResource extends Resource
                                 ->extraInputAttributes(['style' => 'text-transform: uppercase'])
                                 ->dehydrateStateUsing(fn(string $state): string => strtoupper($state)),
 
-
-                            Select::make('type')
+                            Forms\Components\Select::make('type')
                                 ->label('Tipe Potongan')
                                 ->options([
                                     'fixed' => 'Nominal (Rp)',
@@ -67,9 +61,10 @@ class PromoCodeResource extends Resource
                                 ])
                                 ->default('fixed')
                                 ->required()
-                                ->live(), // Live update untuk prefix value di bawah
+                                ->live()
+                                ->native(false),
 
-                            TextInput::make('value')
+                            Forms\Components\TextInput::make('value')
                                 ->label('Nilai Potongan')
                                 ->numeric()
                                 ->required()
@@ -78,17 +73,18 @@ class PromoCodeResource extends Resource
                         ]),
                     ]),
 
-                Section::make('Validasi & Batasan')
-                    ->description('Atur masa berlaku dan kuota pemakaian.')
+                Forms\Components\Section::make('Informasi Masa Berlaku')
+                    ->description('Atur masa berlaku dan batas kuota pemakaian.')
                     ->schema([
-                        Grid::make(2)->schema([
-                            Toggle::make('is_active')
+                        Forms\Components\Grid::make(2)->schema([
+                            Forms\Components\Toggle::make('is_active')
                                 ->label('Status Aktif')
                                 ->helperText('Jika dimatikan, kode tidak bisa digunakan meskipun tanggal masih berlaku.')
                                 ->default(true)
+                                ->inline(false)
                                 ->columnSpanFull(),
 
-                            DatePicker::make('start_date')
+                            Forms\Components\DatePicker::make('start_date')
                                 ->label('Mulai Berlaku')
                                 ->required()
                                 ->default(now())
@@ -96,7 +92,7 @@ class PromoCodeResource extends Resource
                                 ->native(false)
                                 ->prefixIcon('heroicon-o-calendar-days'),
 
-                            DatePicker::make('end_date')
+                            Forms\Components\DatePicker::make('end_date')
                                 ->label('Berakhir Pada')
                                 ->afterOrEqual('start_date')
                                 ->required()
@@ -104,16 +100,16 @@ class PromoCodeResource extends Resource
                                 ->native(false)
                                 ->prefixIcon('heroicon-o-calendar-days'),
 
-                            TextInput::make('usage_limit')
-                                ->label('Batas Kuota (Total)')
+                            Forms\Components\TextInput::make('usage_limit')
+                                ->label('Batas Kuota')
                                 ->helperText('Kosongkan jika ingin tanpa batas (Unlimited).')
                                 ->numeric()
                                 ->minValue(1),
 
-                            TextInput::make('times_used')
-                                ->label('Sudah Digunakan')
-                                ->disabled() // Hanya info, tidak bisa diedit manual
-                                ->dehydrated(false) // Jangan kirim ke save process
+                            Forms\Components\TextInput::make('times_used')
+                                ->label('Kuota Terpakai')
+                                ->disabled()
+                                ->dehydrated(false)
                                 ->default(0),
                         ]),
                     ]),
@@ -124,15 +120,15 @@ class PromoCodeResource extends Resource
     {
         return $table
             ->columns([
-                TextColumn::make('code')
+                Tables\Columns\TextColumn::make('code')
                     ->label('Kode Promo')
                     ->weight('semibold')
                     ->copyable()
                     ->searchable()
                     ->sortable(),
 
-                TextColumn::make('value')
-                    ->label('Nilai')
+                Tables\Columns\TextColumn::make('value')
+                    ->label('Nilai Potongan')
                     ->formatStateUsing(
                         fn($state, PromoCode $record) =>
                         $record->type === 'fixed'
@@ -140,23 +136,41 @@ class PromoCodeResource extends Resource
                         : number_format($state, 0) . '%'
                     )
                     ->color(fn(PromoCode $record) => $record->type === 'fixed' ? 'success' : 'info')
-                    ->badge(),
+                    ->weight('semibold'),
 
-                ToggleColumn::make('is_active')
-                    ->label('Aktif'),
-
-                TextColumn::make('usage_summary')
+                Tables\Columns\TextColumn::make('usage_summary')
                     ->label('Kuota Terpakai')
                     ->state(
                         fn(PromoCode $record) =>
                         $record->times_used . ' / ' . ($record->usage_limit ?? '∞')
                     ),
 
-                TextColumn::make('start_date')
+                Tables\Columns\ToggleColumn::make('is_active')
+                    ->label('Status Aktif'),
+
+                Tables\Columns\TextColumn::make('start_date')
                     ->label('Periode')
                     ->date('d M Y')
                     ->description(fn(PromoCode $record) => $record->end_date ? 's/d ' . $record->end_date->format('d M Y') : 'Selamanya')
                     ->sortable(),
+
+                Tables\Columns\TextColumn::make('created_at')
+                    ->label('Dibuat Pada')
+                    ->dateTime('d M Y H:i')
+                    ->sortable()
+                    ->toggleable(isToggledHiddenByDefault: true),
+
+                Tables\Columns\TextColumn::make('updated_at')
+                    ->label('Diperbarui Pada')
+                    ->dateTime('d M Y H:i')
+                    ->sortable()
+                    ->toggleable(isToggledHiddenByDefault: true),
+
+                Tables\Columns\TextColumn::make('deleted_at')
+                    ->label('Dihapus Pada')
+                    ->dateTime('d M Y H:i')
+                    ->sortable()
+                    ->toggleable(isToggledHiddenByDefault: true),
             ])
             ->filters([
                 Tables\Filters\Filter::make('created_at')
@@ -205,7 +219,8 @@ class PromoCodeResource extends Resource
                     ->native(false),
             ])
             ->actions([
-                Tables\Actions\ViewAction::make(),
+                Tables\Actions\ViewAction::make()
+                    ->modalHeading('Lihat Kode Promo'),
                 Tables\Actions\EditAction::make(),
                 Tables\Actions\DeleteAction::make(),
                 // Tables\Actions\ForceDeleteAction::make(),
@@ -221,6 +236,97 @@ class PromoCodeResource extends Resource
             ->defaultSort('created_at', 'desc');
     }
 
+    public static function infolist(Infolist $infolist): Infolist
+    {
+        return $infolist
+            ->schema([
+                Section::make('Informasi Kode Promo')
+                    ->description('Detail kode dan nilai potongannya.')
+                    ->columns(3)
+                    ->schema([
+                        TextEntry::make('code')
+                            ->label('Kode Promo')
+                            ->weight('semibold')
+                            ->copyable()
+                            ->placeholder('—'),
+
+                        TextEntry::make('type')
+                            ->label('Tipe Potongan')
+                            ->badge()
+                            ->color(fn(string $state): string => match ($state) {
+                                'fixed' => 'success',
+                                'percentage' => 'info',
+                                default => 'gray',
+                            })
+                            ->formatStateUsing(fn(string $state): string => match ($state) {
+                                'fixed' => 'Nominal (Rp)',
+                                'percentage' => 'Persentase (%)',
+                                default => ucwords(str_replace('_', ' ', $state)),
+                            })
+                            ->placeholder('—'),
+
+                        TextEntry::make('value')
+                            ->label('Nilai Potongan')
+                            ->weight('semibold')
+                            ->color(fn($record) => $record->type === 'fixed' ? 'success' : 'info')
+                            ->formatStateUsing(
+                                fn($state, $record) => $record->type === 'fixed'
+                                ? 'IDR ' . number_format($state, 0, ',', '.')
+                                : number_format($state, 0) . '%'
+                            )
+                            ->placeholder('—'),
+                    ]),
+
+                Section::make('Informasi Masa Berlaku & Kuota Pemakaian')
+                    ->columns(2)
+                    ->schema([
+                        TextEntry::make('is_active')
+                            ->label('Status Aktif')
+                            ->badge()
+                            ->color(fn($state) => $state ? 'success' : 'danger')
+                            ->formatStateUsing(fn($state) => $state ? 'Aktif' : 'Tidak Aktif')
+                            ->columnSpanFull(),
+
+                        TextEntry::make('start_date')
+                            ->label('Mulai Berlaku')
+                            ->date('D, d M Y')
+                            ->placeholder('—'),
+
+                        TextEntry::make('end_date')
+                            ->label('Berakhir Pada')
+                            ->date('D, d M Y')
+                            ->placeholder('Selamanya'),
+
+                        TextEntry::make('usage_limit')
+                            ->label('Batas Kuota')
+                            ->formatStateUsing(fn($state) => number_format($state, 0, ',', '.'))
+                            ->placeholder('Tanpa Batas (Unlimited)'),
+
+                        TextEntry::make('times_used')
+                            ->label('Kuota Terpakai')
+                            ->formatStateUsing(fn($state) => number_format($state, 0, ',', '.') . ' Kali')
+                            ->placeholder('0 Kali'),
+                    ]),
+
+                Section::make('Pengelolaan Data')
+                    ->columns(2)
+                    ->schema([
+                        TextEntry::make('created_at')
+                            ->label('Dibuat Pada')
+                            ->dateTime('d M Y H:i'),
+
+                        TextEntry::make('updated_at')
+                            ->label('Diperbarui Pada')
+                            ->dateTime('d M Y H:i'),
+
+                        TextEntry::make('deleted_at')
+                            ->label('Dihapus Pada')
+                            ->dateTime('d M Y H:i')
+                            ->visible(fn($record) => $record->trashed()),
+                    ]),
+            ]);
+    }
+
     public static function getRelations(): array
     {
         return [
@@ -233,8 +339,16 @@ class PromoCodeResource extends Resource
         return [
             'index' => Pages\ListPromoCodes::route('/'),
             'create' => Pages\CreatePromoCode::route('/create'),
-            'view' => Pages\ViewPromoCodes::route('/{record}'),
+            // 'view' => Pages\ViewPromoCodes::route('/{record}'),
             'edit' => Pages\EditPromoCode::route('/{record}/edit'),
         ];
+    }
+
+    public static function getEloquentQuery(): Builder
+    {
+        return parent::getEloquentQuery()
+            ->withoutGlobalScopes([
+                SoftDeletingScope::class,
+            ]);
     }
 }

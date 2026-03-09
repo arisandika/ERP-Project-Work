@@ -41,7 +41,7 @@
                 value="{{ $dashboardUrl }}" readonly>
 
             <button type="button" @click="copyToClipboard('{{ $dashboardUrl }}', 'URL Dashboard berhasil disalin!')"
-                class="px-3 py-2.5 text-sm text-white rounded-full font-medium bg-main-primary hover:bg-main-primary/90">
+                class="px-4 py-2.5 text-sm text-white rounded-full font-medium bg-main-primary hover:bg-main-primary/90">
                 Salin
             </button>
         </div>
@@ -55,7 +55,7 @@
                 value="{{ $password }}" readonly>
 
             <button type="button" @click="copyToClipboard('{{ $password }}', 'Password berhasil disalin!')"
-                class="px-3 py-2.5 text-sm text-white rounded-full font-medium bg-main-primary hover:bg-main-primary/90">
+                class="px-4 py-2.5 text-sm text-white rounded-full font-medium bg-main-primary hover:bg-main-primary/90">
                 Salin
             </button>
         </div>

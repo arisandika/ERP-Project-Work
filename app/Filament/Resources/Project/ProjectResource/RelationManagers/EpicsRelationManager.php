@@ -147,8 +147,8 @@ class EpicsRelationManager extends RelationManager
 
                 Tables\Columns\TextColumn::make('sort_order')
                     ->label('Urutan')
-                    ->sortable()
-                    ->placeholder('—'),
+                    ->alignCenter()
+                    ->sortable(),
 
                 Tables\Columns\TextColumn::make('start_date')
                     ->label('Tanggal Mulai')
@@ -264,6 +264,7 @@ class EpicsRelationManager extends RelationManager
                         TextEntry::make('name')
                             ->label('Nama Epic')
                             ->weight('semibold')
+                            ->size('lg')
                             ->placeholder('—'),
 
                         TextEntry::make('sort_order')

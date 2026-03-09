@@ -2,20 +2,18 @@
 
 namespace App\Filament\Resources\Project\ProjectResource\RelationManagers;
 
+use App\Filament\Resources\Project\TicketResource;
 use App\Models\Project\Epic;
+use App\Models\Project\Ticket;
 use App\Models\Project\TicketPriority;
 use App\Models\Project\TicketStatus;
 use Filament\Forms;
 use Filament\Forms\Components\Radio;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Form;
-use Filament\Infolists\Components\Section;
-use Filament\Infolists\Components\TextEntry;
-use Filament\Infolists\Infolist;
 use Filament\Notifications\Notification;
 use Filament\Resources\RelationManagers\RelationManager;
 use Filament\Tables;
-use Filament\Tables\Actions\BulkAction;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection;
@@ -47,6 +45,7 @@ class TicketsRelationManager extends RelationManager
         return $form
             ->schema([
                 Forms\Components\Section::make('Informasi Ticket')
+                    ->description('Detail project, epic, status dan informasi ticket.')
                     ->schema([
                         Forms\Components\TextInput::make('name')
                             ->label('Nama Ticket')
@@ -54,7 +53,7 @@ class TicketsRelationManager extends RelationManager
                             ->maxLength(255),
 
                         Forms\Components\Select::make('epic_id')
-                            ->label('Epic')
+                            ->label('Nama Epic')
                             ->options(function () use ($projectId) {
                                 return Epic::where('project_id', $projectId)
                                     ->pluck('name', 'id')
@@ -63,7 +62,7 @@ class TicketsRelationManager extends RelationManager
                             ->nullable(),
 
                         Forms\Components\Select::make('ticket_status_id')
-                            ->label('Status')
+                            ->label('Status Pengerjaan')
                             ->options(function () use ($projectId) {
                                 return TicketStatus::where('project_id', $projectId)
                                     ->pluck('name', 'id')
@@ -77,9 +76,15 @@ class TicketsRelationManager extends RelationManager
                             ->label('Prioritas Ticket')
                             ->options(TicketPriority::pluck('name', 'id')->toArray())
                             ->searchable()
+                            ->required()
                             ->preload()
                             ->nullable(),
+                    ])
+                    ->columns(2),
 
+                Forms\Components\Section::make('Jadwal Pengerjaan')
+                    ->description('Timeline target penyelesaian ticket.')
+                    ->schema([
                         Forms\Components\DatePicker::make('start_date')
                             ->label('Tanggal Mulai')
                             ->default(now())
@@ -94,7 +99,11 @@ class TicketsRelationManager extends RelationManager
                             ->displayFormat('d M Y')
                             ->native(false)
                             ->prefixIcon('heroicon-o-calendar-days'),
+                    ])
+                    ->columns(2),
 
+                Forms\Components\Section::make('Member Ticket')
+                    ->schema([
                         Forms\Components\Select::make('assignees')
                             ->label('Ditugaskan Kepada')
                             ->multiple()
@@ -129,7 +138,11 @@ class TicketsRelationManager extends RelationManager
                             ->relationship('creator', 'full_name')
                             ->disabled()
                             ->hiddenOn('create'),
+                    ])
+                    ->columns(2),
 
+                Forms\Components\Section::make('Deskripsi Ticket')
+                    ->schema([
                         Forms\Components\RichEditor::make('description')
                             ->label('Deskripsi Ticket')
                             ->columnSpanFull()
@@ -152,8 +165,7 @@ class TicketsRelationManager extends RelationManager
                             ->fileAttachmentsDisk('public')
                             ->fileAttachmentsDirectory('attachments')
                             ->fileAttachmentsVisibility('public'),
-                    ])
-                    ->columns(2)
+                    ]),
             ]);
     }
 
@@ -177,10 +189,10 @@ class TicketsRelationManager extends RelationManager
                     ->sortable(),
 
                 Tables\Columns\TextColumn::make('epic.name')
-                    ->label('Epic')
-                    ->placeholder('No Epic')
+                    ->label('Nama Epic')
                     ->sortable()
-                    ->searchable(),
+                    ->searchable()
+                    ->placeholder('—'),
 
                 Tables\Columns\TextColumn::make('status.name')
                     ->label('Status')
@@ -196,7 +208,7 @@ class TicketsRelationManager extends RelationManager
                     ->formatStateUsing(fn(string $state): string => ucwords(str_replace('_', ' ', $state))),
 
                 Tables\Columns\TextColumn::make('priority.name')
-                    ->label('Prioritas')
+                    ->label('Prioritas Ticket')
                     ->badge()
                     ->color(fn(string $state): string => match ($state) {
                         'High' => 'danger',
@@ -213,9 +225,9 @@ class TicketsRelationManager extends RelationManager
                     ->badge()
                     ->color('gray')
                     ->icon('heroicon-o-user')
+                    ->searchable()
                     ->listWithLineBreaks()
-                    ->placeholder('Belum ada member ditugaskan')
-                    ->searchable(),
+                    ->placeholder('—'),
 
                 Tables\Columns\TextColumn::make('start_date')
                     ->label('Tanggal Mulai')
@@ -226,6 +238,43 @@ class TicketsRelationManager extends RelationManager
                     ->label('Tanggal Selesai')
                     ->dateTime('d M Y')
                     ->sortable(),
+
+                Tables\Columns\TextColumn::make('remaining_days')
+                    ->label('Sisa Hari')
+                    ->getStateUsing(function (Ticket $record): ?string {
+                        if (!$record->due_date) {
+                            return '—';
+                        }
+
+                        if ($record->status?->name === 'Done') {
+                            return 'Selesai';
+                        }
+
+                        if ($record->remaining_days < 0) {
+                            return 'Terlambat';
+                        }
+
+                        return $record->remaining_days . ' Hari';
+                    })
+                    ->color(function (Ticket $record): string {
+                        if (!$record->due_date) {
+                            return 'gray';
+                        }
+
+                        if ($record->status?->name === 'Done') {
+                            return 'success';
+                        }
+
+                        if ($record->remaining_days < 0) {
+                            return 'danger';
+                        }
+
+                        if ($record->remaining_days <= 7) {
+                            return 'warning';
+                        }
+
+                        return 'success';
+                    }),
 
                 Tables\Columns\TextColumn::make('creator.full_name')
                     ->label('Dibuat Oleh')
@@ -259,7 +308,7 @@ class TicketsRelationManager extends RelationManager
                     }),
 
                 Tables\Filters\SelectFilter::make('epic_id')
-                    ->label('Epic')
+                    ->label('Nama Epic')
                     ->options(function () {
                         $projectId = $this->getOwnerRecord()->id;
                         return Epic::where('project_id', $projectId)
@@ -323,7 +372,10 @@ class TicketsRelationManager extends RelationManager
             ])
             ->actions([
                 Tables\Actions\ViewAction::make()
-                    ->modalHeading('Lihat Ticket'),
+                    ->modalHeading('Lihat Ticket')
+                    ->url(fn($record) => TicketResource::getUrl('view', ['record' => $record]))
+                    ->openUrlInNewTab(),
+
                 Tables\Actions\EditAction::make(),
                 Tables\Actions\DeleteAction::make(),
             ])
@@ -331,7 +383,7 @@ class TicketsRelationManager extends RelationManager
                 Tables\Actions\BulkActionGroup::make([
                     Tables\Actions\DeleteBulkAction::make(),
 
-                    BulkAction::make('updateStatus')
+                    Tables\Actions\BulkAction::make('updateStatus')
                         ->label('Update Status')
                         ->icon('heroicon-o-arrow-path')
                         ->form([
@@ -360,7 +412,7 @@ class TicketsRelationManager extends RelationManager
                                 ->send();
                         }),
 
-                    BulkAction::make('assignUsers')
+                    Tables\Actions\BulkAction::make('assignUsers')
                         ->label('Tugaskan Member')
                         ->icon('heroicon-o-user-plus')
                         ->form([
@@ -402,12 +454,12 @@ class TicketsRelationManager extends RelationManager
                                 ->send();
                         }),
 
-                    BulkAction::make('updatePriority')
+                    Tables\Actions\BulkAction::make('updatePriority')
                         ->label('Update Prioritas')
                         ->icon('heroicon-o-flag')
                         ->form([
                             Select::make('priority_id')
-                                ->label('Prioritas')
+                                ->label('Prioritas Ticket')
                                 ->options(TicketPriority::pluck('name', 'id')->toArray())
                                 ->nullable(),
                         ])
@@ -419,12 +471,12 @@ class TicketsRelationManager extends RelationManager
                             }
                         }),
 
-                    BulkAction::make('assignToEpic')
+                    Tables\Actions\BulkAction::make('assignToEpic')
                         ->label('Tandai ke Epic')
                         ->icon('heroicon-o-bookmark')
                         ->form([
                             Select::make('epic_id')
-                                ->label('Epic')
+                                ->label('Nama Epic')
                                 ->options(function (RelationManager $livewire) {
                                     $projectId = $livewire->getOwnerRecord()->id;
                                     return Epic::where('project_id', $projectId)
@@ -459,118 +511,6 @@ class TicketsRelationManager extends RelationManager
             ->headerActions([
                 Tables\Actions\CreateAction::make()
                     ->label('Tambah Ticket'),
-            ]);
-    }
-
-    public function infolist(Infolist $infolist): Infolist
-    {
-        return $infolist
-            ->schema([
-                Section::make('Informasi Ticket')
-                    ->description('Detail status dan identitas ticket.')
-                    ->columns(2)
-                    ->schema([
-                        TextEntry::make('name')
-                            ->label('Judul Ticket')
-                            ->weight('semibold')
-                            ->placeholder('—'),
-
-                        TextEntry::make('uuid')
-                            ->label('Ticket ID')
-                            ->weight('semibold')
-                            ->placeholder('—')
-                            ->copyable(),
-
-                        TextEntry::make('status.name')
-                            ->label('Status Pengerjaan')
-                            ->badge()
-                            ->color(fn($state) => match ($state) {
-                                'To Do' => 'warning',
-                                'In Progress' => 'info',
-                                'Review' => 'primary',
-                                'Done' => 'success',
-                                default => 'gray',
-                            })
-                            ->formatStateUsing(fn(string $state): string => ucwords(str_replace('_', ' ', $state))),
-
-                        TextEntry::make('priority.name')
-                            ->label('Prioritas')
-                            ->badge()
-                            ->color(fn($state) => match ($state) {
-                                'High' => 'danger',
-                                'Medium' => 'warning',
-                                'Low' => 'success',
-                                default => 'gray',
-                            }),
-
-                        TextEntry::make('epic.name')
-                            ->label('Epic')
-                            ->placeholder('—'),
-                    ]),
-
-                Section::make('Jadwal Pengerjaan')
-                    ->description('Timeline target penyelesaian ticket.')
-                    ->columns(3)
-                    ->schema([
-                        TextEntry::make('start_date')
-                            ->label('Tanggal Mulai')
-                            ->date('d M Y'),
-
-                        TextEntry::make('due_date')
-                            ->label('Tanggal Selesai')
-                            ->date('d M Y')
-                            ->color(fn($record) => $record->due_date < now() && $record->status?->name !== 'Done' ? 'danger' : 'gray'),
-
-                        TextEntry::make('remaining_days')
-                            ->label('Sisa Waktu')
-                            ->getStateUsing(function ($record) {
-                                if (!$record->due_date || $record->status?->name === 'Done')
-                                    return 'Selesai';
-                                $days = now()->diffInDays($record->due_date, false);
-                                return $days < 0 ? abs((int) $days) . ' hari terlambat' : (int) $days . ' hari lagi';
-                            })
-                            ->color(fn($state) => str_contains($state, 'terlambat') ? 'danger' : 'success'),
-                    ]),
-
-                Section::make('Member Ticket')
-                    ->columns(2)
-                    ->schema([
-                        TextEntry::make('assignees.full_name')
-                            ->label('Ditugaskan Kepada')
-                            ->badge()
-                            ->color('gray')
-                            ->icon('heroicon-o-user')
-                            ->listWithLineBreaks()
-                            ->placeholder('Belum ada member ditugaskan'),
-
-                        TextEntry::make('creator.full_name')
-                            ->label('Dibuat Oleh')
-                            ->weight('semibold')
-                            ->icon('heroicon-o-user')
-                            ->placeholder('—'),
-                    ]),
-
-                Section::make('Deskripsi Ticket')
-                    ->schema([
-                        TextEntry::make('description')
-                            ->hiddenLabel()
-                            ->html()
-                            ->prose()
-                            ->placeholder('Tidak ada deskripsi'),
-                    ])
-                    ->collapsible(),
-
-                Section::make('Pengelolaan Data')
-                    ->columns(2)
-                    ->schema([
-                        TextEntry::make('created_at')
-                            ->label('Dibuat Pada')
-                            ->dateTime('d M Y H:i'),
-
-                        TextEntry::make('updated_at')
-                            ->label('Diperbarui Pada')
-                            ->dateTime('d M Y H:i'),
-                    ]),
             ]);
     }
 

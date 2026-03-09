@@ -33,7 +33,7 @@ class ProjectResource extends Resource
 
     protected static ?string $slug = 'pm/projects';
 
-    protected static ?string $pluralModelLabel = 'Projects';
+    protected static ?string $pluralModelLabel = 'Project';
 
     public static function getNavigationBadge(): ?string
     {
@@ -45,12 +45,76 @@ class ProjectResource extends Resource
         return $form
             ->schema([
                 Forms\Components\Section::make('Informasi Project')
+                    ->description('Detail informasi mengenai project')
                     ->schema([
                         Forms\Components\TextInput::make('name')
                             ->label('Nama Project')
                             ->required()
                             ->maxLength(255),
 
+                        Forms\Components\TextInput::make('ticket_prefix')
+                            ->label('Prefix Ticket')
+                            ->required()
+                            ->helperText('Nama prefix untuk Ticket, maksimal 3 karakter. Contoh: BUG, ISS')
+                            ->maxLength(3),
+
+                        Forms\Components\DatePicker::make('start_date')
+                            ->label('Tanggal Mulai')
+                            ->required()
+                            ->displayFormat('d M Y')
+                            ->native(false)
+                            ->prefixIcon('heroicon-o-calendar-days'),
+
+                        Forms\Components\DatePicker::make('end_date')
+                            ->label('Tanggal Selesai')
+                            ->required()
+                            ->displayFormat('d M Y')
+                            ->native(false)
+                            ->prefixIcon('heroicon-o-calendar-days'),
+
+                        Forms\Components\ColorPicker::make('color')
+                            ->label('Warna')
+                            ->required()
+                            ->helperText('Pilih warna untuk card dan badge project'),
+
+                        Forms\Components\Toggle::make('create_default_statuses')
+                            ->label('Status Ticket Default')
+                            ->helperText('Buat status Backlog, To Do, In Progress, Review, dan Done secara otomatis')
+                            ->default(true)
+                            ->inline(false)
+                            ->dehydrated(false)
+                            ->visible(fn($livewire) => $livewire instanceof \Filament\Resources\Pages\CreateRecord),
+
+                        Forms\Components\Toggle::make('is_pinned')
+                            ->label('Pin Project')
+                            ->helperText('Project di-pin akan ditampilkan di bagian atas pada daftar project')
+                            ->live()
+                            ->inline(false)
+                            ->afterStateUpdated(function ($state, $set) {
+                                if ($state) {
+                                    $set('pinned_date', now());
+                                } else {
+                                    $set('pinned_date', null);
+                                }
+                            })
+                            ->dehydrated(false)
+                            ->afterStateHydrated(function ($component, $state, $get) {
+                                $component->state(!is_null($get('pinned_date')));
+                            }),
+
+                        Forms\Components\DateTimePicker::make('pinned_date')
+                            ->label('Tanggal Pin')
+                            ->displayFormat('d M Y')
+                            ->native(false)
+                            ->prefixIcon('heroicon-o-calendar-days')
+                            ->visible(fn($get) => $get('is_pinned'))
+                            ->dehydrated(true),
+                    ])
+                    ->columns(2),
+
+                Forms\Components\Section::make('Deskripsi Project')
+                    ->description('Penjelasan lengkap mengenai project.')
+                    ->schema([
                         Forms\Components\RichEditor::make('description')
                             ->label('Deskripsi Project')
                             ->columnSpanFull()
@@ -73,68 +137,12 @@ class ProjectResource extends Resource
                             ->fileAttachmentsDisk('public')
                             ->fileAttachmentsDirectory('attachments')
                             ->fileAttachmentsVisibility('public'),
-
-                        Forms\Components\TextInput::make('ticket_prefix')
-                            ->label('Prefix Ticket')
-                            ->required()
-                            ->helperText('Nama prefix untuk Ticket, maksimal 3 karakter. Contoh: BUG, ISS')
-                            ->maxLength(3),
-
-                        Forms\Components\ColorPicker::make('color')
-                            ->label('Project Color')
-                            ->required()
-                            ->helperText('Pilih warna untuk card dan badge project'),
-
-                        Forms\Components\DatePicker::make('start_date')
-                            ->label('Tanggal Mulai')
-                            ->required()
-                            ->displayFormat('d M Y')
-                            ->native(false)
-                            ->prefixIcon('heroicon-o-calendar-days'),
-
-                        Forms\Components\DatePicker::make('end_date')
-                            ->label('Tanggal Selesai')
-                            ->required()
-                            ->displayFormat('d M Y')
-                            ->native(false)
-                            ->prefixIcon('heroicon-o-calendar-days'),
-
-                        Forms\Components\Toggle::make('create_default_statuses')
-                            ->label('Status Ticket Default')
-                            ->helperText('Buat status Backlog, To Do, In Progress, Review, dan Done secara otomatis')
-                            ->default(true)
-                            ->dehydrated(false)
-                            ->visible(fn($livewire) => $livewire instanceof \Filament\Resources\Pages\CreateRecord),
-
-                        Forms\Components\Toggle::make('is_pinned')
-                            ->label('Pin Project')
-                            ->helperText('Project di-pin akan ditampilkan di bagian atas pada daftar project')
-                            ->live()
-                            ->afterStateUpdated(function ($state, $set) {
-                                if ($state) {
-                                    $set('pinned_date', now());
-                                } else {
-                                    $set('pinned_date', null);
-                                }
-                            })
-                            ->dehydrated(false)
-                            ->afterStateHydrated(function ($component, $state, $get) {
-                                $component->state(!is_null($get('pinned_date')));
-                            }),
-
-                        Forms\Components\DateTimePicker::make('pinned_date')
-                            ->label('Tanggal Pin')
-                            ->displayFormat('d M Y')
-                            ->native(false)
-                            ->prefixIcon('heroicon-o-calendar-days')
-                            ->visible(fn($get) => $get('is_pinned'))
-                            ->dehydrated(true),
-                    ])->columns(2),
+                    ]),
 
                 Forms\Components\Section::make('Informasi Kontrak Project')
                     ->schema([
                         Forms\Components\Select::make('nx_sales_order_id')
-                            ->label('Sales Order')
+                            ->label('No. Sales Order')
                             ->relationship(
                                 name: 'salesOrder',
                                 titleAttribute: 'order_number'
@@ -203,6 +211,7 @@ class ProjectResource extends Resource
                     ->columns(2),
 
                 Forms\Components\Section::make('Dokumen Project')
+                    ->description('Dokumen kontrak, BAST, dan file teknis project.')
                     ->schema([
                         Forms\Components\Repeater::make('documents')
                             ->relationship()
@@ -222,14 +231,14 @@ class ProjectResource extends Resource
                                         'invoice' => 'Invoice',
                                         'other' => 'Lainnya',
                                     ])
+                                    ->native(false)
                                     ->required(),
 
                                 Forms\Components\FileUpload::make('file_path')
                                     ->label('File')
                                     ->disk('public')
                                     ->directory('project-documents')
-                                    ->required()
-                                    ->columnSpanFull(),
+                                    ->required(),
                             ])
                             ->columns(2)
                             ->addActionLabel('Tambah Dokumen')
@@ -249,6 +258,7 @@ class ProjectResource extends Resource
 
                 Tables\Columns\TextColumn::make('name')
                     ->label('Nama Project')
+                    ->weight('semibold')
                     ->searchable(),
 
                 Tables\Columns\TextColumn::make('ticket_prefix')
@@ -284,23 +294,42 @@ class ProjectResource extends Resource
                     ->label('Sisa Hari')
                     ->getStateUsing(function (Project $record): ?string {
                         if (!$record->end_date) {
-                            return null;
+                            return '—';
                         }
 
-                        return $record->remaining_days . ' hari';
+                        if ($record->progress_percentage >= 100) {
+                            return 'Selesai';
+                        }
+
+                        if ($record->remaining_days < 0) {
+                            return 'Terlambat';
+                        }
+
+                        return $record->remaining_days . ' Hari';
                     })
-                    ->badge()
-                    ->color(
-                        fn(Project $record): string =>
-                        !$record->end_date ? 'gray' :
-                        ($record->remaining_days <= 0 ? 'danger' :
-                            ($record->remaining_days <= 7 ? 'warning' : 'success'))
-                    ),
+                    ->color(function (Project $record): string {
+                        if (!$record->end_date) {
+                            return 'gray';
+                        }
+
+                        if ($record->progress_percentage >= 100) {
+                            return 'success';
+                        }
+
+                        if ($record->remaining_days < 0) {
+                            return 'danger';
+                        }
+
+                        if ($record->remaining_days <= 7) {
+                            return 'warning';
+                        }
+
+                        return 'success';
+                    }),
 
                 Tables\Columns\ToggleColumn::make('is_pinned')
                     ->label('Pinned')
                     ->updateStateUsing(function ($record, $state) {
-                        // Gunakan method pin/unpin yang sudah ada di model
                         if ($state) {
                             $record->pin();
                         } else {
@@ -310,7 +339,7 @@ class ProjectResource extends Resource
                     }),
 
                 Tables\Columns\TextColumn::make('members_count')
-                    ->label('Members')
+                    ->label('Member')
                     ->counts('members')
                     ->badge()
                     ->color(fn(int $state): string => $state > 0 ? 'info' : 'gray')
@@ -318,7 +347,7 @@ class ProjectResource extends Resource
                     ->formatStateUsing(fn($state) => $state . ' Member'),
 
                 Tables\Columns\TextColumn::make('tickets_count')
-                    ->label('Tickets')
+                    ->label('Ticket')
                     ->counts('tickets')
                     ->badge()
                     ->color(fn(int $state): string => $state > 0 ? 'info' : 'gray')
@@ -329,7 +358,7 @@ class ProjectResource extends Resource
                     ->label('Dibuat Pada')
                     ->dateTime('d M Y H:i')
                     ->sortable()
-                    ->toggleable(isToggledHiddenByDefault: true),
+                    ->toggleable(isToggledHiddenByDefault: false),
 
                 Tables\Columns\TextColumn::make('updated_at')
                     ->label('Diperbarui Pada')
@@ -380,8 +409,7 @@ class ProjectResource extends Resource
                     }),
             ])
             ->actions([
-                Tables\Actions\ViewAction::make()
-                    ->modalHeading('Lihat Departemen'),
+                Tables\Actions\ViewAction::make(),
                 Tables\Actions\EditAction::make(),
                 Tables\Actions\DeleteAction::make(),
                 // Tables\Actions\ForceDeleteAction::make(),

@@ -21,7 +21,7 @@ return new class extends Migration {
 
             // Call to Action (Opsional, jika banner diklik)
             $table->string('cta_url')->nullable();
-            $table->string('cta_label')->nullable();
+            $table->string('cta_text')->nullable();
 
             // Jadwal & Status
             $table->dateTime('start_date');

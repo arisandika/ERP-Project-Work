@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Str;
 
 class Ticket extends Model
@@ -120,5 +121,21 @@ class Ticket extends Model
     public function isAssignedTo(Employee $employee): bool
     {
         return $this->assignees()->where('employee_id', $employee->id)->exists();
+    }
+
+    public function getRemainingDaysAttribute()
+    {
+        if (!$this->due_date) {
+            return null;
+        }
+
+        $today = Carbon::today();
+        $dueDate = Carbon::parse($this->due_date);
+
+        if ($today->gt($dueDate)) {
+            return 0;
+        }
+
+        return $today->diffInDays($dueDate);
     }
 }

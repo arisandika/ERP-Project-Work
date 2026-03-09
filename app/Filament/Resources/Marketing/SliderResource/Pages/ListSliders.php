@@ -10,10 +10,11 @@ class ListSliders extends ListRecords
 {
     protected static string $resource = SliderResource::class;
 
-    protected function getHeaderActions(): array
+     protected function getHeaderActions(): array
     {
         return [
-            Actions\CreateAction::make(),
+            Actions\CreateAction::make()
+                ->label('Tambah Slider'),
         ];
     }
 }

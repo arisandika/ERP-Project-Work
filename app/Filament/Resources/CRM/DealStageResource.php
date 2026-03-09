@@ -53,7 +53,7 @@ class DealStageResource extends Resource
                                     ->helperText('Perkiraan persentase keberhasilan di tahap ini')
                                     ->prefixIcon('heroicon-o-presentation-chart-line'),
 
-                                Forms\Components\TextInput::make('order')
+                                Forms\Components\TextInput::make('sort_order')
                                     ->label('Urutan Tampilan')
                                     ->numeric()
                                     ->default(1)
@@ -69,12 +69,10 @@ class DealStageResource extends Resource
     {
         return $table
             ->columns([
-                Tables\Columns\TextColumn::make('order')
+                Tables\Columns\TextColumn::make('sort_order')
                     ->label('Urutan')
-                    ->sortable()
                     ->alignCenter()
-                    ->badge()
-                    ->color('gray'),
+                    ->sortable(),
 
                 Tables\Columns\TextColumn::make('name')
                     ->label('Nama Stage')

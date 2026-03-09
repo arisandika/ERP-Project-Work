@@ -1,0 +1,1 @@
+<livewire:ticket-history-timeline :ticket="$getRecord()" />

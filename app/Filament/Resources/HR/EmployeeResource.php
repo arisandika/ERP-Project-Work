@@ -256,12 +256,12 @@ class EmployeeResource extends Resource
                             ->prefixIcon('heroicon-o-check-circle'),
 
                         Forms\Components\Toggle::make('can_wfa')
-                            ->label('Boleh Work From Anywhere (WFA)')
+                            ->label('Izin WFA')
                             ->default(false)
                             ->inline(false),
 
                         Forms\Components\Toggle::make('can_unlock_shift')
-                            ->label('Boleh Unlock Shift')
+                            ->label('Jam Kerja Flexible')
                             ->default(false)
                             ->inline(false),
 
@@ -356,12 +356,12 @@ class EmployeeResource extends Resource
                 Tables\Columns\ToggleColumn::make('can_wfa')
                     ->label(new HtmlString(Blade::render('<x-heroicon-o-map-pin class="w-6 h-6" />')))
                     ->placeholder('—')
-                    ->tooltip('Boleh Work From Anywhere (WFA)'),
+                    ->tooltip('Izin WFA'),
 
                 Tables\Columns\ToggleColumn::make('can_unlock_shift')
                     ->label(new HtmlString(Blade::render('<x-heroicon-o-clock class="w-6 h-6" />')))
                     ->placeholder('—')
-                    ->tooltip('Boleh Unlock Shift'),
+                    ->tooltip('Jam Kerja Flexible'),
 
                 Tables\Columns\TextColumn::make('created_at')
                     ->label('Dibuat Pada')
@@ -447,8 +447,7 @@ class EmployeeResource extends Resource
                     ->native(false),
             ])
             ->actions([
-                Tables\Actions\ViewAction::make()
-                    ->modalHeading('Lihat Karyawan'),
+                Tables\Actions\ViewAction::make(),
                 Tables\Actions\EditAction::make(),
                 Tables\Actions\DeleteAction::make(),
                 // Tables\Actions\ForceDeleteAction::make(),
@@ -573,13 +572,13 @@ class EmployeeResource extends Resource
                             ->placeholder('—'),
 
                         IconEntry::make('can_wfa')
-                            ->label('Boleh Work From Anywhere (WFA)')
+                            ->label('Izin WFA')
                             ->trueIcon('heroicon-o-check-circle')
                             ->falseIcon('heroicon-o-x-circle')
                             ->placeholder('—'),
 
                         IconEntry::make('can_unlock_shift')
-                            ->label('Boleh Unlock Shift')
+                            ->label('Jam Kerja Flexible')
                             ->trueIcon('heroicon-o-check-circle')
                             ->falseIcon('heroicon-o-x-circle')
                             ->placeholder('—'),
@@ -655,7 +654,7 @@ class EmployeeResource extends Resource
         return [
             'index' => Pages\ListEmployees::route('/'),
             'create' => Pages\CreateEmployee::route('/create'),
-            // 'view' => Pages\ViewEmployee::route('/{record}'),
+            'view' => Pages\ViewEmployee::route('/{record}'),
             'edit' => Pages\EditEmployee::route('/{record}/edit'),
         ];
     }

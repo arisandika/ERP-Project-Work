@@ -391,10 +391,10 @@ class QuotationResource extends Resource
 
                         $days = now()->diffInDays(\Carbon\Carbon::parse($record->valid_until), false);
                         if ($days < 0)
-                            return 'Expired ' . abs(intval($days)) . ' hari lalu';
+                            return 'Expired ' . abs(intval($days)) . ' Hari lalu';
                         if ($days == 0)
                             return 'Hari ini terakhir';
-                        return 'Sisa ' . intval($days) . ' hari';
+                        return 'Sisa ' . intval($days) . ' Hari';
                     }),
 
                 Tables\Columns\TextColumn::make('status')

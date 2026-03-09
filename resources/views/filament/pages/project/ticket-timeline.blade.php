@@ -5,7 +5,7 @@
             <div class="mb-6">
 
                 <x-filament::section>
-                    
+
                     <div class="mb-5">
                         <h2 class="text-lg font-semibold text-black dark:text-white">
                             Pilih Project
@@ -111,7 +111,7 @@
             </div>
         @else
             {{-- Project Switcher --}}
-            <div class="flex flex-col items-end justify-between gap-3 md:items-center md:flex-row" x-data="{ open: false }">
+            <div class="flex items-center justify-between gap-3" x-data="{ open: false }">
                 <div class="relative">
                     <button @click="open = !open" @click.away="open = false"
                         class="inline-flex items-center gap-2 px-4 py-3 text-sm font-medium text-black transition-colors border-2 dark:text-white bg-secondary-light dark:bg-accent-dark rounded-2xl hover:bg-main-light dark:hover:bg-main-dark"
@@ -196,9 +196,8 @@
                 </div>
 
                 <a href="{{ url()->previous() }}"
-                    class="inline-flex items-center w-20 gap-2 px-3 py-2 text-sm font-medium text-gray-700 transition-colors bg-gray-100 rounded-lg hover:bg-gray-200 dark:bg-gray-700 dark:text-gray-200 dark:hover:bg-gray-600">
-                    <x-heroicon-s-arrow-left class="w-4 h-4" />
-                    Back
+                    class="items-center px-4 py-3 text-sm font-medium text-black transition-colors rounded-full dark:text-white bg-main-light hover:bg-secondary-light dark:bg-main-dark ring-1 ring-border-light dark:ring-border-dark dark:hover:bg-secondary-dark">
+                    Kembali
                 </a>
             </div>
         @endif
@@ -303,17 +302,17 @@
                 const container = document.getElementById('gantt_here');
                 if (container) {
                     container.innerHTML = `
-                                                            <div class="flex flex-col items-center justify-center h-64 gap-4 text-gray-500">
-                                                                <svg class="w-16 h-16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                                                                </svg>
-                                                                <h3 class="text-lg font-medium">${message}</h3>
-                                                                <p class="text-sm">Silakan refresh halaman atau hubungi tim IT</p>
-                                                                <button onclick="location.reload()" class="px-4 py-2 text-white bg-blue-500 rounded hover:bg-blue-600">
-                                                                    Refresh Page
-                                                                </button>
-                                                            </div>
-                                                        `;
+                                                                    <div class="flex flex-col items-center justify-center h-64 gap-4 text-gray-500">
+                                                                        <svg class="w-16 h-16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                                                        </svg>
+                                                                        <h3 class="text-lg font-medium">${message}</h3>
+                                                                        <p class="text-sm">Silakan refresh halaman atau hubungi tim IT</p>
+                                                                        <button onclick="location.reload()" class="px-4 py-2 text-white bg-blue-500 rounded hover:bg-blue-600">
+                                                                            Refresh Page
+                                                                        </button>
+                                                                    </div>
+                                                                `;
                 }
             }
 
@@ -448,12 +447,12 @@
 
                         gantt.templates.tooltip_text = function (start, end, task) {
                             return `<b>Task:</b> ${task.text}<br/>
-                                                                        <b>Status:</b> ${task.status}<br/>
-                                                                        <b>Duration:</b> ${task.duration} day(s)<br/>
-                                                                        <b>Progress:</b> ${Math.round(task.progress * 100)}%<br/>
-                                                                        <b>Start:</b> ${gantt.templates.tooltip_date_format(start)}<br/>
-                                                                        <b>End:</b> ${gantt.templates.tooltip_date_format(end)}
-                                                                        ${task.is_overdue ? '<br/><b style="color: #ef4444;">⚠️ OVERDUE</b>' : ''}`;
+                                                                                <b>Status:</b> ${task.status}<br/>
+                                                                                <b>Duration:</b> ${task.duration} day(s)<br/>
+                                                                                <b>Progress:</b> ${Math.round(task.progress * 100)}%<br/>
+                                                                                <b>Start:</b> ${gantt.templates.tooltip_date_format(start)}<br/>
+                                                                                <b>End:</b> ${gantt.templates.tooltip_date_format(end)}
+                                                                                ${task.is_overdue ? '<br/><b style="color: #ef4444;">⚠️ OVERDUE</b>' : ''}`;
                         };
                     } catch (configError) {
                         console.error('Error configuring gantt:', configError);
@@ -537,5 +536,5 @@
             }
         </script>
     @endpush
-    
+
 </x-filament-panels::page>

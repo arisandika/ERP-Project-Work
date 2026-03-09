@@ -110,7 +110,7 @@
         </div>
     @else
         {{-- Project Switcher --}}
-        <div x-data="{ open: false }">
+        <div class="flex items-center justify-between gap-3" x-data="{ open: false }">
             <div class="relative">
                 <button
                     @click="open = !open"
@@ -189,6 +189,10 @@
                     </div>
                 </div>
             </div>
+
+            <a href="{{ url()->previous() }}" class="items-center px-4 py-3 text-sm font-medium text-black transition-colors rounded-full dark:text-white bg-main-light hover:bg-secondary-light dark:bg-main-dark ring-1 ring-border-light dark:ring-border-dark dark:hover:bg-secondary-dark">
+                Kembali
+            </a>
         </div>
     @endif
 
@@ -802,7 +806,7 @@
                                                         }, 0);
                                                         return false;
                                                     "
-                                                    class="flex items-center justify-center w-8 h-8 transition-colors bg-white border border-gray-200 rounded-full shadow-sm hover:bg-main-light dark:bg-gray-800 dark:border-gray-700 dark:hover:bg-gray-700 text-main-primary"
+                                                    class="relative flex items-center justify-center w-8 h-8 transition-colors border rounded-full shadow-sm border-border-light bg-main-light hover:bg-accent-light dark:bg-accent-dark dark:border-border-dark dark:hover:bg-secondary-dark text-main-primary"
                                                     title="Lihat detail ticket"
                                                 >
                                                     <x-heroicon-o-eye class="w-4 h-4" />

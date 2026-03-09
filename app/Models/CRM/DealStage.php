@@ -14,7 +14,7 @@ class DealStage extends Model
 
     protected $fillable = [
         'name',
-        'order',
+        'sort_order',
         'probability'
     ];
 
