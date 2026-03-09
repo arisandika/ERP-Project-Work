@@ -390,7 +390,8 @@ class PopupBannerResource extends Resource
                             ->extraImgAttributes([
                                 'style' => 'width: 100%; height: auto; object-fit: cover;',
                                 'class' => 'w-full rounded-2xl'
-                            ]),
+                            ])
+                            ->columns(2),
 
                         TextEntry::make('content_text')
                             ->label('Isi Pengumuman')
