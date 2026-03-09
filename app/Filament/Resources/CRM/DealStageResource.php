@@ -53,7 +53,7 @@ class DealStageResource extends Resource
                                     ->helperText('Perkiraan persentase keberhasilan di tahap ini')
                                     ->prefixIcon('heroicon-o-presentation-chart-line'),
 
-                                Forms\Components\TextInput::make('order')
+                                Forms\Components\TextInput::make('sort_order')
                                     ->label('Urutan Tampilan')
                                     ->numeric()
                                     ->default(1)
