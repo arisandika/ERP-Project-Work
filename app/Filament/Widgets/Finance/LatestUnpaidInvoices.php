@@ -11,43 +11,43 @@ use Illuminate\Support\Carbon;
 class LatestUnpaidInvoices extends BaseWidget
 {
     protected static ?string $heading = '🔴 Piutang Klien (A/R) Jatuh Tempo';
-
     protected static ?int $sort = 2;
 
     public function table(Table $table): Table
     {
         return $table
             ->query(
-                // FIX: Cukup gunakan filter status, hapus filter remaining_balance
                 Invoice::whereIn('status', ['sent', 'partial'])
-                    ->orderBy('due_date', 'asc') // Urutkan dari tanggal jatuh tempo paling lama!
+                    ->orderBy('due_date', 'asc')
+                    ->limit(5) // Dibatasi 5 dari database langsung
             )
             ->columns([
                 Tables\Columns\TextColumn::make('invoice_number')
-                    ->label('No. Invoice')
+                    ->label('Invoice') // Teks dipendekkan
                     ->weight('bold')
                     ->color('primary')
-                    // Bisa diklik langsung menuju halaman Invoice
-                    ->url(fn (Invoice $record): string => \App\Filament\Resources\Sales\InvoiceResource::getUrl('view', ['record' => $record])),
+                    ->size('sm'), // Ukuran font dikecilkan agar muat
 
                 Tables\Columns\TextColumn::make('customer.name')
-                    ->label('Nama Klien')
-                    ->searchable(),
+                    ->label('Klien')
+                    ->limit(15) // Jika nama PT kepanjangan, dipotong pake titik-titik
+                    ->size('sm'), // Hapus searchable() agar bar pencarian hilang
 
                 Tables\Columns\TextColumn::make('due_date')
-                    ->label('Jatuh Tempo')
-                    ->date('d M Y')
+                    ->label('Tempo')
+                    ->date('d M y') // Format tanggal dipendekkan (ex: 12 Mar 26)
                     ->badge()
-                    // MAGIC: Warnai Merah kalau hari ini sudah melewati jatuh tempo!
-                    ->color(fn ($state) => Carbon::parse($state)->isPast() ? 'danger' : 'warning'),
+                    ->color(fn ($state) => Carbon::parse($state)->isPast() ? 'danger' : 'warning')
+                    ->size('sm'),
 
                 Tables\Columns\TextColumn::make('remaining_balance')
-                    ->label('Sisa Tagihan')
+                    ->label('Sisa')
                     ->money('IDR', true)
                     ->color('danger')
-                    ->weight('bold'),
+                    ->weight('bold')
+                    ->size('sm'),
             ])
-            ->paginated([5]) // Batasi 5 baris saja agar Dashboard rapi
-            ->defaultPaginationPageOption(5);
+            ->paginated(false) // HAPUS fungsi paginasi di bawah tabel
+            ->striped(); // Tambahkan efek zebra / belang-belang
     }
 }

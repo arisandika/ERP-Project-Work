@@ -9,8 +9,7 @@ use Filament\Widgets\TableWidget as BaseWidget;
 
 class LatestUnpaidPurchaseOrders extends BaseWidget
 {
-    protected static ?string $heading = '🟡 Hutang Supplier (A/P) Menunggu Pembayaran';
-
+    protected static ?string $heading = '🟡 Hutang Supplier (A/P) Menunggu';
     protected static ?int $sort = 3;
 
     public function table(Table $table): Table
@@ -19,16 +18,19 @@ class LatestUnpaidPurchaseOrders extends BaseWidget
             ->query(
                 PurchaseOrder::whereIn('status', ['sent', 'partial'])
                     ->orderBy('created_at', 'asc')
+                    ->limit(5)
             )
             ->columns([
                 Tables\Columns\TextColumn::make('po_number')
                     ->label('No. PO')
                     ->weight('bold')
-                    ->color('primary'), // FIX: Fitur URL link dihapus agar tidak error RouteNotFound
+                    ->color('primary')
+                    ->size('sm'),
 
                 Tables\Columns\TextColumn::make('supplier.name')
                     ->label('Supplier')
-                    ->searchable(),
+                    ->limit(15)
+                    ->size('sm'),
 
                 Tables\Columns\TextColumn::make('status')
                     ->label('Status')
@@ -38,15 +40,17 @@ class LatestUnpaidPurchaseOrders extends BaseWidget
                         'partial' => 'info',
                         default => 'gray',
                     })
-                    ->formatStateUsing(fn(string $state) => strtoupper($state)),
+                    ->formatStateUsing(fn(string $state) => strtoupper($state))
+                    ->size('sm'),
 
                 Tables\Columns\TextColumn::make('grand_total')
-                    ->label('Total Harus Dibayar')
+                    ->label('Total')
                     ->money('IDR', true)
                     ->color('danger')
-                    ->weight('bold'),
+                    ->weight('bold')
+                    ->size('sm'),
             ])
-            ->paginated([5])
-            ->defaultPaginationPageOption(5);
+            ->paginated(false)
+            ->striped();
     }
 }
