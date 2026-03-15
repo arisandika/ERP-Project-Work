@@ -20,15 +20,14 @@ class ProfitAndLossReport extends Page implements HasForms
     protected static ?string $title = 'Laporan Laba Rugi';
     protected static ?string $slug = 'finance/profit-and-loss';
 
-    protected static string $view = 'filament.pages.profit-and-loss-report';
+    protected static string $view = 'filament.pages.finance.profit-and-loss-report';
 
-    // Properti untuk filter tanggal
-    public ?string $start_date = null;
-    public ?string $end_date = null;
+    // FIX UTAMA: Di Filament v3, Form State harus dibungkus dalam properti array
+    public ?array $data = [];
 
-    public function mount()
+    public function mount(): void
     {
-        // Default filter: Bulan Ini
+        // Isi nilai default form
         $this->form->fill([
             'start_date' => Carbon::now()->startOfMonth()->format('Y-m-d'),
             'end_date' => Carbon::now()->endOfMonth()->format('Y-m-d'),
@@ -43,7 +42,7 @@ class ProfitAndLossReport extends Page implements HasForms
                     ->label('Periode Dari')
                     ->native(false)
                     ->displayFormat('d M Y')
-                    ->live() // Otomatis refresh laporan saat tanggal diubah
+                    ->live() // Auto-refresh saat diubah
                     ->required(),
                 DatePicker::make('end_date')
                     ->label('Sampai Tanggal')
@@ -52,6 +51,7 @@ class ProfitAndLossReport extends Page implements HasForms
                     ->live()
                     ->required(),
             ])
+            ->statePath('data') // FIX UTAMA: Wajib deklarasi state path
             ->columns(2);
     }
 
@@ -60,8 +60,12 @@ class ProfitAndLossReport extends Page implements HasForms
      */
     protected function getViewData(): array
     {
-        $startDate = $this->start_date ? Carbon::parse($this->start_date)->startOfDay() : Carbon::now()->startOfMonth();
-        $endDate = $this->end_date ? Carbon::parse($this->end_date)->endOfDay() : Carbon::now()->endOfMonth();
+        // Ambil data dari state array
+        $startDateStr = $this->data['start_date'] ?? Carbon::now()->startOfMonth()->format('Y-m-d');
+        $endDateStr = $this->data['end_date'] ?? Carbon::now()->endOfMonth()->format('Y-m-d');
+
+        $startDate = Carbon::parse($startDateStr)->startOfDay();
+        $endDate = Carbon::parse($endDateStr)->endOfDay();
 
         // 1. Ambil semua transaksi di rentang waktu tersebut
         $transactions = FinancialRecord::whereBetween('transaction_date', [$startDate, $endDate])->get();
@@ -70,15 +74,14 @@ class ProfitAndLossReport extends Page implements HasForms
         $revenueDetails = $transactions->where('type', 'pemasukan')->groupBy('category');
         $totalRevenue = $transactions->where('type', 'pemasukan')->sum('amount');
 
-        // 3. Harga Pokok Penjualan (HPP) - Pembelian Stok (Purchase Order)
-        // Sesuaikan nama kategori ini dengan yang Anda pakai saat insert PO ke FinancialRecord
+        // 3. Harga Pokok Penjualan (HPP)
         $cogsTransactions = $transactions->where('type', 'pengeluaran')->whereIn('category', ['Purchase Order', 'Purchase']);
         $totalCogs = $cogsTransactions->sum('amount');
 
         // 4. Laba Kotor
         $grossProfit = $totalRevenue - $totalCogs;
 
-        // 5. Biaya Operasional (Semua pengeluaran SELAIN pembelian stok)
+        // 5. Biaya Operasional (Opex)
         $opexTransactions = $transactions->where('type', 'pengeluaran')->whereNotIn('category', ['Purchase Order', 'Purchase']);
         $opexDetails = $opexTransactions->groupBy('category');
         $totalOpex = $opexTransactions->sum('amount');
