@@ -3,22 +3,19 @@
 namespace App\Filament\Resources\Sales\QuotationResource\Pages;
 
 use App\Filament\Resources\Sales\QuotationResource;
-use App\Models\CRM\DealStage;
+use App\Services\Sales\QuotationService;
 use Filament\Actions;
-use Filament\Notifications\Notification;
-use Filament\Resources\Pages\EditRecord;
 use Filament\Actions\Action;
 use Filament\Forms;
+use Filament\Resources\Pages\EditRecord;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Database\Eloquent\Model;
 
 class EditQuotation extends EditRecord
 {
     protected static string $resource = QuotationResource::class;
 
-    public function getTitle(): string
-    {
-        return 'Edit Penawaran';
-    }
+    public function getTitle(): string { return 'Edit Penawaran'; }
 
     protected function getHeaderActions(): array
     {
@@ -32,37 +29,9 @@ class EditQuotation extends EditRecord
                 ->requiresConfirmation()
                 ->modalHeading('Approve Penawaran')
                 ->modalDescription('Apakah Anda yakin? Status Deal akan otomatis menjadi WON.')
-                ->action(function ($record) {
+                ->action(function ($record, QuotationService $service) {
                     $user = Auth::user();
-
-                    // 1. Update Quotation jadi Accepted
-                    $record->update([
-                        'status' => 'accepted',
-                        'approved_by' => $user?->employee?->id,
-                        'approved_at' => now(),
-                    ]);
-
-                    // 2. Update Parent Deal jadi Won
-                    if ($record->nx_deal_id) {
-                        $deal = $record->deal; // Asumsi relasi sudah ada
-        
-                        // Cari Stage 'Closed Won' atau 'Won'
-                        $wonStage = DealStage::where('name', 'like', '%Won%')->first();
-
-                        if ($deal) {
-                            $deal->update([
-                                'status' => 'won',
-                                'nx_deal_stage_id' => $wonStage?->id, // Pindah stage
-                                'close_date' => now(), // Set tanggal closing
-                            ]);
-
-                            Notification::make()
-                                ->title('Deal Won!')
-                                ->body("Deal {$deal->deal_number} berhasil ditutup (Won).")
-                                ->success()
-                                ->send();
-                        }
-                    }
+                    $service->approveQuotation($record, $user->id, $user?->employee?->id);
                 }),
 
             // ACTION REJECT (LOST)
@@ -75,60 +44,34 @@ class EditQuotation extends EditRecord
                         ->label('Alasan Penolakan')
                         ->required(),
                 ])
-                // Perbaikan logic visibility
                 ->visible(fn($record) => !in_array($record->status, ['accepted', 'rejected']))
                 ->requiresConfirmation()
                 ->modalHeading('Reject Penawaran')
                 ->modalDescription('Apakah Anda yakin? Status Deal akan otomatis menjadi LOST.')
-                ->action(function (array $data, $record) {
+                ->action(function (array $data, $record, QuotationService $service) {
                     $user = Auth::user();
-
-                    // 1. Update Quotation jadi Rejected
-                    $record->update([
-                        'status' => 'rejected',
-                        'approved_by' => $user?->employee?->id,
-                        'approved_at' => now(),
-                        'notes' => trim(($record->notes ? $record->notes . "\n" : '') . "Alasan Rejected: " . $data['reason']),
-                    ]);
-
-                    // 2. Update Parent Deal jadi Lost
-                    if ($record->nx_deal_id) {
-                        $deal = $record->deal;
-
-                        // Cari Stage 'Closed Lost' atau 'Lost'
-                        $lostStage = DealStage::where('name', 'like', '%Lost%')->first();
-
-                        if ($deal) {
-                            $deal->update([
-                                'status' => 'lost',
-                                'nx_deal_stage_id' => $lostStage?->id, // Pindah stage
-                                'close_date' => now(), // Set tanggal closing
-                            ]);
-
-                            Notification::make()
-                                ->title('Deal Lost')
-                                ->body("Deal {$deal->deal_number} ditandai sebagai Lost.")
-                                ->danger()
-                                ->send();
-                        }
-                    }
+                    $service->rejectQuotation($record, $user?->employee?->id, $data['reason']);
                 }),
 
             Actions\DeleteAction::make(),
-            // Actions\ForceDeleteAction::make(),
             Actions\RestoreAction::make(),
         ];
     }
 
-    protected function mutateFormDataBeforeSave(array $data): array
+    protected function mutateFormDataBeforeFill(array $data): array
     {
+        $data['items'] = $this->record->items->toArray();
+        return $data;
+    }
 
-        if ($this->record->status !== 'accepted' && $data['status'] === 'accepted') {
+    protected function handleRecordUpdate(Model $record, array $data): Model
+    {
+        if ($record->status !== 'accepted' && ($data['status'] ?? $record->status) === 'accepted') {
             $user = auth()->user();
             $data['approved_by'] = $user?->employee?->id;
             $data['approved_at'] = now();
         }
 
-        return $data;
+        return app(QuotationService::class)->updateQuotation($record, $data);
     }
 }

@@ -3,7 +3,6 @@
 namespace App\Filament\Resources\Sales;
 
 use App\Filament\Resources\Sales\QuotationResource\Pages;
-use App\Mail\QuotationSent;
 use App\Models\Inventory\Package;
 use App\Models\Inventory\Product;
 use App\Models\Inventory\Service;
@@ -13,6 +12,7 @@ use App\Models\Sales\SalesPerson;
 use Filament\Forms\Components\Actions\Action as FormAction;
 use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\Grid;
+use Filament\Forms\Components\Group;
 use Filament\Forms\Components\Hidden;
 use Filament\Forms\Components\Repeater;
 use Filament\Forms\Components\Section;
@@ -25,13 +25,12 @@ use Filament\Forms\Set;
 use Filament\Notifications\Notification;
 use Filament\Resources\Resource;
 use Filament\Tables;
-use Filament\Tables\Columns\TextColumn\TextColumnSize;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
+use App\Services\Sales\QuotationService;
 use Illuminate\Support\Carbon;
-use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\HtmlString;
 
 class QuotationResource extends Resource
@@ -52,209 +51,199 @@ class QuotationResource extends Resource
     {
         return static::getModel()::count();
     }
+
     public static function form(Form $form): Form
     {
         return $form->schema([
-            Section::make('Informasi Penawaran')
-                ->schema([
-                    Grid::make(3)
-                        ->schema([
-                            TextInput::make('quotation_number')
-                                ->label('No. Penawaran')
-                                ->disabled()
-                                ->dehydrated()
-                                ->unique(ignoreRecord: true)
-                                ->prefixIcon('heroicon-o-hashtag'),
+            // === KOLOM KIRI (Lebar 2/3) ===
+            Group::make()->schema([
+                Section::make('Informasi Penawaran')
+                    ->schema([
+                        Grid::make(2) // Ubah jadi 2 agar lebih rapi di layout baru
+                            ->schema([
+                                TextInput::make('quotation_number')
+                                    ->label('No. Penawaran')
+                                    ->disabled()
+                                    ->dehydrated()
+                                    ->unique(ignoreRecord: true)
+                                    ->prefixIcon('heroicon-o-hashtag'),
 
-                            DatePicker::make('quotation_date')
-                                ->label('Tanggal Penawaran')
-                                ->default(now())
-                                ->prefixIcon('heroicon-o-calendar-days')
-                                ->required()
-                                ->displayFormat('d M Y')
-                                ->native(false),
+                                DatePicker::make('quotation_date')
+                                    ->label('Tanggal Penawaran')
+                                    ->default(now())
+                                    ->prefixIcon('heroicon-o-calendar-days')
+                                    ->required()
+                                    ->displayFormat('d M Y')
+                                    ->native(false),
 
-                            DatePicker::make('valid_until')
-                                ->label('Berlaku Hingga')
-                                ->default(now()->addDays(7))
-                                ->prefixIcon('heroicon-o-calendar-days')
-                                ->required()
-                                ->displayFormat('d M Y')
-                                ->native(false),
-                        ]),
+                                DatePicker::make('valid_until')
+                                    ->label('Berlaku Hingga')
+                                    ->default(now()->addDays(7))
+                                    ->prefixIcon('heroicon-o-calendar-days')
+                                    ->required()
+                                    ->displayFormat('d M Y')
+                                    ->native(false),
 
-                    Grid::make(2)
-                        ->schema([
-                            Select::make('nx_deal_id')
-                                ->label('No. Deal (Ref)')
-                                ->relationship('deal', 'deal_number', function (Builder $query) {
-                                    return $query->withTrashed();
-                                })
-                                ->searchable(['deal_number', 'customer.name', 'lead.name'])
-                                ->preload()
-                                ->required()
-                                ->default(fn() => request()->query('nx_deal_id'))
-                                ->disabled(fn($record) => $record !== null || request()->has('nx_deal_id'))
-                                ->dehydrated()
-                                ->getOptionLabelFromRecordUsing(function ($record) {
-                                    $lead = $record->lead()->withTrashed()->first();
+                                Select::make('nx_deal_id')
+                                    ->label('No. Deal (Ref)')
+                                    ->relationship('deal', 'deal_number', function (Builder $query) {
+                                        return $query->withTrashed();
+                                    })
+                                    ->searchable(['deal_number', 'customer.name', 'lead.name'])
+                                    ->preload()
+                                    ->required()
+                                    ->default(fn() => request()->query('nx_deal_id'))
+                                    ->disabled(fn($record) => $record !== null || request()->has('nx_deal_id'))
+                                    ->dehydrated()
+                                    ->getOptionLabelFromRecordUsing(function ($record) {
+                                        $lead = $record->lead()->withTrashed()->first();
+                                        $clientName = $record->customer?->name ?? $lead?->name ?? 'Tanpa Klien';
+                                        $label = "{$record->deal_number} - {$clientName}";
+                                        if ($record->trashed()) return "{$label} (Deal Terhapus)";
+                                        if ($lead && $lead->trashed()) return "{$label} (Lead Terhapus)";
+                                        return $label;
+                                    }),
 
-                                    $clientName = $record->customer?->name ?? $lead?->name ?? 'Tanpa Klien';
+                                Select::make('internal_pic_id')
+                                    ->label('PIC (Internal Sales)')
+                                    ->relationship('internalPic', 'full_name', function ($query) {
+                                        return $query->where('type', 'internal');
+                                    })
+                                    ->searchable()
+                                    ->preload()
+                                    ->default(function () {
+                                        $employeeId = auth()->user()?->employee?->id;
+                                        if ($employeeId) {
+                                            return SalesPerson::where('employee_id', $employeeId)
+                                                ->where('type', 'internal')
+                                                ->value('id');
+                                        }
+                                        return null;
+                                    })
+                                    ->prefixIcon('heroicon-o-user'),
 
-                                    $label = "{$record->deal_number} - {$clientName}";
+                                Select::make('field_staff_pic_id')
+                                    ->label('PIC (External/Field Staff)')
+                                    ->relationship('fieldStaffPic', 'full_name', function ($query) {
+                                        return $query->where('type', 'external');
+                                    })
+                                    ->searchable()
+                                    ->preload()
+                                    ->prefixIcon('heroicon-o-users'),
 
-                                    if ($record->trashed()) {
-                                        return "{$label} (Deal Terhapus)";
-                                    }
+                                Select::make('created_by')
+                                    ->label('Dibuat Oleh')
+                                    ->relationship('createdBy', 'full_name')
+                                    ->disabled(),
 
-                                    if ($lead && $lead->trashed()) {
-                                        return "{$label} (Lead Terhapus)";
-                                    }
+                                Select::make('status')
+                                    ->options([
+                                        'draft' => 'Draft',
+                                        'sent' => 'Terkirim',
+                                        'negotiation' => 'Negosiasi',
+                                        'accepted' => 'Diterima',
+                                        'rejected' => 'Ditolak',
+                                    ])
+                                    ->default('draft')
+                                    ->required()
+                                    ->prefixIcon('heroicon-o-adjustments-vertical'),
+                            ]),
+                    ]),
 
-                                    return $label;
-                                }),
+                Section::make('Daftar Item Penawaran')
+                    ->schema([
+                        Repeater::make('items')
+                            ->schema(self::getQuotationItemsSchema())
+                            ->columns(2)
+                            ->live()
+                            ->afterStateUpdated(fn(Get $get, Set $set) => self::updateTotals($get, $set))
+                            ->createItemButtonLabel('Tambah Item')
+                            ->defaultItems(1)
+                            ->deletable(true)
+                            ->addable(true)
+                            ->reorderable(false),
+                    ])
+                    ->collapsible(),
+            ])->columnSpan(['lg' => 2]), // Menempati 2 dari 3 kolom grid utama
 
-                            Select::make('internal_pic_id')
-                                ->label('PIC (Internal Sales)')
-                                ->relationship('internalPic', 'full_name', function ($query) {
-                                    return $query->where('type', 'internal');
-                                })
-                                ->searchable()
-                                ->preload()
-                                ->default(function () {
-                                    $employeeId = auth()->user()?->employee?->id;
+            // === KOLOM KANAN (Lebar 1/3) ===
+            Group::make()->schema([
+                Section::make('Ringkasan Harga')
+                    ->icon('heroicon-o-calculator')
+                    ->schema([
+                        TextInput::make('promo_code_input')
+                            ->label('Kode Promo')
+                            ->placeholder('Masukkan kode promo')
+                            ->dehydrated(false)
+                            ->formatStateUsing(fn($record) => $record?->promoCode?->code)
+                            ->suffixAction(
+                                FormAction::make('apply_promo')
+                                    ->icon('heroicon-m-ticket')
+                                    ->color('success')
+                                    ->label('Apply')
+                                    ->action(fn($state, Set $set, Get $get) => self::applyPromo($state, $set, $get))
+                            )
+                            ->formatStateUsing(function ($state) {
+                                return strtoupper($state ?? '');
+                            })
+                            ->afterStateUpdated(fn(Set $set, $state) => $set('promo_code_input', strtoupper($state ?? ''))),
 
-                                    if ($employeeId) {
-                                        $salesPerson = SalesPerson::where('employee_id', $employeeId)
-                                            ->where('type', 'internal')
-                                            ->first();
+                        Hidden::make('promo_code_id'),
+                        Hidden::make('temp_discount_type')->dehydrated(false),
+                        Hidden::make('temp_discount_value')->dehydrated(false),
 
-                                        return $salesPerson?->id;
-                                    }
+                        TextInput::make('subtotal')
+                            ->label('Subtotal')
+                            ->numeric()
+                            ->prefix('IDR')
+                            ->required()
+                            ->minValue(0)
+                            ->disabled()
+                            ->dehydrated()
+                            ->formatStateUsing(fn($state) => (int) $state),
 
-                                    return null;
-                                })
-                                ->prefixIcon('heroicon-o-user'),
+                        TextInput::make('discount_amount')
+                            ->label('Potongan / Diskon')
+                            ->numeric()
+                            ->prefix('IDR')
+                            ->minValue(0)
+                            ->disabled()
+                            ->dehydrated()
+                            ->formatStateUsing(fn($state) => (int) $state),
 
-                            Select::make('field_staff_pic_id')
-                                ->label('PIC (External/Field Staff)')
-                                ->relationship('fieldStaffPic', 'full_name', function ($query) {
-                                    return $query->where('type', 'external');
-                                })
-                                ->searchable()
-                                ->preload()
-                                ->prefixIcon('heroicon-o-users'),
+                        TextInput::make('tax')
+                            ->label('Pajak PPN (%)')
+                            ->numeric()
+                            ->default(11)
+                            ->minValue(0)
+                            ->live(debounce: 500)
+                            ->afterStateUpdated(fn($state, Set $set, Get $get) => self::updateTotals($get, $set))
+                            ->formatStateUsing(fn($state) => (float) $state)
+                            ->prefixIcon('heroicon-o-receipt-percent'),
 
-                            Select::make('created_by')
-                                ->label('Dibuat Oleh')
-                                ->relationship('createdBy', 'full_name')
-                                ->disabled(),
+                        TextInput::make('grand_total')
+                            ->label('Grand Total')
+                            ->numeric()
+                            ->prefix('IDR')
+                            ->required()
+                            ->minValue(0)
+                            ->disabled()
+                            ->dehydrated()
+                            // Styling ditaruh di sini agar lebih mencolok seperti PO
+                            ->extraInputAttributes(['style' => 'font-size: 1.5rem; font-weight: bold; color: green;'])
+                            ->formatStateUsing(fn($state) => (int) $state),
+                    ]),
 
-                            Select::make('status')
-                                ->options([
-                                    'draft' => 'Draft',
-                                    'sent' => 'Terkirim',
-                                    'negotiation' => 'Negosiasi',
-                                    'accepted' => 'Diterima',
-                                    'rejected' => 'Ditolak',
-                                ])
-                                ->default('draft')
-                                ->required()
-                                ->prefixIcon('heroicon-o-adjustments-vertical'),
+                Section::make('Catatan')
+                    ->schema([
+                        Textarea::make('notes')
+                            ->label('Catatan Tambahan / Syarat Ketentuan')
+                            ->rows(5),
+                    ]),
 
-                            Textarea::make('notes')
-                                ->label('Catatan Tambahan')
-                                ->rows(2),
-                        ]),
-                ]),
+            ])->columnSpan(['lg' => 1]), // Menempati 1 dari 3 kolom grid utama
 
-            Section::make('Daftar Item Penawaran')
-                ->schema([
-                    Repeater::make('items')
-                        ->schema(self::getQuotationItemsSchema())
-                        ->relationship()
-                        ->columns(2)
-                        ->live()
-                        ->afterStateUpdated(fn(Get $get, Set $set) => self::updateTotals($get, $set))
-                        ->createItemButtonLabel('Tambah Item')
-                        ->defaultItems(1)
-                        ->deletable(true)
-                        ->addable(true)
-                        ->reorderable(false),
-                ])
-                ->collapsible(),
-
-            Section::make('Perhitungan Akhir')
-                ->schema([
-                    Grid::make(4)
-                        ->schema([
-                            TextInput::make('subtotal')
-                                ->label('Subtotal')
-                                ->numeric()
-                                ->prefix('IDR')
-                                ->required()
-                                ->minValue(0)
-                                ->disabled()
-                                ->dehydrated()
-                                ->formatStateUsing(fn($state) => (int) $state),
-
-                            TextInput::make('promo_code_input')
-                                ->label('Kode Promo')
-                                ->placeholder('Masukkan kode promo')
-                                ->dehydrated(false)
-                                ->formatStateUsing(fn($record) => $record?->promoCode?->code)
-                                ->suffixAction(
-                                    FormAction::make('apply_promo')
-                                        ->icon('heroicon-m-ticket')
-                                        ->color('success')
-                                        ->label('Apply')
-                                        ->action(fn($state, Set $set, Get $get) => self::applyPromo($state, $set, $get))
-                                )
-                                ->formatStateUsing(function ($state) {
-                                    return strtoupper($state ?? '');
-                                })
-                                ->afterStateUpdated(fn(Set $set, $state) => $set('promo_code_input', strtoupper($state ?? ''))),
-
-                            Hidden::make('promo_code_id'),
-
-                            Hidden::make('temp_discount_type')
-                                ->dehydrated(false),
-
-                            Hidden::make('temp_discount_value')
-                                ->dehydrated(false),
-
-                            TextInput::make('discount_amount')
-                                ->label('Potongan')
-                                ->numeric()
-                                ->prefix('IDR')
-                                ->minValue(0)
-                                ->disabled()
-                                ->dehydrated()
-                                ->formatStateUsing(fn($state) => (int) $state),
-
-                            TextInput::make('tax')
-                                ->label('Pajak (%)')
-                                ->numeric()
-                                ->default(11)
-                                ->minValue(0)
-                                ->live(debounce: 500)
-                                ->afterStateUpdated(fn($state, Set $set, Get $get) => self::updateTotals($get, $set))
-                                ->formatStateUsing(fn($state) => (float) $state)
-                                ->prefixIcon('heroicon-o-receipt-percent'),
-
-                            TextInput::make('grand_total')
-                                ->label('Total')
-                                ->numeric()
-                                ->prefix('IDR')
-                                ->required()
-                                ->minValue(0)
-                                ->disabled()
-                                ->dehydrated()
-                                ->extraInputAttributes(['style' => 'font-weight: bold;'])
-                                ->formatStateUsing(fn($state) => (int) $state),
-                        ]),
-                ]),
-        ]);
+        ])->columns(3); // Container utama dibagi menjadi 3 kolom
     }
 
     public static function table(Table $table): Table
@@ -557,26 +546,14 @@ class QuotationResource extends Resource
                     ->icon('heroicon-o-envelope')
                     ->color('warning')
                     ->requiresConfirmation()
-                    ->action(function (Quotation $record) {
-                        $emailTarget = $record->deal?->customer?->email ?? $record->deal?->lead?->email;
+                    ->action(function (Quotation $record, QuotationService $service) {
+                        $isSent = $service->sendQuotationEmail($record);
 
-                        if (!$emailTarget) {
-                            Notification::make()
-                                ->title('Email Klien tidak tersedia!')
-                                ->danger()
-                                ->send();
-                            return;
+                        if ($isSent) {
+                            Notification::make()->title('Terkirim!')->success()->send();
+                        } else {
+                            Notification::make()->title('Gagal: Email Klien tidak tersedia!')->danger()->send();
                         }
-
-                        Mail::to($emailTarget)->send(new QuotationSent($record));
-
-                        $record->update(['status' => 'sent']);
-
-                        Notification::make()
-                            ->title('Penawaran berhasil dikirim!')
-                            ->body("Terkirim ke: {$emailTarget}")
-                            ->success()
-                            ->send();
                     }),
                 Tables\Actions\EditAction::make(),
                 Tables\Actions\DeleteAction::make(),
@@ -876,6 +853,7 @@ class QuotationResource extends Resource
 
     public static function applyPromo($code, Set $set, Get $get): void
     {
+        // Jika kode kosong, reset diskon
         if (empty($code)) {
             $set('promo_code_id', null);
             $set('temp_discount_type', null);
@@ -884,29 +862,21 @@ class QuotationResource extends Resource
             return;
         }
 
-        $promo = PromoCode::where('code', $code)
-            ->where('is_active', 1)
-            ->whereDate('start_date', '<=', now())
-            ->whereDate('end_date', '>=', now())
-            ->first();
+        $service = app(\App\Services\Sales\QuotationService::class);
+        $promo = $service->validatePromoCode($code);
 
         if (!$promo) {
-            Notification::make()
-                ->title('Kode tidak valid atau kadaluwarsa!')
-                ->danger()
-                ->send();
+            Notification::make()->title('Kode tidak valid atau kadaluwarsa!')->danger()->send();
             $set('promo_code_id', null);
             $set('temp_discount_type', null);
             $set('temp_discount_value', 0);
         } else {
-            Notification::make()
-                ->title("Promo Applied!")
-                ->success()
-                ->send();
+            Notification::make()->title("Promo Applied!")->success()->send();
             $set('promo_code_id', $promo->id);
             $set('temp_discount_type', $promo->type);
             $set('temp_discount_value', $promo->value);
         }
+
         self::updateTotals($get, $set);
     }
 }

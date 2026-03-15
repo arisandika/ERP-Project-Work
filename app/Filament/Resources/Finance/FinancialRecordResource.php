@@ -16,6 +16,7 @@ use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
 use Illuminate\Support\Carbon;
+use App\Models\Procurement\PurchaseOrder;
 
 class FinancialRecordResource extends Resource
 {
@@ -29,7 +30,7 @@ class FinancialRecordResource extends Resource
 
     protected static ?string $slug = 'finance/financial-records';
 
-    protected static ?string $pluralModelLabel = 'Catatan Operasional';
+    protected static ?string $pluralModelLabel = 'Catatan Operasional & Jurnal'; // Update Label
 
     public static function form(Form $form): Form
     {
@@ -40,6 +41,13 @@ class FinancialRecordResource extends Resource
                     ->schema([
                         Forms\Components\Grid::make(2)
                             ->schema([
+                                // --- REVISI 1: Tambahkan Input No. Transaksi di paling atas Form ---
+                                Forms\Components\TextInput::make('transaction_code')
+                                    ->label('No. Transaksi')
+                                    ->placeholder('Akan di-generate otomatis saat disimpan')
+                                    ->disabled()
+                                    ->dehydrated(false),
+
                                 Forms\Components\DatePicker::make('transaction_date')
                                     ->label('Tanggal Transaksi')
                                     ->required()
@@ -112,12 +120,45 @@ class FinancialRecordResource extends Resource
     {
         return $table
             ->columns([
+                // --- REVISI 2: Tambahkan Kolom No. Transaksi di paling kiri Tabel ---
+                Tables\Columns\TextColumn::make('transaction_code')
+                    ->label('No. Transaksi')
+                    ->searchable()
+                    ->sortable()
+                    ->weight('bold')
+                    ->copyable()
+                    ->placeholder('Sedang diproses...'), // Fallback jika data lama belum punya nomor
+
+                Tables\Columns\TextColumn::make('reference_number')
+                    ->label('Referensi')
+                    ->searchable()
+                    ->sortable()
+                    ->weight('bold')
+                    ->color('primary')
+                    // Membuat link ke halaman dokumen asli (jika referensi adalah PO)
+                    ->url(function ($record) {
+                        if ($record->reference_type === PurchaseOrder::class) {
+                            // Link ke halaman View PO
+                            return \App\Filament\Resources\Procurement\PurchaseOrderResource::getUrl('view', ['record' => $record->reference_id]);
+                        }
+                        return null;
+                    })
+                    ->description(function ($record) {
+                        // Mengubah nama namespace model (App\Models\Procurement\PurchaseOrder) menjadi nama simpel (PurchaseOrder)
+                        if ($record->reference_type) {
+                            return class_basename($record->reference_type);
+                        }
+                        return $record->reimburse_id ? 'Reimbursement' : 'Catatan Manual';
+                    })
+                    ->placeholder('Catatan Manual'),
+
                 Tables\Columns\TextColumn::make('creator')
                     ->label('Dibuat Oleh')
                     ->state(
                         fn($record) =>
                         $record->reimbursement?->employee?->full_name
                         ?? $record->employee?->full_name
+                        ?? 'Sistem Otomatis'
                     )
                     ->sortable()
                     ->weight('semibold')
@@ -130,28 +171,19 @@ class FinancialRecordResource extends Resource
                     ->color(fn(string $state): string => match ($state) {
                         'pemasukan' => 'success',
                         'pengeluaran' => 'danger',
+                        default => 'gray'
                     })
                     ->formatStateUsing(fn(string $state) => match ($state) {
                         'pemasukan' => 'Pemasukan',
                         'pengeluaran' => 'Pengeluaran',
-
                         default => ucwords(
                             str_replace('_', ' ', $state)
                         ),
                     })
                     ->placeholder('—'),
 
-                Tables\Columns\TextColumn::make('source')
-                    ->label('Sumber')
-                    ->sortable()
-                    ->state(
-                        fn($record) =>
-                        $record->reimbursement ? 'Reimburse' : 'Manual'
-                    )
-                    ->placeholder('—'),
-
                 Tables\Columns\TextColumn::make('transaction_category')
-                    ->label('Jenis Transaksi')
+                    ->label('Kategori')
                     ->state(
                         fn($record) =>
                         $record->reimbursement?->type
@@ -170,7 +202,8 @@ class FinancialRecordResource extends Resource
                     )
                     ->searchable()
                     ->placeholder('—')
-                    ->limit(30),
+                    ->limit(30)
+                    ->tooltip(fn ($record) => $record->description), // Hover untuk lihat full teks
 
                 Tables\Columns\TextColumn::make('transaction_date')
                     ->label('Tanggal')
@@ -200,18 +233,6 @@ class FinancialRecordResource extends Resource
                     ->dateTime('d M Y H:i')
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
-
-                Tables\Columns\TextColumn::make('updated_at')
-                    ->label('Diperbarui Pada')
-                    ->dateTime('d M Y H:i')
-                    ->sortable()
-                    ->toggleable(isToggledHiddenByDefault: true),
-
-                Tables\Columns\TextColumn::make('deleted_at')
-                    ->label('Dihapus Pada')
-                    ->dateTime('d M Y H:i')
-                    ->sortable()
-                    ->toggleable(isToggledHiddenByDefault: true),
             ])
             ->filters([
                 Tables\Filters\SelectFilter::make('type')
@@ -225,21 +246,17 @@ class FinancialRecordResource extends Resource
                 Tables\Filters\SelectFilter::make('source')
                     ->label('Sumber Data')
                     ->options([
-                        'manual' => 'Manual',
-                        'reimburse' => 'Reimburse',
+                        'manual' => 'Manual (Kas Kecil)',
+                        'reimburse' => 'Reimburse Karyawan',
+                        'purchase_order' => 'Pembelian (Purchase Order)',
+                        // Tambahkan 'invoice' => 'Penjualan (Invoice)' nanti kalau modul Invoice dihubungkan
                     ])
                     ->query(function ($query, $data) {
-
                         return match ($data['value'] ?? null) {
-
-                            'manual'
-                            => $query->whereNull('reimburse_id'),
-
-                            'reimburse'
-                            => $query->whereNotNull('reimburse_id'),
-
-                            default
-                            => $query,
+                            'manual' => $query->whereNull('reimburse_id')->whereNull('reference_id'),
+                            'reimburse' => $query->whereNotNull('reimburse_id'),
+                            'purchase_order' => $query->where('reference_type', PurchaseOrder::class),
+                            default => $query,
                         };
                     })
                     ->native(false),
@@ -284,24 +301,9 @@ class FinancialRecordResource extends Resource
 
                         return $indicators;
                     }),
-
-                Tables\Filters\TrashedFilter::make()
-                    ->label('Deleted Status')
-                    ->native(false),
             ])
             ->actions([
                 Tables\Actions\ViewAction::make(),
-                // Tables\Actions\EditAction::make(),
-                // Tables\Actions\DeleteAction::make(),
-                // Tables\Actions\ForceDeleteAction::make(),
-                // Tables\Actions\RestoreAction::make(),
-            ])
-            ->bulkActions([
-                Tables\Actions\BulkActionGroup::make([
-                    // Tables\Actions\DeleteBulkAction::make(),
-                    // Tables\Actions\ForceDeleteBulkAction::make(),
-                    // Tables\Actions\RestoreBulkAction::make(),
-                ]),
             ])
             ->defaultSort('created_at', 'desc');
     }
@@ -311,13 +313,22 @@ class FinancialRecordResource extends Resource
         return $infolist
             ->schema([
                 Section::make('Informasi Transaksi Keuangan')
-                    ->description('Detail transaksi pemasukan atau pengeluaran operasional.')
+                    ->description('Detail transaksi pemasukan atau pengeluaran.')
                     ->columns(2)
                     ->schema([
+                        // --- REVISI 3: Tambahkan Infolist No. Transaksi di paling atas Detail ---
+                        TextEntry::make('transaction_code')
+                            ->label('No. Transaksi')
+                            ->weight('bold')
+                            ->color('primary')
+                            ->icon('heroicon-o-hashtag')
+                            ->placeholder('—'),
+
                         TextEntry::make('employee.full_name')
                             ->label('Dibuat Oleh')
                             ->weight('semibold')
                             ->icon('heroicon-o-user')
+                            ->state(fn ($record) => $record->employee?->full_name ?? 'Sistem Otomatis')
                             ->placeholder('—'),
 
                         TextEntry::make('transaction_date')
@@ -359,8 +370,24 @@ class FinancialRecordResource extends Resource
 
                         TextEntry::make('description')
                             ->label('Keterangan')
+                            ->columnSpanFull()
                             ->placeholder('—'),
+                    ]),
 
+                Section::make('Informasi Dokumen Referensi Sistem')
+                    ->description('Transaksi ini dicatat secara otomatis dari modul lain di ERP.')
+                    ->columns(2)
+                    ->visible(fn($record) => filled($record->reference_id))
+                    ->schema([
+                        TextEntry::make('reference_number')
+                            ->label('Nomor Referensi (ID)')
+                            ->weight('semibold')
+                            ->color('primary')
+                            ->icon('heroicon-o-document-text'),
+
+                        TextEntry::make('reference_type')
+                            ->label('Modul Asal')
+                            ->formatStateUsing(fn ($state) => class_basename($state)),
                     ]),
 
                 Section::make('Informasi Reimburse')
@@ -392,7 +419,6 @@ class FinancialRecordResource extends Resource
                             ->color(fn(string $state): string => match ($state) {
                                 'pending' => 'warning',
                                 'approved' => 'success',
-
                                 default => 'danger',
                             })
                             ->formatStateUsing(fn(string $state) => match ($state) {
@@ -400,7 +426,6 @@ class FinancialRecordResource extends Resource
                                 'approved' => 'Disetujui',
                                 'rejected' => 'Ditolak',
                                 'cancelled' => 'Dibatalkan',
-
                                 default => ucwords(
                                     str_replace('_', ' ', $state)
                                 ),
@@ -423,9 +448,9 @@ class FinancialRecordResource extends Resource
 
                     ]),
 
-                Section::make('Bukti Transaksi')
+                Section::make('Bukti Transaksi Manual')
                     ->description('Transaksi ini dibuat langsung di catatan operasional.')
-                    ->visible(fn($record) => empty($record->reimburse_id))
+                    ->visible(fn($record) => empty($record->reimburse_id) && empty($record->reference_id))
                     ->schema([
                         ImageEntry::make('receipt')
                             ->label('Bukti Transaksi')
@@ -436,23 +461,6 @@ class FinancialRecordResource extends Resource
                             ]),
                     ])
                     ->columns(2),
-
-                Section::make('Pengelolaan Data')
-                    ->columns(2)
-                    ->schema([
-                        TextEntry::make('created_at')
-                            ->label('Dibuat Pada')
-                            ->dateTime('d M Y H:i'),
-
-                        TextEntry::make('updated_at')
-                            ->label('Diperbarui Pada')
-                            ->dateTime('d M Y H:i'),
-
-                        TextEntry::make('deleted_at')
-                            ->label('Dihapus Pada')
-                            ->dateTime('d M Y H:i')
-                            ->visible(fn($record) => $record->trashed()),
-                    ]),
             ]);
     }
 
@@ -462,7 +470,6 @@ class FinancialRecordResource extends Resource
             'index' => Pages\ListFinancialRecords::route('/'),
             'create' => Pages\CreateFinancialRecord::route('/create'),
             'view' => Pages\ViewFinancialRecord::route('/{record}'),
-            // 'edit' => Pages\EditFinancialRecord::route('/{record}/edit'),
         ];
     }
 

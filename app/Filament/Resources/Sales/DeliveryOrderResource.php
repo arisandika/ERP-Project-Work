@@ -124,7 +124,6 @@ class DeliveryOrderResource extends Resource
                 ]),
             ]),
 
-            // FORM EDIT BERSIH TANPA SCANNER
             Section::make('Daftar Item Surat Jalan')->schema([
                 Repeater::make('items')
                     ->relationship()
@@ -179,7 +178,6 @@ class DeliveryOrderResource extends Resource
                     }),
             ])
             ->actions([
-                // === ACTION SUPER: PROSES, SCAN, POTONG STOK, DAN CETAK DO ===
                 Action::make('proses_dan_cetak')
                     ->label('Proses & Cetak DO')
                     ->icon('heroicon-o-printer')
@@ -271,7 +269,6 @@ class DeliveryOrderResource extends Resource
                                         throw new \Exception("Total stok gabungan untuk {$item->item_name} tidak mencukupi!");
                                     }
 
-                                    // A. PEMOTONGAN STOK HYBRID
                                     $stockReservedBefore = $stockUtama->qty_reserved;
                                     $potongDariReserved = min($stockUtama->qty_reserved, $item->qty);
                                     $sisaKekurangan = $item->qty - $potongDariReserved;
@@ -280,7 +277,6 @@ class DeliveryOrderResource extends Resource
                                     if ($sisaKekurangan > 0) { $stockUtama->decrement('qty_available', $sisaKekurangan); }
                                     $stockUtama->increment('qty_on_delivery', $item->qty);
 
-                                    // === REVISI TRANSACTION CODE DENGAN BULAN ROMAWI ===
                                     $roman = ['I','II','III','IV','V','VI','VII','VIII','IX','X','XI','XII'][$now->month - 1];
                                     $prefix = "%/ST-OUT/NEX/{$roman}/" . $now->year;
 
@@ -291,7 +287,6 @@ class DeliveryOrderResource extends Resource
                                     $seq = $last ? ((int) explode('/', $last)[0]) + 1 : 1;
                                     $trxCode = str_pad((string) $seq, 3, '0', STR_PAD_LEFT) . "/ST-OUT/NEX/{$roman}/" . $now->year;
 
-                                    // B. CATAT HISTORY TRANSAKSI
                                     StockTransaction::create([
                                         'transaction_code' => $trxCode,
                                         'transaction_date' => $now,
@@ -311,18 +306,13 @@ class DeliveryOrderResource extends Resource
                                         'created_by'       => auth()->id(),
                                     ]);
 
-                                    // C. SIMPAN HASIL SCAN KE TABEL ITEMS & UPDATE STATUS SN
                                     $product = \App\Models\Inventory\Product::find($item->item_id);
                                     if ($product && $product->is_serialized && isset($data["scanned_sns_{$item->id}"])) {
-
-                                        // Ubah teks berbaris dari textarea menjadi string yang dipisah koma
                                         $snsArray = array_filter(array_map('trim', explode("\n", $data["scanned_sns_{$item->id}"])));
                                         $snString = implode(', ', $snsArray);
 
-                                        // Simpan SN ke database items (Agar bisa dirender di PDF)
                                         $item->update(['scanned_sns' => $snString]);
 
-                                        // Update status SN di tabel Serial Number
                                         if (!empty($snsArray)) {
                                             SerialNumber::whereIn('serial_number', $snsArray)
                                                 ->where('product_id', $item->item_id)
@@ -338,7 +328,6 @@ class DeliveryOrderResource extends Resource
 
                             StockTransaction::$autoUpdateStock = true;
 
-                            // Update Status Dokumen
                             $record->update(['status' => 'on_delivery']);
                             if ($record->salesOrder) {
                                 $record->salesOrder->update(['status' => 'shipped']);
@@ -347,10 +336,8 @@ class DeliveryOrderResource extends Resource
 
                         Notification::make()->title('Surat Jalan Diproses & Siap Cetak!')->success()->send();
 
-                        // ALIHKAN BROWSER KE TAB BARU UNTUK CETAK PDF
                         return redirect()->route('print.delivery-order', $record);
                     }),
-                // ==========================================================
 
                 Action::make('upload_proof')
                     ->label('Upload Bukti')
@@ -378,7 +365,6 @@ class DeliveryOrderResource extends Resource
                         Notification::make()->title('Delivered!')->success()->send();
                     }),
 
-                // Tombol Print Ulang (Muncul setelah dokumen berstatus On Delivery / Delivered)
                 Action::make('print')
                     ->label('Print Ulang')
                     ->icon('heroicon-o-printer')
