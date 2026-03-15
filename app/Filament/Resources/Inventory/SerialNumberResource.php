@@ -19,8 +19,8 @@ class SerialNumberResource extends Resource
     protected static ?string $navigationIcon = 'heroicon-o-qr-code';
     protected static ?string $navigationGroup = 'Manajemen Inventory';
     protected static ?int $navigationSort = 8;
-    protected static ?string $navigationLabel = 'Pelacakan SN';
-    protected static ?string $pluralModelLabel = 'Pelacakan Serial Number';
+    protected static ?string $navigationLabel = 'Daftar Serial Number';
+    protected static ?string $pluralModelLabel = 'Daftar Serial Number';
 
     public static function form(Form $form): Form
     {

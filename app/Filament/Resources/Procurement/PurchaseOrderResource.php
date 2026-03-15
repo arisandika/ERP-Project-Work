@@ -6,6 +6,7 @@ use App\Filament\Resources\Procurement\PurchaseOrderResource\Pages;
 use App\Models\Inventory\Product;
 use App\Models\Procurement\PurchaseOrder;
 use App\Services\Procurement\PurchaseOrderReceiptService;
+use App\Models\Finance\FinancialRecord;
 use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Resources\Resource;
@@ -13,6 +14,8 @@ use Filament\Tables;
 use Filament\Tables\Table;
 use Filament\Notifications\Notification;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Mail;
+use App\Mail\Procurement\PurchaseOrderMail;
 
 class PurchaseOrderResource extends Resource
 {
@@ -46,11 +49,15 @@ class PurchaseOrderResource extends Resource
             $subtotal += (float) ($item['total_price'] ?? 0);
         }
 
-        $tax = (float) ($get($prefix . 'tax_amount') ?? 0);
         $discount = (float) ($get($prefix . 'discount_amount') ?? 0);
 
+        $taxRate = (float) ($get($prefix . 'tax_rate') ?? 0);
+
+        $taxAmount = ($subtotal - $discount) * ($taxRate / 100);
+
         $set($prefix . 'subtotal', $subtotal);
-        $set($prefix . 'grand_total', $subtotal + $tax - $discount);
+        $set($prefix . 'tax_amount', $taxAmount);
+        $set($prefix . 'grand_total', $subtotal + $taxAmount - $discount);
     }
 
     public static function form(Form $form): Form
@@ -109,7 +116,6 @@ class PurchaseOrderResource extends Resource
                                         ->preload()
                                         ->required()
                                         ->disableOptionsWhenSelectedInSiblingRepeaterItems()
-                                        // --- REVISI 2: Panggil updateTotals ---
                                         ->live(debounce: 500)
                                         ->afterStateUpdated(function ($state, Forms\Set $set, Forms\Get $get) {
                                             $product = Product::find($state);
@@ -119,7 +125,6 @@ class PurchaseOrderResource extends Resource
                                             $set('unit_price', $price);
                                             $set('total_price', $price * $qty);
 
-                                            // Sinkronisasi Global
                                             self::updateTotals($get, $set);
                                         }),
 
@@ -129,13 +134,11 @@ class PurchaseOrderResource extends Resource
                                         ->default(0)
                                         ->minValue(1)
                                         ->required()
-                                        // --- REVISI 3: Panggil updateTotals ---
                                         ->live(debounce: 500)
                                         ->afterStateUpdated(function ($state, Forms\Set $set, Forms\Get $get) {
                                             $price = (float) ($get('unit_price') ?? 0);
                                             $set('total_price', $price * (int) $state);
 
-                                            // Sinkronisasi Global
                                             self::updateTotals($get, $set);
                                         }),
 
@@ -143,13 +146,11 @@ class PurchaseOrderResource extends Resource
                                         ->label('Harga Satuan')
                                         ->numeric()
                                         ->required()
-                                        // --- REVISI 4: Panggil updateTotals ---
                                         ->live(debounce: 500)
                                         ->afterStateUpdated(function ($state, Forms\Set $set, Forms\Get $get) {
                                             $qty = (int) ($get('quantity') ?? 1);
                                             $set('total_price', (float) $state * $qty);
 
-                                            // Sinkronisasi Global
                                             self::updateTotals($get, $set);
                                         }),
 
@@ -180,15 +181,25 @@ class PurchaseOrderResource extends Resource
                                 ->dehydrated()
                                 ->prefix('Rp'),
 
-                            Forms\Components\TextInput::make('tax_amount')
-                                ->label('Pajak (PPN)')
+                            Forms\Components\TextInput::make('tax_rate')
+                                ->label('Pajak PPN (%)')
                                 ->numeric()
-                                ->default(0)
+                                ->default(11)
                                 ->live(debounce: 500)
+                                ->afterStateHydrated(function (Forms\Components\TextInput $component, $state, Forms\Get $get) {
+                                    $subtotal = (float) $get('subtotal');
+                                    $taxAmount = (float) $get('tax_amount');
+                                    if ($subtotal > 0 && $taxAmount > 0) {
+                                        $component->state(round(($taxAmount / $subtotal) * 100, 2));
+                                    }
+                                })
                                 ->afterStateUpdated(function (Forms\Get $get, Forms\Set $set) {
                                     self::updateTotals($get, $set);
                                 })
-                                ->prefix('Rp'),
+                                ->suffix('%')
+                                ->dehydrated(false),
+
+                            Forms\Components\Hidden::make('tax_amount'),
 
                             Forms\Components\TextInput::make('discount_amount')
                                 ->label('Diskon')
@@ -278,14 +289,37 @@ class PurchaseOrderResource extends Resource
                     ->label('Kirim ke Supplier')
                     ->icon('heroicon-o-paper-airplane')
                     ->color('info')
-                    ->visible(fn ($record) => $record->status === 'draft')
+                    ->visible(fn ($record) => in_array($record->status, ['draft', 'sent']))
                     ->requiresConfirmation()
                     ->action(function (PurchaseOrder $record) {
-                        $record->update(['status' => 'sent']);
-                        Notification::make()
-                            ->title('PO Berhasil Dikirim')
-                            ->success()
-                            ->send();
+                        $supplierEmail = $record->supplier?->email ?? null;
+
+                        if ($supplierEmail) {
+                            try {
+                                Mail::to($supplierEmail)->send(new PurchaseOrderMail($record));
+
+                                $record->update(['status' => 'sent']);
+
+                                Notification::make()
+                                    ->title('PO Berhasil Dikirim ke Email Supplier')
+                                    ->success()
+                                    ->send();
+                            } catch (\Exception $e) {
+                                Log::error('Gagal mengirim email PO: ' . $e->getMessage());
+
+                                Notification::make()
+                                    ->title('Email Gagal Dikirim')
+                                    ->body('Terjadi kesalahan saat mengirim email ke supplier. Pastikan konfigurasi SMTP benar.')
+                                    ->danger()
+                                    ->send();
+                            }
+                        } else {
+                            Notification::make()
+                                ->title('Email Tidak Dapat Dikirim')
+                                ->body('Supplier tidak memiliki alamat email yang terdaftar.')
+                                ->warning()
+                                ->send();
+                        }
                     }),
 
                 Tables\Actions\Action::make('receive_goods')
@@ -356,6 +390,28 @@ class PurchaseOrderResource extends Resource
                         try {
                             $service = app(PurchaseOrderReceiptService::class);
                             $service->processReceipt($record, $data, auth()->id());
+
+                            $record->refresh();
+
+                            if ($record->status === 'completed') {
+                                $journalExists = FinancialRecord::where('reference_type', PurchaseOrder::class)
+                                    ->where('reference_id', $record->id)
+                                    ->exists();
+
+                                if (!$journalExists) {
+                                    FinancialRecord::create([
+                                        'transaction_date' => now(),
+                                        'type'             => 'pengeluaran',
+                                        'amount'           => $record->grand_total,
+                                        'category'         => 'Purchase Order',
+                                        'description'      => 'Pelunasan Pembelian Stok (PO) dari Supplier: ' . ($record->supplier->name ?? '-'),
+                                        'reference_number' => $record->po_number,
+                                        'reference_type'   => PurchaseOrder::class,
+                                        'reference_id'     => $record->id,
+                                        'created_by'       => auth()->id() ?? 1,
+                                    ]);
+                                }
+                            }
 
                             Notification::make()
                                 ->title('Barang Diterima & Masuk Gudang!')

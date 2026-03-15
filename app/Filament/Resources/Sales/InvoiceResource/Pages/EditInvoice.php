@@ -4,112 +4,119 @@ namespace App\Filament\Resources\Sales\InvoiceResource\Pages;
 
 use App\Filament\Resources\Sales\InvoiceResource;
 use App\Models\Sales\Invoice;
+use App\Models\Sales\Payment;
 use Filament\Actions;
 use Filament\Forms;
 use Filament\Resources\Pages\EditRecord;
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\DB;
+use Filament\Notifications\Notification;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Picqer\Barcode\BarcodeGeneratorPNG;
-use Illuminate\Database\Eloquent\Model;
-use Filament\Notifications\Notification;
+use Endroid\QrCode\QrCode;
+use Endroid\QrCode\Encoding\Encoding;
+use Endroid\QrCode\Writer\PngWriter;
+use Illuminate\Support\Str;
 
 class EditInvoice extends EditRecord
 {
     protected static string $resource = InvoiceResource::class;
 
-    public function getTitle(): string
-    {
-        return 'Edit Invoice';
-    }
-
     protected function getHeaderActions(): array
     {
         return [
             Actions\Action::make('add_payment')
-                ->label('Input Pembayaran')
-                ->icon('heroicon-o-banknotes')
-                ->color('primary')
-                // Hanya muncul jika status belum Lunas (paid) dan bukan Draft
-                ->visible(fn(Invoice $record) => $record->status !== 'paid' && $record->status !== 'draft')
+                ->label('Tambah Pembayaran')
+                ->icon('heroicon-o-currency-dollar')
+                ->color('success')
+                ->visible(fn(Invoice $record) => in_array($record->status, ['sent', 'partial']))
                 ->form([
-                    Forms\Components\DatePicker::make('payment_date')
-                        ->label('Tanggal Bayar')
-                        ->default(now())
-                        ->prefixIcon('heroicon-o-calendar-days')
-                        ->required()
-                        ->displayFormat('d M Y')
-                        ->native(false),
-
-                    Forms\Components\Select::make('payment_method')
-                        ->label('Metode Pembayaran')
-                        ->options([
-                            'bank_transfer' => 'Transfer Bank',
-                            'cash' => 'Tunai',
-                            'cheque' => 'Cek/Giro',
-                            'qris' => 'QRIS',
-                        ])
-                        ->required(),
-
                     Forms\Components\TextInput::make('amount')
                         ->label('Jumlah Bayar')
                         ->numeric()
                         ->prefix('IDR')
                         ->required()
-                        ->minValue(0)
-                        // Menampilkan sisa tagihan sebagai petunjuk
-                        ->helperText(fn(Invoice $record) => 'Sisa Tagihan: IDR ' . number_format($record->remaining_balance ?? 0, 0, ',', '.'))
-                        // Validasi: Tidak boleh bayar lebih dari sisa tagihan
-                        ->maxValue(fn(Invoice $record) => $record->remaining_balance ?? 0),
+                        ->maxValue(fn(Invoice $record) => $record->remaining_balance)
+                        ->default(fn(Invoice $record) => $record->remaining_balance),
+
+                    Forms\Components\DatePicker::make('payment_date')
+                        ->label('Tanggal Bayar')
+                        ->default(now())
+                        ->required(),
+
+                    Forms\Components\Select::make('payment_method')
+                        ->label('Metode Pembayaran')
+                        ->options([
+                            'transfer' => 'Transfer Bank',
+                            'cash' => 'Tunai',
+                            'credit_card' => 'Kartu Kredit',
+                            'qris' => 'QRIS',
+                        ])
+                        ->required(),
 
                     Forms\Components\Textarea::make('notes')
-                        ->label('Catatan'),
+                        ->label('Catatan')
+                        ->rows(2),
                 ])
                 ->action(function (Invoice $record, array $data) {
-                    // Generate Nomor Pembayaran Unik
-                    $count = $record->payments()->count() + 1;
-                    $paymentNo = 'PAY-' . str_replace('/', '-', $record->invoice_number) . '-' . $count;
+                    DB::transaction(function () use ($record, $data) {
+                        // 1. Buat record payment
+                        Payment::create([
+                            'nx_invoice_id' => $record->id,
+                            'payment_number' => $this->generatePaymentNumber(),
+                            'amount' => $data['amount'],
+                            'payment_date' => $data['payment_date'],
+                            'payment_method' => $data['payment_method'],
+                            'notes' => $data['notes'],
+                            'created_by' => auth()->id(),
+                        ]);
 
-                    // Simpan ke Tabel Payments
-                    $record->payments()->create([
-                        'payment_number' => $paymentNo,
-                        'payment_date' => $data['payment_date'],
-                        'payment_method' => $data['payment_method'],
-                        'amount' => $data['amount'],
-                        'notes' => $data['notes'],
-                    ]);
+                        // 2. Update status invoice
+                        $totalPaid = $record->payments()->sum('amount');
+                        $remaining = $record->grand_total - $totalPaid;
 
-                    // Notifikasi Sukses
+                        $newStatus = $remaining <= 0 ? 'paid' : 'partial';
+
+                        $record->update(['status' => $newStatus]);
+
+                        // 3. Update status SO jika lunas
+                        if ($newStatus === 'paid' && $record->salesOrder) {
+                            $record->salesOrder->update(['status' => 'completed']);
+                        }
+                    });
+
                     Notification::make()
-                        ->title('Pembayaran Berhasil Disimpan')
+                        ->title('Pembayaran Berhasil Dicatat')
                         ->success()
                         ->send();
-
-                    // Refresh halaman agar status terbaru muncul
-                    $this->redirect($this->getResource()::getUrl('edit', ['record' => $record]));
                 }),
 
-            Actions\ViewAction::make(),
+            Actions\Action::make('download_pdf')
+                ->label('Cetak Invoice')
+                ->icon('heroicon-o-printer')
+                ->color('info')
+                ->action(function (Invoice $record) {
+                    $validationUrl = route('invoice.verify.form', ['number' => $record->invoice_number]);
+                    $qrCode = new QrCode(data: $validationUrl, encoding: new Encoding('UTF-8'), size: 200, margin: 10);
+                    $writer = new PngWriter();
+                    $qrBase64 = base64_encode($writer->write($qrCode)->getString());
+
+                    $generator = new BarcodeGeneratorPNG();
+                    $barBase64 = base64_encode($generator->getBarcode($record->invoice_number, $generator::TYPE_CODE_128));
+
+                    $pdf = Pdf::loadView('pdf.invoice', [
+                        'invoice' => $record,
+                        'qrCode' => $qrBase64,
+                        'barcode' => $barBase64,
+                    ]);
+
+                    return response()->streamDownload(function () use ($pdf) {
+                        echo $pdf->output();
+                    }, 'Invoice-' . Str::slug($record->invoice_number) . '.pdf');
+                }),
+
             Actions\DeleteAction::make(),
-            Actions\ForceDeleteAction::make(),
-            Actions\RestoreAction::make(),
         ];
-    }
-
-    protected function mutateFormDataBeforeFill(array $data): array
-    {
-        $data['items'] = $this->record->items->map(function ($item) {
-            return [
-                'id' => $item->id,
-                'item_type' => $item->item_type,
-                'item_id' => $item->item_id,
-                'item_code' => $item->item_code,
-                'item_name' => $item->item_name,
-                'qty' => (float) $item->qty,
-                'unit_price' => (float) $item->unit_price,
-                'line_total' => (float) $item->line_total,
-            ];
-        })->toArray();
-
-        return $data;
     }
 
     protected function handleRecordUpdate(Model $record, array $data): Model
@@ -117,45 +124,62 @@ class EditInvoice extends EditRecord
         $items = $data['items'] ?? [];
         unset($data['items']);
 
-        // Update data header invoice
         $record->update($data);
 
-        // 1. Kumpulkan ID item yang ada di form (yang tidak dihapus user)
-        $keepIds = collect($items)
-            ->pluck('id')
-            ->filter()
-            ->toArray();
+        if (!empty($items)) {
+            $existingItemIds = [];
 
-        // 2. Hapus item di DB yang tidak ada di form
-        $record->items()->whereNotIn('id', $keepIds)->delete();
-
-        // 3. Loop items untuk update atau create
-        foreach ($items as $item) {
-            $qty = (float) ($item['qty'] ?? 0);
-            $price = (float) ($item['unit_price'] ?? 0);
-            $lineTotal = $qty * $price;
-
-            if (isset($item['id']) && $item['id']) {
-                // UPDATE: Jika item punya ID
-                $record->items()->where('id', $item['id'])->update([
-                    'qty' => $qty,
-                    'unit_price' => $price,
-                    'line_total' => $lineTotal, // Gunakan hasil hitung server
-                ]);
-            } else {
-                // CREATE: Jika item baru (ID null)
-                $record->items()->create([
-                    'item_type' => $item['item_type'] ?? null,
-                    'item_id' => $item['item_id'] ?? null,
-                    'item_code' => $item['item_code'] ?? null,
-                    'item_name' => $item['item_name'] ?? null,
-                    'qty' => $qty,
-                    'unit_price' => $price,
-                    'line_total' => $lineTotal, // Gunakan hasil hitung server
-                ]);
+            foreach ($items as $item) {
+                if (isset($item['id'])) {
+                    $record->items()->where('id', $item['id'])->update([
+                        'qty' => $item['qty'],
+                        'unit_price' => $item['unit_price'],
+                        'line_total' => $item['line_total'],
+                    ]);
+                    $existingItemIds[] = $item['id'];
+                } else {
+                    $newItem = $record->items()->create([
+                        'item_type' => $item['item_type'] ?? null,
+                        'item_id' => $item['item_id'] ?? null,
+                        'item_code' => $item['item_code'] ?? null,
+                        'item_name' => $item['item_name'] ?? null,
+                        'qty' => $item['qty'] ?? 0,
+                        'unit_price' => $item['unit_price'] ?? 0,
+                        'line_total' => $item['line_total'] ?? 0,
+                    ]);
+                    $existingItemIds[] = $newItem->id;
+                }
             }
+
+            $record->items()->whereNotIn('id', $existingItemIds)->delete();
         }
 
         return $record;
+    }
+
+    private function generatePaymentNumber(): string
+    {
+        $roman = ['I', 'II', 'III', 'IV', 'V', 'VI', 'VII', 'VIII', 'IX', 'X', 'XI', 'XII'][now()->month - 1];
+        $year = now()->year;
+        $company = 'NEX';
+        $code = 'PAY';
+
+        $prefixLike = "%/$code/$company/$roman/$year";
+
+        $last = Payment::withTrashed()
+            ->where('payment_number', 'like', $prefixLike)
+            ->orderByDesc('id')
+            ->value('payment_number');
+
+        $seq = 1;
+
+        if ($last) {
+            $parts = explode('/', $last);
+            $seq = ((int) $parts[0]) + 1;
+        }
+
+        $seqStr = str_pad((string) $seq, 3, '0', STR_PAD_LEFT);
+
+        return "{$seqStr}/{$code}/{$company}/{$roman}/{$year}";
     }
 }

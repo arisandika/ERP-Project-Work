@@ -1,10 +1,17 @@
 <!DOCTYPE html>
-<html>
+<html lang="id">
 <head>
-    <title>Quotation - {{ $quotation->quotation_number }}</title>
+    <meta charset="UTF-8">
+    <title>Penawaran - {{ $quotation->quotation_number }}</title>
     <style>
-        @page { margin: 20px 25px; }
-        body { font-family: 'Helvetica', sans-serif; font-size: 11px; color: #333; }
+        @page {
+            margin: 20px 25px;
+        }
+        body {
+            font-family: 'Helvetica', sans-serif;
+            font-size: 11px;
+            color: #333;
+        }
 
         .header-table { width: 100%; border-collapse: collapse; margin-bottom: 15px; }
         .header-table .logo-cell { width: 15%; vertical-align: middle; }
@@ -31,12 +38,19 @@
         .totals-table { width: 45%; float: right; }
         .totals-table td { padding: 5px 8px; }
         .totals-table .label { font-weight: bold; }
-        .totals-table .grand-total { font-weight: bold; font-size: 14px; background-color: #f2f2f2; border-top: 2px solid #333; border-bottom: 2px solid #333; }
+        .totals-table .grand-total {
+            font-weight: bold;
+            font-size: 14px;
+            background-color: #f2f2f2;
+            border-top: 2px solid #333;
+            border-bottom: 2px solid #333;
+        }
+
+        .clearfix { clear: both; }
     </style>
 </head>
 <body>
 
-    <!-- Header Sesuai Gambar -->
     <table class="header-table">
         <tr>
             <td class="logo-cell">
@@ -55,30 +69,43 @@
     </table>
     <div class="header-divider"></div>
 
-    <!-- Judul Dokumen -->
     <div class="document-title">
         <h1>Penawaran</h1>
         <p>No: {{ $quotation->quotation_number }}</p>
     </div>
 
-    <!-- Detail Client dan Tanggal -->
+    @php
+        // Ambil relasi klien dengan aman (Mencegah Null Property Error)
+        $client = $quotation->deal?->customer ?? $quotation->deal?->lead;
+
+        $clientName    = $client?->name ?? 'Nama Klien Tidak Tersedia';
+        $clientAddress = $client?->address ?? 'Alamat tidak tersedia';
+        $clientEmail   = $client?->email ?? '';
+
+        // Ambil pembuat penawaran (Menyesuaikan dengan Filament Schema)
+        $creatorName = $quotation->internalPic?->full_name
+                    ?? $quotation->createdBy?->full_name
+                    ?? 'Tim Sales';
+    @endphp
+
     <table class="details-table">
         <tr>
             <td style="width: 60%;">
                 <strong>Ditujukan Kepada:</strong><br>
-                <strong>{{ $quotation->customer->name }}</strong><br>
-                {{ $quotation->customer->address ?? 'Alamat tidak tersedia' }}<br>
-                {{ $quotation->customer->email ?? '' }}
+                <strong style="font-size: 12px;">{{ $clientName }}</strong><br>
+                {{ $clientAddress }}<br>
+                @if($clientEmail)
+                    Email: {{ $clientEmail }}
+                @endif
             </td>
             <td style="width: 40%;">
-                <strong>Tanggal:</strong> {{ $quotation->quotation_date->format('d F Y') }}<br>
-                <strong>Berlaku Hingga:</strong> {{ $quotation->valid_until->format('d F Y') }}<br>
-                <strong>Dibuat Oleh:</strong> {{ $quotation->employee->full_name }}
+                <strong>Tanggal:</strong> {{ \Carbon\Carbon::parse($quotation->quotation_date)->format('d F Y') }}<br>
+                <strong>Berlaku Hingga:</strong> {{ \Carbon\Carbon::parse($quotation->valid_until)->format('d F Y') }}<br>
+                <strong>Dibuat Oleh:</strong> {{ $creatorName }}
             </td>
         </tr>
     </table>
 
-    <!-- Tabel Item -->
     <table class="items-table">
         <thead>
             <tr>
@@ -89,47 +116,65 @@
             </tr>
         </thead>
         <tbody>
-            @foreach ($quotation->items as $item)
+            @forelse ($quotation->items as $item)
                 <tr>
                     <td>
                         <strong>{{ $item->item_name }}</strong><br>
-                        @if($item->item_code)<small>Kode: {{ $item->item_code }}</small>@endif
+                        @if($item->item_code)
+                            <small style="color: #666;">Kode: {{ $item->item_code }}</small>
+                        @endif
                     </td>
-                    <td class="text-right">{{ $item->quantity }}</td>
-                    <td class="text-right">IDR {{ number_format($item->unit_price, 0, ',', '.') }}</td>
-                    <td class="text-right">IDR {{ number_format($item->line_total, 0, ',', '.') }}</td>
+                    <td class="text-right">{{ $item->qty ?? $item->quantity ?? 1 }}</td>
+                    <td class="text-right">IDR {{ number_format((float) ($item->unit_price ?? 0), 0, ',', '.') }}</td>
+                    <td class="text-right">IDR {{ number_format((float) ($item->line_total ?? 0), 0, ',', '.') }}</td>
                 </tr>
-            @endforeach
+            @empty
+                <tr>
+                    <td colspan="4" class="text-center">Tidak ada item dalam penawaran ini.</td>
+                </tr>
+            @endforelse
         </tbody>
     </table>
 
-    <!-- Tabel Total -->
     <table class="totals-table">
         <tr>
             <td class="label">Subtotal:</td>
-            <td class="text-right">IDR {{ number_format($quotation->subtotal, 0, ',', '.') }}</td>
+            <td class="text-right">IDR {{ number_format((float) ($quotation->subtotal ?? 0), 0, ',', '.') }}</td>
         </tr>
+
+        @if((float) $quotation->discount_amount > 0)
         <tr>
-            <td class="label">Diskon ({{ $quotation->discount }}%):</td>
-            <td class="text-right">- IDR {{ number_format($quotation->subtotal * ($quotation->discount / 100), 0, ',', '.') }}</td>
+            <td class="label">Diskon:</td>
+            <td class="text-right" style="color: red;">
+                - IDR {{ number_format((float) $quotation->discount_amount, 0, ',', '.') }}
+            </td>
         </tr>
+        @endif
+
+        @if((float) $quotation->tax > 0)
         <tr>
-            <td class="label">Pajak ({{ $quotation->tax }}%):</td>
-            <td class="text-right">IDR {{ number_format(($quotation->subtotal - ($quotation->subtotal * ($quotation->discount / 100))) * ($quotation->tax / 100), 0, ',', '.') }}</td>
+            @php
+                // Menghitung nominal pajak (Subtotal - Diskon) * (Tax / 100)
+                $subtotalAfterDiscount = (float) $quotation->subtotal - (float) $quotation->discount_amount;
+                $taxNominal = $subtotalAfterDiscount * ((float) $quotation->tax / 100);
+            @endphp
+            <td class="label">Pajak PPN ({{ $quotation->tax }}%):</td>
+            <td class="text-right">IDR {{ number_format($taxNominal, 0, ',', '.') }}</td>
         </tr>
+        @endif
+
         <tr class="grand-total">
             <td class="label">Grand Total:</td>
-            <td class="text-right">IDR {{ number_format($quotation->grand_total, 0, ',', '.') }}</td>
+            <td class="text-right">IDR {{ number_format((float) ($quotation->grand_total ?? 0), 0, ',', '.') }}</td>
         </tr>
     </table>
 
-    <div style="clear: both;"></div>
+    <div class="clearfix"></div>
 
-    <!-- Catatan Tambahan -->
     @if($quotation->notes)
-    <div style="margin-top: 30px;">
-        <strong>Catatan:</strong>
-        <p style="white-space: pre-wrap;">{{ $quotation->notes }}</p>
+    <div style="margin-top: 30px; border-top: 1px solid #ccc; padding-top: 10px;">
+        <strong>Syarat & Ketentuan / Catatan:</strong>
+        <p style="white-space: pre-wrap; margin-top: 5px; color: #555;">{{ $quotation->notes }}</p>
     </div>
     @endif
 

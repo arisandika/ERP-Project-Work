@@ -15,6 +15,7 @@ use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\DatePicker;
+use Filament\Forms\Components\Group;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
@@ -54,253 +55,250 @@ class InvoiceResource extends Resource
     public static function form(Form $form): Form
     {
         return $form->schema([
-            Section::make('Informasi Invoice')->schema([
-                Grid::make(3)->schema([
-                    TextInput::make('invoice_number')
-                        ->label('No. Invoice')
-                        ->disabled()
-                        ->dehydrated()
-                        ->unique(ignoreRecord: true)
-                        ->prefixIcon('heroicon-o-hashtag'),
-
-                    DatePicker::make('invoice_date')
-                        ->label('Tanggal Invoice')
-                        ->default(now())
-                        ->prefixIcon('heroicon-o-calendar-days')
-                        ->required()
-                        ->displayFormat('d M Y')
-                        ->native(false),
-
-                    DatePicker::make('due_date')
-                        ->label('Jatuh Tempo')
-                        ->default(now()
-                            ->addDays(7))
-                        ->prefixIcon('heroicon-o-calendar-days')
-                        ->required()
-                        ->displayFormat('d M Y')
-                        ->native(false),
-                ]),
-
-                Grid::make(2)->schema([
-                    Select::make('nx_sales_order_id')
-                        ->label('No. Sales Order (Ref)')
-                        ->searchable()
-                        ->preload()
-                        ->live()
-                        ->relationship(
-                            name: 'salesOrder',
-                            titleAttribute: 'order_number',
-                            modifyQueryUsing: fn($query) => $query->orderByDesc('created_at')
-                        )
-                        ->afterStateUpdated(function ($state, callable $set, callable $get) {
-                            if (!$state) {
-                                return;
-                            }
-
-                            $so = SalesOrder::with([
-                                'items' => function ($query) {
-                                    $query->orderBy('created_at', 'asc');
-                                }
-                            ])->find($state);
-
-                            if (!$so) {
-                                return;
-                            }
-
-                            $set('customer_po_number', $so->customer_po_number);
-                            $set('nx_customer_id', $so->nx_customer_id);
-                            $set('subtotal', (float) ($so->subtotal ?? 0));
-                            $set('discount', (float) ($so->discount ?? 0));
-                            $set('tax', (float) ($so->tax ?? 0));
-                            $set('grand_total', (float) ($so->grand_total ?? 0));
-
-                            $items = $so->items->map(function ($item) {
-                                $qty = (float) $item->qty;
-                                $price = (float) $item->unit_price;
-
-                                return [
-                                    'item_type' => $item->item_type,
-                                    'item_id' => $item->item_id,
-                                    'item_code' => $item->item_code,
-                                    'item_name' => $item->item_name,
-                                    'qty' => $qty,
-                                    'unit_price' => $price,
-                                    'line_total' => (float) $item->line_total ?: $qty * $price,
-                                ];
-                            })->toArray();
-
-                            $set('items', $items);
-                            self::updateTotals($get, $set);
-                        })
-                        ->disabled(fn(?Invoice $record) => filled($record))
-                        ->required(),
-
-                    TextInput::make('customer_po_number')
-                        ->label('No. PO Customer')
-                        ->placeholder('Contoh: PO-ABC-001')
-                        ->maxLength(50),
-
-                    Select::make('nx_customer_id')
-                        ->label('Customer')
-                        ->relationship('customer', 'name')
-                        ->searchable()
-                        ->required()
-                        ->prefixIcon('heroicon-o-user-circle'),
-
-                    Select::make('nx_employee_id')
-                        ->label('Ditugaskan Kepada')
-                        ->relationship('employee', 'full_name')
-                        ->default(fn() => auth()->user()?->employee?->id)
-                        ->disabled()
-                        ->dehydrated()
-                        ->required()
-                        ->prefixIcon('heroicon-o-user'),
-
-                    Select::make('status')
-                        ->label('Status')
-                        ->options([
-                            'draft' => 'Draft',
-                            'sent' => 'Terkirim',
-                            'partial' => 'Terbayar Sebagian',
-                            'paid' => 'Lunas',
-                            'cancelled' => 'Dibatalkan',
-                        ])
-                        ->default('draft')
-                        ->required()
-                        ->live()
-                        ->prefixIcon('heroicon-o-adjustments-vertical'),
-
-                    Textarea::make('notes')
-                        ->label('Catatan Tambahan')
-                        ->rows(3),
-                ]),
-            ]),
-
-            Section::make('Daftar Item Invoice')->schema([
-                Repeater::make('items')
-                    ->schema([
-                        Forms\Components\Hidden::make('id'),
-
-                        TextInput::make('item_type')->hidden()->dehydrated(),
-
-                        TextInput::make('item_id')->hidden()->dehydrated(),
-
+            Grid::make(3)->schema([
+                Group::make()->schema([
+                    Section::make('Informasi Invoice')->schema([
                         Grid::make(2)->schema([
-
-                            TextInput::make('item_code')
-                                ->label('Kode Product')
-                                ->readOnly()
-                                ->dehydrated(),
-
-                            TextInput::make('item_name')
-                                ->label('Nama Item')
-                                ->readOnly()
-                                ->dehydrated(),
-
-                            TextInput::make('qty')
-                                ->label('Qty')
-                                ->numeric()
-                                ->required()
-                                ->reactive()
-                                ->afterStateUpdated(
-                                    fn($state, callable $set, callable $get) =>
-                                    self::updateItemTotal($get, $set)
-                                ),
-
-                            TextInput::make('unit_price')
-                                ->label('Harga Satuan')
-                                ->numeric()
-                                ->prefix('IDR')
-                                ->required()
-                                ->minValue(0)
-                                ->reactive()
-                                ->afterStateUpdated(
-                                    fn($state, callable $set, callable $get) =>
-                                    self::updateItemTotal($get, $set)
-                                ),
-
-                            TextInput::make('line_total')
-                                ->label('Subtotal')
-                                ->numeric()
-                                ->prefix('IDR')
-                                ->required()
-                                ->minValue(0)
-                                ->dehydrated()
+                            TextInput::make('invoice_number')
+                                ->label('No. Invoice')
                                 ->disabled()
-                                ->extraInputAttributes(['style' => 'font-weight: bold;']),
+                                ->dehydrated()
+                                ->unique(ignoreRecord: true)
+                                ->prefixIcon('heroicon-o-hashtag'),
+
+                            Select::make('nx_sales_order_id')
+                                ->label('No. Sales Order (Ref)')
+                                ->searchable()
+                                ->preload()
+                                ->live()
+                                ->relationship(
+                                    name: 'salesOrder',
+                                    titleAttribute: 'order_number',
+                                    modifyQueryUsing: fn($query) => $query->orderByDesc('created_at')
+                                )
+                                ->afterStateUpdated(function ($state, callable $set, callable $get) {
+                                    if (!$state) {
+                                        return;
+                                    }
+
+                                    $so = SalesOrder::with([
+                                        'items' => function ($query) {
+                                            $query->orderBy('created_at', 'asc');
+                                        }
+                                    ])->find($state);
+
+                                    if (!$so) {
+                                        return;
+                                    }
+
+                                    $set('customer_po_number', $so->customer_po_number);
+                                    $set('nx_customer_id', $so->nx_customer_id);
+                                    $set('subtotal', (float) ($so->subtotal ?? 0));
+                                    $set('discount', (float) ($so->discount ?? 0));
+                                    $set('tax', (float) ($so->tax ?? 0));
+                                    $set('grand_total', (float) ($so->grand_total ?? 0));
+
+                                    $items = $so->items->map(function ($item) {
+                                        $qty = (float) $item->qty;
+                                        $price = (float) $item->unit_price;
+
+                                        return [
+                                            'item_type' => $item->item_type,
+                                            'item_id' => $item->item_id,
+                                            'item_code' => $item->item_code,
+                                            'item_name' => $item->item_name,
+                                            'qty' => $qty,
+                                            'unit_price' => $price,
+                                            'line_total' => (float) $item->line_total ?: $qty * $price,
+                                        ];
+                                    })->toArray();
+
+                                    $set('items', $items);
+                                    self::updateTotals($get, $set);
+                                })
+                                ->disabled(fn(?Invoice $record) => filled($record))
+                                ->required(),
+
+                            DatePicker::make('invoice_date')
+                                ->label('Tanggal Invoice')
+                                ->default(now())
+                                ->prefixIcon('heroicon-o-calendar-days')
+                                ->required()
+                                ->displayFormat('d M Y')
+                                ->native(false),
+
+                            DatePicker::make('due_date')
+                                ->label('Jatuh Tempo')
+                                ->default(now()->addDays(7))
+                                ->prefixIcon('heroicon-o-calendar-days')
+                                ->required()
+                                ->displayFormat('d M Y')
+                                ->native(false),
+
+                            TextInput::make('customer_po_number')
+                                ->label('No. PO Customer')
+                                ->placeholder('Contoh: PO-ABC-001')
+                                ->maxLength(50),
+
+                            Select::make('nx_customer_id')
+                                ->label('Customer')
+                                ->relationship('customer', 'name')
+                                ->searchable()
+                                ->required()
+                                ->prefixIcon('heroicon-o-user-circle'),
+
+                            Select::make('nx_employee_id')
+                                ->label('Ditugaskan Kepada')
+                                ->relationship('employee', 'full_name')
+                                ->default(fn() => auth()->user()?->employee?->id)
+                                ->disabled()
+                                ->dehydrated()
+                                ->required()
+                                ->prefixIcon('heroicon-o-user'),
+
+                            Select::make('status')
+                                ->label('Status')
+                                ->options([
+                                    'draft' => 'Draft',
+                                    'sent' => 'Terkirim',
+                                    'partial' => 'Terbayar Sebagian',
+                                    'paid' => 'Lunas',
+                                    'cancelled' => 'Dibatalkan',
+                                ])
+                                ->default('draft')
+                                ->required()
+                                ->live()
+                                ->prefixIcon('heroicon-o-adjustments-vertical'),
                         ]),
-                    ])
-                    ->relationship()
-                    ->addable(false)
-                    ->deletable(false)
-                    ->reorderable(false)
-                    ->reactive()
-                    ->columns(1),
-            ])->collapsed(),
+                        Textarea::make('notes')
+                            ->label('Catatan Tambahan')
+                            ->rows(3),
+                    ]),
 
-            Section::make('Perhitungan Akhir')->schema([
-                Grid::make(4)->schema([
-                    TextInput::make('subtotal')
-                        ->label('Subtotal')
-                        ->numeric()
-                        ->prefix('IDR')
-                        ->required()
-                        ->minValue(0)
-                        ->disabled()
-                        ->dehydrated(),
+                    Section::make('Daftar Item Invoice')->schema([
+                        Repeater::make('items')
+                            ->schema([
+                                Forms\Components\Hidden::make('id'),
+                                TextInput::make('item_type')->hidden()->dehydrated(),
+                                TextInput::make('item_id')->hidden()->dehydrated(),
 
-                    TextInput::make('discount')
-                        ->label('Diskon (%)')
-                        ->numeric()
-                        ->default(0)
-                        ->reactive()
-                        ->afterStateUpdated(
-                            fn(callable $get, callable $set) =>
-                            self::updateTotals($get, $set)
-                        )
-                        ->prefixIcon('heroicon-o-tag')
-                        ->minValue(0)
-                        ->maxValue(100),
+                                Grid::make(2)->schema([
+                                    TextInput::make('item_code')
+                                        ->label('Kode Product')
+                                        ->readOnly()
+                                        ->dehydrated(),
 
-                    TextInput::make('tax')
-                        ->label('Pajak (%)')
-                        ->numeric()
-                        ->default(0)
-                        ->reactive()
-                        ->afterStateUpdated(
-                            fn(callable $get, callable $set) =>
-                            self::updateTotals($get, $set)
-                        )
-                        ->prefixIcon('heroicon-o-receipt-percent')
-                        ->minValue(0)
-                        ->maxValue(100),
+                                    TextInput::make('item_name')
+                                        ->label('Nama Item')
+                                        ->readOnly()
+                                        ->dehydrated(),
 
-                    TextInput::make('grand_total')
-                        ->label('Total')
-                        ->numeric()
-                        ->prefix('IDR')
-                        ->required()
-                        ->minValue(0)
-                        ->disabled()
-                        ->dehydrated()
-                        ->extraInputAttributes(['style' => 'font-weight: bold;']),
-                ]),
+                                    TextInput::make('qty')
+                                        ->label('Qty')
+                                        ->numeric()
+                                        ->required()
+                                        ->reactive()
+                                        ->afterStateUpdated(
+                                            fn($state, callable $set, callable $get) =>
+                                            self::updateItemTotal($get, $set)
+                                        ),
 
-                Grid::make(2)->schema([
-                    Forms\Components\Placeholder::make('total_paid_view')
-                        ->label('Sudah Dibayar')
-                        ->content(fn($record) => 'IDR ' . number_format($record?->total_paid ?? 0, 0, ',', '.'))
-                        ->extraAttributes(['class' => 'text-success-600 font-bold text-lg']),
+                                    TextInput::make('unit_price')
+                                        ->label('Harga Satuan')
+                                        ->numeric()
+                                        ->prefix('IDR')
+                                        ->required()
+                                        ->minValue(0)
+                                        ->reactive()
+                                        ->afterStateUpdated(
+                                            fn($state, callable $set, callable $get) =>
+                                            self::updateItemTotal($get, $set)
+                                        ),
 
-                    Forms\Components\Placeholder::make('remaining_balance_view')
-                        ->label('Sisa Tagihan')
-                        ->content(fn($record) => 'IDR ' . number_format($record?->remaining_balance ?? 0, 0, ',', '.'))
-                        ->extraAttributes(fn($record) => [
-                            'class' => ($record?->remaining_balance > 0)
-                                ? 'text-danger-600 font-bold text-lg'
-                                : 'text-gray-500 font-bold text-lg'
-                        ]),
-                ])->visible(fn($record) => $record !== null),
+                                    TextInput::make('line_total')
+                                        ->label('Subtotal')
+                                        ->numeric()
+                                        ->prefix('IDR')
+                                        ->required()
+                                        ->minValue(0)
+                                        ->dehydrated()
+                                        ->disabled()
+                                        ->extraInputAttributes(['style' => 'font-weight: bold;']),
+                                ]),
+                            ])
+                            ->relationship()
+                            ->addable(false)
+                            ->deletable(false)
+                            ->reorderable(false)
+                            ->reactive()
+                            ->columns(1),
+                    ])->collapsed(),
+                ])->columnSpan(['lg' => 2]),
+
+                Group::make()->schema([
+                    Section::make('Perhitungan Akhir')->schema([
+                        TextInput::make('subtotal')
+                            ->label('Subtotal')
+                            ->numeric()
+                            ->prefix('IDR')
+                            ->required()
+                            ->minValue(0)
+                            ->disabled()
+                            ->dehydrated(),
+
+                        TextInput::make('discount')
+                            ->label('Diskon (%)')
+                            ->numeric()
+                            ->default(0)
+                            ->reactive()
+                            ->afterStateUpdated(
+                                fn(callable $get, callable $set) =>
+                                self::updateTotals($get, $set)
+                            )
+                            ->prefixIcon('heroicon-o-tag')
+                            ->minValue(0)
+                            ->maxValue(100),
+
+                        TextInput::make('tax')
+                            ->label('Pajak (%)')
+                            ->numeric()
+                            ->default(0)
+                            ->reactive()
+                            ->afterStateUpdated(
+                                fn(callable $get, callable $set) =>
+                                self::updateTotals($get, $set)
+                            )
+                            ->prefixIcon('heroicon-o-receipt-percent')
+                            ->minValue(0)
+                            ->maxValue(100),
+
+                        TextInput::make('grand_total')
+                            ->label('Total')
+                            ->numeric()
+                            ->prefix('IDR')
+                            ->required()
+                            ->minValue(0)
+                            ->disabled()
+                            ->dehydrated()
+                            ->extraInputAttributes(['style' => 'font-weight: bold; font-size: 1.1em; color: #10b981;']),
+
+                        Forms\Components\Placeholder::make('total_paid_view')
+                            ->label('Sudah Dibayar')
+                            ->content(fn($record) => 'IDR ' . number_format($record?->total_paid ?? 0, 0, ',', '.'))
+                            ->extraAttributes(['class' => 'text-success-600 font-bold text-lg'])
+                            ->visible(fn($record) => $record !== null),
+
+                        Forms\Components\Placeholder::make('remaining_balance_view')
+                            ->label('Sisa Tagihan')
+                            ->content(fn($record) => 'IDR ' . number_format($record?->remaining_balance ?? 0, 0, ',', '.'))
+                            ->extraAttributes(fn($record) => [
+                                'class' => ($record?->remaining_balance > 0)
+                                    ? 'text-danger-600 font-bold text-lg'
+                                    : 'text-gray-500 font-bold text-lg'
+                            ])
+                            ->visible(fn($record) => $record !== null),
+                    ]),
+                ])->columnSpan(['lg' => 1]),
             ]),
         ]);
     }
@@ -444,7 +442,7 @@ class InvoiceResource extends Resource
                     ->visible(fn(Invoice $record) => !empty($record->customer->email))
                     ->action(function (Invoice $record) {
                         try {
-                            Mail::to($record->customer->email)->send(new InvoiceSent($record));
+                            Mail::to($record->customer->email)->queue(new InvoiceSent($record));
                             if ($record->status === 'draft')
                                 $record->update(['status' => 'sent']);
                             Notification::make()->title('Email Terkirim')->success()->send();
@@ -455,13 +453,11 @@ class InvoiceResource extends Resource
 
                 Tables\Actions\EditAction::make(),
                 Tables\Actions\DeleteAction::make(),
-                // Tables\Actions\ForceDeleteAction::make(),
                 Tables\Actions\RestoreAction::make(),
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([
                     Tables\Actions\DeleteBulkAction::make(),
-                    // Tables\Actions\ForceDeleteBulkAction::make(),
                     Tables\Actions\RestoreBulkAction::make(),
                 ]),
             ])
@@ -512,7 +508,7 @@ class InvoiceResource extends Resource
         $afterDiscount = $subtotal * (1 - ($discount / 100));
         $grandTotal = $afterDiscount * (1 + ($tax / 100));
 
-        $set('subtotal', $subtotal);
-        $set('grand_total', $grandTotal);
+        $set('subtotal', round($subtotal, 0));
+        $set('grand_total', round($grandTotal, 0));
     }
 }
