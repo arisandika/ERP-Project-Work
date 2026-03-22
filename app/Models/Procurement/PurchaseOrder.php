@@ -50,6 +50,11 @@ class PurchaseOrder extends Model
         return $this->belongsTo(User::class, 'created_by');
     }
 
+    public function payments(): HasMany
+    {
+        return $this->hasMany(\App\Models\Finance\PurchaseOrderPayment::class, 'purchase_order_id');
+    }
+
     protected static function booted()
     {
         static::creating(function ($model) {

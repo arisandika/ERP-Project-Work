@@ -393,26 +393,6 @@ class PurchaseOrderResource extends Resource
 
                             $record->refresh();
 
-                            if ($record->status === 'completed') {
-                                $journalExists = FinancialRecord::where('reference_type', PurchaseOrder::class)
-                                    ->where('reference_id', $record->id)
-                                    ->exists();
-
-                                if (!$journalExists) {
-                                    FinancialRecord::create([
-                                        'transaction_date' => now(),
-                                        'type'             => 'pengeluaran',
-                                        'amount'           => $record->grand_total,
-                                        'category'         => 'Purchase Order',
-                                        'description'      => 'Pelunasan Pembelian Stok (PO) dari Supplier: ' . ($record->supplier->name ?? '-'),
-                                        'reference_number' => $record->po_number,
-                                        'reference_type'   => PurchaseOrder::class,
-                                        'reference_id'     => $record->id,
-                                        'created_by'       => auth()->id() ?? 1,
-                                    ]);
-                                }
-                            }
-
                             Notification::make()
                                 ->title('Barang Diterima & Masuk Gudang!')
                                 ->success()
@@ -446,6 +426,12 @@ class PurchaseOrderResource extends Resource
             'index' => Pages\ListPurchaseOrders::route('/'),
             'create' => Pages\CreatePurchaseOrder::route('/create'),
             'edit' => Pages\EditPurchaseOrder::route('/{record}/edit'),
+        ];
+    }
+    public static function getRelations(): array
+    {
+        return [
+            \App\Filament\Resources\Procurement\PurchaseOrderResource\RelationManagers\PaymentsRelationManager::class,
         ];
     }
 }
