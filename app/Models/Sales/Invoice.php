@@ -30,6 +30,7 @@ class Invoice extends Model
         'discount',
         'tax',
         'grand_total',
+        'total_paid',
     ];
 
     protected $casts = [
@@ -37,6 +38,7 @@ class Invoice extends Model
         'due_date' => 'date',
         'subtotal' => 'decimal:2',
         'grand_total' => 'decimal:2',
+        'total_paid' => 'decimal:2',
     ];
 
     public function salesOrder(): BelongsTo
@@ -64,43 +66,37 @@ class Invoice extends Model
         return $this->hasMany(Payment::class, 'nx_invoice_id');
     }
 
-    public function getTotalPaidAttribute(): float
-    {
-        return (float) $this->payments()->sum('amount');
-    }
 
-    public function getRemainingBalanceAttribute(): float
-    {
-        $balance = (float) $this->grand_total - $this->total_paid;
-        return $balance > 0 ? $balance : 0;
-    }
-
+    // Logika Perhitungan
     public function recalculateStatus(): void
     {
-        $totalPaid = $this->total_paid;
+        $totalPaid = (float) $this->payments()->sum('amount');
         $grandTotal = (float) $this->grand_total;
-
-        // Toleransi selisih koma (float precision)
         $tolerance = 0.01;
 
         if ($totalPaid >= ($grandTotal - $tolerance)) {
-            $status = 'paid'; // Lunas
+            $status = 'paid';
         } elseif ($totalPaid > 0) {
-            $status = 'partial'; // Bayar Sebagian
+            $status = 'partial';
         } else {
-            // Jika belum bayar sama sekali, kembalikan ke sent/draft
-            // (Asumsi default 'sent' jika sudah ada tagihan tapi belum bayar)
             $status = $this->status === 'draft' ? 'draft' : 'sent';
         }
 
-        // Update status di database tanpa mentrigger event 'updated' berulang kali
-        $this->updateQuietly(['status' => $status]);
+        // Update fisik total_paid dan status ke database
+        $this->updateQuietly([
+            'total_paid' => $totalPaid,
+            'status' => $status
+        ]);
+
+        // Auto update SO jika invoice Lunas
+        if ($status === 'paid' && $this->salesOrder && $this->salesOrder->status !== 'completed') {
+            $this->salesOrder->update(['status' => 'completed']);
+        }
     }
 
     protected static function booted(): void
     {
         static::creating(function (Invoice $invoice) {
-
             if ($invoice->invoice_date) {
                 $invoice->invoice_date = Carbon::parse($invoice->invoice_date)
                     ->setTimeFromTimeString(now()->format('H:i:s'));

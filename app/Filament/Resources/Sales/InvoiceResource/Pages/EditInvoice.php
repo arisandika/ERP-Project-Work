@@ -5,6 +5,7 @@ namespace App\Filament\Resources\Sales\InvoiceResource\Pages;
 use App\Filament\Resources\Sales\InvoiceResource;
 use App\Models\Sales\Invoice;
 use App\Models\Sales\Payment;
+use App\Models\Finance\FinancialRecord; // Tambahkan ini
 use Filament\Actions;
 use Filament\Forms;
 use Filament\Resources\Pages\EditRecord;
@@ -61,7 +62,7 @@ class EditInvoice extends EditRecord
                 ->action(function (Invoice $record, array $data) {
                     DB::transaction(function () use ($record, $data) {
                         // 1. Buat record payment
-                        Payment::create([
+                        $payment = Payment::create([
                             'nx_invoice_id' => $record->id,
                             'payment_number' => $this->generatePaymentNumber(),
                             'amount' => $data['amount'],
@@ -71,18 +72,21 @@ class EditInvoice extends EditRecord
                             'created_by' => auth()->id(),
                         ]);
 
-                        // 2. Update status invoice
-                        $totalPaid = $record->payments()->sum('amount');
-                        $remaining = $record->grand_total - $totalPaid;
+                        // 2. Buat FinancialRecord agar Buku Kas Jurnal konsisten!
+                        FinancialRecord::create([
+                            'transaction_date' => $payment->payment_date,
+                            'type'             => 'pemasukan',
+                            'amount'           => $payment->amount,
+                            'category'         => 'Sales Revenue',
+                            'description'      => 'Pembayaran Invoice dari Klien: ' . ($record->customer->name ?? '-') . ' via ' . strtoupper($payment->payment_method),
+                            'reference_number' => $record->invoice_number,
+                            'reference_type'   => Invoice::class,
+                            'reference_id'     => $record->id,
+                            'created_by'       => auth()->id() ?? 1,
+                        ]);
 
-                        $newStatus = $remaining <= 0 ? 'paid' : 'partial';
-
-                        $record->update(['status' => $newStatus]);
-
-                        // 3. Update status SO jika lunas
-                        if ($newStatus === 'paid' && $record->salesOrder) {
-                            $record->salesOrder->update(['status' => 'completed']);
-                        }
+                        // Tidak perlu manual calculate totalPaid, Status, atau update SO.
+                        // Model event di Payment.php akan otomatis memanggil $invoice->recalculateStatus()!
                     });
 
                     Notification::make()
@@ -92,6 +96,7 @@ class EditInvoice extends EditRecord
                 }),
 
             Actions\Action::make('download_pdf')
+                // ... (Kode Download PDF tidak diubah sama sekali) ...
                 ->label('Cetak Invoice')
                 ->icon('heroicon-o-printer')
                 ->color('info')

@@ -15,16 +15,18 @@ class Payment extends Model
         return $this->belongsTo(Invoice::class, 'nx_invoice_id');
     }
 
-    // Auto update status invoice setiap kali ada pembayaran
     protected static function booted()
     {
         static::saved(function ($payment) {
-            $payment->invoice->recalculateStatus();
+            if ($payment->invoice) {
+                $payment->invoice->recalculateStatus();
+            }
         });
 
         static::deleted(function ($payment) {
-            $payment->invoice->recalculateStatus();
+            if ($payment->invoice) {
+                $payment->invoice->recalculateStatus();
+            }
         });
     }
 }
-
