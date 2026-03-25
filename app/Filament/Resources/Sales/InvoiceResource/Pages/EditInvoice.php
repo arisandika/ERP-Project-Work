@@ -5,7 +5,7 @@ namespace App\Filament\Resources\Sales\InvoiceResource\Pages;
 use App\Filament\Resources\Sales\InvoiceResource;
 use App\Models\Sales\Invoice;
 use App\Models\Sales\Payment;
-use App\Models\Finance\FinancialRecord; // Tambahkan ini
+use App\Models\Finance\FinancialRecord;
 use Filament\Actions;
 use Filament\Forms;
 use Filament\Resources\Pages\EditRecord;
@@ -61,10 +61,10 @@ class EditInvoice extends EditRecord
                 ])
                 ->action(function (Invoice $record, array $data) {
                     DB::transaction(function () use ($record, $data) {
-                        // 1. Buat record payment
+
+                        // 1. Buat record payment (payment_number di-generate oleh Model)
                         $payment = Payment::create([
                             'nx_invoice_id' => $record->id,
-                            'payment_number' => $this->generatePaymentNumber(),
                             'amount' => $data['amount'],
                             'payment_date' => $data['payment_date'],
                             'payment_method' => $data['payment_method'],
@@ -72,21 +72,19 @@ class EditInvoice extends EditRecord
                             'created_by' => auth()->id(),
                         ]);
 
-                        // 2. Buat FinancialRecord agar Buku Kas Jurnal konsisten!
+                        // 2. Buat FinancialRecord
                         FinancialRecord::create([
                             'transaction_date' => $payment->payment_date,
                             'type'             => 'pemasukan',
                             'amount'           => $payment->amount,
                             'category'         => 'Sales Revenue',
                             'description'      => 'Pembayaran Invoice dari Klien: ' . ($record->customer->name ?? '-') . ' via ' . strtoupper($payment->payment_method),
-                            'reference_number' => $record->invoice_number,
+                            'reference_number' => $payment->payment_number, // Panggil dari object $payment langsung
                             'reference_type'   => Invoice::class,
                             'reference_id'     => $record->id,
                             'created_by'       => auth()->id() ?? 1,
                         ]);
 
-                        // Tidak perlu manual calculate totalPaid, Status, atau update SO.
-                        // Model event di Payment.php akan otomatis memanggil $invoice->recalculateStatus()!
                     });
 
                     Notification::make()
@@ -96,7 +94,6 @@ class EditInvoice extends EditRecord
                 }),
 
             Actions\Action::make('download_pdf')
-                // ... (Kode Download PDF tidak diubah sama sekali) ...
                 ->label('Cetak Invoice')
                 ->icon('heroicon-o-printer')
                 ->color('info')
@@ -162,29 +159,4 @@ class EditInvoice extends EditRecord
         return $record;
     }
 
-    private function generatePaymentNumber(): string
-    {
-        $roman = ['I', 'II', 'III', 'IV', 'V', 'VI', 'VII', 'VIII', 'IX', 'X', 'XI', 'XII'][now()->month - 1];
-        $year = now()->year;
-        $company = 'NEX';
-        $code = 'PAY';
-
-        $prefixLike = "%/$code/$company/$roman/$year";
-
-        $last = Payment::withTrashed()
-            ->where('payment_number', 'like', $prefixLike)
-            ->orderByDesc('id')
-            ->value('payment_number');
-
-        $seq = 1;
-
-        if ($last) {
-            $parts = explode('/', $last);
-            $seq = ((int) $parts[0]) + 1;
-        }
-
-        $seqStr = str_pad((string) $seq, 3, '0', STR_PAD_LEFT);
-
-        return "{$seqStr}/{$code}/{$company}/{$roman}/{$year}";
-    }
 }

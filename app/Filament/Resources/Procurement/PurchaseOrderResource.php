@@ -387,7 +387,7 @@ class PurchaseOrderResource extends Resource
     public static function getRelations(): array
     {
         return [
-            \App\Filament\Resources\Procurement\PurchaseOrderResource\RelationManagers\PaymentsRelationManager::class,
+            // \App\Filament\Resources\Procurement\PurchaseOrderResource\RelationManagers\PaymentsRelationManager::class,
         ];
     }
 }
