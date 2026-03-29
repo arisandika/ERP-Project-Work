@@ -26,3 +26,8 @@ Schedule::command('attendance:mark-absent')
 Schedule::command('leave:auto-expire')
     ->dailyAt('00:01')
     ->timezone('Asia/Jakarta');
+
+// SALES SCHEDULER
+Schedule::command('sales:process-expired-quotations')
+    ->dailyAt('00:00')
+    ->withoutOverlapping();

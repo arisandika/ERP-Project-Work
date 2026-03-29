@@ -15,6 +15,7 @@ class PurchaseOrder extends Model
     protected $fillable = [
         'po_number',
         'supplier_id',
+        'purchase_requisition_id', // DITAMBAHKAN: Foreign key ke PR
         'order_date',
         'expected_delivery_date',
         'status',
@@ -40,6 +41,12 @@ class PurchaseOrder extends Model
         return $this->belongsTo(Supplier::class, 'supplier_id');
     }
 
+    // DITAMBAHKAN: Relasi ke tabel Purchase Requisition
+    public function purchaseRequisition(): BelongsTo
+    {
+        return $this->belongsTo(PurchaseRequisition::class, 'purchase_requisition_id');
+    }
+
     public function items(): HasMany
     {
         return $this->hasMany(PurchaseOrderItem::class, 'purchase_order_id');
@@ -50,11 +57,25 @@ class PurchaseOrder extends Model
         return $this->belongsTo(User::class, 'created_by');
     }
 
+    public function payments(): HasMany
+    {
+        return $this->hasMany(\App\Models\Finance\PurchaseOrderPayment::class, 'purchase_order_id');
+    }
+
     protected static function booted()
     {
         static::creating(function ($model) {
             if (empty($model->created_by)) {
                 $model->created_by = Auth::id();
+            }
+        });
+
+        // DITAMBAHKAN: Event listener setelah PO berhasil di-save ke database
+        static::created(function ($model) {
+            if ($model->purchase_requisition_id) {
+                // Ubah status PR menjadi 'completed' agar tidak bisa ditarik jadi PO lagi
+                PurchaseRequisition::where('id', $model->purchase_requisition_id)
+                    ->update(['status' => 'completed']);
             }
         });
     }

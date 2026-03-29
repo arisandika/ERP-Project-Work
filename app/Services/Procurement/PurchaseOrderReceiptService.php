@@ -5,30 +5,24 @@ namespace App\Services\Procurement;
 use App\Models\Procurement\PurchaseOrder;
 use App\Models\Inventory\StockTransaction;
 use App\Models\Inventory\SerialNumber as ProductSerial;
+use App\Models\Finance\FinancialRecord; // Tambahkan ini
 use Illuminate\Support\Facades\DB;
 use Exception;
 
 class PurchaseOrderReceiptService
 {
-    /**
-     * Memproses penerimaan barang ke gudang beserta pencatatan Serial Number (jika ada).
-     *
-     * @param PurchaseOrder $purchaseOrder
-     * @param array $data Data input dari form Filament
-     * @param int|null $userId ID User yang memproses
-     * @throws Exception
-     */
     public function processReceipt(PurchaseOrder $purchaseOrder, array $data, ?int $userId): void
     {
         DB::transaction(function () use ($purchaseOrder, $data, $userId) {
-            // 1. Lock record PO
             $lockedPo = PurchaseOrder::where('id', $purchaseOrder->id)->lockForUpdate()->first();
 
             $warehouseId = $data['warehouse_id'];
             $receiptDate = $data['receipt_date'];
             $allCompleted = true;
 
-            // 2. Siapkan parameter untuk Auto-Numbering
+            // Variabel untuk menampung total nominal barang yang masuk hari ini
+            $totalReceivedValueToday = 0;
+
             $romanMonths = ['I','II','III','IV','V','VI','VII','VIII','IX','X','XI','XII'];
             $monthRoman = $romanMonths[now()->month - 1];
             $year = now()->year;
@@ -42,15 +36,9 @@ class PurchaseOrderReceiptService
                 ->lockForUpdate()
                 ->value('transaction_code');
 
-            $seq = 1;
-            if ($last) {
-                $parts = explode('/', $last);
-                $seq = ((int) $parts[0]) + 1;
-            }
+            $seq = $last ? ((int) explode('/', $last)[0]) + 1 : 1;
 
-            // 3. Proses setiap item yang diterima
             foreach ($lockedPo->items as $item) {
-                // Key untuk form input yang baru (menggunakan prefix qty_ dan sn_)
                 $inputQtyKey = "qty_{$item->id}";
                 $inputSnKey  = "sn_{$item->id}";
 
@@ -58,15 +46,15 @@ class PurchaseOrderReceiptService
                 $snInput     = $data[$inputSnKey] ?? '';
 
                 if ($receivedNow > 0) {
-                    // Update qty received di tabel PO Item
                     $item->quantity_received += $receivedNow;
                     $item->save();
 
-                    // Generate kode transaksi
+                    // Kalkulasi nilai hutang baru (Qty Diterima x Harga Satuan)
+                    $totalReceivedValueToday += ($receivedNow * $item->unit_price);
+
                     $seqStr = str_pad((string) $seq, 3, '0', STR_PAD_LEFT);
                     $txCode = "{$seqStr}/{$code}/{$company}/{$monthRoman}/{$year}";
 
-                    // Catat ke Stock Transaction
                     StockTransaction::create([
                         'product_id'       => $item->product_id,
                         'warehouse_id'     => $warehouseId,
@@ -82,40 +70,52 @@ class PurchaseOrderReceiptService
 
                     $seq++;
 
-                    // LOGIKA BARU: Pencatatan Serial Number
-                    // Cek jika product_id ini wajib menggunakan SN
                     if ($item->product->is_serialized ?? false) {
-                        // Pecah string dari Textarea berdasarkan baris baru (enter)
                         $sns = array_filter(array_map('trim', explode("\n", $snInput)));
-
                         $serialData = [];
                         foreach ($sns as $sn) {
                             $serialData[] = [
                                 'product_id'        => $item->product_id,
                                 'serial_number'     => $sn,
                                 'warehouse_id'      => $warehouseId,
-                                'status'            => 'available', // Status ready untuk dijual/dikirim
-                                'purchase_order_id' => $lockedPo->id, // Tracking asal mula SN
+                                'status'            => 'available',
+                                'purchase_order_id' => $lockedPo->id,
                                 'inbound_date'      => $receiptDate,
                                 'created_at'        => now(),
                                 'updated_at'        => now(),
                             ];
                         }
-
-                        // Insert massal agar optimal di database
                         if (!empty($serialData)) {
                             ProductSerial::insert($serialData);
                         }
                     }
                 }
 
-                // Cek apakah PO item ini masih partial atau sudah terpenuhi total
                 if ($item->quantity_received < $item->quantity) {
                     $allCompleted = false;
                 }
             }
 
-            // 4. Update status final PO
+            // --- REQUIREMENT PERUSAHAAN: INTEGRASI FINANCE (HUTANG DAGANG) ---
+            if ($totalReceivedValueToday > 0) {
+                // Tambahkan proporsi pajak jika ada (Berdasarkan rate pajak PO)
+                $taxRate = $lockedPo->subtotal > 0 ? ($lockedPo->tax_amount / $lockedPo->subtotal) : 0;
+                $taxNominal = $totalReceivedValueToday * $taxRate;
+                $hutangBaru = $totalReceivedValueToday + $taxNominal;
+
+                FinancialRecord::create([
+                    'transaction_date' => $receiptDate,
+                    'type'             => 'hutang', // Kategori Hutang Dagang
+                    'amount'           => $hutangBaru,
+                    'category'         => 'Accounts Payable',
+                    'description'      => 'Hutang dagang atas penerimaan barang (GR) dari PO: ' . $lockedPo->po_number,
+                    'reference_number' => $lockedPo->po_number,
+                    'reference_type'   => PurchaseOrder::class,
+                    'reference_id'     => $lockedPo->id,
+                    'created_by'       => $userId ?? 1,
+                ]);
+            }
+
             $lockedPo->status = $allCompleted ? 'completed' : 'partial';
             $lockedPo->save();
         });
