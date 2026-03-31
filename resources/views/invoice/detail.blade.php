@@ -115,12 +115,14 @@
                     <header class="flex flex-col items-center fi-simple-header">
                         <div style="height: 1.5rem;" class="flex mb-8 fi-logo">
                             <div class="flex items-center">
-                                <img src="https://erp.arihub.my.id/assets/logo.png" alt="Logo" class="h-11">
+                                <img src="{{ asset('assets/logo-dark.png') }}" alt="Logo" class="h-8 dark:hidden">
+                                <img src="{{ asset('assets/logo-light.png') }}" alt="Logo"
+                                    class="hidden h-8 dark:block">
                             </div>
 
                         </div>
                         <h1
-                            class="text-2xl font-bold tracking-tight text-center fi-simple-header-heading text-black dark:text-white">
+                            class="text-2xl font-bold tracking-tight text-center text-black fi-simple-header-heading dark:text-white">
                             Dokumen Valid
                         </h1>
                         <p

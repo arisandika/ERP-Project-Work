@@ -35,7 +35,8 @@
                     <a href="https://erp.arihub.my.id/dashboard">
                         <div style="height: 1.5rem;" class="flex fi-logo">
                             <div class="flex items-center">
-                                <img src="https://erp.arihub.my.id/assets/logo.png" alt="Logo" class="h-11">
+                                <img src="{{ asset('assets/logo-dark.png') }}" alt="Logo" class="h-8 dark:hidden">
+                                <img src="{{ asset('assets/logo-light.png') }}" alt="Logo" class="hidden h-8 dark:block">
                             </div>
                         </div>
                     </a>
