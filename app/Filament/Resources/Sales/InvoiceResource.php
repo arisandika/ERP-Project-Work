@@ -94,7 +94,7 @@ class InvoiceResource extends Resource
                                     $set('customer_po_number', $so->customer_po_number);
                                     $set('nx_customer_id', $so->nx_customer_id);
                                     $set('subtotal', (float) ($so->subtotal ?? 0));
-                                    $set('discount', (float) ($so->discount ?? 0));
+                                    $set('discount', (float) ($so->discount_amount ?? 0));
                                     $set('tax', (float) ($so->tax ?? 0));
                                     $set('grand_total', (float) ($so->grand_total ?? 0));
 
@@ -247,7 +247,7 @@ class InvoiceResource extends Resource
                             ->dehydrated(),
 
                         TextInput::make('discount')
-                            ->label('Diskon (%)')
+                            ->label('Diskon')
                             ->numeric()
                             ->default(0)
                             ->reactive()
@@ -256,8 +256,7 @@ class InvoiceResource extends Resource
                                 self::updateTotals($get, $set)
                             )
                             ->prefixIcon('heroicon-o-tag')
-                            ->minValue(0)
-                            ->maxValue(100),
+                            ->minValue(0),
 
                         TextInput::make('tax')
                             ->label('Pajak (%)')
@@ -497,16 +496,19 @@ class InvoiceResource extends Resource
     public static function updateTotals(callable $get, callable $set): void
     {
         $items = $get('items') ?? [];
+
         $subtotal = collect($items)->sum(
             fn($item) =>
             (float) ($item['qty'] ?? 0) * (float) ($item['unit_price'] ?? 0)
         );
 
         $discount = (float) ($get('discount') ?? 0);
+        $discount = min($discount, $subtotal);
+
         $tax = (float) ($get('tax') ?? 0);
 
-        $afterDiscount = $subtotal * (1 - ($discount / 100));
-        $grandTotal = $afterDiscount * (1 + ($tax / 100));
+        $afterDiscount = $subtotal - $discount;
+        $grandTotal = $afterDiscount + ($afterDiscount * ($tax / 100));
 
         $set('subtotal', round($subtotal, 0));
         $set('grand_total', round($grandTotal, 0));

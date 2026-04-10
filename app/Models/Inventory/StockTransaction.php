@@ -63,6 +63,8 @@ class StockTransaction extends Model
 
             if (!self::$autoUpdateStock) {
                 $transaction->created_by = $transaction->created_by ?? Auth::id();
+                $transaction->price = $transaction->price ?? 0;
+                $transaction->total_price = $transaction->total_price ?? (($transaction->price ?? 0) * ($transaction->quantity ?? 0));
                 return;
             }
 

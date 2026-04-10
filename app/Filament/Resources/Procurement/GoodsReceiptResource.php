@@ -18,7 +18,7 @@ class GoodsReceiptResource extends Resource
     protected static ?string $model = GoodsReceipt::class;
     protected static ?string $navigationIcon = 'heroicon-o-inbox-arrow-down';
     protected static ?string $navigationGroup = 'Manajemen Procurement';
-    protected static ?int $navigationSort = 4;
+    protected static ?int $navigationSort = 5;
     protected static ?string $pluralModelLabel = 'Goods Receipts';
 
     public static function form(Form $form): Form

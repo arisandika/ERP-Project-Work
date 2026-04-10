@@ -9,7 +9,11 @@ class PurchaseRequisitionItem extends Model
 {
     protected $table = 'nx_purchase_requisition_items';
     protected $guarded = ['id'];
-    protected $casts = ['estimated_price' => 'decimal:2'];
+
+    protected $casts = [
+        'quantity' => 'integer',
+        'estimated_price' => 'decimal:2',
+    ];
 
     public function purchaseRequisition()
     {

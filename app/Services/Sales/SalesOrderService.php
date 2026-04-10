@@ -125,73 +125,86 @@ class SalesOrderService
     {
         DB::transaction(function () use ($record, $userId) {
             $warehouseUtamaId = Warehouse::where('warehouse_name', 'Gudang Utama')->value('id') ?? 1;
+
             StockTransaction::$autoUpdateStock = false;
 
-            // A. BOOKING STOK
-            foreach ($record->items as $item) {
-                if ($item->item_type === 'product') {
+            try {
+                // A. BOOKING STOK
+                foreach ($record->items as $item) {
+                    if ($item->item_type !== 'product') {
+                        continue;
+                    }
+
                     $stockUtama = ProductStock::where('product_id', $item->item_id)
                         ->where('warehouse_id', $warehouseUtamaId)
                         ->lockForUpdate()
                         ->first();
 
-                    if (!$stockUtama || $stockUtama->qty_available < $item->qty) {
+                    if (!$stockUtama || (float) $stockUtama->qty_available < (float) $item->qty) {
                         throw new \Exception("Stok Siap Jual untuk '{$item->item_name}' tidak mencukupi!");
                     }
 
-                    $stockAvailableBefore = $stockUtama->qty_available;
-                    $stockUtama->decrement('qty_available', $item->qty);
-                    $stockUtama->increment('qty_reserved', $item->qty); // Pindah ke status Booking
+                    $qty = (float) $item->qty;
+                    $stockAvailableBefore = (float) $stockUtama->qty_available;
+
+                    $stockUtama->decrement('qty_available', $qty);
+                    $stockUtama->increment('qty_reserved', $qty);
 
                     StockTransaction::create([
-                        'transaction_code' => $this->generateTransactionCode(),
-                        'transaction_date' => now(),
-                        'product_id'       => $item->item_id,
-                        'warehouse_id'     => $warehouseUtamaId,
-                        'mutation_type'    => 'reserve',
-                        'type'             => 'keluar',
-                        'quantity'         => $item->qty,
-                        'stock_before'     => $stockAvailableBefore,
-                        'stock_after'      => $stockAvailableBefore - $item->qty,
-                        'reference_id'     => $record->id,
-                        'reference_type'   => SalesOrder::class,
-                        'no_reference'     => $record->order_number,
-                        'notes'            => 'Booking Stok (SO Confirmed)',
-                        'created_by'       => $userId,
+                        'transaction_code'  => $this->generateTransactionCode(),
+                        'transaction_date'  => now(),
+                        'product_id'        => $item->item_id,
+                        'warehouse_id'      => $warehouseUtamaId,
+                        'mutation_type'     => 'reserve',
+                        'type'              => 'keluar',
+                        'quantity'          => $item->qty,
+                        'stock_before'      => $stockAvailableBefore,
+                        'stock_after'       => $stockAvailableBefore - $item->qty,
+                        'price'             => 0,
+                        'total_price'       => 0,
+                        'reference_id'      => $record->id,
+                        'reference_type'    => SalesOrder::class,
+                        'reference_number'  => $record->order_number,
+                        'notes'             => 'Booking Stok (SO Confirmed)',
+                        'created_by'        => $userId,
                     ]);
                 }
-            }
-            StockTransaction::$autoUpdateStock = true;
 
-            // B. UPDATE PENGGUNAAN PROMO
-            if ($record->promo_code_id) {
-                PromoCode::find($record->promo_code_id)?->increment('times_used');
-            }
-
-            // C. AUTO CREATE SURAT JALAN (DO) DRAFT
-            $exists = DeliveryOrder::where('nx_sales_order_id', $record->id)->where('status', '!=', 'cancelled')->exists();
-            if (!$exists) {
-                $do = DeliveryOrder::create([
-                    'nx_sales_order_id' => $record->id,
-                    'nx_customer_id'    => $record->nx_customer_id,
-                    'nx_employee_id'    => $record->nx_employee_id,
-                    'do_number'         => $this->generateDeliveryNumber(),
-                    'do_date'           => now(),
-                    'status'            => 'draft',
-                ]);
-
-                foreach ($record->items as $item) {
-                    DeliveryOrderItem::create([
-                        'nx_delivery_order_id' => $do->id,
-                        'item_type'            => $item->item_type,
-                        'item_id'              => $item->item_id,
-                        'item_code'            => $item->item_code,
-                        'item_name'            => $item->item_name,
-                        'qty_ordered'          => $item->qty,
-                        'qty'                  => $item->qty,
-                        'qty_remaining'        => 0,
-                    ]);
+                // B. UPDATE PENGGUNAAN PROMO
+                if ($record->promo_code_id) {
+                    PromoCode::find($record->promo_code_id)?->increment('times_used');
                 }
+
+                // C. AUTO CREATE SURAT JALAN (DO) DRAFT
+                $exists = DeliveryOrder::where('nx_sales_order_id', $record->id)
+                    ->where('status', '!=', 'cancelled')
+                    ->exists();
+
+                if (!$exists) {
+                    $do = DeliveryOrder::create([
+                        'nx_sales_order_id' => $record->id,
+                        'nx_customer_id'    => $record->nx_customer_id,
+                        'nx_employee_id'    => $record->nx_employee_id,
+                        'do_number'         => $this->generateDeliveryNumber(),
+                        'do_date'           => now(),
+                        'status'            => 'draft',
+                    ]);
+
+                    foreach ($record->items as $item) {
+                        DeliveryOrderItem::create([
+                            'nx_delivery_order_id' => $do->id,
+                            'item_type'            => $item->item_type,
+                            'item_id'              => $item->item_id,
+                            'item_code'            => $item->item_code,
+                            'item_name'            => $item->item_name,
+                            'qty_ordered'          => $item->qty,
+                            'qty'                  => $item->qty,
+                            'qty_remaining'        => 0,
+                        ]);
+                    }
+                }
+            } finally {
+                StockTransaction::$autoUpdateStock = true;
             }
         });
     }

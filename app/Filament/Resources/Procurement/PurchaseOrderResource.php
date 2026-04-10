@@ -26,7 +26,7 @@ class PurchaseOrderResource extends Resource
 
     protected static ?string $navigationGroup = 'Manajemen Procurement';
 
-    protected static ?int $navigationSort = 3;
+    protected static ?int $navigationSort = 4;
 
     protected static ?string $slug = 'procurement/purchase-orders';
 
