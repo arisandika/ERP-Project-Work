@@ -6,32 +6,32 @@ use App\Filament\Resources\Sales\InvoiceResource\Pages;
 use App\Filament\Resources\Sales\InvoiceResource\RelationManagers;
 use App\Models\Sales\Invoice;
 use App\Models\Sales\SalesOrder;
+use Barryvdh\DomPDF\Facade\Pdf;
+use Endroid\QrCode\Encoding\Encoding;
+use Endroid\QrCode\QrCode;
+use Endroid\QrCode\Writer\PngWriter;
 use Filament\Forms;
-use Filament\Forms\Form;
-use Filament\Forms\Components\Section;
+use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\Grid;
+use Filament\Forms\Components\Group;
 use Filament\Forms\Components\Repeater;
+use Filament\Forms\Components\Section;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Textarea;
-use Filament\Forms\Components\DatePicker;
-use Filament\Forms\Components\Group;
+use Filament\Forms\Form;
+use Filament\Notifications\Notification;
 use Filament\Resources\Resource;
 use Filament\Tables;
-use Filament\Tables\Table;
 use Filament\Tables\Actions\Action;
+use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
-use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Support\Carbon;
-use Picqer\Barcode\BarcodeGeneratorPNG;
-use Endroid\QrCode\QrCode;
-use Endroid\QrCode\Encoding\Encoding;
-use Endroid\QrCode\Writer\PngWriter;
-use App\Mail\InvoiceSent;
-use Illuminate\Support\Facades\Mail;
-use Filament\Notifications\Notification;
 use Illuminate\Support\Str;
+use Picqer\Barcode\BarcodeGeneratorPNG;
+use Illuminate\Support\Facades\Mail;
+use App\Mail\InvoiceSent;
 
 class InvoiceResource extends Resource
 {
@@ -49,7 +49,7 @@ class InvoiceResource extends Resource
 
     public static function getNavigationBadge(): ?string
     {
-        return static::getModel()::count();
+        return (string) static::getModel()::count();
     }
 
     public static function form(Form $form): Form
@@ -74,7 +74,7 @@ class InvoiceResource extends Resource
                                 ->relationship(
                                     name: 'salesOrder',
                                     titleAttribute: 'order_number',
-                                    modifyQueryUsing: fn($query) => $query->orderByDesc('created_at')
+                                    modifyQueryUsing: fn ($query) => $query->orderByDesc('created_at')
                                 )
                                 ->afterStateUpdated(function ($state, callable $set, callable $get) {
                                     if (!$state) {
@@ -96,11 +96,10 @@ class InvoiceResource extends Resource
                                     $set('subtotal', (float) ($so->subtotal ?? 0));
                                     $set('discount', (float) ($so->discount_amount ?? 0));
                                     $set('tax', (float) ($so->tax ?? 0));
-                                    $set('grand_total', (float) ($so->grand_total ?? 0));
 
                                     $items = $so->items->map(function ($item) {
-                                        $qty = (float) $item->qty;
-                                        $price = (float) $item->unit_price;
+                                        $qty = (float) ($item->qty ?? 0);
+                                        $price = (float) ($item->unit_price ?? 0);
 
                                         return [
                                             'item_type' => $item->item_type,
@@ -109,14 +108,14 @@ class InvoiceResource extends Resource
                                             'item_name' => $item->item_name,
                                             'qty' => $qty,
                                             'unit_price' => $price,
-                                            'line_total' => (float) $item->line_total ?: $qty * $price,
+                                            'line_total' => (float) ($item->line_total ?? ($qty * $price)),
                                         ];
                                     })->toArray();
 
                                     $set('items', $items);
                                     self::updateTotals($get, $set);
                                 })
-                                ->disabled(fn(?Invoice $record) => filled($record))
+                                ->disabled(fn (?Invoice $record) => filled($record))
                                 ->required(),
 
                             DatePicker::make('invoice_date')
@@ -150,7 +149,7 @@ class InvoiceResource extends Resource
                             Select::make('nx_employee_id')
                                 ->label('Ditugaskan Kepada')
                                 ->relationship('employee', 'full_name')
-                                ->default(fn() => auth()->user()?->employee?->id)
+                                ->default(fn () => auth()->user()?->employee?->id)
                                 ->disabled()
                                 ->dehydrated()
                                 ->required()
@@ -170,6 +169,7 @@ class InvoiceResource extends Resource
                                 ->live()
                                 ->prefixIcon('heroicon-o-adjustments-vertical'),
                         ]),
+
                         Textarea::make('notes')
                             ->label('Catatan Tambahan')
                             ->rows(3),
@@ -177,10 +177,11 @@ class InvoiceResource extends Resource
 
                     Section::make('Daftar Item Invoice')->schema([
                         Repeater::make('items')
+                            ->relationship()
                             ->schema([
                                 Forms\Components\Hidden::make('id'),
-                                TextInput::make('item_type')->hidden()->dehydrated(),
-                                TextInput::make('item_id')->hidden()->dehydrated(),
+                                Forms\Components\Hidden::make('item_type'),
+                                Forms\Components\Hidden::make('item_id'),
 
                                 Grid::make(2)->schema([
                                     TextInput::make('item_code')
@@ -198,10 +199,7 @@ class InvoiceResource extends Resource
                                         ->numeric()
                                         ->required()
                                         ->reactive()
-                                        ->afterStateUpdated(
-                                            fn($state, callable $set, callable $get) =>
-                                            self::updateItemTotal($get, $set)
-                                        ),
+                                        ->afterStateUpdated(fn ($state, callable $set, callable $get) => self::updateItemTotal($get, $set)),
 
                                     TextInput::make('unit_price')
                                         ->label('Harga Satuan')
@@ -210,10 +208,7 @@ class InvoiceResource extends Resource
                                         ->required()
                                         ->minValue(0)
                                         ->reactive()
-                                        ->afterStateUpdated(
-                                            fn($state, callable $set, callable $get) =>
-                                            self::updateItemTotal($get, $set)
-                                        ),
+                                        ->afterStateUpdated(fn ($state, callable $set, callable $get) => self::updateItemTotal($get, $set)),
 
                                     TextInput::make('line_total')
                                         ->label('Subtotal')
@@ -226,7 +221,6 @@ class InvoiceResource extends Resource
                                         ->extraInputAttributes(['style' => 'font-weight: bold;']),
                                 ]),
                             ])
-                            ->relationship()
                             ->addable(false)
                             ->deletable(false)
                             ->reorderable(false)
@@ -251,10 +245,8 @@ class InvoiceResource extends Resource
                             ->numeric()
                             ->default(0)
                             ->reactive()
-                            ->afterStateUpdated(
-                                fn(callable $get, callable $set) =>
-                                self::updateTotals($get, $set)
-                            )
+                            ->dehydrated()
+                            ->afterStateUpdated(fn (callable $get, callable $set) => self::updateTotals($get, $set))
                             ->prefixIcon('heroicon-o-tag')
                             ->minValue(0),
 
@@ -263,10 +255,8 @@ class InvoiceResource extends Resource
                             ->numeric()
                             ->default(0)
                             ->reactive()
-                            ->afterStateUpdated(
-                                fn(callable $get, callable $set) =>
-                                self::updateTotals($get, $set)
-                            )
+                            ->dehydrated()
+                            ->afterStateUpdated(fn (callable $get, callable $set) => self::updateTotals($get, $set))
                             ->prefixIcon('heroicon-o-receipt-percent')
                             ->minValue(0)
                             ->maxValue(100),
@@ -279,23 +269,25 @@ class InvoiceResource extends Resource
                             ->minValue(0)
                             ->disabled()
                             ->dehydrated()
-                            ->extraInputAttributes(['style' => 'font-weight: bold; font-size: 1.1em; color: #10b981;']),
+                            ->extraInputAttributes([
+                                'style' => 'font-weight: bold; font-size: 1.1em; color: #10b981;',
+                            ]),
 
                         Forms\Components\Placeholder::make('total_paid_view')
                             ->label('Sudah Dibayar')
-                            ->content(fn($record) => 'IDR ' . number_format($record?->total_paid ?? 0, 0, ',', '.'))
+                            ->content(fn ($record) => 'IDR ' . number_format((float) ($record?->total_paid ?? 0), 0, ',', '.'))
                             ->extraAttributes(['class' => 'text-success-600 font-bold text-lg'])
-                            ->visible(fn($record) => $record !== null),
+                            ->visible(fn ($record) => $record !== null),
 
                         Forms\Components\Placeholder::make('remaining_balance_view')
                             ->label('Sisa Tagihan')
-                            ->content(fn($record) => 'IDR ' . number_format($record?->remaining_balance ?? 0, 0, ',', '.'))
-                            ->extraAttributes(fn($record) => [
-                                'class' => ($record?->remaining_balance > 0)
+                            ->content(fn ($record) => 'IDR ' . number_format((float) ($record?->remaining_balance ?? 0), 0, ',', '.'))
+                            ->extraAttributes(fn ($record) => [
+                                'class' => (($record?->remaining_balance ?? 0) > 0)
                                     ? 'text-danger-600 font-bold text-lg'
                                     : 'text-gray-500 font-bold text-lg'
                             ])
-                            ->visible(fn($record) => $record !== null),
+                            ->visible(fn ($record) => $record !== null),
                     ]),
                 ])->columnSpan(['lg' => 1]),
             ]),
@@ -325,20 +317,20 @@ class InvoiceResource extends Resource
                 Tables\Columns\TextColumn::make('grand_total')
                     ->label('Total Tagihan')
                     ->money('IDR', true)
-                    ->color(fn($state) => $state < 0 ? 'danger' : 'success')
+                    ->color(fn ($state) => $state < 0 ? 'danger' : 'success')
                     ->sortable()
                     ->weight('semibold'),
 
                 Tables\Columns\TextColumn::make('remaining_balance')
                     ->label('Sisa')
                     ->money('IDR', true)
-                    ->color(fn($state) => $state > 0 ? 'danger' : 'success')
+                    ->color(fn ($state) => $state > 0 ? 'danger' : 'success')
                     ->sortable()
                     ->weight('semibold'),
 
                 Tables\Columns\TextColumn::make('status')
                     ->badge()
-                    ->color(fn(string $state): string => match ($state) {
+                    ->color(fn (string $state): string => match ($state) {
                         'draft' => 'gray',
                         'sent' => 'warning',
                         'partial' => 'info',
@@ -346,7 +338,7 @@ class InvoiceResource extends Resource
                         'cancelled' => 'danger',
                         default => 'gray',
                     })
-                    ->formatStateUsing(fn(string $state): string => match ($state) {
+                    ->formatStateUsing(fn (string $state): string => match ($state) {
                         'draft' => 'Draft',
                         'sent' => 'Terkirim',
                         'partial' => 'Parsial',
@@ -365,14 +357,14 @@ class InvoiceResource extends Resource
 
                 Tables\Filters\Filter::make('created_at')
                     ->form([
-                        Forms\Components\DatePicker::make('created_from')
+                        DatePicker::make('created_from')
                             ->label('Dibuat Dari')
                             ->required()
                             ->displayFormat('d M Y')
                             ->native(false)
                             ->prefixIcon('heroicon-o-calendar-days'),
 
-                        Forms\Components\DatePicker::make('created_until')
+                        DatePicker::make('created_until')
                             ->label('Dibuat Hingga')
                             ->required()
                             ->displayFormat('d M Y')
@@ -382,12 +374,12 @@ class InvoiceResource extends Resource
                     ->query(function (Builder $query, array $data): Builder {
                         return $query
                             ->when(
-                                $data['created_from'],
-                                fn(Builder $query, $date): Builder => $query->whereDate('created_at', '>=', $date),
+                                $data['created_from'] ?? null,
+                                fn (Builder $query, $date): Builder => $query->whereDate('created_at', '>=', $date),
                             )
                             ->when(
-                                $data['created_until'],
-                                fn(Builder $query, $date): Builder => $query->whereDate('created_at', '<=', $date),
+                                $data['created_until'] ?? null,
+                                fn (Builder $query, $date): Builder => $query->whereDate('created_at', '<=', $date),
                             );
                     })
                     ->indicateUsing(function (array $data): array {
@@ -415,12 +407,21 @@ class InvoiceResource extends Resource
                     ->color('success')
                     ->action(function (Invoice $record) {
                         $validationUrl = route('invoice.verify.form', ['number' => $record->invoice_number]);
-                        $qrCode = new QrCode(data: $validationUrl, encoding: new Encoding('UTF-8'), size: 200, margin: 10);
+
+                        $qrCode = new QrCode(
+                            data: $validationUrl,
+                            encoding: new Encoding('UTF-8'),
+                            size: 200,
+                            margin: 10
+                        );
+
                         $writer = new PngWriter();
                         $qrBase64 = base64_encode($writer->write($qrCode)->getString());
 
                         $generator = new BarcodeGeneratorPNG();
-                        $barBase64 = base64_encode($generator->getBarcode($record->invoice_number, $generator::TYPE_CODE_128));
+                        $barBase64 = base64_encode(
+                            $generator->getBarcode($record->invoice_number, $generator::TYPE_CODE_128)
+                        );
 
                         $pdf = Pdf::loadView('pdf.invoice', [
                             'invoice' => $record,
@@ -438,15 +439,25 @@ class InvoiceResource extends Resource
                     ->icon('heroicon-o-envelope')
                     ->color('warning')
                     ->requiresConfirmation()
-                    ->visible(fn(Invoice $record) => !empty($record->customer->email))
+                    ->visible(fn (Invoice $record) => !empty($record->customer->email))
                     ->action(function (Invoice $record) {
                         try {
                             Mail::to($record->customer->email)->queue(new InvoiceSent($record));
-                            if ($record->status === 'draft')
+
+                            if ($record->status === 'draft') {
                                 $record->update(['status' => 'sent']);
-                            Notification::make()->title('Email Terkirim')->success()->send();
+                            }
+
+                            Notification::make()
+                                ->title('Email Terkirim')
+                                ->success()
+                                ->send();
                         } catch (\Exception $e) {
-                            Notification::make()->title('Gagal')->body($e->getMessage())->danger()->send();
+                            Notification::make()
+                                ->title('Gagal')
+                                ->body($e->getMessage())
+                                ->danger()
+                                ->send();
                         }
                     }),
 
@@ -490,27 +501,38 @@ class InvoiceResource extends Resource
     {
         $qty = (float) ($get('qty') ?? 0);
         $price = (float) ($get('unit_price') ?? 0);
-        $set('line_total', $qty * $price);
+
+        $set('line_total', round($qty * $price, 2));
+
+        $items = $get('../../items') ?? $get('items') ?? null;
+        if ($items !== null) {
+            self::updateTotals($get, $set);
+        }
     }
 
     public static function updateTotals(callable $get, callable $set): void
     {
-        $items = $get('items') ?? []; 
+        $items = $get('items') ?? [];
 
-        $subtotal = collect($items)->sum(
-            fn($item) =>
-            (float) ($item['qty'] ?? 0) * (float) ($item['unit_price'] ?? 0)
-        );
+        $subtotal = collect($items)->sum(function ($item) {
+            $qty = (float) ($item['qty'] ?? 0);
+            $price = (float) ($item['unit_price'] ?? 0);
+
+            return $qty * $price;
+        });
 
         $discount = (float) ($get('discount') ?? 0);
         $discount = min($discount, $subtotal);
 
-        $tax = (float) ($get('tax') ?? 0); 
+        $tax = (float) ($get('tax') ?? 0); // persen
+        $tax = max(0, min($tax, 100));
 
         $afterDiscount = $subtotal - $discount;
         $grandTotal = $afterDiscount + ($afterDiscount * ($tax / 100));
 
-        $set('subtotal', round($subtotal, 0));
-        $set('grand_total', round($grandTotal, 0));
+        $set('subtotal', round($subtotal, 2));
+        $set('discount', round($discount, 2));
+        $set('tax', round($tax, 2));
+        $set('grand_total', round($grandTotal, 2));
     }
 }

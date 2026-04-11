@@ -2,25 +2,31 @@
 
 namespace App\Filament\Resources\Finance\FinancialRecordResource\Widgets;
 
+use App\Models\Finance\FinancialRecord;
+use App\Models\Procurement\PurchaseOrder;
+use App\Models\Sales\Invoice;
 use Filament\Widgets\StatsOverviewWidget as BaseWidget;
 use Filament\Widgets\StatsOverviewWidget\Stat;
-use App\Models\Finance\FinancialRecord;
-use App\Models\Sales\Invoice;
-use App\Models\Procurement\PurchaseOrder;
 
 class FinanceOverview extends BaseWidget
 {
     protected static bool $isDiscovered = false;
+
     protected static ?string $pollingInterval = '60s';
 
     protected function getStats(): array
     {
-        $totalPemasukan = FinancialRecord::where('type', 'pemasukan')->sum('amount');
-        $totalPengeluaran = FinancialRecord::where('type', 'pengeluaran')->sum('amount');
+        $totalPemasukan = (float) FinancialRecord::where('type', 'pemasukan')->sum('amount');
+        $totalPengeluaran = (float) FinancialRecord::where('type', 'pengeluaran')->sum('amount');
         $saldoKas = $totalPemasukan - $totalPengeluaran;
 
-        $totalPiutang = Invoice::whereIn('status', ['sent', 'partial'])->get()->sum('remaining_balance');
-        $totalHutang = PurchaseOrder::whereIn('status', ['draft', 'sent', 'partial'])->get()->sum('grand_total');
+        $totalPiutang = Invoice::whereIn('status', ['sent', 'partial'])
+            ->get()
+            ->sum('remaining_balance');
+
+        $totalHutang = PurchaseOrder::whereIn('status', ['sent', 'partial'])
+            ->get()
+            ->sum('grand_total');
 
         return [
             Stat::make('Saldo Kas Tersedia', 'Rp ' . number_format($saldoKas, 0, ',', '.'))
@@ -28,7 +34,6 @@ class FinanceOverview extends BaseWidget
                 ->descriptionIcon('heroicon-m-banknotes')
                 ->color('success')
                 ->chart([7, 10, 13, 15, 18, 20, 25])
-                // MAGIC UI: Warna background pastel + Border tebal di kiri
                 ->extraAttributes([
                     'class' => 'bg-success-50 dark:bg-success-900/20 border-l-4 border-success-500 shadow-sm',
                 ]),

@@ -5,19 +5,18 @@ namespace App\Filament\Resources\Sales\InvoiceResource\Pages;
 use App\Filament\Resources\Sales\InvoiceResource;
 use App\Models\Sales\Invoice;
 use App\Models\Sales\Payment;
-use App\Models\Finance\FinancialRecord;
+use Barryvdh\DomPDF\Facade\Pdf;
+use Endroid\QrCode\Encoding\Encoding;
+use Endroid\QrCode\QrCode;
+use Endroid\QrCode\Writer\PngWriter;
 use Filament\Actions;
 use Filament\Forms;
+use Filament\Notifications\Notification;
 use Filament\Resources\Pages\EditRecord;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\DB;
-use Filament\Notifications\Notification;
-use Barryvdh\DomPDF\Facade\Pdf;
-use Picqer\Barcode\BarcodeGeneratorPNG;
-use Endroid\QrCode\QrCode;
-use Endroid\QrCode\Encoding\Encoding;
-use Endroid\QrCode\Writer\PngWriter;
 use Illuminate\Support\Str;
+use Picqer\Barcode\BarcodeGeneratorPNG;
 
 class EditInvoice extends EditRecord
 {
@@ -30,15 +29,16 @@ class EditInvoice extends EditRecord
                 ->label('Tambah Pembayaran')
                 ->icon('heroicon-o-currency-dollar')
                 ->color('success')
-                ->visible(fn(Invoice $record) => in_array($record->status, ['sent', 'partial']))
+                ->visible(fn (Invoice $record) => in_array($record->status, ['sent', 'partial'], true))
                 ->form([
                     Forms\Components\TextInput::make('amount')
                         ->label('Jumlah Bayar')
                         ->numeric()
                         ->prefix('IDR')
                         ->required()
-                        ->maxValue(fn(Invoice $record) => $record->remaining_balance)
-                        ->default(fn(Invoice $record) => $record->remaining_balance),
+                        ->minValue(0.01)
+                        ->maxValue(fn (Invoice $record) => $record->remaining_balance)
+                        ->default(fn (Invoice $record) => $record->remaining_balance),
 
                     Forms\Components\DatePicker::make('payment_date')
                         ->label('Tanggal Bayar')
@@ -61,30 +61,15 @@ class EditInvoice extends EditRecord
                 ])
                 ->action(function (Invoice $record, array $data) {
                     DB::transaction(function () use ($record, $data) {
-
-                        // 1. Buat record payment (payment_number di-generate oleh Model)
-                        $payment = Payment::create([
+                        Payment::create([
                             'nx_invoice_id' => $record->id,
-                            'amount' => $data['amount'],
+                            'amount' => (float) $data['amount'],
                             'payment_date' => $data['payment_date'],
                             'payment_method' => $data['payment_method'],
-                            'notes' => $data['notes'],
+                            'status' => 'paid',
+                            'notes' => $data['notes'] ?? null,
                             'created_by' => auth()->id(),
                         ]);
-
-                        // 2. Buat FinancialRecord
-                        FinancialRecord::create([
-                            'transaction_date' => $payment->payment_date,
-                            'type'             => 'pemasukan',
-                            'amount'           => $payment->amount,
-                            'category'         => 'Sales Revenue',
-                            'description'      => 'Pembayaran Invoice dari Klien: ' . ($record->customer->name ?? '-') . ' via ' . strtoupper($payment->payment_method),
-                            'reference_number' => $payment->payment_number, // Panggil dari object $payment langsung
-                            'reference_type'   => Invoice::class,
-                            'reference_id'     => $record->id,
-                            'created_by'       => auth()->id() ?? 1,
-                        ]);
-
                     });
 
                     Notification::make()
@@ -99,12 +84,21 @@ class EditInvoice extends EditRecord
                 ->color('info')
                 ->action(function (Invoice $record) {
                     $validationUrl = route('invoice.verify.form', ['number' => $record->invoice_number]);
-                    $qrCode = new QrCode(data: $validationUrl, encoding: new Encoding('UTF-8'), size: 200, margin: 10);
+
+                    $qrCode = new QrCode(
+                        data: $validationUrl,
+                        encoding: new Encoding('UTF-8'),
+                        size: 200,
+                        margin: 10
+                    );
+
                     $writer = new PngWriter();
                     $qrBase64 = base64_encode($writer->write($qrCode)->getString());
 
                     $generator = new BarcodeGeneratorPNG();
-                    $barBase64 = base64_encode($generator->getBarcode($record->invoice_number, $generator::TYPE_CODE_128));
+                    $barBase64 = base64_encode(
+                        $generator->getBarcode($record->invoice_number, $generator::TYPE_CODE_128)
+                    );
 
                     $pdf = Pdf::loadView('pdf.invoice', [
                         'invoice' => $record,
@@ -123,21 +117,42 @@ class EditInvoice extends EditRecord
 
     protected function handleRecordUpdate(Model $record, array $data): Model
     {
-        $items = $data['items'] ?? [];
-        unset($data['items']);
+        return DB::transaction(function () use ($record, $data) {
+            $items = $data['items'] ?? [];
+            unset($data['items']);
 
-        $record->update($data);
+            $subtotal = collect($items)->sum(function ($item) {
+                $qty = (float) ($item['qty'] ?? 0);
+                $price = (float) ($item['unit_price'] ?? 0);
 
-        if (!empty($items)) {
+                return $qty * $price;
+            });
+
+            $discount = min((float) ($data['discount'] ?? 0), $subtotal);
+            $tax = max(0, min((float) ($data['tax'] ?? 0), 100));
+            $afterDiscount = $subtotal - $discount;
+            $grandTotal = $afterDiscount + ($afterDiscount * ($tax / 100));
+
+            $data['subtotal'] = round($subtotal, 2);
+            $data['discount'] = round($discount, 2);
+            $data['tax'] = round($tax, 2);
+            $data['grand_total'] = round($grandTotal, 2);
+
+            $record->update($data);
+
             $existingItemIds = [];
 
             foreach ($items as $item) {
-                if (isset($item['id'])) {
+                $qty = (float) ($item['qty'] ?? 0);
+                $price = (float) ($item['unit_price'] ?? 0);
+
+                if (isset($item['id']) && $item['id']) {
                     $record->items()->where('id', $item['id'])->update([
-                        'qty' => $item['qty'],
-                        'unit_price' => $item['unit_price'],
-                        'line_total' => $item['line_total'],
+                        'qty' => (int) $qty,
+                        'unit_price' => round($price, 2),
+                        'line_total' => round($qty * $price, 2),
                     ]);
+
                     $existingItemIds[] = $item['id'];
                 } else {
                     $newItem = $record->items()->create([
@@ -145,18 +160,22 @@ class EditInvoice extends EditRecord
                         'item_id' => $item['item_id'] ?? null,
                         'item_code' => $item['item_code'] ?? null,
                         'item_name' => $item['item_name'] ?? null,
-                        'qty' => $item['qty'] ?? 0,
-                        'unit_price' => $item['unit_price'] ?? 0,
-                        'line_total' => $item['line_total'] ?? 0,
+                        'qty' => (int) $qty,
+                        'unit_price' => round($price, 2),
+                        'line_total' => round($qty * $price, 2),
                     ]);
+
                     $existingItemIds[] = $newItem->id;
                 }
             }
 
-            $record->items()->whereNotIn('id', $existingItemIds)->delete();
-        }
+            if (!empty($existingItemIds)) {
+                $record->items()->whereNotIn('id', $existingItemIds)->delete();
+            }
 
-        return $record;
+            $record->refresh()->recalculateStatus();
+
+            return $record;
+        });
     }
-
 }

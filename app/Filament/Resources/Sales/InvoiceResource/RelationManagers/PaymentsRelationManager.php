@@ -7,8 +7,7 @@ use Filament\Forms\Form;
 use Filament\Resources\RelationManagers\RelationManager;
 use Filament\Tables;
 use Filament\Tables\Table;
-use App\Models\Finance\FinancialRecord;
-use App\Models\Sales\Invoice;
+use Illuminate\Support\Facades\DB;
 
 class PaymentsRelationManager extends RelationManager
 {
@@ -20,13 +19,9 @@ class PaymentsRelationManager extends RelationManager
     {
         return $form
             ->schema([
-                Forms\Components\TextInput::make('payment_number')
+                Forms\Components\Placeholder::make('payment_number_placeholder')
                     ->label('No. Pembayaran')
-                    ->default('AUTO-GENERATED') // UBAH INI
-                    ->disabled()                // TAMBAH INI
-                    ->dehydrated()              // TAMBAH INI
-                    ->required()
-                    ->maxLength(255),
+                    ->content('Auto Generate'),
 
                 Forms\Components\DatePicker::make('payment_date')
                     ->label('Tanggal Pembayaran')
@@ -38,6 +33,7 @@ class PaymentsRelationManager extends RelationManager
                     ->numeric()
                     ->prefix('Rp')
                     ->required()
+                    ->minValue(0.01)
                     ->default(fn (RelationManager $livewire) => $livewire->ownerRecord->remaining_balance)
                     ->maxValue(fn (RelationManager $livewire) => $livewire->ownerRecord->remaining_balance),
 
@@ -58,51 +54,73 @@ class PaymentsRelationManager extends RelationManager
 
     public function table(Table $table): Table
     {
-        // (Isi tabel tetap sama seperti punyamu)
         return $table
             ->recordTitleAttribute('payment_number')
             ->columns([
-                Tables\Columns\TextColumn::make('payment_number')->label('No. Pembayaran')->sortable()->searchable(),
-                Tables\Columns\TextColumn::make('payment_date')->label('Tanggal')->date('d M Y')->sortable(),
-                Tables\Columns\TextColumn::make('amount')->label('Jumlah')->money('IDR', true)->sortable()->weight('bold'),
+                Tables\Columns\TextColumn::make('payment_number')
+                    ->label('No. Pembayaran')
+                    ->sortable()
+                    ->searchable(),
+
+                Tables\Columns\TextColumn::make('payment_date')
+                    ->label('Tanggal')
+                    ->date('d M Y')
+                    ->sortable(),
+
+                Tables\Columns\TextColumn::make('amount')
+                    ->label('Jumlah')
+                    ->money('IDR', true)
+                    ->sortable()
+                    ->weight('bold'),
+
                 Tables\Columns\TextColumn::make('payment_method')
                     ->label('Metode')
                     ->badge()
-                    ->color(fn(string $state): string => match ($state) {
+                    ->color(fn (string $state): string => match ($state) {
                         'transfer' => 'info',
                         'cash' => 'success',
                         'credit_card' => 'warning',
                         'qris' => 'primary',
                         default => 'gray',
                     })
-                    ->formatStateUsing(fn(string $state): string => match ($state) {
+                    ->formatStateUsing(fn (string $state): string => match ($state) {
                         'transfer' => 'Transfer Bank',
                         'cash' => 'Tunai',
                         'credit_card' => 'Kartu Kredit',
                         'qris' => 'QRIS',
                         default => ucfirst($state),
                     }),
-                Tables\Columns\TextColumn::make('notes')->label('Catatan')->limit(30),
+
+                Tables\Columns\TextColumn::make('status')
+                    ->label('Status')
+                    ->badge()
+                    ->color(fn (string $state): string => match ($state) {
+                        'paid', 'settlement', 'success' => 'success',
+                        'pending' => 'warning',
+                        'failed', 'cancelled', 'expired' => 'danger',
+                        default => 'gray',
+                    }),
+
+                Tables\Columns\TextColumn::make('notes')
+                    ->label('Catatan')
+                    ->limit(30),
             ])
             ->headerActions([
                 Tables\Actions\CreateAction::make()
                     ->label('Catat Pembayaran')
-                    ->after(function ($record, RelationManager $livewire) {
-                        $invoice = $livewire->ownerRecord;
+                    ->using(function (array $data, RelationManager $livewire) {
+                        return DB::transaction(function () use ($data, $livewire) {
+                            $invoice = $livewire->ownerRecord;
 
-                        FinancialRecord::create([
-                            'transaction_date' => $record->payment_date,
-                            'type'             => 'pemasukan',
-                            'amount'           => $record->amount,
-                            'category'         => 'Sales Revenue',
-                            'description'      => 'Pembayaran Invoice dari Klien: ' . ($invoice->customer->name ?? '-') . ' via ' . strtoupper($record->payment_method),
-                            // UBAH reference_number INI:
-                            'reference_number' => $record->payment_number,
-                            'reference_type'   => Invoice::class,
-                            'reference_id'     => $invoice->id,
-                            'created_by'       => auth()->id() ?? 1,
-                        ]);
-
+                            return $invoice->payments()->create([
+                                'payment_date' => $data['payment_date'],
+                                'amount' => (float) $data['amount'],
+                                'payment_method' => $data['payment_method'],
+                                'status' => 'paid',
+                                'notes' => $data['notes'] ?? null,
+                                'created_by' => auth()->id() ?? 1,
+                            ]);
+                        });
                     }),
             ])
             ->actions([
