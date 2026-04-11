@@ -9,7 +9,6 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Carbon;
-use Illuminate\Support\Str;
 
 class DeliveryOrder extends Model
 {
@@ -60,10 +59,16 @@ class DeliveryOrder extends Model
     protected static function booted(): void
     {
         static::creating(function (DeliveryOrder $deliveryOrder) {
+            // Revisi: fallback auto-generate nomor DO kalau kosong
+            if (blank($deliveryOrder->do_number)) {
+                $deliveryOrder->do_number = self::generateDoNumber();
+            }
 
             if ($deliveryOrder->do_date) {
                 $deliveryOrder->do_date = Carbon::parse($deliveryOrder->do_date)
                     ->setTimeFromTimeString(now()->format('H:i:s'));
+            } else {
+                $deliveryOrder->do_date = now();
             }
         });
     }
@@ -93,5 +98,4 @@ class DeliveryOrder extends Model
 
         return "{$seqStr}/{$code}/{$company}/{$roman}/{$year}";
     }
-
 }
