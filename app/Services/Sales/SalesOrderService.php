@@ -60,9 +60,13 @@ class SalesOrderService
         }
 
         $data['discount_amount'] = min($totalDiscount, $subtotal);
+
         $taxPercent = (float) ($data['tax'] ?? 0);
+        $data['tax'] = $taxPercent;
+
         $afterDiscount = $subtotal - $data['discount_amount'];
         $data['grand_total'] = $afterDiscount + ($afterDiscount * ($taxPercent / 100));
+
 
         return $data;
     }
@@ -115,6 +119,7 @@ class SalesOrderService
             }
 
             return $order;
+
         });
     }
 
@@ -185,7 +190,7 @@ class SalesOrderService
                         'nx_sales_order_id' => $record->id,
                         'nx_customer_id'    => $record->nx_customer_id,
                         'nx_employee_id'    => $record->nx_employee_id,
-                        'do_number'         => $this->generateDeliveryNumber(),
+                        'do_number'         => DeliveryOrder::generateDoNumber(),
                         'do_date'           => now(),
                         'status'            => 'draft',
                     ]);
@@ -215,13 +220,5 @@ class SalesOrderService
         $last = StockTransaction::where('transaction_code', 'like', $prefix)->orderByDesc('id')->value('transaction_code');
         $seq = $last ? ((int) explode('/', $last)[0]) + 1 : 1;
         return str_pad((string) $seq, 3, '0', STR_PAD_LEFT) . "/ST-RES/NEX/{$roman}/" . now()->year;
-    }
-
-    private function generateDeliveryNumber(): string {
-        $roman = ['I','II','III','IV','V','VI','VII','VIII','IX','X','XI','XII'][now()->month - 1];
-        $prefix = "%/DO/NEX/{$roman}/" . now()->year;
-        $last = DeliveryOrder::withTrashed()->where('do_number', 'like', $prefix)->orderByDesc('id')->value('do_number');
-        $seq = $last ? ((int) explode('/', $last)[0]) + 1 : 1;
-        return str_pad((string) $seq, 3, '0', STR_PAD_LEFT) . "/DO/NEX/{$roman}/" . now()->year;
     }
 }
