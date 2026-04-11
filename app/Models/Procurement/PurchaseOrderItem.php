@@ -5,6 +5,7 @@ namespace App\Models\Procurement;
 use App\Models\Inventory\Product;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class PurchaseOrderItem extends Model
 {
@@ -16,23 +17,33 @@ class PurchaseOrderItem extends Model
         'quantity',
         'quantity_received',
         'unit_price',
-        'total_price'
+        'total_price',
     ];
 
     protected $casts = [
+        'quantity' => 'integer',
+        'quantity_received' => 'integer',
         'unit_price' => 'decimal:2',
         'total_price' => 'decimal:2',
     ];
 
-    // Relasi balik ke Induk PO
     public function purchaseOrder(): BelongsTo
     {
         return $this->belongsTo(PurchaseOrder::class, 'purchase_order_id');
     }
 
-    // Relasi ke Master Produk di modul Inventory
     public function product(): BelongsTo
     {
         return $this->belongsTo(Product::class, 'product_id');
+    }
+
+    public function goodsReceiptItems(): HasMany
+    {
+        return $this->hasMany(GoodsReceiptItem::class, 'purchase_order_item_id');
+    }
+
+    public function purchaseInvoiceItems(): HasMany
+    {
+        return $this->hasMany(PurchaseInvoiceItem::class, 'purchase_order_item_id');
     }
 }

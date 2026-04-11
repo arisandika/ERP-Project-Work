@@ -15,7 +15,7 @@ class PurchaseOrder extends Model
     protected $fillable = [
         'po_number',
         'supplier_id',
-        'purchase_requisition_id', // DITAMBAHKAN: Foreign key ke PR
+        'purchase_requisition_id',
         'order_date',
         'expected_delivery_date',
         'status',
@@ -24,7 +24,7 @@ class PurchaseOrder extends Model
         'discount_amount',
         'grand_total',
         'notes',
-        'created_by'
+        'created_by',
     ];
 
     protected $casts = [
@@ -36,12 +36,17 @@ class PurchaseOrder extends Model
         'grand_total' => 'decimal:2',
     ];
 
+    public const STATUS_DRAFT = 'draft';
+    public const STATUS_SENT = 'sent';
+    public const STATUS_PARTIAL = 'partial';
+    public const STATUS_COMPLETED = 'completed';
+    public const STATUS_CANCELLED = 'cancelled';
+
     public function supplier(): BelongsTo
     {
         return $this->belongsTo(Supplier::class, 'supplier_id');
     }
 
-    // DITAMBAHKAN: Relasi ke tabel Purchase Requisition
     public function purchaseRequisition(): BelongsTo
     {
         return $this->belongsTo(PurchaseRequisition::class, 'purchase_requisition_id');
@@ -57,35 +62,52 @@ class PurchaseOrder extends Model
         return $this->belongsTo(User::class, 'created_by');
     }
 
+    public function goodsReceipts(): HasMany
+    {
+        return $this->hasMany(GoodsReceipt::class, 'purchase_order_id');
+    }
+
+    public function purchaseInvoices(): HasMany
+    {
+        return $this->hasMany(PurchaseInvoice::class, 'purchase_order_id');
+    }
+
     public function payments(): HasMany
     {
         return $this->hasMany(\App\Models\Finance\PurchaseOrderPayment::class, 'purchase_order_id');
     }
 
-    protected static function booted()
+    protected static function booted(): void
     {
-        static::creating(function ($model) {
-            if (empty($model->created_by)) {
+        static::creating(function (self $model): void {
+            if (blank($model->po_number)) {
+                $model->po_number = self::generatePONumber();
+            }
+
+            if (blank($model->created_by)) {
                 $model->created_by = Auth::id();
+            }
+
+            if (blank($model->status)) {
+                $model->status = self::STATUS_DRAFT;
             }
         });
 
-        // DITAMBAHKAN: Event listener setelah PO berhasil di-save ke database
-        static::created(function ($model) {
+        static::created(function (self $model): void {
             if ($model->purchase_requisition_id) {
-                // Ubah status PR menjadi 'completed' agar tidak bisa ditarik jadi PO lagi
-                PurchaseRequisition::where('id', $model->purchase_requisition_id)
-                    ->update(['status' => 'completed']);
+                PurchaseRequisition::whereKey($model->purchase_requisition_id)
+                    ->update([
+                        'status' => PurchaseRequisition::STATUS_COMPLETED,
+                    ]);
             }
         });
     }
 
-    // FUNGSI AUTO GENERATE NOMOR PO
     public static function generatePONumber(): string
     {
         $romanMonths = [
             1 => 'I', 2 => 'II', 3 => 'III', 4 => 'IV', 5 => 'V', 6 => 'VI',
-            7 => 'VII', 8 => 'VIII', 9 => 'IX', 10 => 'X', 11 => 'XI', 12 => 'XII'
+            7 => 'VII', 8 => 'VIII', 9 => 'IX', 10 => 'X', 11 => 'XI', 12 => 'XII',
         ];
 
         $month = now()->month;
@@ -100,9 +122,10 @@ class PurchaseOrder extends Model
             ->first();
 
         $sequence = 1;
-        if ($lastPo) {
+
+        if ($lastPo?->po_number) {
             $parts = explode('/', $lastPo->po_number);
-            $sequence = ((int) $parts[0]) + 1;
+            $sequence = ((int) ($parts[0] ?? 0)) + 1;
         }
 
         return str_pad((string) $sequence, 3, '0', STR_PAD_LEFT) . "/{$prefix}";

@@ -48,6 +48,11 @@ class PurchaseRequisition extends Model
         return $this->belongsTo(User::class, 'approved_by');
     }
 
+    public function purchaseOrders()
+    {
+        return $this->hasMany(PurchaseOrder::class, 'purchase_requisition_id');
+    }
+
     public function isDraft(): bool
     {
         return $this->status === self::STATUS_DRAFT;

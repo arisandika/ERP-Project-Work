@@ -9,7 +9,12 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 class GoodsReceiptItem extends Model
 {
     protected $table = 'nx_goods_receipt_items';
+
     protected $guarded = ['id'];
+
+    protected $casts = [
+        'quantity_received' => 'integer',
+    ];
 
     public function goodsReceipt(): BelongsTo
     {
