@@ -69,13 +69,16 @@ class SalesOrderResource extends Resource
                         TextInput::make('customer_po_number')
                             ->label('No. PO Customer')
                             ->placeholder('Contoh: PO-ABC-001')
-                            ->maxLength(50),
+                            ->maxLength(50)
+                            ->required(fn (Get $get) => blank($get('nx_quotation_id')))
+                            ->dehydrated(),
 
                         Select::make('nx_quotation_id')
                             ->label('No. Penawaran (Ref)')
                             ->searchable()
                             ->preload()
                             ->live()
+                            ->required(fn (Get $get) => blank($get('customer_po_number')))
                             ->options(function (?SalesOrder $record) {
                                 return Quotation::query()
                                     ->where('status', 'accepted')
@@ -378,7 +381,28 @@ class SalesOrderResource extends Resource
         return $table
             ->columns([
                 Tables\Columns\TextColumn::make('order_number')->label('No. Pesanan')->sortable()->searchable()->weight('semibold'),
-                Tables\Columns\TextColumn::make('quotation.quotation_number')->label('Ref. Penawaran')->sortable()->searchable(),
+                Tables\Columns\TextColumn::make('reference_display')
+                    ->label('Referensi')
+                    ->getStateUsing(function (SalesOrder $record): string {
+                        $refs = [];
+
+                        if ($record->quotation?->quotation_number) {
+                            $refs[] = '' . $record->quotation->quotation_number;
+                        }
+
+                        if ($record->customer_po_number) {
+                            $refs[] = '' . $record->customer_po_number;
+                        }
+
+                        return !empty($refs) ? implode(' | ', $refs) : '-';
+                    })
+                    ->searchable(query: function (Builder $query, string $search): Builder {
+                        return $query
+                            ->where('customer_po_number', 'like', "%{$search}%")
+                            ->orWhereHas('quotation', function (Builder $q) use ($search) {
+                                $q->where('quotation_number', 'like', "%{$search}%");
+                            });
+                    }),
                 Tables\Columns\TextColumn::make('customer.name')->label('Customer')->sortable()->searchable(),
                 Tables\Columns\TextColumn::make('order_date')->label('Tanggal')->dateTime('d M Y')->sortable(),
                 Tables\Columns\TextColumn::make('grand_total')->label('Total')->money('IDR', true)->weight('semibold'),

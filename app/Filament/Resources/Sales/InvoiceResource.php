@@ -495,7 +495,7 @@ class InvoiceResource extends Resource
 
     public static function updateTotals(callable $get, callable $set): void
     {
-        $items = $get('items') ?? [];
+        $items = $get('items') ?? []; 
 
         $subtotal = collect($items)->sum(
             fn($item) =>
@@ -505,7 +505,7 @@ class InvoiceResource extends Resource
         $discount = (float) ($get('discount') ?? 0);
         $discount = min($discount, $subtotal);
 
-        $tax = (float) ($get('tax') ?? 0);
+        $tax = (float) ($get('tax') ?? 0); 
 
         $afterDiscount = $subtotal - $discount;
         $grandTotal = $afterDiscount + ($afterDiscount * ($tax / 100));

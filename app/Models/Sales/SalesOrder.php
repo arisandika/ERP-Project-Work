@@ -24,6 +24,7 @@ class SalesOrder extends Model
         'nx_employee_id',
         'order_number',
         'order_date',
+        'customer_po_number',
         'status',
         'notes',
         'subtotal',
@@ -31,6 +32,7 @@ class SalesOrder extends Model
         'tax',
         'grand_total',
         'promo_code_id',
+        
     ];
 
     protected $casts = [
