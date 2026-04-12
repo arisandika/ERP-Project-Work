@@ -8,16 +8,21 @@ use App\Services\Sales\SalesOrderService;
 use Filament\Notifications\Notification;
 use Filament\Resources\Pages\CreateRecord;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\DB;
 
 class CreateSalesOrder extends CreateRecord
 {
     protected static string $resource = SalesOrderResource::class;
 
-    public function getTitle(): string { return 'Buat Pesanan'; }
+    public function getTitle(): string
+    {
+        return 'Buat Pesanan';
+    }
 
     public function mount(): void
     {
         parent::mount();
+
         $this->form->fill([
             'order_number'   => $this->generateOrderNumber(),
             'nx_employee_id' => auth()->user()?->employee?->id,
@@ -25,13 +30,24 @@ class CreateSalesOrder extends CreateRecord
         ]);
     }
 
-    // Override handleRecordCreation untuk menggunakan Service
     protected function handleRecordCreation(array $data): Model
     {
         $data['order_number'] = $this->generateOrderNumber();
 
-        // Gunakan Service untuk create order dan items
-        return app(SalesOrderService::class)->createOrder($data);
+        return DB::transaction(function () use ($data) {
+            $service = app(SalesOrderService::class);
+
+            // 1. Buat SO dulu di dalam transaction
+            $record = $service->createOrder($data);
+
+            // 2. Kalau status confirmed, langsung proses booking stok + auto DO
+            if (($record->status ?? null) === 'confirmed') {
+                $service->processConfirmation($record, auth()->id());
+            }
+
+            // Kalau processConfirmation gagal, semua rollback
+            return $record;
+        });
     }
 
     protected function afterCreate(): void
@@ -39,26 +55,39 @@ class CreateSalesOrder extends CreateRecord
         $record = $this->getRecord();
 
         if ($record->status === 'confirmed') {
-            try {
-                // Panggil Service Logic untuk konfirmasi
-                app(SalesOrderService::class)->processConfirmation($record, auth()->id());
-
-                Notification::make()->title('Pesanan Confirmed & Stok Di-booking!')->success()->send();
-            } catch (\Exception $e) {
-                Notification::make()->title('Gagal: ' . $e->getMessage())->danger()->persistent()->send();
-                // Jika gagal konfirmasi, mungkin perlu rollback status atau delete?
-                // Disini kita biarkan record ada tapi user tau errornya.
-            }
+            Notification::make()
+                ->title('Pesanan Confirmed & Stok Di-booking!')
+                ->success()
+                ->send();
         } else {
-            Notification::make()->title('Pesanan Draft Tersimpan')->info()->send();
+            Notification::make()
+                ->title('Pesanan Draft Tersimpan')
+                ->info()
+                ->send();
         }
     }
 
-    private function generateOrderNumber(): string {
+    protected function onValidationError(\Throwable $exception): void
+    {
+        Notification::make()
+            ->title('Gagal membuat Sales Order')
+            ->body($exception->getMessage())
+            ->danger()
+            ->persistent()
+            ->send();
+    }
+
+    private function generateOrderNumber(): string
+    {
         $roman = ['I', 'II', 'III', 'IV', 'V', 'VI', 'VII', 'VIII', 'IX', 'X', 'XI', 'XII'][now()->month - 1];
         $prefix = "%/SO/NEX/{$roman}/" . now()->year;
-        $last = SalesOrder::withTrashed()->where('order_number', 'like', $prefix)->orderByDesc('id')->value('order_number');
+        $last = SalesOrder::withTrashed()
+            ->where('order_number', 'like', $prefix)
+            ->orderByDesc('id')
+            ->value('order_number');
+
         $seq = $last ? ((int) explode('/', $last)[0]) + 1 : 1;
+
         return str_pad((string) $seq, 3, '0', STR_PAD_LEFT) . "/SO/NEX/{$roman}/" . now()->year;
     }
 }

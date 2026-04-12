@@ -25,7 +25,7 @@ class CreateDeliveryOrder extends CreateRecord
         parent::mount();
 
         $this->form->fill([
-            'do_number'      => $this->generateDeliveryNumber(),
+            'do_number'      => DeliveryOrder::generateDoNumber(),
             'nx_employee_id' => auth()->user()?->employee?->id,
             'do_date'        => now()->toDateString(),
         ]);
@@ -34,7 +34,7 @@ class CreateDeliveryOrder extends CreateRecord
     // === MENCEGAT DATA SN DARI DALAM REPEATER ITEMS ===
     protected function mutateFormDataBeforeCreate(array $data): array
     {
-        $data['do_number'] = $this->generateDeliveryNumber();
+        $data['do_number'] = DeliveryOrder::generateDoNumber();
 
         // 1. Cek apakah ada barang yang dikirim
         if (isset($data['items'])) {
@@ -76,36 +76,10 @@ class CreateDeliveryOrder extends CreateRecord
                         ->where('product_id', $productId)
                         ->update([
                             'status'    => 'ON_DELIVERY',
-                            'client_id' => $record->nx_customer_id,
+                            'customer_id' => $record->nx_customer_id,
                         ]);
                 }
             });
         }
-    }
-
-    private function generateDeliveryNumber(): string
-    {
-        $roman = ['I', 'II', 'III', 'IV', 'V', 'VI', 'VII', 'VIII', 'IX', 'X', 'XI', 'XII'][now()->month - 1];
-        $year = now()->year;
-        $company = 'NEX';
-        $code = 'DO';
-
-        $prefixLike = "%/$code/$company/$roman/$year";
-
-        $last = \App\Models\Sales\DeliveryOrder::withTrashed()
-            ->where('do_number', 'like', $prefixLike)
-            ->orderByDesc('id')
-            ->value('do_number');
-
-        $seq = 1;
-
-        if ($last) {
-            $parts = explode('/', $last);
-            $seq = ((int) $parts[0]) + 1;
-        }
-
-        $seqStr = str_pad((string) $seq, 3, '0', STR_PAD_LEFT);
-
-        return "{$seqStr}/{$code}/{$company}/{$roman}/{$year}";
     }
 }

@@ -9,7 +9,6 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Carbon;
-use Illuminate\Support\Str;
 
 class DeliveryOrder extends Model
 {
@@ -60,12 +59,43 @@ class DeliveryOrder extends Model
     protected static function booted(): void
     {
         static::creating(function (DeliveryOrder $deliveryOrder) {
+            // Revisi: fallback auto-generate nomor DO kalau kosong
+            if (blank($deliveryOrder->do_number)) {
+                $deliveryOrder->do_number = self::generateDoNumber();
+            }
 
             if ($deliveryOrder->do_date) {
                 $deliveryOrder->do_date = Carbon::parse($deliveryOrder->do_date)
                     ->setTimeFromTimeString(now()->format('H:i:s'));
+            } else {
+                $deliveryOrder->do_date = now();
             }
         });
     }
 
+    public static function generateDoNumber(): string
+    {
+        $roman = ['I', 'II', 'III', 'IV', 'V', 'VI', 'VII', 'VIII', 'IX', 'X', 'XI', 'XII'][now()->month - 1];
+        $year = now()->year;
+        $company = 'NEX';
+        $code = 'DO';
+
+        $prefixLike = "%/{$code}/{$company}/{$roman}/{$year}";
+
+        $last = self::withTrashed()
+            ->where('do_number', 'like', $prefixLike)
+            ->orderByDesc('id')
+            ->value('do_number');
+
+        $seq = 1;
+
+        if ($last) {
+            $parts = explode('/', $last);
+            $seq = ((int) $parts[0]) + 1;
+        }
+
+        $seqStr = str_pad((string) $seq, 3, '0', STR_PAD_LEFT);
+
+        return "{$seqStr}/{$code}/{$company}/{$roman}/{$year}";
+    }
 }

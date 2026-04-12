@@ -9,6 +9,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Support\Carbon;
 
 class Invoice extends Model
@@ -37,6 +38,8 @@ class Invoice extends Model
         'invoice_date' => 'datetime',
         'due_date' => 'date',
         'subtotal' => 'decimal:2',
+        'discount' => 'decimal:2',
+        'tax' => 'decimal:2',
         'grand_total' => 'decimal:2',
         'total_paid' => 'decimal:2',
     ];
@@ -66,31 +69,57 @@ class Invoice extends Model
         return $this->hasMany(Payment::class, 'nx_invoice_id');
     }
 
+    public function project(): HasOne
+    {
+        return $this->hasOne(Project::class, 'nx_invoice_id');
+    }
 
-    // Logika Perhitungan
+    public function getRemainingBalanceAttribute(): float
+    {
+        $remaining = (float) $this->grand_total - (float) $this->total_paid;
+
+        return max(0, round($remaining, 2));
+    }
+
+    public function getIsOverdueAttribute(): bool
+    {
+        if (!$this->due_date) {
+            return false;
+        }
+
+        return in_array($this->status, ['sent', 'partial'], true)
+            && Carbon::parse($this->due_date)->isPast();
+    }
+
     public function recalculateStatus(): void
     {
-        $totalPaid = (float) $this->payments()->sum('amount');
+        $totalPaid = (float) $this->payments()
+            ->whereIn('status', ['paid', 'settlement', 'success'])
+            ->sum('amount');
+
         $grandTotal = (float) $this->grand_total;
         $tolerance = 0.01;
 
-        if ($totalPaid >= ($grandTotal - $tolerance)) {
+        if ($totalPaid >= ($grandTotal - $tolerance) && $grandTotal > 0) {
             $status = 'paid';
+            $totalPaid = $grandTotal;
         } elseif ($totalPaid > 0) {
             $status = 'partial';
         } else {
             $status = $this->status === 'draft' ? 'draft' : 'sent';
         }
 
-        // Update fisik total_paid dan status ke database
         $this->updateQuietly([
-            'total_paid' => $totalPaid,
-            'status' => $status
+            'total_paid' => round($totalPaid, 2),
+            'status' => $status,
         ]);
 
-        // Auto update SO jika invoice Lunas
-        if ($status === 'paid' && $this->salesOrder && $this->salesOrder->status !== 'completed') {
-            $this->salesOrder->update(['status' => 'completed']);
+        if ($this->salesOrder && $status === 'paid') {
+            if (!in_array($this->salesOrder->status, ['completed', 'cancelled'], true)) {
+                $this->salesOrder->update([
+                    'status' => 'paid',
+                ]);
+            }
         }
     }
 
@@ -101,11 +130,20 @@ class Invoice extends Model
                 $invoice->invoice_date = Carbon::parse($invoice->invoice_date)
                     ->setTimeFromTimeString(now()->format('H:i:s'));
             }
-        });
-    }
 
-    public function project()
-    {
-        return $this->hasOne(Project::class, 'nx_invoice_id');
+            $invoice->subtotal = round((float) ($invoice->subtotal ?? 0), 2);
+            $invoice->discount = round((float) ($invoice->discount ?? 0), 2);
+            $invoice->tax = max(0, min(round((float) ($invoice->tax ?? 0), 2), 100));
+            $invoice->grand_total = round((float) ($invoice->grand_total ?? 0), 2);
+            $invoice->total_paid = round((float) ($invoice->total_paid ?? 0), 2);
+        });
+
+        static::updating(function (Invoice $invoice) {
+            $invoice->subtotal = round((float) ($invoice->subtotal ?? 0), 2);
+            $invoice->discount = round((float) ($invoice->discount ?? 0), 2);
+            $invoice->tax = max(0, min(round((float) ($invoice->tax ?? 0), 2), 100));
+            $invoice->grand_total = round((float) ($invoice->grand_total ?? 0), 2);
+            $invoice->total_paid = round((float) ($invoice->total_paid ?? 0), 2);
+        });
     }
 }

@@ -24,7 +24,7 @@ class InvoiceItem extends Model
     ];
 
     protected $casts = [
-        'qty'        => 'integer',
+        'qty' => 'integer',
         'unit_price' => 'decimal:2',
         'line_total' => 'decimal:2',
     ];
@@ -37,18 +37,16 @@ class InvoiceItem extends Model
     protected static function booted(): void
     {
         static::creating(function (InvoiceItem $item) {
-            if ($item->line_total === null) {
-                $qty   = (float) ($item->qty ?? 0);
-                $price = (float) ($item->unit_price ?? 0);
-                $item->line_total = $qty * $price;
-            }
+            $qty = (float) ($item->qty ?? 0);
+            $price = (float) ($item->unit_price ?? 0);
+            $item->line_total = round($qty * $price, 2);
         });
 
         static::updating(function (InvoiceItem $item) {
             if ($item->isDirty(['qty', 'unit_price']) || $item->line_total === null) {
-                $qty   = (float) ($item->qty ?? 0);
+                $qty = (float) ($item->qty ?? 0);
                 $price = (float) ($item->unit_price ?? 0);
-                $item->line_total = $qty * $price;
+                $item->line_total = round($qty * $price, 2);
             }
         });
     }

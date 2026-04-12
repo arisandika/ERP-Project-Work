@@ -15,10 +15,16 @@ class GoodsReceipt extends Model
     use SoftDeletes;
 
     protected $table = 'nx_goods_receipts';
+
     protected $guarded = ['id'];
+
     protected $casts = [
         'receipt_date' => 'date',
     ];
+
+    public const STATUS_DRAFT = 'draft';
+    public const STATUS_COMPLETED = 'completed';
+    public const STATUS_CANCELLED = 'cancelled';
 
     public function purchaseOrder(): BelongsTo
     {
@@ -45,14 +51,19 @@ class GoodsReceipt extends Model
         return $this->hasMany(GoodsReceiptItem::class, 'goods_receipt_id');
     }
 
-    protected static function booted()
+    protected static function booted(): void
     {
-        static::creating(function ($model) {
-            if (empty($model->gr_number)) {
+        static::creating(function (self $model): void {
+            if (blank($model->gr_number)) {
                 $model->gr_number = self::generateGRNumber();
             }
-            if (empty($model->received_by)) {
-                $model->received_by = Auth::id() ?? 1;
+
+            if (blank($model->received_by)) {
+                $model->received_by = Auth::id();
+            }
+
+            if (blank($model->status)) {
+                $model->status = self::STATUS_DRAFT;
             }
         });
     }
@@ -61,7 +72,7 @@ class GoodsReceipt extends Model
     {
         $romanMonths = [
             1 => 'I', 2 => 'II', 3 => 'III', 4 => 'IV', 5 => 'V', 6 => 'VI',
-            7 => 'VII', 8 => 'VIII', 9 => 'IX', 10 => 'X', 11 => 'XI', 12 => 'XII'
+            7 => 'VII', 8 => 'VIII', 9 => 'IX', 10 => 'X', 11 => 'XI', 12 => 'XII',
         ];
 
         $month = now()->month;
@@ -71,8 +82,17 @@ class GoodsReceipt extends Model
 
         $prefix = "{$code}/{$company}/{$romanMonths[$month]}/{$year}";
 
-        $lastGr = self::withTrashed()->where('gr_number', 'like', "%/{$prefix}")->orderByDesc('id')->first();
-        $sequence = $lastGr ? ((int) explode('/', $lastGr->gr_number)[0]) + 1 : 1;
+        $lastGr = self::withTrashed()
+            ->where('gr_number', 'like', "%/{$prefix}")
+            ->orderByDesc('id')
+            ->first();
+
+        $sequence = 1;
+
+        if ($lastGr?->gr_number) {
+            $parts = explode('/', $lastGr->gr_number);
+            $sequence = ((int) ($parts[0] ?? 0)) + 1;
+        }
 
         return str_pad((string) $sequence, 3, '0', STR_PAD_LEFT) . "/{$prefix}";
     }

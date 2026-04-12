@@ -18,7 +18,7 @@ class GoodsReceiptResource extends Resource
     protected static ?string $model = GoodsReceipt::class;
     protected static ?string $navigationIcon = 'heroicon-o-inbox-arrow-down';
     protected static ?string $navigationGroup = 'Manajemen Procurement';
-    protected static ?int $navigationSort = 4;
+    protected static ?int $navigationSort = 5;
     protected static ?string $pluralModelLabel = 'Goods Receipts';
 
     public static function form(Form $form): Form
@@ -28,10 +28,14 @@ class GoodsReceiptResource extends Resource
                 Forms\Components\Group::make()->schema([
                     Forms\Components\Section::make('Informasi Surat Jalan Penerimaan')
                         ->schema([
+
                             Forms\Components\TextInput::make('gr_number')
                                 ->label('No. Penerimaan (GR)')
-                                ->default('AUTO-GENERATED')
-                                ->disabled(),
+                                ->disabled()
+                                ->dehydrated(false)
+                                ->afterStateHydrated(function (Forms\Components\TextInput $component, ?GoodsReceipt $record) {
+                                    $component->state($record?->gr_number ?? GoodsReceipt::generateGRNumber());
+                                }),
 
                             // 1. Pilih PO
                             Forms\Components\Select::make('purchase_order_id')
@@ -99,7 +103,8 @@ class GoodsReceiptResource extends Resource
                                     Forms\Components\Hidden::make('purchase_order_item_id'),
                                     Forms\Components\Hidden::make('product_id'),
                                     Forms\Components\Hidden::make('is_serialized'),
-                                    Forms\Components\Hidden::make('unit_price'), // Rahasia HPP, hanya untuk di-passing ke Service
+                                    Forms\Components\Hidden::make('unit_price')
+                                        ->dehydrated(false),
 
                                     Forms\Components\TextInput::make('product_name')
                                         ->label('Nama Barang')

@@ -3,7 +3,6 @@
 namespace App\Filament\Resources\Finance\FinancialRecordResource\Pages;
 
 use App\Filament\Resources\Finance\FinancialRecordResource;
-use Filament\Actions;
 use Filament\Resources\Pages\CreateRecord;
 
 class CreateFinancialRecord extends CreateRecord
@@ -17,8 +16,7 @@ class CreateFinancialRecord extends CreateRecord
 
     protected function mutateFormDataBeforeCreate(array $data): array
     {
-        $data['created_by'] =
-            auth()->user()?->employee?->id;
+        $data['created_by'] = auth()->user()?->employee?->id;
 
         return $data;
     }
