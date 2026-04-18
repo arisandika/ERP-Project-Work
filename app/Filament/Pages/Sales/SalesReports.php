@@ -14,35 +14,27 @@ use Filament\Support\Enums\MaxWidth;
 class SalesReports extends Page implements HasForms
 {
     use InteractsWithForms;
-
     use HasPageShield;
 
     protected static ?string $navigationIcon = 'heroicon-o-document-chart-bar';
-
     protected static ?string $navigationGroup = 'Manajemen Finance';
-
     protected static ?string $navigationLabel = 'Laporan Penjualan';
-
     protected static ?string $title = 'Laporan Penjualan';
-
     protected static ?int $navigationSort = 1;
-
     protected static string $view = 'filament.pages.sales.sales-reports';
+
+    public ?array $data = [];
 
     public function getMaxContentWidth(): MaxWidth
     {
         return MaxWidth::Full;
     }
 
-    public ?array $data = [];
-
     public function mount(): void
     {
-        parent::mount();
-        
         $this->form->fill([
-            'start_date' => now()->startOfMonth(),
-            'end_date' => now(),
+            'start_date' => now()->startOfMonth()->toDateString(),
+            'end_date' => now()->toDateString(),
         ]);
     }
 
@@ -71,12 +63,12 @@ class SalesReports extends Page implements HasForms
                     ])
                     ->columns(2)
                     ->statePath('data')
-                    ->live()
+                    ->live(),
             ]);
     }
 
     public function getFilterData(): array
     {
-        return $this->data;
+        return $this->data ?? [];
     }
 }
