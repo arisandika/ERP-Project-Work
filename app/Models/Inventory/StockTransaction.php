@@ -17,10 +17,11 @@ class StockTransaction extends Model
 
     protected $fillable = [
         'product_id',
+        'warehouse_id',
+        'serial_number_id',
         'transaction_code',
         'reference_number',
         'mutation_type',
-        'warehouse_id',
         'transaction_date',
         'type',
         'quantity',
@@ -44,12 +45,12 @@ class StockTransaction extends Model
 
     public function product()
     {
-        return $this->belongsTo(Product::class);
+        return $this->belongsTo(Product::class, 'product_id');
     }
 
     public function warehouse()
     {
-        return $this->belongsTo(Warehouse::class);
+        return $this->belongsTo(Warehouse::class, 'warehouse_id');
     }
 
     public function creator()
@@ -57,14 +58,19 @@ class StockTransaction extends Model
         return $this->belongsTo(User::class, 'created_by');
     }
 
+    public function serialNumber()
+    {
+        return $this->belongsTo(SerialNumber::class, 'serial_number_id');
+    }
+
     protected static function booted(): void
     {
         static::creating(function (StockTransaction $transaction) {
-
-            if (!self::$autoUpdateStock) {
+            if (! self::$autoUpdateStock) {
                 $transaction->created_by = $transaction->created_by ?? Auth::id();
                 $transaction->price = $transaction->price ?? 0;
                 $transaction->total_price = $transaction->total_price ?? (($transaction->price ?? 0) * ($transaction->quantity ?? 0));
+
                 return;
             }
 
@@ -77,21 +83,25 @@ class StockTransaction extends Model
                     ->setTimeFromTimeString(now()->format('H:i:s'));
             }
 
-            $product = Product::findOrFail($transaction->product_id);
-            $transaction->price = $product->purchase_price ?? 0;
-            $transaction->total_price = $transaction->price * $transaction->quantity;
-            $transaction->created_by = Auth::id();
+            $transaction->price = $transaction->price ?? 0;
+            $transaction->total_price = $transaction->total_price ?? ($transaction->price * $transaction->quantity);
+            $transaction->created_by = $transaction->created_by ?? Auth::id();
 
             if (is_null($transaction->stock_after)) {
-
                 DB::transaction(function () use ($transaction) {
-
                     $productStock = ProductStock::where('product_id', $transaction->product_id)
                         ->where('warehouse_id', $transaction->warehouse_id)
                         ->lockForUpdate()
                         ->firstOrCreate(
-                            ['product_id' => $transaction->product_id, 'warehouse_id' => $transaction->warehouse_id],
-                            ['qty_available' => 0, 'qty_reserved' => 0, 'qty_on_delivery' => 0]
+                            [
+                                'product_id' => $transaction->product_id,
+                                'warehouse_id' => $transaction->warehouse_id,
+                            ],
+                            [
+                                'qty_available' => 0,
+                                'qty_reserved' => 0,
+                                'qty_on_delivery' => 0,
+                            ]
                         );
 
                     $transaction->stock_before = $productStock->qty_available;
@@ -102,34 +112,55 @@ class StockTransaction extends Model
                             $productStock->qty_available += $qty;
                             $transaction->type = 'masuk';
                             break;
+
                         case 'reserve':
-                            if ($productStock->qty_available < $qty) throw new \Exception("Stok siap jual tidak cukup!");
+                            if ($productStock->qty_available < $qty) {
+                                throw new \Exception('Stok siap jual tidak cukup!');
+                            }
+
                             $productStock->qty_available -= $qty;
                             $productStock->qty_reserved += $qty;
                             $transaction->type = 'keluar';
                             break;
+
                         case 'delivery':
-                            if ($productStock->qty_reserved < $qty) throw new \Exception("Stok reserved tidak cukup!");
+                            if ($productStock->qty_reserved < $qty) {
+                                throw new \Exception('Stok reserved tidak cukup!');
+                            }
+
                             $productStock->qty_reserved -= $qty;
                             $productStock->qty_on_delivery += $qty;
                             $transaction->type = 'keluar';
                             break;
+
                         case 'complete':
-                            if ($productStock->qty_on_delivery < $qty) throw new \Exception("Stok delivery tidak cukup!");
+                            if ($productStock->qty_on_delivery < $qty) {
+                                throw new \Exception('Stok delivery tidak cukup!');
+                            }
+
                             $productStock->qty_on_delivery -= $qty;
                             $transaction->type = 'keluar';
                             break;
+
                         case 'cancel':
-                            if ($productStock->qty_reserved < $qty) throw new \Exception("Stok reserved tidak cukup dibatalkan!");
+                            if ($productStock->qty_reserved < $qty) {
+                                throw new \Exception('Stok reserved tidak cukup dibatalkan!');
+                            }
+
                             $productStock->qty_reserved -= $qty;
                             $productStock->qty_available += $qty;
                             $transaction->type = 'masuk';
                             break;
+
                         case 'adjustment_out':
-                            if ($productStock->qty_available < $qty) throw new \Exception("Stok fisik tidak cukup!");
+                            if ($productStock->qty_available < $qty) {
+                                throw new \Exception('Stok fisik tidak cukup!');
+                            }
+
                             $productStock->qty_available -= $qty;
                             $transaction->type = 'keluar';
                             break;
+
                         default:
                             $productStock->qty_available += $qty;
                             $transaction->mutation_type = 'stock_in';

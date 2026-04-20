@@ -7,11 +7,14 @@ use App\Models\Inventory\SerialNumber;
 use App\Models\Inventory\StockTransaction;
 use Filament\Forms;
 use Filament\Forms\Form;
+use Filament\Infolists\Components\Section;
+use Filament\Infolists\Components\TextEntry;
+use Filament\Infolists\Infolist;
+use Filament\Notifications\Notification;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Support\Facades\DB;
-use Filament\Notifications\Notification;
 
 class SerialNumberResource extends Resource
 {
@@ -25,6 +28,32 @@ class SerialNumberResource extends Resource
     public static function form(Form $form): Form
     {
         return $form->schema([]);
+    }
+
+    protected static function generateTransactionCode(string $code, $now): string
+    {
+        $romanMonths = ['I', 'II', 'III', 'IV', 'V', 'VI', 'VII', 'VIII', 'IX', 'X', 'XI', 'XII'];
+        $monthRoman = $romanMonths[$now->month - 1];
+        $year = $now->year;
+        $company = 'NEX';
+
+        $prefixLike = "%/{$code}/{$company}/{$monthRoman}/{$year}";
+
+        $last = StockTransaction::query()
+            ->where('transaction_code', 'like', $prefixLike)
+            ->orderByDesc('id')
+            ->value('transaction_code');
+
+        $seq = 1;
+
+        if ($last) {
+            $parts = explode('/', $last);
+            $seq = ((int) $parts[0]) + 1;
+        }
+
+        $seqStr = str_pad((string) $seq, 3, '0', STR_PAD_LEFT);
+
+        return "{$seqStr}/{$code}/{$company}/{$monthRoman}/{$year}";
     }
 
     public static function table(Table $table): Table
@@ -45,7 +74,7 @@ class SerialNumberResource extends Resource
                     ->searchable()
                     ->sortable()
                     ->limit(30)
-                    ->description(fn($record) => $record->product->product_code ?? ''),
+                    ->description(fn($record) => $record->product->product_code ?? '-'),
 
                 Tables\Columns\TextColumn::make('warehouse.warehouse_name')
                     ->label('Lokasi Gudang')
@@ -58,24 +87,25 @@ class SerialNumberResource extends Resource
                 Tables\Columns\TextColumn::make('status')
                     ->label('Status Unit')
                     ->badge()
-                    ->color(fn (string $state): string => match ($state) {
+                    ->color(fn(string $state): string => match ($state) {
                         SerialNumber::STATUS_AVAILABLE => 'success',
                         SerialNumber::STATUS_RESERVED => 'warning',
                         SerialNumber::STATUS_ON_DELIVERY => 'info',
-                        SerialNumber::STATUS_SOLD => 'gray', // Terjual bukan danger, lebih baik abu-abu (selesai)
-                        SerialNumber::STATUS_DEFECTIVE, SerialNumber::STATUS_LOST => 'danger',
+                        SerialNumber::STATUS_SOLD => 'gray',
+                        SerialNumber::STATUS_DEFECTIVE,
+                        SerialNumber::STATUS_LOST => 'danger',
                         default => 'gray',
                     })
-                    ->formatStateUsing(fn (string $state): string => str_replace('_', ' ', $state)),
+                    ->formatStateUsing(fn(string $state): string => str_replace('_', ' ', $state)),
 
                 Tables\Columns\TextColumn::make('inbound_date')
-                    ->label('Tgl Masuk (Suplai)')
+                    ->label('Tgl Masuk')
                     ->date('d M Y')
                     ->sortable()
                     ->toggleable(),
 
                 Tables\Columns\TextColumn::make('outbound_date')
-                    ->label('Tgl Keluar (Terjual)')
+                    ->label('Tgl Keluar')
                     ->date('d M Y')
                     ->sortable()
                     ->placeholder('Belum Keluar')
@@ -94,24 +124,21 @@ class SerialNumberResource extends Resource
                     ->searchable()
                     ->preload(),
 
-                // Filter status disesuaikan dengan Konstanta di Model
                 Tables\Filters\SelectFilter::make('status')
                     ->label('Status SN')
                     ->options(SerialNumber::getAllStatuses()),
             ])
-
             ->actions([
                 Tables\Actions\ViewAction::make(),
 
-                // === TAMBAHAN FITUR: QUICK ACTION LAPOR RUSAK ===
                 Tables\Actions\Action::make('mark_as_defective')
                     ->label('Lapor Rusak')
                     ->icon('heroicon-o-exclamation-triangle')
                     ->color('danger')
-                    ->visible(fn ($record) => $record->status === SerialNumber::STATUS_AVAILABLE)
+                    ->visible(fn($record) => $record->status === SerialNumber::STATUS_AVAILABLE)
                     ->requiresConfirmation()
                     ->modalHeading('Laporkan Barang Rusak / Afkir')
-                    ->modalDescription('Apakah Anda yakin barang ini rusak? Tindakan ini akan mengeluarkan SN dari stok siap jual dan membuat Log Mutasi Gudang secara otomatis.')
+                    ->modalDescription('Barang akan dikeluarkan dari stok siap jual dan dicatat ke audit transaksi.')
                     ->form([
                         Forms\Components\Textarea::make('reason')
                             ->label('Alasan Kerusakan')
@@ -122,43 +149,22 @@ class SerialNumberResource extends Resource
                         DB::transaction(function () use ($record, $data) {
                             $now = now();
 
-                            // 1. Ubah status SN ini menjadi rusak & catat waktu keluarnya
                             $record->update([
                                 'status' => SerialNumber::STATUS_DEFECTIVE,
                                 'outbound_date' => $now->toDateString(),
                             ]);
 
-                            // 2. LOGIKA GENERATE KODE TRANSAKSI STANDAR (ST-OUT)
-                            $romanMonths = ['I', 'II', 'III', 'IV', 'V', 'VI', 'VII', 'VIII', 'IX', 'X', 'XI', 'XII'];
-                            $monthRoman = $romanMonths[$now->month - 1];
-                            $year = $now->year;
-                            $company = 'NEX';
-                            $code = 'ST-OUT'; // Karena ini mutasi pengeluaran (rusak)
-
-                            $prefixLike = "%/{$code}/{$company}/{$monthRoman}/{$year}";
-
-                            $last = StockTransaction::query()
-                                ->where('transaction_code', 'like', $prefixLike)
-                                ->orderByDesc('id')
-                                ->value('transaction_code');
-
-                            $seq = 1;
-                            if ($last) {
-                                $parts = explode('/', $last);
-                                $seq = ((int) $parts[0]) + 1;
-                            }
-                            $seqStr = str_pad((string) $seq, 3, '0', STR_PAD_LEFT);
-                            $transactionCode = "{$seqStr}/{$code}/{$company}/{$monthRoman}/{$year}";
-
-                            // 3. OTOMATIS Buat Catatan di Tabel Transaksi Stok (Audit Trail)
                             StockTransaction::create([
                                 'product_id'       => $record->product_id,
                                 'warehouse_id'     => $record->warehouse_id,
-                                'transaction_code' => $transactionCode, // <-- Pakai kode yang sudah distandarisasi
+                                'serial_number_id' => $record->id,
+                                'transaction_code' => static::generateTransactionCode('ST-OUT', $now),
                                 'reference_number' => 'Pelaporan Kerusakan SN',
                                 'mutation_type'    => 'adjustment_out',
                                 'transaction_date' => $now,
                                 'quantity'         => 1,
+                                'price'            => 0,
+                                'total_price'      => 0,
                                 'notes'            => "Dilaporkan rusak (SN: {$record->serial_number}). Alasan: {$data['reason']}",
                                 'created_by'       => auth()->id() ?? 1,
                             ]);
@@ -166,7 +172,56 @@ class SerialNumberResource extends Resource
 
                         Notification::make()
                             ->title('Berhasil!')
-                            ->body("SN {$record->serial_number} dilaporkan rusak dan tercatat di mutasi gudang.")
+                            ->body("SN {$record->serial_number} dilaporkan rusak dan tercatat di audit transaksi.")
+                            ->success()
+                            ->send();
+                    }),
+
+                Tables\Actions\Action::make('mark_as_lost')
+                    ->label('Tandai Hilang')
+                    ->icon('heroicon-o-x-circle')
+                    ->color('danger')
+                    ->visible(fn($record) => in_array($record->status, [
+                        SerialNumber::STATUS_AVAILABLE,
+                        SerialNumber::STATUS_RESERVED,
+                    ]))
+                    ->requiresConfirmation()
+                    ->modalHeading('Tandai Barang Hilang')
+                    ->modalDescription('Barang akan ditandai hilang dan dicatat ke audit transaksi.')
+                    ->form([
+                        Forms\Components\Textarea::make('reason')
+                            ->label('Alasan / Keterangan')
+                            ->placeholder('Contoh: Tidak ditemukan saat stock opname')
+                            ->required(),
+                    ])
+                    ->action(function ($record, array $data) {
+                        DB::transaction(function () use ($record, $data) {
+                            $now = now();
+
+                            $record->update([
+                                'status' => SerialNumber::STATUS_LOST,
+                                'outbound_date' => $now->toDateString(),
+                            ]);
+
+                            StockTransaction::create([
+                                'product_id'       => $record->product_id,
+                                'warehouse_id'     => $record->warehouse_id,
+                                'serial_number_id' => $record->id,
+                                'transaction_code' => static::generateTransactionCode('ST-OUT', $now),
+                                'reference_number' => 'Pelaporan Kehilangan SN',
+                                'mutation_type'    => 'adjustment_out',
+                                'transaction_date' => $now,
+                                'quantity'         => 1,
+                                'price'            => 0,
+                                'total_price'      => 0,
+                                'notes'            => "Ditandai hilang (SN: {$record->serial_number}). Keterangan: {$data['reason']}",
+                                'created_by'       => auth()->id() ?? 1,
+                            ]);
+                        });
+
+                        Notification::make()
+                            ->title('Berhasil!')
+                            ->body("SN {$record->serial_number} ditandai hilang dan tercatat di audit transaksi.")
                             ->success()
                             ->send();
                     }),
@@ -175,14 +230,73 @@ class SerialNumberResource extends Resource
             ->defaultSort('created_at', 'desc');
     }
 
+    public static function infolist(Infolist $infolist): Infolist
+    {
+        return $infolist
+            ->schema([
+                Section::make('Informasi Serial Number')
+                    ->columns(2)
+                    ->schema([
+                        TextEntry::make('serial_number')
+                            ->label('Serial Number'),
+
+                        TextEntry::make('status')
+                            ->label('Status')
+                            ->badge(),
+
+                        TextEntry::make('product.product_name')
+                            ->label('Nama Product'),
+
+                        TextEntry::make('product.product_code')
+                            ->label('Kode Product'),
+
+                        TextEntry::make('warehouse.warehouse_name')
+                            ->label('Gudang'),
+
+                        TextEntry::make('inbound_date')
+                            ->label('Tanggal Masuk')
+                            ->date('d M Y'),
+
+                        TextEntry::make('outbound_date')
+                            ->label('Tanggal Keluar')
+                            ->date('d M Y')
+                            ->placeholder('Belum Keluar'),
+                    ]),
+
+                Section::make('Pelacakan')
+                    ->columns(2)
+                    ->schema([
+                        TextEntry::make('created_at')
+                            ->label('Data Dibuat')
+                            ->dateTime('d M Y H:i'),
+
+                        TextEntry::make('updated_at')
+                            ->label('Terakhir Diperbarui')
+                            ->dateTime('d M Y H:i'),
+                    ]),
+            ]);
+    }
+
     public static function getPages(): array
     {
         return [
             'index' => Pages\ListSerialNumbers::route('/'),
+            'view' => Pages\ViewSerialNumber::route('/{record}'),
         ];
     }
 
-    public static function canCreate(): bool { return false; }
-    public static function canEdit($record): bool { return false; }
-    public static function canDelete($record): bool { return false; }
+    public static function canCreate(): bool
+    {
+        return false;
+    }
+
+    public static function canEdit($record): bool
+    {
+        return false;
+    }
+
+    public static function canDelete($record): bool
+    {
+        return false;
+    }
 }
