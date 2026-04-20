@@ -1,4 +1,5 @@
 <?php
+
 namespace App\Filament\Resources\Inventory;
 
 use App\Filament\Resources\Inventory\InventoryMonitoringResource\Pages;
@@ -53,18 +54,17 @@ class InventoryMonitoringResource extends Resource
                     ->color('info')
                     ->icon('heroicon-o-building-office'),
 
-                // REVISI ARSITEKTUR 3-EMBER
                 Tables\Columns\TextColumn::make('qty_available')
                     ->label('Siap Jual')
                     ->numeric()
                     ->sortable()
                     ->badge()
-                    ->color(fn($state) => match (true) {
+                    ->color(fn ($state) => match (true) {
                         $state <= 0 => 'danger',
                         $state <= 5 => 'warning',
                         default => 'success',
                     })
-                    ->icon(fn($state) => match (true) {
+                    ->icon(fn ($state) => match (true) {
                         $state <= 0 => 'heroicon-m-x-circle',
                         $state <= 5 => 'heroicon-m-exclamation-triangle',
                         default => 'heroicon-m-check-circle',
@@ -87,15 +87,12 @@ class InventoryMonitoringResource extends Resource
                     ->color('info')
                     ->suffix(' Unit'),
 
-                // Menampilkan total fisik keseluruhan
                 Tables\Columns\TextColumn::make('total_fisik')
                     ->label('Total Fisik')
-                    ->getStateUsing(fn($record) => $record->qty_available + $record->qty_reserved + $record->qty_on_delivery)
+                    ->getStateUsing(fn ($record) => $record->qty_available + $record->qty_reserved + $record->qty_on_delivery)
                     ->numeric()
                     ->weight('semibold')
                     ->suffix(' Unit'),
-
-                // Kolom 'status' yang lama dihapus karena sudah diwakili oleh angka-angka di atas
             ])
             ->actions([
                 Tables\Actions\Action::make('view')
@@ -103,30 +100,17 @@ class InventoryMonitoringResource extends Resource
                     ->icon('heroicon-o-eye')
                     ->color('gray')
                     ->url(
-                        fn(ProductStock $record): string =>
+                        fn (ProductStock $record): string =>
                         route('filament.admin.resources.inventory.products.view', [
-                            'record' => $record->product->id
+                            'record' => $record->product->id,
                         ])
                     )
                     ->openUrlInNewTab(),
-
-                Tables\Actions\Action::make('restock')
-                    ->label('Mutasi / Restock')
-                    ->icon('heroicon-o-arrows-right-left')
-                    ->color('primary')
-                    ->url(
-                        fn(ProductStock $record): string =>
-                        route('filament.admin.resources.inventory.transactions.create', [
-                            'product' => $record->product->id,
-                            'warehouse' => $record->warehouse->id,
-                        ])
-                    ),
             ])
             ->filters([
-                // REVISI FILTER: Mencari stok siap jual yang rendah
                 Filter::make('low_stock')
                     ->label('Stok Siap Jual ≤ 10')
-                    ->query(fn(Builder $query) => $query->where('qty_available', '<=', 10)),
+                    ->query(fn (Builder $query) => $query->where('qty_available', '<=', 10)),
             ])
             ->bulkActions([])
             ->heading('Live Monitoring Stock Gudang')

@@ -1,4 +1,5 @@
 <?php
+
 namespace App\Filament\Resources\Inventory;
 
 use App\Filament\Resources\Inventory\TransactionReportResource\Pages;
@@ -35,8 +36,8 @@ class TransactionReportResource extends Resource
                     ->placeholder('–')
                     ->weight('semibold'),
 
-                Tables\Columns\TextColumn::make('no_reference')
-                    ->label('Ref. Sales')
+                Tables\Columns\TextColumn::make('reference_number')
+                    ->label('Referensi')
                     ->searchable()
                     ->sortable()
                     ->placeholder('–'),
@@ -69,8 +70,8 @@ class TransactionReportResource extends Resource
                 Tables\Columns\TextColumn::make('type')
                     ->label('Jenis')
                     ->badge()
-                    ->color(fn(string $state) => $state === 'masuk' ? 'warning' : 'success')
-                    ->formatStateUsing(fn(string $state) => $state === 'masuk' ? 'Masuk/Beli' : 'Keluar/Terjual'),
+                    ->color(fn (string $state) => $state === 'masuk' ? 'warning' : 'success')
+                    ->formatStateUsing(fn (string $state) => $state === 'masuk' ? 'Masuk/Beli' : 'Keluar/Terjual'),
 
                 Tables\Columns\TextColumn::make('quantity')
                     ->label('Qty')
@@ -83,14 +84,14 @@ class TransactionReportResource extends Resource
                 Tables\Columns\TextColumn::make('price')
                     ->label('Harga Satuan')
                     ->money('IDR')
-                    ->color(fn($state) => $state < 0 ? 'danger' : 'success')
+                    ->color(fn ($state) => $state < 0 ? 'danger' : 'success')
                     ->sortable()
                     ->weight('semibold'),
 
                 Tables\Columns\TextColumn::make('total_price')
                     ->label('Total')
                     ->money('IDR')
-                    ->color(fn($state) => $state < 0 ? 'danger' : 'success')
+                    ->color(fn ($state) => $state < 0 ? 'danger' : 'success')
                     ->sortable()
                     ->weight('semibold'),
 
@@ -101,12 +102,11 @@ class TransactionReportResource extends Resource
                 Tables\Columns\TextColumn::make('notes')
                     ->label('Catatan')
                     ->limit(40)
-                    ->tooltip(fn($record) => $record->notes)
+                    ->tooltip(fn ($record) => $record->notes)
                     ->toggleable()
                     ->placeholder('–'),
             ])
             ->filters([
-
                 Tables\Filters\Filter::make('transaction_date')
                     ->form([
                         Forms\Components\DatePicker::make('created_from')
@@ -127,11 +127,11 @@ class TransactionReportResource extends Resource
                         return $query
                             ->when(
                                 $data['created_from'],
-                                fn(Builder $query, $date): Builder => $query->whereDate('created_at', '>=', $date),
+                                fn (Builder $query, $date): Builder => $query->whereDate('created_at', '>=', $date),
                             )
                             ->when(
                                 $data['created_until'],
-                                fn(Builder $query, $date): Builder => $query->whereDate('created_at', '<=', $date),
+                                fn (Builder $query, $date): Builder => $query->whereDate('created_at', '<=', $date),
                             );
                     })
                     ->indicateUsing(function (array $data): array {
@@ -174,20 +174,21 @@ class TransactionReportResource extends Resource
                     ]),
             ])
             ->defaultSort('transaction_date', 'desc')
-            ->modifyQueryUsing(fn(Builder $query) => $query->with(['product.unit']))
+            ->modifyQueryUsing(fn (Builder $query) => $query->with(['product.unit']))
             ->deferLoading()
             ->paginated([10, 25, 50, 100]);
     }
 
-    // Disable CRUD actions
     public static function canCreate(): bool
     {
         return false;
     }
+
     public static function canEdit($record): bool
     {
         return false;
     }
+
     public static function canDelete($record): bool
     {
         return false;

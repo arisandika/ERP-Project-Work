@@ -1,4 +1,5 @@
 <?php
+
 namespace App\Filament\Resources\Inventory;
 
 use App\Filament\Resources\Inventory\WarehouseResource\Pages;
@@ -129,6 +130,11 @@ class WarehouseResource extends Resource
 
                 Tables\Columns\TextColumn::make('total_qty')
                     ->label('Total Stock')
+                    ->getStateUsing(fn($record) =>
+                        ($record->sum_qty_available ?? 0) +
+                        ($record->sum_qty_reserved ?? 0) +
+                        ($record->sum_qty_on_delivery ?? 0)
+                    )
                     ->numeric()
                     ->sortable()
                     ->badge()
@@ -229,10 +235,10 @@ class WarehouseResource extends Resource
                     'stocks as total_products' => function ($q) {
                         $q->select(DB::raw('COUNT(DISTINCT product_id)'));
                     },
-                    'stocks as total_qty' => function ($q) {
-                        $q->select(DB::raw('SUM(qty)'));
-                    },
-                ]);
+                ])
+                ->withSum('stocks as sum_qty_available', 'qty_available')
+                ->withSum('stocks as sum_qty_reserved', 'qty_reserved')
+                ->withSum('stocks as sum_qty_on_delivery', 'qty_on_delivery');
             });
     }
 
@@ -262,14 +268,18 @@ class WarehouseResource extends Resource
                             ->label('Jumlah Product')
                             ->badge()
                             ->color('info')
-                            ->state(fn(Warehouse $record) => $record->stocks()->distinct('product_id')->count('id'))
+                            ->state(fn(Warehouse $record) => $record->stocks()->distinct('product_id')->count('product_id'))
                             ->suffix(' items'),
 
                         TextEntry::make('total_qty')
                             ->label('Total Stock')
                             ->badge()
                             ->color('success')
-                            ->state(fn(Warehouse $record) => $record->stocks()->sum('qty'))
+                            ->state(fn(Warehouse $record) =>
+                                $record->stocks()->sum('qty_available') +
+                                $record->stocks()->sum('qty_reserved') +
+                                $record->stocks()->sum('qty_on_delivery')
+                            )
                             ->suffix(' unit'),
                     ]),
 

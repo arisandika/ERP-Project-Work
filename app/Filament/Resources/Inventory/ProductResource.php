@@ -54,6 +54,7 @@ class ProductResource extends Resource
                                     ->required()
                                     ->maxLength(50)
                                     ->prefixIcon('heroicon-o-tag'),
+
                                 Forms\Components\Textarea::make('description')
                                     ->label('Deskripsi')
                                     ->rows(3),
@@ -82,13 +83,6 @@ class ProductResource extends Resource
                                     ->rows(2),
                             ]),
 
-                        Forms\Components\TextInput::make('purchase_price')
-                            ->label('Harga Beli')
-                            ->numeric()
-                            ->prefix('IDR')
-                            ->required()
-                            ->minValue(0),
-
                         Forms\Components\TextInput::make('selling_price')
                             ->label('Harga Jual')
                             ->numeric()
@@ -113,7 +107,8 @@ class ProductResource extends Resource
                                     ->default(false)
                                     ->onColor('info')
                                     ->offColor('gray'),
-                            ])->columns(2),
+                            ])
+                            ->columns(2),
 
                         Forms\Components\FileUpload::make('image_path')
                             ->label('Foto Product')
@@ -126,7 +121,6 @@ class ProductResource extends Resource
                             ->openable()
                             ->downloadable()
                             ->preserveFilenames(),
-
                     ])
                     ->columns(2),
 
@@ -146,14 +140,13 @@ class ProductResource extends Resource
                                     ->distinct()
                                     ->disableOptionsWhenSelectedInSiblingRepeaterItems(),
 
-                                // REVISI: Mengubah 'qty' tunggal dan 'status' menjadi 3 kolom metric stock
                                 Forms\Components\TextInput::make('qty_available')
                                     ->label('Stock Tersedia')
                                     ->numeric()
                                     ->default(0)
                                     ->disabled()
                                     ->dehydrated(true)
-                                    ->helperText('Otomatis 0. Tambah via Transaksi Stock.')
+                                    ->helperText('Otomatis 0. Tambah via proses stok masuk / mutasi sistem.')
                                     ->prefixIcon('heroicon-o-archive-box'),
 
                                 Forms\Components\TextInput::make('qty_reserved')
@@ -170,7 +163,7 @@ class ProductResource extends Resource
                                     ->disabled()
                                     ->dehydrated(true),
                             ])
-                            ->columns(4) // REVISI: Diubah jadi 4 agar layout 1 baris pas untuk ke-4 field di atas
+                            ->columns(4)
                             ->defaultItems(1)
                             ->addActionLabel('Tambah Akses Gudang')
                             ->reorderable(false)
@@ -227,7 +220,6 @@ class ProductResource extends Resource
 
                 Tables\Columns\TextColumn::make('total_stock')
                     ->label('Total Stock Fisik')
-                    // REVISI: Menggabungkan total dari 3 kolom untuk physical stock
                     ->getStateUsing(
                         fn($record) =>
                         $record->productStocks()->sum('qty_available') +
@@ -250,13 +242,6 @@ class ProductResource extends Resource
                     })
                     ->suffix(' Qty'),
 
-                Tables\Columns\TextColumn::make('purchase_price')
-                    ->label('Harga Beli')
-                    ->money('IDR')
-                    ->color(fn($state) => $state < 0 ? 'danger' : 'success')
-                    ->sortable()
-                    ->weight('semibold'),
-
                 Tables\Columns\TextColumn::make('selling_price')
                     ->label('Harga Jual')
                     ->money('IDR')
@@ -275,28 +260,35 @@ class ProductResource extends Resource
                                 'normal' => 'Stock Tersedia Normal',
                             ])
                             ->prefixIcon('heroicon-o-chart-bar'),
+
                         Forms\Components\Select::make('warehouse_id')
                             ->label('Gudang')
-                            ->options(fn() => Warehouse::orderBy('warehouse_name')
-                                ->pluck('warehouse_name', 'id')
-                                ->toArray())
+                            ->options(
+                                fn() => Warehouse::orderBy('warehouse_name')
+                                    ->pluck('warehouse_name', 'id')
+                                    ->toArray()
+                            )
                             ->searchable()
                             ->preload()
                             ->prefixIcon('heroicon-o-building-office'),
                     ])
                     ->indicateUsing(function (array $data): array {
                         $indicators = [];
+
                         if (($data['status'] ?? null) === 'low') {
                             $indicators[] = 'Status Stock: Hanya Stock Rendah';
                         } elseif (($data['status'] ?? null) === 'normal') {
                             $indicators[] = 'Status Stock: Stock Normal';
                         }
+
                         if (!empty($data['warehouse_id'])) {
                             $name = Warehouse::find($data['warehouse_id'])?->warehouse_name;
+
                             if ($name) {
                                 $indicators[] = 'Gudang: ' . $name;
                             }
                         }
+
                         return $indicators;
                     })
                     ->query(function (Builder $query, array $data) {
@@ -306,9 +298,9 @@ class ProductResource extends Resource
                         if ($status === 'low') {
                             return $query->whereHas('productStocks', function ($subQuery) use ($warehouseId) {
                                 if ($warehouseId) {
-                                    $subQuery->where('id', $warehouseId);
+                                    $subQuery->where('warehouse_id', $warehouseId);
                                 }
-                                // REVISI: qty diubah menjadi qty_available
+
                                 $subQuery->where('qty_available', '<=', 10);
                             });
                         }
@@ -317,16 +309,22 @@ class ProductResource extends Resource
                             return $query
                                 ->whereHas('productStocks', function ($subQuery) use ($warehouseId) {
                                     if ($warehouseId) {
-                                        $subQuery->where('id', $warehouseId);
+                                        $subQuery->where('warehouse_id', $warehouseId);
                                     }
                                 })
                                 ->whereDoesntHave('productStocks', function ($subQuery) use ($warehouseId) {
                                     if ($warehouseId) {
-                                        $subQuery->where('id', $warehouseId);
+                                        $subQuery->where('warehouse_id', $warehouseId);
                                     }
-                                    // REVISI: qty diubah menjadi qty_available
+
                                     $subQuery->where('qty_available', '<=', 10);
                                 });
+                        }
+
+                        if ($warehouseId) {
+                            return $query->whereHas('productStocks', function ($subQuery) use ($warehouseId) {
+                                $subQuery->where('warehouse_id', $warehouseId);
+                            });
                         }
 
                         return $query;
@@ -370,14 +368,12 @@ class ProductResource extends Resource
 
     public static function getNavigationBadge(): ?string
     {
-        // REVISI: qty diubah menjadi qty_available
         $count = \App\Models\Inventory\ProductStock::where('qty_available', '<=', 10)
             ->distinct('product_id')
             ->count('product_id');
 
         return $count > 0 ? (string) $count : null;
     }
-
 
     public static function getNavigationBadgeColor(): ?string
     {

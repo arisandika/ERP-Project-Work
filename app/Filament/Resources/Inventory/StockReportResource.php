@@ -1,4 +1,5 @@
 <?php
+
 namespace App\Filament\Resources\Inventory;
 
 use App\Filament\Resources\Inventory\StockReportResource\Pages;
@@ -63,9 +64,8 @@ class StockReportResource extends Resource
                     ->badge()
                     ->color('info')
                     ->icon('heroicon-o-building-office')
-                    ->wrap(), // Membungkus teks jika gudang banyak
+                    ->wrap(),
 
-                // REVISI ARSITEKTUR LAPORAN: Memecah Total menjadi 3 detail metrik
                 Tables\Columns\TextColumn::make('qty_available_total')
                     ->label('Tersedia (Siap Jual)')
                     ->getStateUsing(fn($record) => $record->productStocks()->sum('qty_available'))
@@ -95,7 +95,6 @@ class StockReportResource extends Resource
                     ->color('indigo')
                     ->sortable(),
 
-                // Kolom Total Fisik Keseluruhan untuk keperluan audit
                 Tables\Columns\TextColumn::make('total_physical_stock')
                     ->label('Total Fisik Keseluruhan')
                     ->getStateUsing(fn($record) =>
@@ -107,13 +106,6 @@ class StockReportResource extends Resource
                     ->weight('semibold')
                     ->icon('heroicon-m-archive-box')
                     ->suffix(' Unit'),
-
-                Tables\Columns\TextColumn::make('purchase_price')
-                    ->label('Harga Beli')
-                    ->money('IDR')
-                    ->sortable()
-                    ->weight('semibold')
-                    ->toggleable(isToggledHiddenByDefault: true), // Disembunyikan secara default di laporan stock
 
                 Tables\Columns\TextColumn::make('selling_price')
                     ->label('Harga Jual')
@@ -129,15 +121,18 @@ class StockReportResource extends Resource
                         Forms\Components\Select::make('status')
                             ->label('Status Tersedia')
                             ->options([
-                                'low'    => 'Stock Tersedia Rendah (<= 10)',
+                                'low' => 'Stock Tersedia Rendah (<= 10)',
                                 'normal' => 'Stock Tersedia Normal (> 10)',
                             ]),
+
                         Forms\Components\Select::make('warehouse_id')
                             ->label('Lokasi Gudang')
-                            ->options(fn() => Warehouse::query()
+                            ->options(
+                                fn() => Warehouse::query()
                                     ->orderBy('warehouse_name')
                                     ->pluck('warehouse_name', 'id')
-                                    ->toArray())
+                                    ->toArray()
+                            )
                             ->searchable()
                             ->preload(),
                     ])
@@ -152,6 +147,7 @@ class StockReportResource extends Resource
 
                         if (! empty($data['warehouse_id'])) {
                             $name = Warehouse::find($data['warehouse_id'])?->warehouse_name;
+
                             if ($name) {
                                 $indicators[] = 'Gudang: ' . $name;
                             }
@@ -160,15 +156,15 @@ class StockReportResource extends Resource
                         return $indicators;
                     })
                     ->query(function (Builder $query, array $data) {
-                        $status      = $data['status'] ?? null;
+                        $status = $data['status'] ?? null;
                         $warehouseId = $data['warehouse_id'] ?? null;
 
-                        // REVISI: Mengganti query filter qty menjadi qty_available
                         if ($status === 'low') {
                             return $query->whereHas('productStocks', function ($subQuery) use ($warehouseId) {
                                 if ($warehouseId) {
-                                    $subQuery->where('id', $warehouseId);
+                                    $subQuery->where('warehouse_id', $warehouseId);
                                 }
+
                                 $subQuery->where('qty_available', '<=', 10);
                             });
                         }
@@ -177,22 +173,22 @@ class StockReportResource extends Resource
                             return $query
                                 ->whereHas('productStocks', function ($subQuery) use ($warehouseId) {
                                     if ($warehouseId) {
-                                        $subQuery->where('id', $warehouseId);
+                                        $subQuery->where('warehouse_id', $warehouseId);
                                     }
                                 })
                                 ->whereDoesntHave('productStocks', function ($subQuery) use ($warehouseId) {
                                     if ($warehouseId) {
-                                        $subQuery->where('id', $warehouseId);
+                                        $subQuery->where('warehouse_id', $warehouseId);
                                     }
+
                                     $subQuery->where('qty_available', '<=', 10);
                                 });
                         }
 
-                        // Jika hanya filter gudang yang dipilih tanpa status
-                        if ($warehouseId && !$status) {
-                             return $query->whereHas('productStocks', function ($subQuery) use ($warehouseId) {
-                                $subQuery->where('id', $warehouseId);
-                             });
+                        if ($warehouseId && ! $status) {
+                            return $query->whereHas('productStocks', function ($subQuery) use ($warehouseId) {
+                                $subQuery->where('warehouse_id', $warehouseId);
+                            });
                         }
 
                         return $query;
@@ -238,7 +234,6 @@ class StockReportResource extends Resource
 
     public static function getNavigationBadge(): ?string
     {
-        // REVISI: Mengganti qty menjadi qty_available
         $count = \App\Models\Inventory\ProductStock::where('qty_available', '<=', 10)
             ->distinct('product_id')
             ->count('product_id');
