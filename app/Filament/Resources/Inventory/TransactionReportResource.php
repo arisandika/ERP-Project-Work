@@ -109,16 +109,14 @@ class TransactionReportResource extends Resource
             ->filters([
                 Tables\Filters\Filter::make('transaction_date')
                     ->form([
-                        Forms\Components\DatePicker::make('created_from')
-                            ->label('Dibuat Dari')
-                            ->required()
+                        Forms\Components\DatePicker::make('date_from')
+                            ->label('Tanggal Transaksi Dari')
                             ->displayFormat('d M Y')
                             ->native(false)
                             ->prefixIcon('heroicon-o-calendar-days'),
 
-                        Forms\Components\DatePicker::make('created_until')
-                            ->label('Dibuat Hingga')
-                            ->required()
+                        Forms\Components\DatePicker::make('date_until')
+                            ->label('Tanggal Transaksi Hingga')
                             ->displayFormat('d M Y')
                             ->native(false)
                             ->prefixIcon('heroicon-o-calendar-days'),
@@ -126,23 +124,23 @@ class TransactionReportResource extends Resource
                     ->query(function (Builder $query, array $data): Builder {
                         return $query
                             ->when(
-                                $data['created_from'],
-                                fn (Builder $query, $date): Builder => $query->whereDate('created_at', '>=', $date),
+                                $data['date_from'] ?? null,
+                                fn (Builder $query, $date): Builder => $query->whereDate('transaction_date', '>=', $date),
                             )
                             ->when(
-                                $data['created_until'],
-                                fn (Builder $query, $date): Builder => $query->whereDate('created_at', '<=', $date),
+                                $data['date_until'] ?? null,
+                                fn (Builder $query, $date): Builder => $query->whereDate('transaction_date', '<=', $date),
                             );
                     })
                     ->indicateUsing(function (array $data): array {
                         $indicators = [];
 
-                        if ($data['created_from'] ?? null) {
-                            $indicators[] = 'Created from ' . Carbon::parse($data['created_from'])->toFormattedDateString();
+                        if ($data['date_from'] ?? null) {
+                            $indicators[] = 'Tanggal transaksi dari ' . Carbon::parse($data['date_from'])->translatedFormat('d M Y');
                         }
 
-                        if ($data['created_until'] ?? null) {
-                            $indicators[] = 'Created until ' . Carbon::parse($data['created_until'])->toFormattedDateString();
+                        if ($data['date_until'] ?? null) {
+                            $indicators[] = 'Tanggal transaksi hingga ' . Carbon::parse($data['date_until'])->translatedFormat('d M Y');
                         }
 
                         return $indicators;
@@ -174,7 +172,13 @@ class TransactionReportResource extends Resource
                     ]),
             ])
             ->defaultSort('transaction_date', 'desc')
-            ->modifyQueryUsing(fn (Builder $query) => $query->with(['product.unit']))
+            ->modifyQueryUsing(
+                fn (Builder $query) => $query->with([
+                    'product.unit',
+                    'warehouse',
+                    'creator',
+                ])
+            )
             ->deferLoading()
             ->paginated([10, 25, 50, 100]);
     }

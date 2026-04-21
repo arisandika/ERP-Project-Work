@@ -499,50 +499,85 @@ class DeliveryOrderResource extends Resource
             ->lockForUpdate()
             ->first();
 
-        $qtyAvailable = (float) ($stockUtama->qty_available ?? 0);
-        $qtyReserved = (float) ($stockUtama->qty_reserved ?? 0);
+        if (!$stockUtama) {
+            throw new \Exception("Stok tidak ditemukan.");
+        }
+
         $qtyKirim = (float) $item->qty;
-        $totalStok = $qtyAvailable + $qtyReserved;
 
-        if (!$stockUtama || $totalStok < $qtyKirim) {
-            throw new \Exception("Total stok gabungan untuk {$item->item_name} tidak mencukupi.");
+        if ($qtyKirim <= 0) {
+            return;
         }
 
-        $stockBefore = $qtyAvailable + $qtyReserved;
+        $totalAvailable = $stockUtama->qty_available + $stockUtama->qty_reserved;
 
-        $potongDariReserved = min($qtyReserved, $qtyKirim);
-        $sisaKekurangan = $qtyKirim - $potongDariReserved;
-
-        if ($potongDariReserved > 0) {
-            $stockUtama->decrement('qty_reserved', $potongDariReserved);
+        if ($totalAvailable < $qtyKirim) {
+            throw new \Exception("Stok tidak mencukupi untuk {$item->item_name}");
         }
 
-        if ($sisaKekurangan > 0) {
-            $stockUtama->decrement('qty_available', $sisaKekurangan);
+        $stockBefore = $totalAvailable;
+
+        // ===== POTONG STOK =====
+        $potongReserved = min($stockUtama->qty_reserved, $qtyKirim);
+        $sisa = $qtyKirim - $potongReserved;
+
+        if ($potongReserved > 0) {
+            $stockUtama->decrement('qty_reserved', $potongReserved);
+        }
+
+        if ($sisa > 0) {
+            $stockUtama->decrement('qty_available', $sisa);
         }
 
         $stockUtama->increment('qty_on_delivery', $qtyKirim);
 
-        StockTransaction::create([
-            'transaction_code'   => static::generateStockTransactionCode($now),
-            'transaction_date'   => $now,
-            'product_id'         => $item->item_id,
-            'warehouse_id'       => $warehouseUtamaId,
-            'mutation_type'      => 'delivery',
-            'type'               => 'keluar',
-            'quantity'           => $qtyKirim,
-            'stock_before'       => $stockBefore,
-            'stock_after'        => $stockBefore - $qtyKirim,
-            'price'              => 0,
-            'total_price'        => 0,
-            'reference_id'       => $record->id,
-            'reference_type'     => DeliveryOrder::class,
-            'reference_number'   => $record->do_number,
-            'notes'              => 'Pengiriman Fisik Keluar Gudang',
-            'created_by'         => auth()->id(),
-        ]);
+        // ===== HANDLE SN =====
+        $snsArray = static::handleSerializedProduct($record, $item, $data, $now);
 
-        static::handleSerializedProduct($record, $item, $data, $now);
+        // ===== CREATE TRANSACTION =====
+        if (!empty($snsArray)) {
+            foreach ($snsArray as $sn) {
+                $snModel = SerialNumber::where('serial_number', $sn)->lockForUpdate()->first();
+
+                StockTransaction::create([
+                    'product_id'       => $item->item_id,
+                    'warehouse_id'     => $warehouseUtamaId,
+                    'serial_number_id' => $snModel->id,
+                    'transaction_code' => static::generateStockTransactionCode($now),
+                    'mutation_type'    => 'delivery',
+                    'transaction_date' => $now,
+                    'quantity'         => 1,
+                    'stock_before'     => $stockBefore,
+                    'stock_after'      => $stockBefore - 1,
+                    'type'             => 'keluar',
+                    'reference_id'     => $record->id,
+                    'reference_type'   => DeliveryOrder::class,
+                    'reference_number' => $record->do_number,
+                    'notes'            => "DO {$record->do_number} - SN {$sn}",
+                    'created_by'       => auth()->id(),
+                ]);
+
+                $stockBefore--;
+            }
+        } else {
+            // non-serialized
+            StockTransaction::create([
+                'product_id'       => $item->item_id,
+                'warehouse_id'     => $warehouseUtamaId,
+                'transaction_code' => static::generateStockTransactionCode($now),
+                'mutation_type'    => 'delivery',
+                'transaction_date' => $now,
+                'quantity'         => $qtyKirim,
+                'stock_before'     => $stockBefore,
+                'stock_after'      => $stockBefore - $qtyKirim,
+                'type'             => 'keluar',
+                'reference_id'     => $record->id,
+                'reference_type'   => DeliveryOrder::class,
+                'reference_number' => $record->do_number,
+                'notes'            => "DO {$record->do_number}",
+                'created_by'       => auth()->id(),
+            ]);
+        }
     }
 
     protected static function handleSerializedProduct(
@@ -550,37 +585,49 @@ class DeliveryOrderResource extends Resource
         $item,
         array $data,
         $now
-    ): void {
+    ): array {
         $product = \App\Models\Inventory\Product::find($item->item_id);
 
         if (!$product || !$product->is_serialized) {
-            return;
+            return [];
         }
 
         $fieldName = "scanned_sns_{$item->id}";
 
         if (!isset($data[$fieldName])) {
-            return;
+            throw new \Exception("SN wajib diinput untuk {$item->item_name}");
         }
 
-        $snsArray = array_filter(array_map('trim', explode("\n", $data[$fieldName])));
-        $snString = implode(', ', $snsArray);
+        $snsArray = array_values(array_unique(array_filter(
+            array_map('trim', explode("\n", $data[$fieldName]))
+        )));
 
-        $item->update([
-            'scanned_sns' => $snString,
-        ]);
-
-        if (empty($snsArray)) {
-            return;
+        if (count($snsArray) !== (int) $item->qty) {
+            throw new \Exception("Jumlah SN tidak sesuai untuk {$item->item_name}");
         }
 
-        SerialNumber::whereIn('serial_number', $snsArray)
+        $snModels = SerialNumber::whereIn('serial_number', $snsArray)
             ->where('product_id', $item->item_id)
-            ->update([
+            ->lockForUpdate()
+            ->get();
+
+        if ($snModels->count() !== count($snsArray)) {
+            throw new \Exception("Ada SN yang tidak valid.");
+        }
+
+        foreach ($snModels as $sn) {
+            if ($sn->status !== SerialNumber::STATUS_AVAILABLE) {
+                throw new \Exception("SN {$sn->serial_number} tidak tersedia.");
+            }
+
+            $sn->update([
                 'status'        => SerialNumber::STATUS_ON_DELIVERY,
                 'customer_id'   => $record->nx_customer_id,
                 'outbound_date' => $now->toDateString(),
             ]);
+        }
+
+        return $snsArray;
     }
 
     protected static function generateStockTransactionCode($now): string
