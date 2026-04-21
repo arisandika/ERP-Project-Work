@@ -22,6 +22,7 @@ class Invoice extends Model
         'nx_sales_order_id',
         'nx_customer_id',
         'nx_employee_id',
+        'customer_po_number',
         'invoice_number',
         'invoice_date',
         'due_date',

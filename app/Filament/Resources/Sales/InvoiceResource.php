@@ -4,6 +4,8 @@ namespace App\Filament\Resources\Sales;
 
 use App\Filament\Resources\Sales\InvoiceResource\Pages;
 use App\Filament\Resources\Sales\InvoiceResource\RelationManagers;
+use App\Mail\InvoiceSent;
+use App\Models\Finance\FinancialRecord;
 use App\Models\Sales\Invoice;
 use App\Models\Sales\SalesOrder;
 use Barryvdh\DomPDF\Facade\Pdf;
@@ -28,23 +30,19 @@ use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Str;
 use Picqer\Barcode\BarcodeGeneratorPNG;
-use Illuminate\Support\Facades\Mail;
-use App\Mail\InvoiceSent;
 
 class InvoiceResource extends Resource
 {
     protected static ?string $model = Invoice::class;
 
     protected static ?string $navigationIcon = 'heroicon-o-banknotes';
-
     protected static ?string $navigationGroup = 'Manajemen Sales';
-
     protected static ?int $navigationSort = 5;
-
     protected static ?string $slug = 'sales/invoices';
-
     protected static ?string $pluralModelLabel = 'Invoice';
 
     public static function getNavigationBadge(): ?string
@@ -77,17 +75,15 @@ class InvoiceResource extends Resource
                                     modifyQueryUsing: fn ($query) => $query->orderByDesc('created_at')
                                 )
                                 ->afterStateUpdated(function ($state, callable $set, callable $get) {
-                                    if (!$state) {
+                                    if (! $state) {
                                         return;
                                     }
 
                                     $so = SalesOrder::with([
-                                        'items' => function ($query) {
-                                            $query->orderBy('created_at', 'asc');
-                                        }
+                                        'items' => fn ($query) => $query->orderBy('created_at', 'asc'),
                                     ])->find($state);
 
-                                    if (!$so) {
+                                    if (! $so) {
                                         return;
                                     }
 
@@ -176,57 +172,56 @@ class InvoiceResource extends Resource
                     ]),
 
                     Section::make('Daftar Item Invoice')->schema([
-                        Repeater::make('items')
-                            ->relationship()
-                            ->schema([
-                                Forms\Components\Hidden::make('id'),
-                                Forms\Components\Hidden::make('item_type'),
-                                Forms\Components\Hidden::make('item_id'),
+                            Repeater::make('items')
+                                ->schema([
+                                    Forms\Components\Hidden::make('id'),
+                                    Forms\Components\Hidden::make('item_type'),
+                                    Forms\Components\Hidden::make('item_id'),
 
-                                Grid::make(2)->schema([
-                                    TextInput::make('item_code')
-                                        ->label('Kode Product')
-                                        ->readOnly()
-                                        ->dehydrated(),
+                                    Grid::make(2)->schema([
+                                        TextInput::make('item_code')
+                                            ->label('Kode Product')
+                                            ->readOnly()
+                                            ->dehydrated(),
 
-                                    TextInput::make('item_name')
-                                        ->label('Nama Item')
-                                        ->readOnly()
-                                        ->dehydrated(),
+                                        TextInput::make('item_name')
+                                            ->label('Nama Item')
+                                            ->readOnly()
+                                            ->dehydrated(),
 
-                                    TextInput::make('qty')
-                                        ->label('Qty')
-                                        ->numeric()
-                                        ->required()
-                                        ->reactive()
-                                        ->afterStateUpdated(fn ($state, callable $set, callable $get) => self::updateItemTotal($get, $set)),
+                                        TextInput::make('qty')
+                                            ->label('Qty')
+                                            ->numeric()
+                                            ->required()
+                                            ->reactive()
+                                            ->afterStateUpdated(fn ($state, callable $set, callable $get) => self::updateItemTotal($get, $set)),
 
-                                    TextInput::make('unit_price')
-                                        ->label('Harga Satuan')
-                                        ->numeric()
-                                        ->prefix('IDR')
-                                        ->required()
-                                        ->minValue(0)
-                                        ->reactive()
-                                        ->afterStateUpdated(fn ($state, callable $set, callable $get) => self::updateItemTotal($get, $set)),
+                                        TextInput::make('unit_price')
+                                            ->label('Harga Satuan')
+                                            ->numeric()
+                                            ->prefix('IDR')
+                                            ->required()
+                                            ->minValue(0)
+                                            ->reactive()
+                                            ->afterStateUpdated(fn ($state, callable $set, callable $get) => self::updateItemTotal($get, $set)),
 
-                                    TextInput::make('line_total')
-                                        ->label('Subtotal')
-                                        ->numeric()
-                                        ->prefix('IDR')
-                                        ->required()
-                                        ->minValue(0)
-                                        ->dehydrated()
-                                        ->disabled()
-                                        ->extraInputAttributes(['style' => 'font-weight: bold;']),
-                                ]),
-                            ])
-                            ->addable(false)
-                            ->deletable(false)
-                            ->reorderable(false)
-                            ->reactive()
-                            ->columns(1),
-                    ])->collapsed(),
+                                        TextInput::make('line_total')
+                                            ->label('Subtotal')
+                                            ->numeric()
+                                            ->prefix('IDR')
+                                            ->required()
+                                            ->minValue(0)
+                                            ->dehydrated()
+                                            ->disabled()
+                                            ->extraInputAttributes(['style' => 'font-weight: bold;']),
+                                    ]),
+                                ])
+                                ->addable(false)
+                                ->deletable(false)
+                                ->reorderable(false)
+                                ->reactive()
+                                ->columns(1),
+                        ])->collapsed(),
                 ])->columnSpan(['lg' => 2]),
 
                 Group::make()->schema([
@@ -439,24 +434,49 @@ class InvoiceResource extends Resource
                     ->icon('heroicon-o-envelope')
                     ->color('warning')
                     ->requiresConfirmation()
-                    ->visible(fn (Invoice $record) => !empty($record->customer->email))
+                    ->visible(fn (Invoice $record) => ! empty($record->customer->email))
                     ->action(function (Invoice $record) {
                         try {
-                            Mail::to($record->customer->email)->queue(new InvoiceSent($record));
+                            DB::transaction(function () use ($record) {
+                                Mail::to($record->customer->email)->send(new InvoiceSent($record));
 
-                            if ($record->status === 'draft') {
-                                $record->update(['status' => 'sent']);
-                            }
+                                if ($record->status === 'draft') {
+                                    $record->update(['status' => 'sent']);
+                                }
+
+                                $existingReceivable = FinancialRecord::query()
+                                    ->where('type', 'piutang')
+                                    ->where('reference_type', Invoice::class)
+                                    ->where('reference_id', $record->id)
+                                    ->exists();
+
+                                if (! $existingReceivable) {
+                                    FinancialRecord::create([
+                                        'transaction_date' => $record->invoice_date,
+                                        'type' => 'piutang',
+                                        'amount' => (float) $record->grand_total,
+                                        'category' => 'Accounts Receivable',
+                                        'description' => 'Piutang customer dari invoice ' . $record->invoice_number,
+                                        'reference_number' => $record->invoice_number,
+                                        'reference_type' => Invoice::class,
+                                        'reference_id' => $record->id,
+                                        'created_by' => auth()->user()?->employee?->id,
+                                    ]);
+                                }
+                            });
 
                             Notification::make()
-                                ->title('Email Terkirim')
+                                ->title('Invoice berhasil dikirim dan piutang berhasil dibuat')
                                 ->success()
                                 ->send();
-                        } catch (\Exception $e) {
+                        } catch (\Throwable $e) {
+                            report($e);
+
                             Notification::make()
-                                ->title('Gagal')
+                                ->title('Gagal kirim invoice')
                                 ->body($e->getMessage())
                                 ->danger()
+                                ->persistent()
                                 ->send();
                         }
                     }),
@@ -524,7 +544,7 @@ class InvoiceResource extends Resource
         $discount = (float) ($get('discount') ?? 0);
         $discount = min($discount, $subtotal);
 
-        $tax = (float) ($get('tax') ?? 0); // persen
+        $tax = (float) ($get('tax') ?? 0);
         $tax = max(0, min($tax, 100));
 
         $afterDiscount = $subtotal - $discount;

@@ -42,7 +42,7 @@ class FinancialRecord extends Model
     {
         static::creating(function (FinancialRecord $model) {
             if (blank($model->transaction_code)) {
-                $model->transaction_code = self::generateTransactionCode($model->type);
+                $model->transaction_code = self::generateTransactionCode((string) $model->type);
             }
 
             $model->amount = round((float) ($model->amount ?? 0), 2);
@@ -64,6 +64,8 @@ class FinancialRecord extends Model
             $prefix = match (strtolower($type)) {
                 'pemasukan' => 'FIN-IN',
                 'pengeluaran' => 'FIN-OUT',
+                'hutang' => 'FIN-AP',
+                'piutang' => 'FIN-AR',
                 default => 'FIN-UNK',
             };
 

@@ -2,6 +2,8 @@
 
 namespace App\Filament\Resources\Sales\InvoiceResource\RelationManagers;
 
+use App\Models\Finance\FinancialRecord;
+use App\Models\Sales\Invoice;
 use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Resources\RelationManagers\RelationManager;
@@ -112,7 +114,7 @@ class PaymentsRelationManager extends RelationManager
                         return DB::transaction(function () use ($data, $livewire) {
                             $invoice = $livewire->ownerRecord;
 
-                            return $invoice->payments()->create([
+                            $payment = $invoice->payments()->create([
                                 'payment_date' => $data['payment_date'],
                                 'amount' => (float) $data['amount'],
                                 'payment_method' => $data['payment_method'],
@@ -120,6 +122,22 @@ class PaymentsRelationManager extends RelationManager
                                 'notes' => $data['notes'] ?? null,
                                 'created_by' => auth()->id() ?? 1,
                             ]);
+
+                            FinancialRecord::create([
+                                'transaction_date' => $data['payment_date'],
+                                'type' => 'pemasukan',
+                                'amount' => (float) $data['amount'],
+                                'category' => 'Accounts Receivable',
+                                'description' => 'Penerimaan pembayaran invoice ' . $invoice->invoice_number,
+                                'reference_number' => $invoice->invoice_number,
+                                'reference_type' => Invoice::class,
+                                'reference_id' => $invoice->id,
+                                'created_by' => auth()->user()?->employee?->id,
+                            ]);
+
+                            $invoice->refresh()->recalculateStatus();
+
+                            return $payment;
                         });
                     }),
             ])

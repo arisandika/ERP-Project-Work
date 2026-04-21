@@ -4,6 +4,7 @@ namespace App\Filament\Resources\Finance;
 
 use App\Filament\Resources\Finance\FinancialRecordResource\Pages;
 use App\Models\Finance\FinancialRecord;
+use App\Models\Procurement\GoodsReceipt;
 use App\Models\Procurement\PurchaseOrder;
 use App\Models\Sales\Payment;
 use Filament\Forms;
@@ -24,13 +25,9 @@ class FinancialRecordResource extends Resource
     protected static ?string $model = FinancialRecord::class;
 
     protected static ?string $navigationIcon = 'heroicon-o-banknotes';
-
     protected static ?string $navigationGroup = 'Manajemen Finance';
-
     protected static ?int $navigationSort = 2;
-
     protected static ?string $slug = 'finance/financial-records';
-
     protected static ?string $pluralModelLabel = 'Catatan Operasional & Jurnal';
 
     public static function form(Form $form): Form
@@ -38,7 +35,7 @@ class FinancialRecordResource extends Resource
         return $form
             ->schema([
                 Forms\Components\Section::make('Input Transaksi')
-                    ->description('Catat pengeluaran kecil atau pemasukan non-penjualan.')
+                    ->description('Catat pemasukan atau pengeluaran operasional secara manual.')
                     ->schema([
                         Forms\Components\Grid::make(2)
                             ->schema([
@@ -63,6 +60,8 @@ class FinancialRecordResource extends Resource
                                     ->options([
                                         'pemasukan' => 'Pemasukan (Uang Masuk)',
                                         'pengeluaran' => 'Pengeluaran (Uang Keluar)',
+                                        'hutang' => 'Hutang',
+                                        'piutang' => 'Piutang',
                                     ])
                                     ->native(false)
                                     ->prefixIcon('heroicon-o-tag'),
@@ -71,21 +70,27 @@ class FinancialRecordResource extends Resource
                                     ->label('Jenis Transaksi')
                                     ->required()
                                     ->options([
+                                        'Sales Revenue' => 'Sales Revenue',
+                                        'Accounts Receivable' => 'Accounts Receivable',
+                                        'Accounts Payable' => 'Accounts Payable',
+                                        'Reimbursement' => 'Reimbursement',
+                                        'Salary Expense' => 'Salary Expense',
+                                        'Office Rent' => 'Office Rent',
+                                        'Listrik' => 'Listrik',
+                                        'Air' => 'Air',
                                         'Bensin' => 'Bensin',
                                         'Makan' => 'Makan',
                                         'Transport' => 'Transport',
                                         'Parkir' => 'Parkir',
                                         'Hotel' => 'Hotel',
-                                        'Listrik' => 'Listrik',
-                                        'Air' => 'Air',
-                                        'Sales Revenue' => 'Sales Revenue',
-                                        'Lainnya' => 'Lainnya (Tulis di keterangan)',
+                                        'Lainnya' => 'Lainnya',
                                     ])
                                     ->searchable()
                                     ->native(false)
                                     ->prefixIcon('heroicon-o-tag'),
 
                                 Forms\Components\TextInput::make('amount')
+                                    ->label('Nominal')
                                     ->numeric()
                                     ->prefix('IDR')
                                     ->required()
@@ -100,7 +105,6 @@ class FinancialRecordResource extends Resource
                                 Forms\Components\FileUpload::make('receipt')
                                     ->label('Upload Bukti')
                                     ->image()
-                                    ->required()
                                     ->directory('financials')
                                     ->imageEditor()
                                     ->previewable()
@@ -111,7 +115,8 @@ class FinancialRecordResource extends Resource
                                         'image/jpg',
                                         'image/webp',
                                     ])
-                                    ->helperText('Upload bukti seperti struk (2MB)'),
+                                    ->helperText('Upload bukti seperti struk (maks 2MB)')
+                                    ->visible(fn (Forms\Get $get) => empty($get('reference_id'))),
                             ]),
                     ]),
             ]);
@@ -153,7 +158,7 @@ class FinancialRecordResource extends Resource
                     })
                     ->placeholder('Catatan Manual'),
 
-                Tables\Columns\TextColumn::make('creator')
+                Tables\Columns\TextColumn::make('creator_name')
                     ->label('Dibuat Oleh')
                     ->state(
                         fn ($record) =>
@@ -172,11 +177,15 @@ class FinancialRecordResource extends Resource
                     ->color(fn (string $state): string => match ($state) {
                         'pemasukan' => 'success',
                         'pengeluaran' => 'danger',
+                        'hutang' => 'warning',
+                        'piutang' => 'info',
                         default => 'gray',
                     })
                     ->formatStateUsing(fn (string $state) => match ($state) {
                         'pemasukan' => 'Pemasukan',
                         'pengeluaran' => 'Pengeluaran',
+                        'hutang' => 'Hutang',
+                        'piutang' => 'Piutang',
                         default => ucwords(str_replace('_', ' ', $state)),
                     })
                     ->placeholder('—'),
@@ -209,6 +218,8 @@ class FinancialRecordResource extends Resource
                     ->color(fn ($record) => match ($record->type) {
                         'pemasukan' => 'success',
                         'pengeluaran' => 'danger',
+                        'hutang' => 'warning',
+                        'piutang' => 'info',
                         default => 'gray',
                     })
                     ->sortable()
@@ -227,6 +238,8 @@ class FinancialRecordResource extends Resource
                     ->options([
                         'pemasukan' => 'Pemasukan',
                         'pengeluaran' => 'Pengeluaran',
+                        'hutang' => 'Hutang',
+                        'piutang' => 'Piutang',
                     ])
                     ->native(false),
 
@@ -235,13 +248,15 @@ class FinancialRecordResource extends Resource
                     ->options([
                         'manual' => 'Manual (Kas Kecil)',
                         'reimburse' => 'Reimburse Karyawan',
-                        'purchase_order' => 'Pembelian (Purchase Order)',
+                        'goods_receipt' => 'Goods Receipt',
+                        'purchase_order' => 'Purchase Order',
                         'invoice_payment' => 'Pembayaran Invoice',
                     ])
                     ->query(function ($query, $data) {
                         return match ($data['value'] ?? null) {
                             'manual' => $query->whereNull('reimburse_id')->whereNull('reference_id'),
                             'reimburse' => $query->whereNotNull('reimburse_id'),
+                            'goods_receipt' => $query->where('reference_type', GoodsReceipt::class),
                             'purchase_order' => $query->where('reference_type', PurchaseOrder::class),
                             'invoice_payment' => $query->where('reference_type', Payment::class),
                             default => $query,
@@ -249,18 +264,16 @@ class FinancialRecordResource extends Resource
                     })
                     ->native(false),
 
-                Tables\Filters\Filter::make('created_at')
+                Tables\Filters\Filter::make('transaction_date')
                     ->form([
-                        Forms\Components\DatePicker::make('created_from')
-                            ->label('Dibuat Dari')
-                            ->required()
+                        Forms\Components\DatePicker::make('date_from')
+                            ->label('Tanggal Dari')
                             ->displayFormat('d M Y')
                             ->native(false)
                             ->prefixIcon('heroicon-o-calendar-days'),
 
-                        Forms\Components\DatePicker::make('created_until')
-                            ->label('Dibuat Hingga')
-                            ->required()
+                        Forms\Components\DatePicker::make('date_until')
+                            ->label('Tanggal Hingga')
                             ->displayFormat('d M Y')
                             ->native(false)
                             ->prefixIcon('heroicon-o-calendar-days'),
@@ -268,23 +281,23 @@ class FinancialRecordResource extends Resource
                     ->query(function (Builder $query, array $data): Builder {
                         return $query
                             ->when(
-                                $data['created_from'] ?? null,
-                                fn (Builder $query, $date): Builder => $query->whereDate('created_at', '>=', $date),
+                                $data['date_from'] ?? null,
+                                fn (Builder $query, $date): Builder => $query->whereDate('transaction_date', '>=', $date),
                             )
                             ->when(
-                                $data['created_until'] ?? null,
-                                fn (Builder $query, $date): Builder => $query->whereDate('created_at', '<=', $date),
+                                $data['date_until'] ?? null,
+                                fn (Builder $query, $date): Builder => $query->whereDate('transaction_date', '<=', $date),
                             );
                     })
                     ->indicateUsing(function (array $data): array {
                         $indicators = [];
 
-                        if ($data['created_from'] ?? null) {
-                            $indicators[] = 'Created from ' . Carbon::parse($data['created_from'])->toFormattedDateString();
+                        if ($data['date_from'] ?? null) {
+                            $indicators[] = 'Tanggal dari ' . Carbon::parse($data['date_from'])->toFormattedDateString();
                         }
 
-                        if ($data['created_until'] ?? null) {
-                            $indicators[] = 'Created until ' . Carbon::parse($data['created_until'])->toFormattedDateString();
+                        if ($data['date_until'] ?? null) {
+                            $indicators[] = 'Tanggal hingga ' . Carbon::parse($data['date_until'])->toFormattedDateString();
                         }
 
                         return $indicators;
@@ -293,7 +306,7 @@ class FinancialRecordResource extends Resource
             ->actions([
                 Tables\Actions\ViewAction::make(),
             ])
-            ->defaultSort('created_at', 'desc');
+            ->defaultSort('transaction_date', 'desc');
     }
 
     public static function infolist(Infolist $infolist): Infolist
@@ -301,7 +314,7 @@ class FinancialRecordResource extends Resource
         return $infolist
             ->schema([
                 Section::make('Informasi Transaksi Keuangan')
-                    ->description('Detail transaksi pemasukan atau pengeluaran.')
+                    ->description('Detail transaksi pemasukan, pengeluaran, hutang, atau piutang.')
                     ->columns(2)
                     ->schema([
                         TextEntry::make('transaction_code')
@@ -329,11 +342,15 @@ class FinancialRecordResource extends Resource
                             ->color(fn ($state) => match ($state) {
                                 'pemasukan' => 'success',
                                 'pengeluaran' => 'danger',
+                                'hutang' => 'warning',
+                                'piutang' => 'info',
                                 default => 'gray',
                             })
                             ->formatStateUsing(fn ($state) => match ($state) {
                                 'pemasukan' => 'Pemasukan',
                                 'pengeluaran' => 'Pengeluaran',
+                                'hutang' => 'Hutang',
+                                'piutang' => 'Piutang',
                                 default => ucwords(str_replace('_', ' ', $state)),
                             })
                             ->placeholder('—'),
@@ -345,6 +362,8 @@ class FinancialRecordResource extends Resource
                             ->color(fn ($record) => match (strtolower($record->type)) {
                                 'pemasukan' => 'success',
                                 'pengeluaran' => 'danger',
+                                'hutang' => 'warning',
+                                'piutang' => 'info',
                                 default => 'gray',
                             })
                             ->placeholder('—'),
@@ -360,12 +379,12 @@ class FinancialRecordResource extends Resource
                     ]),
 
                 Section::make('Informasi Dokumen Referensi Sistem')
-                    ->description('Transaksi ini dicatat secara otomatis dari modul lain di ERP.')
+                    ->description('Transaksi ini dicatat otomatis dari modul lain di ERP.')
                     ->columns(2)
                     ->visible(fn ($record) => filled($record->reference_id))
                     ->schema([
                         TextEntry::make('reference_number')
-                            ->label('Nomor Referensi (ID)')
+                            ->label('Nomor Referensi')
                             ->weight('semibold')
                             ->color('primary')
                             ->icon('heroicon-o-document-text'),
