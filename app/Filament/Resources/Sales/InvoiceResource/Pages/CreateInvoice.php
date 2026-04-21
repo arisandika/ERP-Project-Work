@@ -32,6 +32,7 @@ class CreateInvoice extends CreateRecord
             'tax' => 0,
             'grand_total' => 0,
             'total_paid' => 0,
+            'items' => [],
         ]);
     }
 
@@ -40,6 +41,7 @@ class CreateInvoice extends CreateRecord
         $data['invoice_number'] = $this->generateInvoiceNumber();
 
         $items = $data['items'] ?? [];
+
         $subtotal = collect($items)->sum(function ($item) {
             $qty = (float) ($item['qty'] ?? 0);
             $price = (float) ($item['unit_price'] ?? 0);
@@ -48,7 +50,7 @@ class CreateInvoice extends CreateRecord
         });
 
         $discount = min((float) ($data['discount'] ?? 0), $subtotal);
-        $tax = (float) ($data['tax'] ?? 0); // persen
+        $tax = max(0, min((float) ($data['tax'] ?? 0), 100));
         $afterDiscount = $subtotal - $discount;
         $grandTotal = $afterDiscount + ($afterDiscount * ($tax / 100));
 
@@ -96,7 +98,7 @@ class CreateInvoice extends CreateRecord
         $company = 'NEX';
         $code = 'INV';
 
-        $prefixLike = "%/$code/$company/$roman/$year";
+        $prefixLike = "%/{$code}/{$company}/{$roman}/{$year}";
 
         $last = Invoice::withTrashed()
             ->where('invoice_number', 'like', $prefixLike)
