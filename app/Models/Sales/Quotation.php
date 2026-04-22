@@ -24,6 +24,9 @@ class Quotation extends Model
         'quotation_date',
         'valid_until',
         'status',
+        'is_primary',
+        'rejected_reason',
+        // 'accepted_at',
         'subtotal',
         'tax',
         'discount_amount',
@@ -34,40 +37,49 @@ class Quotation extends Model
         'field_staff_pic_id',
         'created_by',
         'approved_by',
-        'approved_at'
+        'approved_at',
     ];
 
     protected $casts = [
-        'quotation_date' => 'datetime',
-        'valid_until' => 'datetime',
-        'approved_at' => 'datetime'
+        'is_primary' => 'boolean',
+        'quotation_date' => 'date',
+        'valid_until' => 'date',
+        // 'accepted_at' => 'datetime',
+        'approved_at' => 'datetime',
+        'subtotal' => 'decimal:2',
+        'tax' => 'decimal:2',
+        'discount_amount' => 'decimal:2',
+        'grand_total' => 'decimal:2',
     ];
 
-    // --- Relations ---
+    // -------------------------------------------------------------------------
+    // Constants
+    // -------------------------------------------------------------------------
+
+    const STATUS_NEW = 'new';
+    const STATUS_SENT = 'sent';
+    const STATUS_NEGOTIATION = 'negotiation';
+    const STATUS_ACCEPTED = 'accepted';
+    const STATUS_REJECTED = 'rejected';
+    const STATUS_EXPIRED = 'expired';
+
+    // -------------------------------------------------------------------------
+    // Relations
+    // -------------------------------------------------------------------------
 
     public function deal(): BelongsTo
     {
-        return $this->belongsTo(Deal::class, 'nx_deal_id')->withTrashed()->withDefault();
-    }
-
-    public function internalPic(): BelongsTo
-    {
-        return $this->belongsTo(SalesPerson::class, 'internal_pic_id')->withDefault();
-    }
-
-    public function fieldStaffPic(): BelongsTo
-    {
-        return $this->belongsTo(SalesPerson::class, 'field_staff_pic_id')->withDefault();
+        return $this->belongsTo(Deal::class, 'nx_deal_id');
     }
 
     public function createdBy(): BelongsTo
     {
-        return $this->belongsTo(Employee::class, 'created_by')->withDefault();
+        return $this->belongsTo(Employee::class, 'created_by');
     }
 
     public function approvedBy(): BelongsTo
     {
-        return $this->belongsTo(Employee::class, 'approved_by')->withDefault();
+        return $this->belongsTo(Employee::class, 'approved_by');
     }
 
     public function promoCode(): BelongsTo
@@ -85,21 +97,73 @@ class Quotation extends Model
         return $this->hasOne(SalesOrder::class, 'nx_quotation_id');
     }
 
-    // --- Boot Logic ---
+    public function internalPic(): BelongsTo
+    {
+        return $this->belongsTo(Employee::class, 'internal_pic_id');
+    }
+
+    public function fieldStaffPic(): BelongsTo
+    {
+        return $this->belongsTo(SalesPerson::class, 'field_staff_pic_id');
+    }
+
+    // -------------------------------------------------------------------------
+    // Helpers
+    // -------------------------------------------------------------------------
+
+    public function isAccepted(): bool
+    {
+        return $this->status === self::STATUS_ACCEPTED;
+    }
+
+    public function isRejected(): bool
+    {
+        return $this->status === self::STATUS_REJECTED;
+    }
+
+    // -------------------------------------------------------------------------
+    // Actions
+    // -------------------------------------------------------------------------
+
+    /**
+     * Tandai quotation ini sebagai accepted.
+     * Otomatis set is_primary = true dan isi accepted_at.
+     */
+    public function markAsAccepted(): bool
+    {
+        return $this->update([
+            'status' => self::STATUS_ACCEPTED,
+            'accepted_at' => now(),
+            'is_primary' => true,
+        ]);
+    }
+
+    /**
+     * Tandai quotation ini sebagai rejected.
+     */
+    public function markAsRejected(string $reason = null): bool
+    {
+        return $this->update([
+            'status' => self::STATUS_REJECTED,
+            'rejected_reason' => $reason,
+            'is_primary' => false,
+        ]);
+    }
+
+    // -------------------------------------------------------------------------
+    // Lifecycle Hooks
+    // -------------------------------------------------------------------------
 
     protected static function booted(): void
     {
-        static::creating(function (Quotation $q) {
-            if ($q->quotation_date) {
-                $q->quotation_date = Carbon::parse($q->quotation_date)->setTimeFromTimeString(now()->format('H:i:s'));
-            }
-
-            if ($q->valid_until) {
-                $q->valid_until = Carbon::parse($q->valid_until)->setTimeFromTimeString(now()->format('H:i:s'));
-            }
-
-            if (empty($q->created_by) && auth()->check()) {
-                $q->created_by = auth()->user()->employee?->id;
+        // Rules: Enforce hanya 1 is_primary per deal
+        // Saat quotation ini di-set is_primary = true,
+        // semua quotation lain dalam deal yang sama di-unset
+        static::saving(function (Quotation $quotation) {
+            if ($quotation->is_primary) {
+                static::where('nx_deal_id', $quotation->nx_deal_id)
+                    ->where('id', '!=', $quotation->id ?? 0)
+                    ->update(['is_primary' => false]);
             }
         });
     }

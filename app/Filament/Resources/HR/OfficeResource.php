@@ -21,7 +21,7 @@ class OfficeResource extends Resource
 
     protected static ?string $navigationIcon = 'heroicon-o-building-office-2';
 
-    protected static ?string $navigationGroup = 'Manajemen HR';
+    protected static ?string $navigationGroup = 'Manajemen HR ✅';
 
     protected static ?int $navigationSort = 4;
 

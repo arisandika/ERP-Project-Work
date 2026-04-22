@@ -15,7 +15,7 @@ class ReimbursementRequestPolicy
      */
     public function viewAny(User $user): bool
     {
-        return $user->can('view_any_h::r::reimbursement::approval');
+        return $user->can('view_any_finance::reimbursement::request');
     }
 
     /**
@@ -23,7 +23,7 @@ class ReimbursementRequestPolicy
      */
     public function view(User $user, ReimbursementRequest $reimbursementRequest): bool
     {
-        return $user->can('view_h::r::reimbursement::approval');
+        return $user->can('view_finance::reimbursement::request');
     }
 
     /**
@@ -31,7 +31,7 @@ class ReimbursementRequestPolicy
      */
     public function create(User $user): bool
     {
-        return $user->can('create_h::r::reimbursement::approval');
+        return $user->can('create_finance::reimbursement::request');
     }
 
     /**
@@ -39,7 +39,7 @@ class ReimbursementRequestPolicy
      */
     public function update(User $user, ReimbursementRequest $reimbursementRequest): bool
     {
-        return $user->can('update_h::r::reimbursement::approval');
+        return $user->can('update_finance::reimbursement::request');
     }
 
     /**
@@ -47,7 +47,7 @@ class ReimbursementRequestPolicy
      */
     public function delete(User $user, ReimbursementRequest $reimbursementRequest): bool
     {
-        return $user->can('delete_h::r::reimbursement::approval');
+        return $user->can('delete_finance::reimbursement::request');
     }
 
     /**
@@ -55,7 +55,7 @@ class ReimbursementRequestPolicy
      */
     public function deleteAny(User $user): bool
     {
-        return $user->can('delete_any_h::r::reimbursement::approval');
+        return $user->can('delete_any_finance::reimbursement::request');
     }
 
     /**
@@ -63,7 +63,7 @@ class ReimbursementRequestPolicy
      */
     public function forceDelete(User $user, ReimbursementRequest $reimbursementRequest): bool
     {
-        return $user->can('force_delete_h::r::reimbursement::approval');
+        return $user->can('force_delete_finance::reimbursement::request');
     }
 
     /**
@@ -71,7 +71,7 @@ class ReimbursementRequestPolicy
      */
     public function forceDeleteAny(User $user): bool
     {
-        return $user->can('force_delete_any_h::r::reimbursement::approval');
+        return $user->can('force_delete_any_finance::reimbursement::request');
     }
 
     /**
@@ -79,7 +79,7 @@ class ReimbursementRequestPolicy
      */
     public function restore(User $user, ReimbursementRequest $reimbursementRequest): bool
     {
-        return $user->can('restore_h::r::reimbursement::approval');
+        return $user->can('restore_finance::reimbursement::request');
     }
 
     /**
@@ -87,7 +87,7 @@ class ReimbursementRequestPolicy
      */
     public function restoreAny(User $user): bool
     {
-        return $user->can('restore_any_h::r::reimbursement::approval');
+        return $user->can('restore_any_finance::reimbursement::request');
     }
 
     /**
@@ -95,7 +95,7 @@ class ReimbursementRequestPolicy
      */
     public function replicate(User $user, ReimbursementRequest $reimbursementRequest): bool
     {
-        return $user->can('replicate_h::r::reimbursement::approval');
+        return $user->can('replicate_finance::reimbursement::request');
     }
 
     /**
@@ -103,6 +103,6 @@ class ReimbursementRequestPolicy
      */
     public function reorder(User $user): bool
     {
-        return $user->can('reorder_h::r::reimbursement::approval');
+        return $user->can('reorder_finance::reimbursement::request');
     }
 }

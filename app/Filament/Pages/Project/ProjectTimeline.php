@@ -19,7 +19,7 @@ class ProjectTimeline extends Page
 
     protected static string $routePath = 'pm/project-timeline';
 
-    protected static ?string $navigationGroup = 'Manajemen Project';
+    protected static ?string $navigationGroup = 'Manajemen Project ✅';
 
     protected static ?string $navigationLabel = 'Project Timeline';
 

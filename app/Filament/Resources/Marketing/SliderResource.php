@@ -25,7 +25,7 @@ class SliderResource extends Resource
 
     protected static ?string $navigationIcon = 'heroicon-o-photo';
 
-    protected static ?string $navigationGroup = 'Manajemen Marketing';
+    protected static ?string $navigationGroup = 'Manajemen Marketing ✅';
 
     protected static ?int $navigationSort = 3;
 

@@ -11,6 +11,7 @@ use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
+use Illuminate\Support\HtmlString;
 
 class CustomerResource extends Resource
 {
@@ -35,64 +36,53 @@ class CustomerResource extends Resource
     {
         return $form
             ->schema([
-                Forms\Components\Section::make('Informasi Pelanggan')
-                    ->description('Pilih tipe pelanggan untuk menampilkan form yang sesuai.')
+                Forms\Components\Section::make('Informasi Customer')
+                    ->description('Lengkapi data untuk customer.')
                     ->schema([
-                        Forms\Components\Select::make('customer_type')
-                            ->label('Tipe Pelanggan')
-                            ->options([
-                                'individual' => 'Perorangan (B2C)',
-                                'company' => 'Perusahaan (B2B)',
-                            ])
-                            ->required()
-                            ->native(false)
-                            ->live()
-                            ->afterStateUpdated(fn(Forms\Set $set) => $set('name', null)),
+                        Forms\Components\Grid::make(2)
+                            ->schema([
+                                Forms\Components\TextInput::make('name')
+                                    ->label(fn(Forms\Get $get) => $get('customer_type') === 'company' ? 'Nama Perusahaan' : 'Nama Individu')
+                                    ->required()
+                                    ->maxLength(255)
+                                    ->prefixIcon('heroicon-o-building-office'),
 
-                        Forms\Components\TextInput::make('name')
-                            ->label(fn(Forms\Get $get) => $get('customer_type') === 'company' ? 'Nama Perusahaan (PT/CV)' : 'Nama Lengkap')
-                            ->required()
-                            ->maxLength(255)
-                            ->prefixIcon('heroicon-o-user')
-                            ->visible(fn(Forms\Get $get) => filled($get('customer_type'))),
+                                Forms\Components\Select::make('customer_type')
+                                    ->label('Tipe')
+                                    ->options([
+                                        'individual' => 'Perorangan (B2C)',
+                                        'company' => 'Perusahaan (B2B)',
+                                    ])
+                                    ->required()
+                                    ->native(false)
+                                    ->live()
+                                    ->prefixIcon('heroicon-o-identification'),
 
-                        Forms\Components\TextInput::make('email')
-                            ->label('Email')
-                            ->email()
-                            ->required()
-                            ->maxLength(255)
-                            ->unique(ignoreRecord: true)
-                            ->prefixIcon('heroicon-o-envelope')
-                            ->visible(fn(Forms\Get $get) => filled($get('customer_type'))),
+                                Forms\Components\TextInput::make('email')
+                                    ->label('Email')
+                                    ->email()
+                                    ->required()
+                                    ->maxLength(255)
+                                    ->unique(ignoreRecord: true)
+                                    ->prefixIcon('heroicon-o-envelope'),
 
-                        Forms\Components\TextInput::make('phone')
-                            ->label('No. WhatsApp')
-                            ->tel()
-                            ->maxLength(20)
-                            ->prefixIcon('heroicon-o-device-phone-mobile')
-                            ->required()
-                            ->helperText('No. ini wajib diisi untuk validasi QR Code.'),
+                                Forms\Components\TextInput::make('phone')
+                                    ->label('No. WhatsApp')
+                                    ->tel()
+                                    ->maxLength(20)
+                                    ->prefixIcon('heroicon-o-device-phone-mobile')
+                                    ->required(),
 
-                        Forms\Components\Select::make('status')
-                            ->label('Status Customer')
-                            ->options([
-                                'active' => 'Active',
-                                'inactive' => 'Inactive',
-                                'lost' => 'Lost',
-                            ])
-                            ->default('active')
-                            ->required()
-                            ->native(false),
+                                Forms\Components\Textarea::make('address')
+                                    ->label(fn(Forms\Get $get) => $get('customer_type') === 'company' ? 'Alamat Kantor' : 'Alamat Domisili')
+                                    ->rows(3)
+                                    ->maxLength(255)
+                                    ->columnSpanFull(), // KONSISTENSI: Layout seperti Lead
+                            ]),
+                    ]),
 
-                        Forms\Components\Textarea::make('address')
-                            ->label(fn(Forms\Get $get) => $get('customer_type') === 'company' ? 'Alamat Kantor' : 'Alamat Domisili')
-                            ->rows(3)
-                            ->maxLength(255)
-                            ->visible(fn(Forms\Get $get) => filled($get('customer_type'))),
-                    ])
-                    ->columns(2),
-
-                Forms\Components\Section::make('Detail Perorangan')
+                Forms\Components\Section::make('Informasi Tambahan & Legalitas')
+                    ->description('Lengkapi data legalitas seperti NIK atau NPWP.')
                     ->schema([
                         Forms\Components\TextInput::make('nik')
                             ->label('NIK (KTP)')
@@ -100,49 +90,170 @@ class CustomerResource extends Resource
                             ->minLength(16)
                             ->maxLength(16)
                             ->prefixIcon('heroicon-o-identification')
-                            ->required(),
-
-                        Forms\Components\TextInput::make('phone')
-                            ->label('No. WhatsApp')
-                            ->tel()
-                            ->maxLength(20)
-                            ->prefixIcon('heroicon-o-device-phone-mobile')
                             ->required()
-                            ->helperText('No. ini wajib diisi untuk validasi QR Code.'),
-                    ])
-                    ->columns(2)
-                    ->visible(fn(Forms\Get $get) => $get('customer_type') === 'individual'),
+                            ->visible(fn(Forms\Get $get) => $get('customer_type') === 'individual'),
 
-                Forms\Components\Section::make('Detail Perusahaan & PIC')
-                    ->description('Lengkapi data NPWP dan Penanggung Jawab (PIC).')
-                    ->schema([
                         Forms\Components\TextInput::make('npwp')
                             ->label('NPWP Perusahaan')
                             ->prefixIcon('heroicon-o-document-text')
-                            ->columnSpanFull(),
+                            ->visible(fn(Forms\Get $get) => $get('customer_type') === 'company'),
+                    ])->columns(2),
 
-                        Forms\Components\Grid::make(3)
+                Forms\Components\Section::make('Informasi PIC (Person In Charge)')
+                    ->description('Data narahubung dari pihak Customer/Perusahaan')
+                    ->collapsible()
+                    ->visible(fn(Forms\Get $get) => $get('customer_type') === 'company')
+                    ->schema([
+                        Forms\Components\Grid::make(2)
                             ->schema([
                                 Forms\Components\TextInput::make('pic_name')
                                     ->label('Nama PIC')
                                     ->required()
                                     ->prefixIcon('heroicon-o-user-circle'),
 
-                                Forms\Components\TextInput::make('pic_position')
-                                    ->label('Jabatan PIC')
-                                    ->prefixIcon('heroicon-o-briefcase'),
+                                Forms\Components\TextInput::make('pic_email')
+                                    ->label('Email PIC')
+                                    ->email()
+                                    ->required()
+                                    ->prefixIcon('heroicon-o-envelope'),
 
                                 Forms\Components\TextInput::make('pic_phone')
                                     ->label('No. WhatsApp PIC')
                                     ->tel()
                                     ->maxLength(20)
                                     ->prefixIcon('heroicon-o-device-phone-mobile')
-                                    ->required()
-                                    ->helperText('No. ini wajib diisi untuk validasi QR Code.'),
+                                    ->required(),
+
+                                Forms\Components\TextInput::make('pic_position')
+                                    ->label('Jabatan PIC')
+                                    ->prefixIcon('heroicon-o-briefcase'),
                             ]),
+                    ]),
+
+                Forms\Components\Section::make('Status & Klasifikasi')
+                    ->schema([
+                        Forms\Components\Grid::make(2)
+                            ->schema([
+                                Forms\Components\Select::make('source')
+                                    ->label('Sumber dari')
+                                    ->options([
+                                        'manual' => 'Manual',
+                                        'website' => 'Website/Form',
+                                        'social_media' => 'Social Media (IG/FB/Tiktok)',
+                                        'referral' => 'Referral/Rekomendasi',
+                                        'cold_call' => 'Cold Call/Canvas',
+                                        'ads' => 'Iklan Berbayar',
+                                        'lead_conversion' => 'Konversi dari Lead',
+                                        'other' => 'Lainnya',
+                                    ])
+                                    ->required()
+                                    ->searchable()
+                                    ->native(false),
+
+                                Forms\Components\Select::make('status')
+                                    ->label('Status Customer')
+                                    ->options([
+                                        'active' => 'Active',
+                                        'inactive' => 'Inactive',
+                                        'lost' => 'Lost',
+                                    ])
+                                    ->default('active')
+                                    ->required()
+                                    ->native(false),
+                            ]),
+                    ]),
+
+                Forms\Components\Section::make('Daftar Deal Terkait')
+                    ->icon('heroicon-o-briefcase')
+                    ->collapsible()
+                    ->schema([
+                        Forms\Components\Placeholder::make('deals_list')
+                            ->hiddenLabel()
+                            ->content(function ($record) {
+                                if (!$record)
+                                    return new HtmlString('<p class="text-sm italic text-gray-500">Simpan data terlebih dahulu.</p>');
+
+                                $deals = $record->deals()->withTrashed()->with('stage')->latest()->get();
+                                if ($deals->isEmpty())
+                                    return new HtmlString('<p class="text-sm italic text-gray-500">Belum ada deal.</p>');
+
+                                $html = '<div class="grid w-full grid-cols-1 gap-4 card-repeater md:grid-cols-2">';
+                                foreach ($deals as $deal) {
+                                    $isDeleted = $deal->trashed();
+                                    $containerClass = $isDeleted ? 'bg-danger-50 ring-danger-600/30 border-danger-200' : match ($deal->status) {
+                                        'won' => 'bg-success-100/40 ring-success-600/30',
+                                        'lost' => 'bg-danger-100/40 ring-danger-600/30',
+                                        default => 'bg-warning-100/40 ring-warning-600/30',
+                                    };
+                                    $badgeClass = $isDeleted ? 'bg-white text-danger-600 ring-danger-600/30' : match ($deal->status) {
+                                        'won' => 'bg-white text-success-600 ring-success-600/30',
+                                        'lost' => 'bg-white text-danger-600 ring-danger-600/30',
+                                        default => 'bg-white text-warning-600 ring-warning-600/30',
+                                    };
+
+                                    $val = 'IDR ' . number_format($deal->estimated_value, 0, ',', '.');
+                                    $html .= "<div class='flex flex-col justify-between p-4 rounded-lg ring-1 ring-inset shadow-sm {$containerClass}'>
+                                    <div class='flex items-start justify-between mb-2'>
+                                        <div><span class='block text-sm font-bold'>{$deal->deal_number}</span><span class='text-xs opacity-75'>{$deal->created_at->format('d M Y')}</span></div>
+                                        <span class='inline-flex items-center rounded-md px-2 py-1 text-xs ring-1 ring-inset shadow-sm capitalize {$badgeClass}'>" . ($isDeleted ? 'Terhapus' : $deal->status) . "</span>
+                                    </div>
+                                    <div class='flex items-end justify-between pt-3 mt-3 border-t border-black/10'>
+                                        <div class='text-xs'><p class='opacity-70 text-[10px] uppercase'>Stage</p><p class='font-semibold'>" . ($deal->stage->name ?? '-') . "</p></div>
+                                        <div class='text-xs text-right'><p class='opacity-70 text-[10px] uppercase'>Value</p><p class='font-semibold'>{$val}</p></div>
+                                    </div>
+                                </div>";
+                                }
+                                $html .= '</div>';
+                                return new HtmlString($html);
+                            }),
                     ])
-                    ->visible(fn(Forms\Get $get) => $get('customer_type') === 'company'),
-            ]);
+                    ->visible(fn($record) => $record && $record->deals()->withTrashed()->exists()),
+
+                Forms\Components\Section::make('Daftar Penawaran Terkait')
+                    ->icon('heroicon-o-document-text')
+                    ->collapsible()
+                    ->schema([
+                        Forms\Components\Placeholder::make('quotations_list')
+                            ->hiddenLabel()
+                            ->content(function ($record) {
+                                if (!$record)
+                                    return null;
+
+                                $quotations = $record->quotations()->with('deal')->withTrashed()->latest()->get();
+                                if ($quotations->isEmpty())
+                                    return new HtmlString('<p class="text-sm italic text-gray-500">Belum ada penawaran.</p>');
+
+                                $html = '<div class="grid w-full grid-cols-1 gap-4 card-repeater md:grid-cols-2">';
+                                foreach ($quotations as $q) {
+                                    $isDeleted = $q->trashed();
+                                    $status = $isDeleted ? 'deleted' : $q->status;
+
+                                    $containerClass = match ($status) {
+                                        'accepted' => 'bg-success-100/40 ring-success-600/30',
+                                        'rejected', 'deleted' => 'bg-danger-100/40 ring-danger-600/30',
+                                        default => 'bg-warning-100/40 ring-warning-600/30',
+                                    };
+                                    $badgeClass = 'bg-white ring-1 ring-inset shadow-sm px-2 py-1 text-xs rounded-md capitalize';
+
+                                    $total = 'IDR ' . number_format($q->grand_total, 0, ',', '.');
+                                    $html .= "<div class='flex flex-col justify-between p-4 rounded-lg ring-1 ring-inset shadow-sm {$containerClass}'>
+                                    <div class='flex items-start justify-between mb-2'>
+                                        <div><span class='block text-sm font-bold'>{$q->quotation_number}</span><span class='text-xs opacity-75'>{$q->quotation_date->format('d M Y')}</span></div>
+                                        <span class='{$badgeClass}'>" . ($isDeleted ? 'Dihapus' : $q->status) . "</span>
+                                    </div>
+                                    <div class='flex items-end justify-between pt-3 mt-3 border-t border-black/10'>
+                                        <div class='text-xs'><p class='opacity-70 text-[10px] uppercase'>Deal Ref</p><p class='font-semibold'>" . ($q->deal?->deal_number ?? '-') . "</p></div>
+                                        <div class='text-xs text-right'><p class='opacity-70 text-[10px] uppercase'>Grand Total</p><p class='font-semibold'>{$total}</p></div>
+                                    </div>
+                                </div>";
+                                }
+                                $html .= '</div>';
+                                return new HtmlString($html);
+                            }),
+                    ])
+                    ->visible(fn($record) => $record && $record->quotations()->withTrashed()->exists()),
+
+            ])->columns(1); // DIUBAH: Layout utama menjadi 1 kolom untuk Section
     }
 
     public static function table(Table $table): Table
@@ -219,8 +330,8 @@ class CustomerResource extends Resource
                 Tables\Filters\SelectFilter::make('customer_type')
                     ->label('Tipe Customer')
                     ->options([
-                        'individual' => 'Perorangan',
-                        'company' => 'Perusahaan',
+                        'individual' => 'Perorangan (B2C)',
+                        'company' => 'Perusahaan (B2B)',
                     ]),
 
                 Tables\Filters\TrashedFilter::make(),
@@ -240,13 +351,11 @@ class CustomerResource extends Resource
                 Tables\Actions\ViewAction::make(),
                 Tables\Actions\EditAction::make(),
                 Tables\Actions\DeleteAction::make(),
-                // Tables\Actions\ForceDeleteAction::make(),
                 Tables\Actions\RestoreAction::make(),
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([
                     Tables\Actions\DeleteBulkAction::make(),
-                    // Tables\Actions\ForceDeleteBulkAction::make(),
                     Tables\Actions\RestoreBulkAction::make(),
                 ]),
             ]);
@@ -255,7 +364,6 @@ class CustomerResource extends Resource
     public static function getRelations(): array
     {
         return [
-            //
         ];
     }
 

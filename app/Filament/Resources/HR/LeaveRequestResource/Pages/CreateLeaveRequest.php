@@ -4,8 +4,10 @@ namespace App\Filament\Resources\HR\LeaveRequestResource\Pages;
 
 use App\Filament\Resources\HR\LeaveRequestResource;
 use App\Models\HR\Attendance;
+use App\Models\HR\Holiday;
 use App\Models\HR\Leave;
 use App\Models\HR\LeaveRequest;
+use Carbon\CarbonPeriod; // <-- Tambahkan ini
 use Filament\Facades\Filament;
 use Filament\Notifications\Notification;
 use Filament\Resources\Pages\CreateRecord;
@@ -82,40 +84,22 @@ class CreateLeaveRequest extends CreateRecord
         }
 
         /**
-         * WEEKEND
-         */
-        if ($start->isWeekend() || $end->isWeekend()) {
-            Notification::make()
-                ->title('Tanggal tidak valid')
-                ->body("Tanggal tidak boleh jatuh pada Sabtu atau Minggu.")
-                ->danger()
-                ->send();
-
-            $this->halt();
-        }
-
-        /**
          * OVERLAP CUTI
          */
         $overlap = LeaveRequest::query()
             ->where('employee_id', $employee->id)
             ->whereIn('status', ['pending', 'approved'])
             ->where(function ($q) use ($start, $end) {
-
                 $q->whereBetween('start_date', [$start, $end])
                     ->orWhereBetween('end_date', [$start, $end])
                     ->orWhere(function ($sub) use ($start, $end) {
-
                         $sub->where('start_date', '<=', $start)
                             ->where('end_date', '>=', $end);
-
                     });
-
             })
             ->exists();
 
         if ($overlap) {
-
             Notification::make()
                 ->title('Tanggal bertabrakan')
                 ->body('Anda sudah memiliki pengajuan cuti pada rentang tanggal tersebut.')
@@ -126,21 +110,9 @@ class CreateLeaveRequest extends CreateRecord
         }
 
         /**
-         * HITUNG HARI KERJA
-         */
-        $workingDays = $start->diffInDaysFiltered(
-            fn(Carbon $date) => !$date->isWeekend(),
-            $end
-        );
-
-        $data['total_days'] = $workingDays + 1;
-
-
-        /**
          * VALIDASI JENIS CUTI
          */
         if (empty($data['leave_id'])) {
-
             Notification::make()
                 ->title('Jenis cuti wajib dipilih')
                 ->danger()
@@ -152,7 +124,6 @@ class CreateLeaveRequest extends CreateRecord
         $leave = Leave::find($data['leave_id']);
 
         if (!$leave) {
-
             Notification::make()
                 ->title('Jenis cuti tidak ditemukan')
                 ->danger()
@@ -162,7 +133,55 @@ class CreateLeaveRequest extends CreateRecord
         }
 
         /**
-         * HITUNG PEMAKAIAN CUTI
+         * LOGIC BARU: HITUNG HARI KERJA EFEKTIF (Mengecualikan Weekend & Libur)
+         */
+        $leaveDays = 0;
+        $period = CarbonPeriod::create($start, $end);
+
+        // Ambil array tanggal libur nasional di rentang waktu tersebut
+        $holidays = Holiday::whereBetween('date', [$start->format('Y-m-d'), $end->format('Y-m-d')])
+            ->pluck('date')
+            ->map(fn($d) => Carbon::parse($d)->format('Y-m-d'))
+            ->toArray();
+
+        // Opsional: Jika jenis cutinya adalah 'Melahirkan' atau 'Haji', biasanya aturannya hari kalender (tanpa potong libur)
+        // Silakan sesuaikan nama cuti di regex ini jika ada pengecualian.
+        $isFullCalendar = preg_match('/melahirkan|haji/i', $leave->name);
+
+        foreach ($period as $date) {
+            $dateString = $date->format('Y-m-d');
+
+            if ($isFullCalendar) {
+                $leaveDays++; // Dihitung semua hari jika cuti khusus
+            } else {
+                $isWeekend = $date->isWeekend();
+                $isHoliday = in_array($dateString, $holidays);
+
+                // Hitung sebagai 1 hari cuti JIKA BUKAN weekend dan BUKAN libur nasional
+                if (!$isWeekend && !$isHoliday) {
+                    $leaveDays++;
+                }
+            }
+        }
+
+        // Masukkan hasil perhitungan ke form data
+        $data['total_days'] = $leaveDays;
+
+        /**
+         * VALIDASI TOTAL HARI (Jika user cuma pilih tanggal pas hari libur/weekend)
+         */
+        if ($data['total_days'] === 0) {
+            Notification::make()
+                ->title('Tanggal tidak valid')
+                ->body('Rentang tanggal yang dipilih hanya berisi Hari Libur atau Akhir Pekan (Weekend).')
+                ->danger()
+                ->send();
+
+            $this->halt();
+        }
+
+        /**
+         * HITUNG PEMAKAIAN CUTI & VALIDASI KUOTA
          */
         $used = LeaveRequest::query()
             ->where('employee_id', $employee->id)
@@ -170,17 +189,12 @@ class CreateLeaveRequest extends CreateRecord
             ->where('status', 'approved')
             ->sum('total_days');
 
-
         $remaining = $leave->days_count - $used;
 
-        /**
-         * VALIDASI KUOTA
-         */
         if ($data['total_days'] > $remaining) {
-
             Notification::make()
                 ->title('Jatah cuti tidak mencukupi')
-                ->body("Sisa cuti Anda {$remaining} hari.")
+                ->body("Pengajuan cuti ini memotong {$data['total_days']} hari kerja, namun sisa cuti Anda hanya {$remaining} hari.")
                 ->danger()
                 ->send();
 
@@ -224,16 +238,14 @@ class CreateLeaveRequest extends CreateRecord
         }
 
         /**
-         * Cek jika jam kerja hari ini sudah selesai
+         * Cek jika jam kerja hari ini sudah selesai (Untuk cuti mendadak)
          */
         if ($start->isToday()) {
             $shift = $employee->shift;
 
-            // Pastikan karyawan punya shift dan jam pulang
             if ($shift && $shift->end_time) {
-                $shiftEndTime = Carbon::parse($shift->end_time); // Ini akan otomatis menggunakan tanggal hari ini
+                $shiftEndTime = Carbon::parse($shift->end_time);
 
-                // Jika waktu sekarang sudah melewati jam pulang shift
                 if (now()->gt($shiftEndTime)) {
                     Notification::make()
                         ->title('Waktu Pengajuan Habis')

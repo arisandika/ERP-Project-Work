@@ -121,7 +121,8 @@ class ViewTicket extends ViewRecord
                             ->badge()
                             ->color('gray')
                             ->icon('heroicon-o-user')
-                            ->placeholder('Belum ada member ditugaskan'),
+                            ->placeholder('Belum ada member ditugaskan')
+                            ->listWithLineBreaks(),
 
                         TextEntry::make('creator.full_name')
                             ->label('Dibuat Oleh')

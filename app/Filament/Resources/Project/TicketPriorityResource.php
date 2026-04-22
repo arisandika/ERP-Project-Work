@@ -20,7 +20,7 @@ class TicketPriorityResource extends Resource
 
     protected static ?string $navigationIcon = 'heroicon-o-flag';
 
-    protected static ?string $navigationGroup = 'Manajemen Project';
+    protected static ?string $navigationGroup = 'Manajemen Project ✅';
 
     protected static ?int $navigationSort = 7;
 

@@ -64,7 +64,7 @@ class NotesRelationManager extends RelationManager
                                 'undo',
                             ])
                             ->fileAttachmentsDisk('public')
-                            ->fileAttachmentsDirectory('attachments')
+                            ->fileAttachmentsDirectory('attachments/project-notes')
                             ->fileAttachmentsVisibility('public')
                             ->helperText('Tuliskan catatan dan lampirkan file atau gambar disini'),
 

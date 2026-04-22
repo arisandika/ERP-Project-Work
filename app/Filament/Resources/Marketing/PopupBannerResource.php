@@ -25,7 +25,7 @@ class PopupBannerResource extends Resource
 
     protected static ?string $navigationIcon = 'heroicon-o-megaphone';
 
-    protected static ?string $navigationGroup = 'Manajemen Marketing';
+    protected static ?string $navigationGroup = 'Manajemen Marketing ✅';
 
     protected static ?int $navigationSort = 2;
 
@@ -81,14 +81,19 @@ class PopupBannerResource extends Resource
                         Forms\Components\RichEditor::make('content_text')
                             ->label('Isi Pengumuman')
                             ->toolbarButtons([
+                                'blockquote',
                                 'bold',
-                                'italic',
-                                'underline',
                                 'bulletList',
-                                'orderedList',
-                                'link',
+                                'codeBlock',
                                 'h2',
-                                'h3'
+                                'h3',
+                                'italic',
+                                'link',
+                                'orderedList',
+                                'redo',
+                                'strike',
+                                'underline',
+                                'undo',
                             ])
                             ->required(fn(Get $get) => $get('type') === 'text')
                             ->visible(fn(Get $get) => $get('type') === 'text')

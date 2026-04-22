@@ -3,6 +3,8 @@ namespace App\Http\Controllers\API\HR;
 
 use App\Http\Controllers\Controller;
 use App\Models\HR\Attendance;
+use App\Models\HR\Holiday;
+use App\Models\HR\LeaveRequest;
 use Filament\Notifications\Notification;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
@@ -33,8 +35,8 @@ class AttendanceController extends Controller
 
         $today = now()->toDateString();
 
-        // Cek apakah karyawan sedang cuti
-        $isOnLeave = \App\Models\HR\LeaveRequest::where('employee_id', $employee->id)
+        // 1. Cek apakah karyawan sedang cuti
+        $isOnLeave = LeaveRequest::where('employee_id', $employee->id)
             ->where('status', 'approved')
             ->whereDate('start_date', '<=', $today)
             ->whereDate('end_date', '>=', $today)
@@ -50,9 +52,21 @@ class AttendanceController extends Controller
             return redirect()->back();
         }
 
-        // NEW LOGIC: Cari placeholder presensi hari ini.
-        // firstOrNew digunakan sebagai *fallback* jika seandainya cron job gagal jalan semalam, 
-        // sistem tidak akan error dan akan membuat instancenya secara on-the-fly.
+        // 2. Cek apakah hari ini adalah Hari Libur Nasional
+        $holiday = Holiday::whereDate('date', $today)->first();
+
+        // BLOKIR MUTLAK JIKA HARI LIBUR (Tanpa terkecuali)
+        if ($holiday) {
+            Notification::make()
+                ->title('Tidak Bisa Presensi')
+                ->body('Hari ini adalah hari libur (' . $holiday->name . '). Tidak diperbolehkan melakukan presensi.')
+                ->danger()
+                ->persistent()
+                ->send();
+            return redirect()->back();
+        }
+
+        // Cari placeholder presensi hari ini
         $attendance = Attendance::firstOrNew(
             [
                 'employee_id' => $employee->id,
@@ -64,7 +78,7 @@ class AttendanceController extends Controller
             ]
         );
 
-        // Cek apakah sudah presensi masuk (jam masuk sudah terisi)
+        // Cek apakah sudah presensi masuk
         if ($attendance->exists && $attendance->clock_in) {
             Notification::make()
                 ->title('Sudah Presensi Masuk')
@@ -142,7 +156,7 @@ class AttendanceController extends Controller
             return redirect()->back();
         }
 
-        // NEW LOGIC: UPDATE data attendance yang sudah ada (bukan Create lagi)
+        // UPDATE data attendance
         $attendance->fill([
             'shift_id' => $shift->id,
             'note' => $request->filled('note') ? $request->note : null,
@@ -150,12 +164,11 @@ class AttendanceController extends Controller
             'latitude_in' => $request->lat,
             'longitude_in' => $request->lng,
             'face_snapshot_in' => $photoInPath,
-            'status' => $status, // 'hadir' atau 'terlambat'
+            'status' => $status,
         ]);
 
         $attendance->save();
 
-        // Notifikasi sukses
         Notification::make()
             ->title('Berhasil Presensi Masuk')
             ->body("Kamu berhasil presensi masuk. Status kehadiran: " . ucfirst($status))
@@ -188,12 +201,28 @@ class AttendanceController extends Controller
 
         $today = now()->toDateString();
 
-        // LOGIC LAMA SUDAH BENAR: Mencari record presensi hari ini
+        // Mencari record presensi hari ini
         $attendance = Attendance::where('employee_id', $employee->id)
             ->whereDate('date', $today)
             ->first();
 
-        // LOGIC LAMA SUDAH BENAR: Jika belum ada clock_in, tolak
+        // Cek Hari Libur saat mau Clock Out
+        $holiday = Holiday::whereDate('date', $today)->first();
+
+        // BLOKIR MUTLAK JIKA HARI LIBUR
+        // Catatan: Jika entah bagaimana karyawan sudah berhasil Clock In (misal data libur diinput belakangan),
+        // kita tetap mengizinkan dia Clock Out agar datanya tidak error menggantung.
+        if ($holiday && (!$attendance || !$attendance->clock_in)) {
+            Notification::make()
+                ->title('Tidak Bisa Presensi Keluar')
+                ->body('Hari ini adalah hari libur (' . $holiday->name . '). Sistem ditutup.')
+                ->danger()
+                ->persistent()
+                ->send();
+            return redirect()->back();
+        }
+
+        // Jika belum ada clock_in, tolak
         if (!$attendance || !$attendance->clock_in) {
             Notification::make()
                 ->title('Belum Presensi Masuk')
@@ -213,7 +242,7 @@ class AttendanceController extends Controller
             return redirect()->back();
         }
 
-        // Validasi lokasi (sama seperti check-in)
+        // Validasi lokasi
         $office = $employee->office;
         $distance = $this->getDistance(
             $office->latitude,
@@ -277,7 +306,7 @@ class AttendanceController extends Controller
             return redirect()->back();
         }
 
-        // LOGIC LAMA SUDAH BENAR: Ini tinggal mengupdate record yang sudah ada
+        // UPDATE record
         $attendance->update([
             'clock_out' => now(),
             'latitude_out' => $request->lat,

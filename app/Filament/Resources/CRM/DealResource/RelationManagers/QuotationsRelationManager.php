@@ -83,7 +83,7 @@ class QuotationsRelationManager extends RelationManager
                     ->searchable(['deal.customer.name', 'deal.lead.name'])
                     ->sortable()
                     ->weight('semibold')
-                    ->icon('heroicon-o-user')
+                    ->icon('heroicon-o-building-office')
                     ->color(function (Quotation $record) {
                         $deal = $record->deal()->withTrashed()->first();
                         $lead = $deal?->lead()->withTrashed()->first();
@@ -126,7 +126,7 @@ class QuotationsRelationManager extends RelationManager
                     ->label('Field Staff')
                     ->searchable()
                     ->sortable()
-                    ->icon('heroicon-o-user')
+                    ->icon('heroicon-o-users')
                     ->weight('semibold')
                     ->toggleable(isToggledHiddenByDefault: false),
 
@@ -235,24 +235,9 @@ class QuotationsRelationManager extends RelationManager
 
                 Tables\Filters\SelectFilter::make('internal_pic_id')
                     ->label('PIC (Internal Sales)')
-                    ->relationship('internalPic', 'full_name', function ($query) {
-                        return $query->where('type', 'internal');
-                    })
+                    ->relationship('internalPic', 'full_name')
                     ->searchable()
-                    ->preload()
-                    ->default(function () {
-                        $employeeId = auth()->user()?->employee?->id;
-
-                        if ($employeeId) {
-                            $salesPerson = SalesPerson::where('employee_id', $employeeId)
-                                ->where('type', 'internal')
-                                ->first();
-
-                            return $salesPerson?->id;
-                        }
-
-                        return null;
-                    }),
+                    ->preload(),
 
                 Tables\Filters\SelectFilter::make('field_staff_pic_id')
                     ->label('PIC (External/Field Staff)')

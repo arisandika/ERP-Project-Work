@@ -1,11 +1,14 @@
 <?php
 namespace App\Models\HR;
 
+use App\Models\CRM\Deal;
+use App\Models\CRM\Lead;
 use App\Models\Finance\FinancialRecord;
 use App\Models\Finance\ReimbursementRequest;
 use App\Models\Project\Notification;
 use App\Models\Project\Project;
 use App\Models\Project\Ticket;
+use App\Models\Sales\Quotation;
 use App\Models\User;
 use Filament\Panel;
 use Illuminate\Database\Eloquent\Model;
@@ -84,6 +87,26 @@ class Employee extends Model
     public function reimbursementRequests()
     {
         return $this->hasMany(ReimbursementRequest::class, 'employee_id', 'id');
+    }
+
+    public function leads(): HasMany
+    {
+        return $this->hasMany(Lead::class, 'created_by');
+    }
+
+    public function convertedLeads(): HasMany
+    {
+        return $this->hasMany(Lead::class, 'converted_by');
+    }
+
+    public function deals(): HasMany
+    {
+        return $this->hasMany(Deal::class, 'created_by');
+    }
+
+    public function internalQuotations(): HasMany
+    {
+        return $this->hasMany(Quotation::class, 'internal_pic_id');
     }
 
     // ================================ //
