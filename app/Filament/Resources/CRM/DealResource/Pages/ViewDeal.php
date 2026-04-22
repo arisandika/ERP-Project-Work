@@ -3,9 +3,11 @@
 namespace App\Filament\Resources\CRM\DealResource\Pages;
 
 use App\Filament\Resources\CRM\DealResource;
+use App\Filament\Resources\CRM\LeadResource;
 use App\Models\CRM\Deal;
 use Filament\Actions;
 use Filament\Actions\Action;
+use Filament\Infolists\Components\Fieldset;
 use Filament\Infolists\Components\Grid;
 use Filament\Infolists\Components\Section;
 use Filament\Infolists\Components\TextEntry;
@@ -36,208 +38,188 @@ class ViewDeal extends ViewRecord
     {
         return $infolist
             ->schema([
-                Section::make('Informasi Deal')
+                // BAGIAN 1: Ringkasan Deal (Sedikit di-tata ulang untuk alur yang lebih baik)
+                Section::make('Ringkasan Deal')
+                    ->columns(3)
                     ->schema([
-                        Grid::make(2)
-                            ->schema([
-                                TextEntry::make('deal_number')
-                                    ->label('No. Deal')
-                                    ->weight('semibold')
-                                    ->size('lg')
-                                    ->icon('heroicon-o-hashtag')
-                                    ->copyable()
-                                    ->color(function (Deal $record) {
-                                        $record->withTrashed()->first();
-                                        if ($record && $record->trashed())
-                                            return 'danger';
-                                        return 'primary';
-                                    })
-                                    ->placeholder('—'),
+                        TextEntry::make('deal_number')
+                            ->label('No. Deal')
+                            ->weight('semibold')
+                            ->icon('heroicon-o-hashtag')
+                            ->copyable(),
 
-                                TextEntry::make('stage.name')
-                                    ->label('Stage Deal')
-                                    ->icon('heroicon-o-queue-list')
-                                    ->formatStateUsing(fn(string $state): string => ucfirst($state))
-                                    ->color(fn(Deal $record): string => match ($record->status) {
-                                        'won' => 'success',
-                                        'lost' => 'danger',
-                                        default => 'warning',
-                                    })
-                                    ->placeholder('—'),
+                        TextEntry::make('stage.name')
+                            ->label('Stage Deal')
+                            ->badge()
+                            ->color(fn(?string $state): string => match (strtolower($state ?? '')) {
+                                'closed lost' => 'danger',
+                                'closed won' => 'success',
+                                'lead baru' => 'gray',
+                                'kualifikasi' => 'primary',
+                                'presentasi', 'penawaran' => 'info',
+                                'negosiasi' => 'warning',
+                                default => 'primary',
+                            })
+                            ->formatStateUsing(fn($state) => ucwords($state)),
 
-                                TextEntry::make('customer_or_lead')
-                                    ->label('Lead')
-                                    ->getStateUsing(function (Deal $record) {
-                                        if ($record->customer) {
-                                            return $record->customer->name . ' (Customer)';
-                                        }
+                        TextEntry::make('status')
+                            ->label('Status')
+                            ->badge()
+                            ->formatStateUsing(fn(string $state): string => ucfirst($state))
+                            ->color(fn(string $state): string => match ($state) {
+                                'open' => 'warning',
+                                'won' => 'success',
+                                'lost' => 'danger',
+                                default => 'gray',
+                            }),
 
-                                        $lead = $record->lead()->withTrashed()->first();
+                        // Nilai dan tanggal dikelompokkan bersama
+                        TextEntry::make('estimated_value')
+                            ->label('Estimasi Nilai')
+                            ->money('IDR')
+                            ->weight('bold')
+                            ->color('success'),
 
-                                        if ($lead) {
-                                            $suffix = $lead->trashed() ? ' (Terhapus)' : ' (Lead)';
-                                            return $lead->name . $suffix;
-                                        }
-                                        return '-';
-                                    })
-                                    ->weight('semibold')
-                                    ->icon('heroicon-o-user')
-                                    ->color(
-                                        fn(Deal $record) =>
-                                        ($record->lead()->withTrashed()->first()?->trashed()) ? 'danger' : ''
-                                    )
-                                    ->placeholder('—'),
+                        TextEntry::make('deal_date')
+                            ->label('Tanggal Deal')
+                            ->date('d M Y'),
 
-                                TextEntry::make('status')
-                                    ->label('Status')
-                                    ->color(fn(string $state): string => match ($state) {
-                                        'open' => 'warning',
-                                        'won' => 'success',
-                                        'lost' => 'danger',
-                                        default => 'gray',
-                                    })
-                                    ->formatStateUsing(fn(string $state): string => ucfirst($state))
-                                    ->icon(fn(string $state): string => match ($state) {
-                                        'open' => 'heroicon-o-clock',
-                                        'won' => 'heroicon-o-check-circle',
-                                        'lost' => 'heroicon-o-x-circle',
-                                        default => 'heroicon-o-question-mark-circle',
-                                    })
-                                    ->placeholder('—'),
-
-                                TextEntry::make('deal_date')
-                                    ->label('Tanggal Deal Dibuat')
-                                    ->date('d M Y')
-                                    ->icon('heroicon-o-calendar'),
-
-                                TextEntry::make('close_date')
-                                    ->label('Tanggal Penutupan')
-                                    ->date('d M Y')
-                                    ->placeholder('Belum ditutup')
-                                    ->icon('heroicon-o-calendar-days'),
-                            ]),
-                    ])
-                    ->columns(1),
-
-                Section::make('Nilai & Statistik')
-                    ->schema([
-                        Grid::make(4)
-                            ->schema([
-                                TextEntry::make('estimated_value')
-                                    ->label('Estimasi Nilai')
-                                    ->money('IDR')
-                                    ->weight('semibold')
-                                    ->size('lg')
-                                    ->color('success')
-                                    ->placeholder('—'),
-
-                                TextEntry::make('quotations_count')
-                                    ->label('Jumlah Penawaran')
-                                    ->formatStateUsing(fn($state) => $state . ' Penawaran')
-                                    ->badge()
-                                    
-                                    ->state(function (Deal $record) {
-                                        return $record->quotations()->withTrashed()->count();
-                                    })
-                                    ->color(function (Deal $record, int $state): string {
-                                        if ($state === 0)
-                                            return 'gray';
-
-                                        $hasTrashed = $record->quotations()->onlyTrashed()->exists();
-
-                                        return $hasTrashed ? 'danger' : 'info';
-                                    })
-                                    ->placeholder('—'),
-
-                                TextEntry::make('duration')
-                                    ->label('Durasi Proses')
-                                    ->getStateUsing(function ($record): string {
-                                        $start = \Carbon\Carbon::parse($record->created_at);
-                                        $end = $record->close_date ? \Carbon\Carbon::parse($record->close_date) : now();
-
-                                        if (!$start)
-                                            return '-';
-
-                                        $diff = $start->diff($end);
-
-                                        if ($diff->days > 0) {
-                                            return "{$diff->days} Hari";
-                                        } elseif ($diff->h > 0) {
-                                            return "{$diff->h} Jam {$diff->i} Menit";
-                                        } else {
-                                            return "{$diff->i} Menit";
-                                        }
-                                    })
-                                    ->badge()
-                                    ->color('gray')
-                                    ->placeholder('—'),
-
-                                TextEntry::make('stage.order')
-                                    ->label('Urutan Stage')
-                                    ->badge()
-                                    ->color('primary')
-                                    ->formatStateUsing(fn($state) => 'Tahap ke-' . $state)
-                                    ->placeholder('—'),
-                            ]),
+                        TextEntry::make('closed_at')
+                            ->label('Tanggal Penutupan')
+                            ->date('d M Y H:i')
+                            ->placeholder('Belum Closing')
                     ]),
 
-                Section::make('Informasi Kontak Lead')
-                    ->description(fn(Deal $record) => $record->lead()->withTrashed()->first()?->trashed() ? 'Data Lead ini telah dihapus.' : null)
+                // BARU: Section khusus untuk menampilkan siapa yang bertanggung jawab
+                Section::make('Penanggung Jawab Deal')
+                    ->columns(2)
                     ->schema([
+                        TextEntry::make('createdBy.full_name')
+                            ->label('Ditangani Oleh (Sales)')
+                            ->icon('heroicon-o-user')
+                            ->placeholder('Tidak diketahui'),
+
+                        TextEntry::make('createdBy.position')
+                            ->label('Posisi Sales')
+                            ->placeholder('Tidak ada data posisi'),
+
+                        // Menampilkan siapa yang mengkonversi Lead menjadi Deal, jika ada
+                        TextEntry::make('lead.convertedBy.full_name')
+                            ->label('Dikonversi Oleh')
+                            ->placeholder('Lead belum dikonversi')
+                            ->visible(fn(Deal $record) => $record->lead?->converted_by !== null),
+
+                        // Menampilkan kapan Lead dikonversi
+                        TextEntry::make('lead.converted_at')
+                            ->label('Dikonversi Pada')
+                            ->dateTime('d M Y H:i')
+                            ->visible(fn(Deal $record) => $record->lead?->converted_at !== null),
+                    ]),
+
+                // BAGIAN 2: Informasi Pihak Terkait (Lead)
+                Section::make('Informasi Pihak Terkait (Lead)')
+                    ->description(fn(Deal $record) => $record->lead()->withTrashed()->first()?->trashed() ? 'PERINGATAN: Data Lead ini telah dihapus.' : 'Detail kontak dan narahubung dari Lead.')
+                    ->collapsible()
+                    ->schema([
+                        // Informasi Utama Lead
                         Grid::make(2)->schema([
-                            TextEntry::make('lead_name_manual')
+                            TextEntry::make('lead.name')
                                 ->label('Nama Lead')
-                                ->getStateUsing(fn(Deal $record) => $record->lead()->withTrashed()->first()?->name)
-                                ->placeholder('—')
-                                ->icon('heroicon-o-user')
                                 ->weight('semibold')
-                                ->size('lg')
-                                ->color(function (Deal $record) {
-                                    $record->withTrashed()->first();
-                                    if ($record && $record->trashed())
-                                        return 'danger';
-                                    return '';
-                                }),
+                                ->icon('heroicon-o-building-office-2')
+                                ->url(function (Deal $record) {
+                                    $lead = $record->lead()->withTrashed()->first();
+                                    return $lead ? LeadResource::getUrl('view', ['record' => $lead->id]) : null;
+                                }, shouldOpenInNewTab: true)
+                                ->color(fn(Deal $record) => $record->lead()->withTrashed()->first()?->trashed() ? 'danger' : null),
 
-                            TextEntry::make('lead_company_manual')
-                                ->label('Tipe Customer')
-                                ->getStateUsing(fn(Deal $record) => ucfirst($record->lead()->withTrashed()->first()?->customer_type ?? ''))
-                                ->placeholder('—')
-                                ->icon('heroicon-o-identification'),
+                            TextEntry::make('lead.customer_type')
+                                ->label('Tipe')
+                                ->badge()
+                                ->formatStateUsing(fn($state) => ucfirst($state)),
 
-                            TextEntry::make('lead_email_manual')
-                                ->label('Email')
-                                ->icon('heroicon-o-envelope')
-                                ->getStateUsing(fn(Deal $record) => $record->lead()->withTrashed()->first()?->email)
-                                ->url(function ($record) {
-                                    $email = $record->lead()->withTrashed()->first()?->email;
-                                    return $email ? "mailto:{$email}" : null;
-                                })
-                                ->placeholder('—')
+                            TextEntry::make('lead.email')
+                                ->label('Email Lead')
+                                ->url(fn($state) => $state ? "mailto:{$state}" : null)
                                 ->color('warning'),
 
-                            TextEntry::make('lead_phone_manual')
-                                ->label('No. WhatsApp')
-                                ->icon('heroicon-o-phone')
-                                ->getStateUsing(fn(Deal $record) => $record->lead()->withTrashed()->first()?->phone)
-                                ->url(function ($record) {
-                                    $phone = $record->lead()->withTrashed()->first()?->phone;
-                                    return $phone ? "tel:{$phone}" : null;
-                                })
-                                ->placeholder('—')
+                            TextEntry::make('lead.phone')
+                                ->label('No. WhatsApp Lead')
+                                ->url(fn($state) => $state ? "https://wa.me/" . preg_replace('/[^0-9]/', '', $state) : null, true)
                                 ->color('success'),
 
-                            TextEntry::make('lead_address_manual')
-                                ->label('Alamat')
-                                ->getStateUsing(fn(Deal $record) => $record->lead()->withTrashed()->first()?->address)
-                                ->columnSpanFull()
+                            TextEntry::make('lead.address')
+                                ->label('Alamat Lead')
                                 ->icon('heroicon-o-map-pin')
-                                ->placeholder('Tidak ada alamat tersimpan'),
+                                ->columnSpanFull()
+                                ->placeholder('Tidak ada data alamat.'),
                         ]),
-                    ])
-                    ->collapsible()
-                    ->persistCollapsed(),
 
+                        Fieldset::make('PIC Lead')
+                            ->schema([
+                                Grid::make(2)->schema([
+                                    TextEntry::make('lead.pic_name')->label('Nama PIC'),
+                                    TextEntry::make('lead.pic_position')->label('Jabatan PIC'),
+                                    TextEntry::make('lead.pic_email')
+                                        ->label('Email PIC')
+                                        ->url(fn($state) => $state ? "mailto:{$state}" : null)
+                                        ->color('warning'),
+                                    TextEntry::make('lead.pic_phone')
+                                        ->label('No. WhatsApp PIC')
+                                        ->url(fn($state) => $state ? "https://wa.me/" . preg_replace('/[^0-9]/', '', $state) : null, true)
+                                        ->color('success'),
+                                ]),
+                            ])
+                            ->visible(fn(Deal $record) => $record->lead?->customer_type === 'company'),
+                    ])
+                    ->visible(fn(Deal $record) => $record->lead()->withTrashed()->exists()),
+
+                // BAGIAN 3: Aktivitas & Statistik Deal
+                Section::make('Aktivitas & Statistik Deal')
+                    ->columns(3)
+                    ->schema([
+                        TextEntry::make('quotations_count')
+                            ->label('Jumlah Penawaran')
+                            ->badge()
+                            ->state(fn(Deal $record) => $record->quotations()->withTrashed()->count())
+                            ->formatStateUsing(function (int $state, Deal $record) {
+                                $trashedCount = $record->quotations()->onlyTrashed()->count();
+                                $activeCount = $state - $trashedCount;
+                                $parts = [];
+                                if ($activeCount > 0)
+                                    $parts[] = "$activeCount Aktif";
+                                if ($trashedCount > 0)
+                                    $parts[] = "$trashedCount Terhapus";
+                                return empty($parts) ? '0 Penawaran' : implode(' & ', $parts);
+                            })
+                            ->color(function (int $state, Deal $record): string {
+                                if ($state === 0)
+                                    return 'gray';
+                                return $record->quotations()->onlyTrashed()->exists() ? 'danger' : 'info';
+                            }),
+
+                        TextEntry::make('duration')
+                            ->label('Durasi Proses')
+                            ->getStateUsing(function ($record): string {
+                                $start = \Carbon\Carbon::parse($record->created_at);
+                                $end = $record->close_date ? \Carbon\Carbon::parse($record->close_date) : now();
+                                if (!$start)
+                                    return '-';
+                                return $start->diffForHumans($end, true, false, 2);
+                            }),
+
+                        TextEntry::make('stage.probability')
+                            ->label('Probabilitas (%)')
+                            ->badge()
+                            ->color(fn(int $state): string => match (true) {
+                                $state <= 30 => 'danger',
+                                $state <= 70 => 'warning',
+                                default => 'success',
+                            })
+                            ->formatStateUsing(fn($state) => $state . '%'),
+                    ]),
+
+                // BAGIAN 4: Pengelolaan Data (TETAP SAMA SESUAI PERMINTAAN)
                 Section::make('Pengelolaan Data')
                     ->columns(2)
                     ->schema([

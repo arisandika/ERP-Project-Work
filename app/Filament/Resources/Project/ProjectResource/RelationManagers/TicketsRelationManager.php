@@ -163,7 +163,7 @@ class TicketsRelationManager extends RelationManager
                                 'undo',
                             ])
                             ->fileAttachmentsDisk('public')
-                            ->fileAttachmentsDirectory('attachments')
+                            ->fileAttachmentsDirectory('attachments/ticket-description')
                             ->fileAttachmentsVisibility('public'),
                     ]),
             ]);

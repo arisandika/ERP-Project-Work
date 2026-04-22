@@ -27,7 +27,7 @@ class TicketResource extends Resource
 
     protected static ?string $navigationIcon = 'heroicon-o-ticket';
 
-    protected static ?string $navigationGroup = 'Manajemen Project';
+    protected static ?string $navigationGroup = 'Manajemen Project ✅';
 
     protected static ?int $navigationSort = 4;
 
@@ -214,7 +214,7 @@ class TicketResource extends Resource
                                 'undo',
                             ])
                             ->fileAttachmentsDisk('public')
-                            ->fileAttachmentsDirectory('attachments')
+                            ->fileAttachmentsDirectory('attachments/ticket-descriptions')
                             ->fileAttachmentsVisibility('public'),
                     ]),
             ]);

@@ -4,6 +4,8 @@ namespace App\Filament\Resources\Sales\QuotationResource\Pages;
 
 use App\Filament\Resources\Sales\QuotationResource;
 use App\Models\CRM\Deal;
+use App\Models\CRM\DealStage;
+use App\Models\CRM\Lead;
 use App\Services\Sales\QuotationService;
 use Filament\Notifications\Notification;
 use Filament\Resources\Pages\CreateRecord;
@@ -14,7 +16,10 @@ class CreateQuotation extends CreateRecord
 {
     protected static string $resource = QuotationResource::class;
 
-    public function getTitle(): string { return 'Buat Penawaran'; }
+    public function getTitle(): string
+    {
+        return 'Buat Penawaran';
+    }
 
     public function mount(): void
     {
@@ -40,7 +45,7 @@ class CreateQuotation extends CreateRecord
             'quotation_number' => $this->generateQuotationNumber(),
             'quotation_date' => now()->toDateString(),
             'valid_until' => now()->addDays(7)->toDateString(),
-            'status' => 'draft',
+            'status' => 'new',
             'tax' => 11,
         ]);
     }
@@ -56,6 +61,35 @@ class CreateQuotation extends CreateRecord
         }
 
         return app(QuotationService::class)->createQuotation($data);
+    }
+
+    protected function afterCreate(): void
+    {
+        $quotation = $this->record;
+
+        if ($quotation->nx_deal_id) {
+            $deal = Deal::find($quotation->nx_deal_id);
+
+            if ($deal) {
+                // 2. Ubah Deal Stage menjadi Penawaran
+                $penawaranStage = DealStage::whereRaw('LOWER(name) LIKE ?', ['%penawaran%'])->first();
+                if ($penawaranStage && $deal->nx_deal_stage_id !== $penawaranStage->id) {
+                    $deal->update([
+                        'nx_deal_stage_id' => $penawaranStage->id,
+                    ]);
+                }
+
+                // Ubah status Lead menjadi Qualified
+                if ($deal->nx_lead_id) {
+                    $lead = Lead::find($deal->nx_lead_id);
+                    if ($lead && in_array($lead->status, [Lead::STATUS_NEW, Lead::STATUS_CONTACTED])) {
+                        $lead->update([
+                            'status' => Lead::STATUS_QUALIFIED,
+                        ]);
+                    }
+                }
+            }
+        }
     }
 
     private function generateQuotationNumber(): string

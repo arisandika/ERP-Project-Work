@@ -2,8 +2,13 @@
 
 namespace App\Services\Sales;
 
+use App\Models\CRM\Customer;
 use App\Models\CRM\Deal;
 use App\Models\CRM\DealStage;
+use App\Models\CRM\Lead;
+use App\Models\Inventory\Package;
+use App\Models\Inventory\Product;
+use App\Models\Inventory\Service;
 use App\Models\Sales\Quotation;
 use App\Models\Marketing\PromoCode;
 use App\Mail\QuotationSent;
@@ -29,7 +34,8 @@ class QuotationService
 
     public function validatePromoCode(?string $code): ?PromoCode
     {
-        if (empty($code)) return null;
+        if (empty($code))
+            return null;
 
         return PromoCode::where('code', $code)
             ->where('is_active', 1)
@@ -48,9 +54,9 @@ class QuotationService
                 if (!empty($item['item_id'])) {
                     $type = $item['item_type'] ?? 'product';
                     $model = match ($type) {
-                        'product' => \App\Models\Inventory\Product::find($item['item_id']),
-                        'service' => \App\Models\Inventory\Service::find($item['item_id']),
-                        'package' => \App\Models\Inventory\Package::find($item['item_id']),
+                        'product' => Product::find($item['item_id']),
+                        'service' => Service::find($item['item_id']),
+                        'package' => Package::find($item['item_id']),
                         default => null
                     };
 
@@ -75,9 +81,9 @@ class QuotationService
             $promo = PromoCode::find($data['promo_code_id']);
             if ($promo) {
                 if ($promo->type === 'percentage') {
-                    $totalDiscount = $subtotal * ((float)$promo->value / 100);
+                    $totalDiscount = $subtotal * ((float) $promo->value / 100);
                 } else {
-                    $totalDiscount = (float)$promo->value;
+                    $totalDiscount = (float) $promo->value;
                 }
             }
         }
@@ -129,9 +135,12 @@ class QuotationService
                 $quotation->items()->create($item);
             }
 
+            // Jika status dirubah lewat form edit secara manual
             if ($oldStatus !== 'accepted' && $newStatus === 'accepted') {
+                $quotation->markAsAccepted(); // Pastikan is_primary trigger jalan
                 $this->handleQuotationAccepted($quotation);
             } elseif ($oldStatus !== 'rejected' && $newStatus === 'rejected') {
+                $quotation->markAsRejected('Ditolak secara manual via form Edit');
                 $this->handleQuotationRejected($quotation);
             }
 
@@ -141,37 +150,45 @@ class QuotationService
 
     public function syncDealAfterCreation(Quotation $quotation): void
     {
-        if (!$quotation->nx_deal_id) return;
+        if (!$quotation->nx_deal_id)
+            return;
 
         $deal = Deal::find($quotation->nx_deal_id);
-        if (!$deal) return;
+        if (!$deal)
+            return;
 
         $updateData = [];
-        $penawaranStage = DealStage::where('name', 'like', '%Penawaran%')->first();
+        $penawaranStage = DealStage::whereRaw('LOWER(name) LIKE ?', ['%penawaran%'])->first();
 
         if ($penawaranStage) {
             $updateData['nx_deal_stage_id'] = $penawaranStage->id;
         }
 
-        if ($deal->status === 'lost') {
-            $updateData['status'] = 'open';
+        // Kembalikan Deal ke OPEN jika sebelumnya sudah ditutup (Lost/Won)
+        if (in_array($deal->status, [Deal::STATUS_CLOSED_LOST, Deal::STATUS_CLOSED_WON])) {
+            $updateData['status'] = Deal::STATUS_OPEN;
             $updateData['close_date'] = null;
-
-            Notification::make()
-                ->title('Deal Dibuka Kembali')
-                ->body("Status Deal {$deal->deal_number} otomatis berubah dari Lost menjadi Open.")
-                ->info()->send();
+            $updateData['closed_at'] = null;
         }
 
         if (!empty($updateData)) {
             $deal->update($updateData);
         }
+
+        // LOGIKA BARU: Kembalikan Lead menjadi Qualified
+        if ($deal->lead) {
+            $deal->lead->update([
+                'status' => Lead::STATUS_QUALIFIED
+            ]);
+        }
     }
 
     public function approveQuotation(Quotation $record, $userId, $employeeId): void
     {
+        // Gunakan helper method markAsAccepted() untuk otomatis set status = accepted, is_primary = true, dan accepted_at = now()
+        $record->markAsAccepted();
+
         $record->update([
-            'status' => 'accepted',
             'approved_by' => $employeeId,
             'approved_at' => now(),
         ]);
@@ -181,11 +198,12 @@ class QuotationService
 
     public function rejectQuotation(Quotation $record, $employeeId, string $reason): void
     {
+        // Gunakan helper method markAsRejected() untuk set is_primary = false dan reject_reason
+        $record->markAsRejected($reason);
+
         $record->update([
-            'status' => 'rejected',
             'approved_by' => $employeeId,
             'approved_at' => now(),
-            'notes' => trim(($record->notes ? $record->notes . "\n" : '') . "Alasan Rejected: " . $reason),
         ]);
 
         $this->handleQuotationRejected($record);
@@ -196,48 +214,84 @@ class QuotationService
         $quotation->loadMissing(['deal.lead']);
         $deal = $quotation->deal;
 
-        if (!$deal || !$deal->exists) return;
+        if (!$deal || !$deal->exists)
+            return;
 
         DB::transaction(function () use ($deal) {
-            $wonStage = DealStage::where('name', 'like', '%Won%')->first();
+            // 1. Konversi Lead menjadi Customer
+            $lead = $deal->lead;
+            if ($lead) {
+                // convertToCustomer() sudah memiliki logic untuk mencegah duplikasi atau membuat riwayat duplikat baru jika Cancelled
+                $customer = $lead->convertToCustomer();
 
+                // PENTING: Pastikan Deal ini terkait ke Customer yang Active (Terbaru)
+                $deal->update(['nx_customer_id' => $customer->id]);
+            }
+
+            // 2. Cari Stage Won
+            $wonStage = DealStage::whereRaw('LOWER(name) LIKE ?', ['%won%'])->first();
+
+            // 3. Update Deal: Status WON dan Isi Tanggal Penutupan
             $deal->update([
-                'status' => 'won',
+                'status' => Deal::STATUS_CLOSED_WON,
                 'nx_deal_stage_id' => $wonStage?->id,
                 'close_date' => now(),
+                'closed_at' => now(),
             ]);
-
-            $lead = $deal->lead;
-            if ($lead && empty($deal->nx_customer_id)) {
-                $customer = $lead->convertToCustomer();
-                if ($customer) {
-                    $deal->update(['nx_customer_id' => $customer->id]);
-                }
-            }
         });
 
         Notification::make()
             ->title('Deal Won!')
-            ->body("Deal {$deal->deal_number} berhasil ditutup (Won) dan dikonversi ke Customer.")
+            ->body("Penawaran disetujui. Deal {$deal->deal_number} ditutup (Won) dan Customer diperbarui.")
             ->success()->send();
     }
 
     public function handleQuotationRejected(Quotation $quotation): void
     {
-        $deal = Deal::find($quotation->nx_deal_id);
-        $lostStage = DealStage::where('name', 'like', '%Lost%')->first();
+        $deal = $quotation->deal;
+        if (!$deal || !$deal->exists)
+            return;
 
-        if ($deal) {
+        // CEK FAKTA: Apakah MASIH ADA penawaran lain yang BUKAN rejected?
+        $hasOtherActiveQuotations = $deal->quotations()
+            ->where('id', '!=', $quotation->id)
+            ->where('status', '!=', 'rejected')
+            ->exists();
+
+        if ($hasOtherActiveQuotations) {
+            return;
+        }
+
+        // Jika semua penawaran ditolak
+        DB::transaction(function () use ($deal) {
+            // 1. Ubah Deal Stage & Status menjadi Lost
+            $lostStage = DealStage::whereRaw('LOWER(name) LIKE ?', ['%lost%'])->first();
             $deal->update([
-                'status' => 'lost',
+                'status' => Deal::STATUS_CLOSED_LOST,
                 'nx_deal_stage_id' => $lostStage?->id,
                 'close_date' => now(),
+                'closed_at' => now(),
             ]);
 
-            Notification::make()
-                ->title('Deal Lost')
-                ->body("Deal {$deal->deal_number} ditandai sebagai Lost.")
-                ->danger()->send();
-        }
+            // 2. LOGIKA BARU: Ubah Lead menjadi Unqualified
+            if ($deal->lead) {
+                $deal->lead->update([
+                    'status' => Lead::STATUS_UNQUALIFIED
+                ]);
+            }
+
+            // 3. Batalkan Customer (Cancelled)
+            if ($deal->nx_customer_id) {
+                $customer = Customer::find($deal->nx_customer_id);
+                if ($customer && $customer->status !== 'cancelled') {
+                    $customer->update(['status' => 'cancelled']);
+                }
+            }
+        });
+
+        Notification::make()
+            ->title('Deal & Lead Unqualified')
+            ->body("Semua penawaran ditolak. Deal {$deal->deal_number} menjadi Lost dan Lead menjadi Unqualified.")
+            ->danger()->send();
     }
 }

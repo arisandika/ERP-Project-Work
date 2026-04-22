@@ -122,7 +122,7 @@ class EpicsRelationManager extends RelationManager
                                 'undo',
                             ])
                             ->fileAttachmentsDisk('public')
-                            ->fileAttachmentsDirectory('attachments')
+                            ->fileAttachmentsDirectory('attachments/epic-descriptions')
                             ->fileAttachmentsVisibility('public'),
 
                         Forms\Components\Hidden::make('created_by')
@@ -145,10 +145,10 @@ class EpicsRelationManager extends RelationManager
                     ->weight('semibold')
                     ->placeholder('—'),
 
-                Tables\Columns\TextColumn::make('sort_order')
-                    ->label('Urutan')
-                    ->alignCenter()
-                    ->sortable(),
+                // Tables\Columns\TextColumn::make('sort_order')
+                //     ->label('Urutan')
+                //     ->alignCenter()
+                //     ->sortable(),
 
                 Tables\Columns\TextColumn::make('start_date')
                     ->label('Tanggal Mulai')

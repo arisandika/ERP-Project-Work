@@ -15,33 +15,37 @@ class EditQuotation extends EditRecord
 {
     protected static string $resource = QuotationResource::class;
 
-    public function getTitle(): string { return 'Edit Penawaran'; }
+    public function getTitle(): string
+    {
+        return 'Edit Penawaran';
+    }
 
     protected function getHeaderActions(): array
     {
         return [
             // ACTION APPROVE (WON)
-            Action::make('approve')
+            Actions\Action::make('approve')
                 ->label('Approve')
                 ->icon('heroicon-o-check-circle')
                 ->color('success')
                 ->visible(fn($record) => !in_array($record->status, ['accepted', 'rejected']))
                 ->requiresConfirmation()
                 ->modalHeading('Approve Penawaran')
-                ->modalDescription('Apakah Anda yakin? Status Deal akan otomatis menjadi WON.')
+                ->modalDescription('Apakah Anda yakin? Lead akan terkonversi otomatis dan status Deal menjadi WON.')
                 ->action(function ($record, QuotationService $service) {
                     $user = Auth::user();
                     $service->approveQuotation($record, $user->id, $user?->employee?->id);
                 }),
 
             // ACTION REJECT (LOST)
-            Action::make('reject')
+            Actions\Action::make('reject')
                 ->label('Reject')
                 ->icon('heroicon-o-x-circle')
                 ->color('danger')
                 ->form([
                     Forms\Components\Textarea::make('reason')
                         ->label('Alasan Penolakan')
+                        ->placeholder('Contoh: Harga tidak masuk budget, Klien pilih vendor lain...')
                         ->required(),
                 ])
                 ->visible(fn($record) => !in_array($record->status, ['accepted', 'rejected']))
@@ -66,6 +70,7 @@ class EditQuotation extends EditRecord
 
     protected function handleRecordUpdate(Model $record, array $data): Model
     {
+        // Jika user secara manual mengubah status dropdown menjadi "accepted" via Form edit
         if ($record->status !== 'accepted' && ($data['status'] ?? $record->status) === 'accepted') {
             $user = auth()->user();
             $data['approved_by'] = $user?->employee?->id;

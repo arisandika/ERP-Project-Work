@@ -24,7 +24,7 @@ class TicketTimeline extends Page
 
     protected static string $routePath = 'pm/ticket-timeline';
 
-    protected static ?string $navigationGroup = 'Manajemen Project';
+    protected static ?string $navigationGroup = 'Manajemen Project ✅';
 
     protected static ?string $navigationLabel = 'Ticket Timeline';
 

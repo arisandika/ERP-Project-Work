@@ -18,7 +18,7 @@ class Attendance extends Page
 
     protected static string $routePath = 'attendance';
 
-    protected static ?string $navigationGroup = 'Manajemen Presensi';
+    protected static ?string $navigationGroup = 'Manajemen Presensi ✅';
 
     protected static ?string $navigationLabel = 'Presensi Harian';
 

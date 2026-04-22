@@ -3,6 +3,7 @@
 namespace App\Filament\Resources\CRM\DealResource\Pages;
 
 use App\Filament\Resources\CRM\DealResource;
+use App\Models\CRM\Customer;
 use App\Models\CRM\Deal;
 use App\Models\CRM\DealStage;
 use Filament\Actions;
@@ -70,5 +71,32 @@ class EditDeal extends EditRecord
         }
 
         return $data;
+    }
+
+    protected function afterSave(): void
+    {
+        $deal = $this->record;
+
+        // Jika Deal diubah menjadi LOST (Batal / Gagal)
+        if ($deal->status === Deal::STATUS_CLOSED_LOST) {
+            
+            // 1. Cari Quotation yang is_primary = true dan reset ke false
+            $primaryQuotation = $deal->quotations()->where('is_primary', true)->first();
+            if ($primaryQuotation) {
+                $primaryQuotation->update([
+                    'is_primary' => false,
+                    'status' => 'rejected',
+                    'rejected_reason' => 'Dibatalkan secara manual karena Deal berstatus Lost'
+                ]);
+            }
+
+            // 2. Ubah status Customer menjadi "cancelled" (JANGAN DIHAPUS)
+            if ($deal->nx_customer_id) {
+                $customer = Customer::find($deal->nx_customer_id);
+                if ($customer && $customer->status !== 'cancelled') {
+                    $customer->update(['status' => 'cancelled']);
+                }
+            }
+        }
     }
 }

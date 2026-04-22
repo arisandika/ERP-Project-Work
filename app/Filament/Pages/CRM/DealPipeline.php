@@ -75,7 +75,7 @@ class DealPipeline extends Page
                     ->orderByDesc('id');
             }
         ])
-            ->orderBy('order')
+            ->orderBy('sort_order')
             ->get();
 
         // Terapkan sorting dinamis untuk setiap kolom (jika user memilih opsi urutkan)
@@ -126,145 +126,77 @@ class DealPipeline extends Page
 
     public function moveDeal($dealId, $newStageId): void
     {
-        // Pastikan user punya akses pindahkan deal
+        // Pastikan user punya akses
         if (!$this->canMoveDeals()) {
-            Notification::make()
-                ->title('Akses Ditolak')
-                ->body('Anda tidak memiliki izin untuk memindahkan deal ini.')
-                ->danger()
-                ->send();
+            Notification::make()->title('Akses Ditolak')->danger()->send();
             return;
         }
 
-        // Ambil deal (eager load stage) & target stage
-        $deal = Deal::with('stage', 'quotations')->findOrFail($dealId);
+        $deal = Deal::with('quotations')->findOrFail($dealId);
         $targetStage = DealStage::findOrFail($newStageId);
 
+        // --- VALIDASI FAKTUAL BARU ---
+        $hasWon = $deal->quotations()->where('is_primary', true)->exists();
+        $hasQuotations = $deal->quotations()->exists();
+        $allRejected = $hasQuotations && $deal->quotations()->where('status', '!=', 'rejected')->count() === 0;
+
+        // 1. Cek apakah Deal ini sudah terkunci (final)
+        if ($hasWon || $allRejected) {
+            Notification::make()
+                ->title('Aksi Ditolak')
+                ->body('Deal ini terkunci karena status penawarannya sudah final (Won/Lost).')
+                ->warning()
+                ->send();
+            $this->loadDealStages(); // Batalkan perpindahan di UI
+            return;
+        }
+
+        // 2. Cek apakah user mencoba memindahkan ke stage final secara manual
         $stageName = strtolower($targetStage->name);
+        $isTargetWon = str_contains($stageName, 'won');
+        $isTargetLost = str_contains($stageName, 'lost');
+
+        if ($isTargetWon || $isTargetLost) {
+            Notification::make()
+                ->title('Aksi Ditolak')
+                ->body('Stage Won/Lost hanya bisa diatur secara otomatis melalui status penawaran.')
+                ->danger()
+                ->send();
+            $this->loadDealStages(); // Batalkan perpindahan di UI
+            return;
+        }
+        // --- AKHIR VALIDASI FAKTUAL ---
+
+        // Validasi lama (tetap relevan untuk stage non-final)
         $hasQuotation = $deal->quotations()->exists();
-
-        $isWon = str_contains($stageName, 'won');
-        $isLost = str_contains($stageName, 'lost');
-
-        // Cari stage patokan (Penawaran)
-        $penawaranStage = DealStage::whereRaw(
-            'LOWER(name) LIKE ?',
-            ['%penawaran%']
-        )->first();
-
+        $penawaranStage = DealStage::whereRaw('LOWER(name) LIKE ?', ['%penawaran%'])->first();
         $penawaranProbability = $penawaranStage?->probability ?? 0;
 
-        // VALIDASI 1: TIDAK PUNYA PENAWARAN
-        if (!$hasQuotation) {
-
-            // Tidak boleh ke Penawaran atau di atasnya (Kecuali LOST)
-            if ($targetStage->probability >= $penawaranProbability && !$isLost) {
-                Notification::make()
-                    ->title('Gagal Memperbarui Deal')
-                    ->body('Deal tanpa Penawaran tidak bisa ke stage Penawaran atau di atasnya.')
-                    ->danger()
-                    ->send();
-
-                // Refresh UI agar kartu kembali ke kolom asal
-                $this->loadDealStages();
-                $this->dispatch('deal-updated');
-                return;
-            }
-
-            // Tidak boleh ke WON
-            if ($isWon) {
-                Notification::make()
-                    ->title('Gagal Memperbarui Deal')
-                    ->body('Deal tanpa Penawaran tidak bisa Closed Won.')
-                    ->danger()
-                    ->send();
-
-                // Refresh UI agar kartu kembali ke kolom asal
-                $this->loadDealStages();
-                $this->dispatch('deal-updated');
-                return;
-            }
+        if (!$hasQuotation && $targetStage->probability >= $penawaranProbability) {
+            Notification::make()
+                ->title('Gagal Memperbarui Deal')
+                ->body('Deal tanpa Penawaran tidak bisa ke stage Penawaran atau di atasnya.')
+                ->danger()
+                ->send();
+            $this->loadDealStages();
+            return;
         }
 
-        // VALIDASI 2: PUNYA PENAWARAN
-        if ($hasQuotation) {
+        // --- (Sisanya bisa tetap sama, atau bisa disederhanakan) ---
 
-            // Jika turun ke bawah Penawaran tapi bukan LOST -> Tolak
-            if ($targetStage->probability < $penawaranProbability && !$isLost) {
-                Notification::make()
-                    ->title('Gagal Memperbarui Deal')
-                    ->body('Deal tidak bisa kembali ke bawah stage Penawaran kecuali Closed Lost.')
-                    ->warning()
-                    ->send();
-
-                // Refresh UI agar kartu kembali ke kolom asal
-                $this->loadDealStages();
-                $this->dispatch('deal-updated');
-                return;
-            }
-        }
-
-        // LOGIKA OTOMATISASI UPDATE STATUS DEAL
-        $oldStatus = $deal->status;
-        $newStatus = 'open'; // Default selalu Open kecuali ke Won/Lost
-
-        if ($isWon) {
-            $newStatus = 'won';
-        } elseif ($isLost) {
-            $newStatus = 'lost';
-        }
-
-        // ADJUSTMENT TERBARU: Jika dari WON atau LOST ditarik ke stage biasa -> kembali OPEN
-        if ($oldStatus === 'won' && !$isWon && !$isLost) {
-            $newStatus = 'open';
-        }
-
-        if ($oldStatus === 'lost' && !$isWon && !$isLost) {
-            $newStatus = 'open';
-        }
-
-        $statusChanged = ($oldStatus !== $newStatus);
-
-        // Jika lolos semua validasi, simpan perubahan stage, status, dan close_date
+        // Jika lolos, simpan perubahan stage
         $deal->nx_deal_stage_id = $newStageId;
-        $deal->status = $newStatus;
-        $deal->close_date = in_array($newStatus, ['won', 'lost']) ? now() : null;
-
-        // EKSEKUSI SAVE:
-        // Panggilan $deal->save() ini akan otomatis memicu `static::updated()` di file app/Models/Deal.php
-        // sehingga Quotation-nya akan otomatis berubah jadi "accepted", "rejected", atau "negotiation"
-        // beserta "approved_by" dan "approved_at"!!
+        // Status akan tetap 'open' atau 'on_hold', tidak akan pernah menjadi 'won'/'lost' dari sini.
         $deal->save();
 
-        // Refresh state board untuk menyimpan urutan baru
         $this->loadDealStages();
-
-        // Memicu re-render UI penuh agar data di DOM sinkron
         $this->dispatch('$refresh');
 
-        // NOTIFIKASI DINAMIS BERHASIL
-        if ($statusChanged) {
-            $statusLabel = strtoupper($newStatus);
-
-            // Sesuaikan warna notifikasi biar lebih interaktif
-            $color = match ($newStatus) {
-                'won' => 'success',
-                'lost' => 'danger', // saya ubah ke danger untuk Lost
-                default => 'info',
-            };
-
-            Notification::make()
-                        ->title('Berhasil Memperbarui Deal')
-                        ->body("Status Deal otomatis diperbarui menjadi {$statusLabel}.")
-                ->$color()
-                    ->send();
-        } else {
-            Notification::make()
-                ->title('Berhasil Memperbarui Deal')
-                ->body("Stage berhasil diperbarui menjadi {$targetStage->name}.")
-                ->success()
-                ->send();
-        }
+        Notification::make()
+            ->title('Berhasil Memperbarui Deal')
+            ->body("Stage berhasil diperbarui menjadi {$targetStage->name}.")
+            ->success()
+            ->send();
     }
 
     #[On('refresh-board')]

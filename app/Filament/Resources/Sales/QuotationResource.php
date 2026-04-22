@@ -55,11 +55,10 @@ class QuotationResource extends Resource
     public static function form(Form $form): Form
     {
         return $form->schema([
-            // === KOLOM KIRI (Lebar 2/3) ===
             Group::make()->schema([
                 Section::make('Informasi Penawaran')
                     ->schema([
-                        Grid::make(2) // Ubah jadi 2 agar lebih rapi di layout baru
+                        Grid::make(2)
                             ->schema([
                                 TextInput::make('quotation_number')
                                     ->label('No. Penawaran')
@@ -67,6 +66,36 @@ class QuotationResource extends Resource
                                     ->dehydrated()
                                     ->unique(ignoreRecord: true)
                                     ->prefixIcon('heroicon-o-hashtag'),
+
+                                Select::make('nx_deal_id')
+                                    ->label('No. Deal (Ref)')
+                                    ->relationship(
+                                        'deal',
+                                        'deal_number',
+                                        function (Builder $query) {
+                                            return $query
+                                                ->leftJoin('nx_customers', 'nx_deals.nx_customer_id', '=', 'nx_customers.id')
+                                                ->leftJoin('nx_leads', 'nx_deals.nx_lead_id', '=', 'nx_leads.id')
+                                                ->select('nx_deals.*', 'nx_customers.name as customer_name', 'nx_leads.name as lead_name')
+                                                ->withTrashed();
+                                        }
+                                    )
+                                    ->searchable(['deal_number', 'nx_customers.name', 'nx_leads.name'])
+                                    ->preload()
+                                    ->required()
+                                    ->default(fn() => request()->query('nx_deal_id'))
+                                    ->disabled(fn($record) => $record !== null || request()->has('nx_deal_id'))
+                                    ->dehydrated()
+                                    ->getOptionLabelFromRecordUsing(function ($record) {
+                                        $lead = $record->lead()->withTrashed()->first();
+                                        $clientName = $record->customer?->name ?? $lead?->name ?? 'Tanpa Klien';
+                                        $label = "{$record->deal_number} - {$clientName}";
+                                        if ($record->trashed())
+                                            return "{$label} (Deal Terhapus)";
+                                        if ($lead && $lead->trashed())
+                                            return "{$label} (Lead Terhapus)";
+                                        return $label;
+                                    }),
 
                                 DatePicker::make('quotation_date')
                                     ->label('Tanggal Penawaran')
@@ -84,41 +113,14 @@ class QuotationResource extends Resource
                                     ->displayFormat('d M Y')
                                     ->native(false),
 
-                                Select::make('nx_deal_id')
-                                    ->label('No. Deal (Ref)')
-                                    ->relationship('deal', 'deal_number', function (Builder $query) {
-                                        return $query->withTrashed();
-                                    })
-                                    ->searchable(['deal_number', 'customer.name', 'lead.name'])
-                                    ->preload()
-                                    ->required()
-                                    ->default(fn() => request()->query('nx_deal_id'))
-                                    ->disabled(fn($record) => $record !== null || request()->has('nx_deal_id'))
-                                    ->dehydrated()
-                                    ->getOptionLabelFromRecordUsing(function ($record) {
-                                        $lead = $record->lead()->withTrashed()->first();
-                                        $clientName = $record->customer?->name ?? $lead?->name ?? 'Tanpa Klien';
-                                        $label = "{$record->deal_number} - {$clientName}";
-                                        if ($record->trashed()) return "{$label} (Deal Terhapus)";
-                                        if ($lead && $lead->trashed()) return "{$label} (Lead Terhapus)";
-                                        return $label;
-                                    }),
-
                                 Select::make('internal_pic_id')
                                     ->label('PIC (Internal Sales)')
-                                    ->relationship('internalPic', 'full_name', function ($query) {
-                                        return $query->where('type', 'internal');
-                                    })
+                                    ->relationship('internalPic', 'full_name')
                                     ->searchable()
                                     ->preload()
+                                    ->required()
                                     ->default(function () {
-                                        $employeeId = auth()->user()?->employee?->id;
-                                        if ($employeeId) {
-                                            return SalesPerson::where('employee_id', $employeeId)
-                                                ->where('type', 'internal')
-                                                ->value('id');
-                                        }
-                                        return null;
+                                        return auth()->user()?->employee?->id;
                                     })
                                     ->prefixIcon('heroicon-o-user'),
 
@@ -137,15 +139,25 @@ class QuotationResource extends Resource
                                     ->disabled(),
 
                                 Select::make('status')
-                                    ->options([
-                                        'draft' => 'Draft',
-                                        'sent' => 'Terkirim',
-                                        'negotiation' => 'Negosiasi',
-                                        'accepted' => 'Diterima',
-                                        'rejected' => 'Ditolak',
-                                    ])
-                                    ->default('draft')
+                                    ->options(function (string $operation): array {
+                                        $allStatuses = [
+                                            'new' => 'Baru',
+                                            'sent' => 'Terkirim',
+                                            'negotiation' => 'Negosiasi',
+                                            'accepted' => 'Diterima',
+                                            'rejected' => 'Ditolak',
+                                            'expired' => 'Expired',
+                                        ];
+
+                                        if ($operation === 'create') {
+                                            return ['new' => 'Baru'];
+                                        }
+
+                                        return $allStatuses;
+                                    })
+                                    ->default('new')
                                     ->required()
+                                    ->native(false)
                                     ->prefixIcon('heroicon-o-adjustments-vertical'),
                             ]),
                     ]),
@@ -164,12 +176,10 @@ class QuotationResource extends Resource
                             ->reorderable(false),
                     ])
                     ->collapsible(),
-            ])->columnSpan(['lg' => 2]), // Menempati 2 dari 3 kolom grid utama
+            ])->columnSpan(['lg' => 2]),
 
-            // === KOLOM KANAN (Lebar 1/3) ===
             Group::make()->schema([
                 Section::make('Ringkasan Harga')
-                    ->icon('heroicon-o-calculator')
                     ->schema([
                         TextInput::make('promo_code_input')
                             ->label('Kode Promo')
@@ -229,8 +239,7 @@ class QuotationResource extends Resource
                             ->minValue(0)
                             ->disabled()
                             ->dehydrated()
-                            // Styling ditaruh di sini agar lebih mencolok seperti PO
-                            ->extraInputAttributes(['style' => 'font-size: 1.5rem; font-weight: bold; color: green;'])
+                            ->extraInputAttributes(['style' => 'font-size: 1rem; font-weight: bold; color: green;'])
                             ->formatStateUsing(fn($state) => (int) $state),
                     ]),
 
@@ -306,7 +315,7 @@ class QuotationResource extends Resource
                     ->searchable(['deal.customer.name', 'deal.lead.name'])
                     ->sortable()
                     ->weight('semibold')
-                    ->icon('heroicon-o-user')
+                    ->icon('heroicon-o-building-office')
                     ->color(function (Quotation $record) {
                         $deal = $record->deal()->withTrashed()->first();
                         $lead = $deal?->lead()->withTrashed()->first();
@@ -321,19 +330,23 @@ class QuotationResource extends Resource
                     ->label('Status Penawaran')
                     ->badge()
                     ->color(fn(string $state): string => match ($state) {
-                        'draft' => 'gray',
+                        'new' => 'gray',
                         'sent' => 'warning',
                         'negotiation' => 'info',
                         'accepted' => 'success',
                         'rejected' => 'danger',
+                        'expired' => 'danger',
+
                         default => 'gray'
                     })
                     ->formatStateUsing(fn(string $state): string => match ($state) {
-                        'draft' => 'Draft',
+                        'new' => 'Baru',
                         'sent' => 'Terkirim',
                         'negotiation' => 'Negosiasi',
                         'accepted' => 'Diterima',
                         'rejected' => 'Ditolak',
+                        'expired' => 'Expired',
+
                         default => ucfirst($state),
                     }),
 
@@ -349,7 +362,7 @@ class QuotationResource extends Resource
                     ->label('Field Staff')
                     ->searchable()
                     ->sortable()
-                    ->icon('heroicon-o-user')
+                    ->icon('heroicon-o-users')
                     ->weight('semibold')
                     ->toggleable(isToggledHiddenByDefault: false),
 
@@ -389,19 +402,23 @@ class QuotationResource extends Resource
                 Tables\Columns\TextColumn::make('status')
                     ->badge()
                     ->color(fn(string $state): string => match ($state) {
-                        'draft' => 'gray',
+                        'new' => 'gray',
                         'sent' => 'warning',
                         'negotiation' => 'warning',
                         'accepted' => 'success',
                         'rejected' => 'danger',
+                        'expired' => 'danger',
+
                         default => 'gray'
                     })
                     ->formatStateUsing(fn(string $state): string => match ($state) {
-                        'draft' => 'Draft',
+                        'new' => 'Baru',
                         'sent' => 'Terkirim',
                         'negotiation' => 'Negosiasi',
                         'accepted' => 'Diterima',
                         'rejected' => 'Ditolak',
+                        'expired' => 'Expired',
+
                         default => ucfirst($state),
                     }),
 
@@ -449,33 +466,22 @@ class QuotationResource extends Resource
                 Tables\Filters\SelectFilter::make('status')
                     ->label('Status')
                     ->options([
-                        'draft' => 'Draft',
+                        'new' => 'Baru',
                         'sent' => 'Terkirim',
                         'negotiation' => 'Negosiasi',
                         'accepted' => 'Diterima',
                         'rejected' => 'Ditolak',
+                        'expired' => 'Expired',
                     ]),
 
                 Tables\Filters\SelectFilter::make('internal_pic_id')
                     ->label('PIC (Internal Sales)')
-                    ->relationship('internalPic', 'full_name', function ($query) {
-                        return $query->where('type', 'internal');
-                    })
+                    ->relationship('internalPic', 'full_name')
                     ->searchable()
-                    ->preload()
-                    ->default(function () {
-                        $employeeId = auth()->user()?->employee?->id;
-
-                        if ($employeeId) {
-                            $salesPerson = SalesPerson::where('employee_id', $employeeId)
-                                ->where('type', 'internal')
-                                ->first();
-
-                            return $salesPerson?->id;
-                        }
-
-                        return null;
-                    }),
+                    ->preload(),
+                    // ->default(function () {
+                    //     return auth()->user()?->employee?->id;
+                    // }),
 
                 Tables\Filters\SelectFilter::make('field_staff_pic_id')
                     ->label('PIC (External/Field Staff)')
@@ -491,8 +497,8 @@ class QuotationResource extends Resource
                     ->trueLabel('Sudah Expired')
                     ->falseLabel('Masih Berlaku')
                     ->queries(
-                        true: fn(Builder $query) => $query->whereDate('valid_until', '<', now())->whereIn('status', ['draft', 'sent']),
-                        false: fn(Builder $query) => $query->whereDate('valid_until', '>=', now())->orWhereNotIn('status', ['draft', 'sent']),
+                        true: fn(Builder $query) => $query->whereDate('valid_until', '<', now())->whereIn('status', ['new', 'sent']),
+                        false: fn(Builder $query) => $query->whereDate('valid_until', '>=', now())->orWhereNotIn('status', ['new', 'sent']),
                     ),
 
                 Tables\Filters\Filter::make('created_at')
@@ -770,7 +776,7 @@ class QuotationResource extends Resource
                 }),
 
             TextInput::make('unit_price')
-                ->label('Harga Satuan')
+                ->label('Harga Jual Satuan')
                 ->numeric()
                 ->prefix('IDR')
                 ->required()
@@ -853,7 +859,6 @@ class QuotationResource extends Resource
 
     public static function applyPromo($code, Set $set, Get $get): void
     {
-        // Jika kode kosong, reset diskon
         if (empty($code)) {
             $set('promo_code_id', null);
             $set('temp_discount_type', null);

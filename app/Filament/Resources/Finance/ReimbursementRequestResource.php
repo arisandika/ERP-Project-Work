@@ -25,7 +25,7 @@ class ReimbursementRequestResource extends Resource
 
     protected static ?string $navigationIcon = 'heroicon-o-banknotes';
 
-    protected static ?string $navigationGroup = 'Manajemen Presensi';
+    protected static ?string $navigationGroup = 'Manajemen Presensi ✅';
 
     protected static ?int $navigationSort = 4;
 

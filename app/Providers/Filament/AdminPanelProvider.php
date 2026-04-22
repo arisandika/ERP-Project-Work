@@ -48,7 +48,7 @@ class AdminPanelProvider extends PanelProvider
             ->font('Poppins')
             ->brandName('Nexicon ERP Dashboard')
             ->brandLogo(fn() => view('filament.admin.logo'))
-            ->favicon(url('https://www.nexicon.id/favicon.ico'))
+            ->favicon(url('favicon.ico'))
             ->defaultThemeMode(ThemeMode::Dark)
             ->discoverResources(in: app_path('Filament/Resources'), for: 'App\\Filament\\Resources')
             ->discoverPages(in: app_path('Filament/Pages'), for: 'App\\Filament\\Pages')

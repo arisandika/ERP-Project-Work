@@ -22,7 +22,7 @@ class LeaveResource extends Resource
 
     protected static ?string $navigationIcon = 'heroicon-o-arrow-right-start-on-rectangle';
 
-    protected static ?string $navigationGroup = 'Manajemen HR';
+    protected static ?string $navigationGroup = 'Manajemen HR ✅';
 
     protected static ?int $navigationSort = 5;
 
