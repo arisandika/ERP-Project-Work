@@ -20,6 +20,14 @@ class GoodsReceiptService
                 'receiver.employee',
             ]);
 
+            if ($receipt->status === GoodsReceipt::STATUS_COMPLETED) {
+                return;
+            }
+
+            if ($receipt->items->isEmpty()) {
+                throw new \Exception('Item Goods Receipt tidak ditemukan.');
+            }
+
             $po = PurchaseOrder::query()
                 ->lockForUpdate()
                 ->findOrFail($receipt->purchase_order_id);

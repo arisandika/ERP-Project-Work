@@ -3,6 +3,7 @@
 namespace App\Filament\Resources\Procurement\GoodsReceiptResource\Pages;
 
 use App\Filament\Resources\Procurement\GoodsReceiptResource;
+use App\Models\Procurement\GoodsReceipt;
 use App\Services\Procurement\GoodsReceiptService;
 use Filament\Resources\Pages\CreateRecord;
 use Illuminate\Database\Eloquent\Model;
@@ -18,8 +19,10 @@ class CreateGoodsReceipt extends CreateRecord
             $items = $data['items'] ?? [];
             unset($data['items']);
 
-            /** @var \App\Models\Procurement\GoodsReceipt $record */
+            /** @var GoodsReceipt $record */
             $record = static::getModel()::create($data);
+
+            $hasValidItem = false;
 
             foreach ($items as $item) {
                 $qtyReceived = (int) ($item['quantity_received'] ?? 0);
@@ -27,6 +30,8 @@ class CreateGoodsReceipt extends CreateRecord
                 if ($qtyReceived <= 0) {
                     continue;
                 }
+
+                $hasValidItem = true;
 
                 $record->items()->create([
                     'purchase_order_item_id' => $item['purchase_order_item_id'] ?? null,
@@ -37,9 +42,14 @@ class CreateGoodsReceipt extends CreateRecord
                 ]);
             }
 
+            if (! $hasValidItem) {
+                throw new \Exception('Minimal harus ada satu item dengan qty diterima lebih dari 0.');
+            }
+
             $record->load('items');
 
-            app(GoodsReceiptService::class)->processAfterCreation($record);
+            $service = app(GoodsReceiptService::class);
+            $service->processAfterCreation($record);
 
             return $record;
         });
