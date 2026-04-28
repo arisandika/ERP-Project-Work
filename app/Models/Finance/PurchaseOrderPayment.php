@@ -25,15 +25,18 @@ class PurchaseOrderPayment extends Model
 
             // Otomatis potong kas/uang keluar saat pembayaran Tagihan disimpan
             FinancialRecord::create([
-                'transaction_date' => $payment->payment_date,
-                'type'             => 'pengeluaran',
-                'amount'           => $payment->amount,
-                'category'         => 'Purchase Invoice Payment',
-                'description'      => 'Pembayaran Tagihan ke Supplier: ' . ($invoice->supplier->name ?? '-') . ' via ' . strtoupper($payment->payment_method),
-                'reference_number' => $payment->payment_number,
-                'reference_type'   => PurchaseInvoice::class, // Referensi ke PI
-                'reference_id'     => $payment->purchase_invoice_id,
-                'created_by'       => auth()->id() ?? 1,
+                'transaction_date'     => $payment->payment_date,
+                'type'                 => 'pengeluaran',
+                'amount'               => $payment->amount,
+                'category'             => 'Purchase Invoice Payment',
+                'account_type'         => 'cogs',
+                'cash_flow_activity'   => 'operating',
+                'normal_balance'       => 'debit',
+                'description'          => 'Pembayaran Tagihan ke Supplier: ' . ($invoice->supplier->name ?? '-') . ' via ' . strtoupper($payment->payment_method),
+                'reference_number'     => $payment->payment_number,
+                'reference_type'       => PurchaseInvoice::class,
+                'reference_id'         => $payment->purchase_invoice_id,
+                'created_by'           => auth()->id() ?? 1,
             ]);
 
             // Trigger update status di Purchase Invoice (Otomatis hitung sisa tagihan)

@@ -23,6 +23,9 @@ class FinancialRecord extends Model
         'type',
         'amount',
         'category',
+        'account_type',
+        'cash_flow_activity',
+        'normal_balance',
         'reimburse_id',
         'receipt',
         'reference_number',
@@ -36,6 +39,9 @@ class FinancialRecord extends Model
         'reference_id' => 'integer',
         'transaction_date' => 'datetime',
         'amount' => 'decimal:2',
+        'account_type' => 'string',
+        'cash_flow_activity' => 'string',
+        'normal_balance' => 'string',
     ];
 
     protected static function booted(): void
@@ -46,10 +52,14 @@ class FinancialRecord extends Model
             }
 
             $model->amount = round((float) ($model->amount ?? 0), 2);
+
+            self::guessAccountingFields($model);
         });
 
         static::updating(function (FinancialRecord $model) {
             $model->amount = round((float) ($model->amount ?? 0), 2);
+
+            self::guessAccountingFields($model);
         });
     }
 
@@ -120,5 +130,63 @@ class FinancialRecord extends Model
     public function employee(): BelongsTo
     {
         return $this->belongsTo(Employee::class, 'created_by');
+    }
+
+    private static function guessAccountingFields(FinancialRecord $model): void
+    {
+        $category = strtolower((string) $model->category);
+        $type = strtolower((string) $model->type);
+
+        if (blank($model->account_type)) {
+            $model->account_type = match (true) {
+                str_contains($category, 'sales revenue') => 'revenue',
+                str_contains($category, 'purchase invoice') => 'cogs',
+                str_contains($category, 'purchase order') => 'cogs',
+                str_contains($category, 'purchase') => 'cogs',
+
+                str_contains($category, 'salary') => 'operating_expense',
+                str_contains($category, 'rent') => 'operating_expense',
+                str_contains($category, 'listrik') => 'operating_expense',
+                str_contains($category, 'air') => 'operating_expense',
+                str_contains($category, 'bensin') => 'operating_expense',
+                str_contains($category, 'makan') => 'operating_expense',
+                str_contains($category, 'transport') => 'operating_expense',
+                str_contains($category, 'parkir') => 'operating_expense',
+                str_contains($category, 'hotel') => 'operating_expense',
+                str_contains($category, 'reimbursement') => 'operating_expense',
+
+                str_contains($category, 'accounts receivable') => 'asset',
+                str_contains($category, 'accounts payable') => 'liability',
+
+                $type === 'hutang' => 'liability',
+                $type === 'piutang' => 'asset',
+                $type === 'pemasukan' => 'revenue',
+                $type === 'pengeluaran' => 'operating_expense',
+
+                default => 'other_expense',
+            };
+        }
+
+        if (blank($model->cash_flow_activity)) {
+            $model->cash_flow_activity = match ($model->account_type) {
+                'asset' => 'operating',
+                'liability' => 'financing',
+                'equity' => 'financing',
+                'revenue' => 'operating',
+                'cogs' => 'operating',
+                'operating_expense' => 'operating',
+                'other_income' => 'operating',
+                'other_expense' => 'operating',
+                default => 'operating',
+            };
+        }
+
+        if (blank($model->normal_balance)) {
+            $model->normal_balance = match ($model->account_type) {
+                'asset', 'cogs', 'operating_expense', 'other_expense' => 'debit',
+                'liability', 'equity', 'revenue', 'other_income' => 'credit',
+                default => $type === 'pemasukan' ? 'credit' : 'debit',
+            };
+        }
     }
 }
