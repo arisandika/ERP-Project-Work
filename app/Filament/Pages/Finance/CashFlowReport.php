@@ -2,12 +2,12 @@
 
 namespace App\Filament\Pages\Finance;
 
-use Filament\Pages\Page;
 use App\Models\Finance\FinancialRecord;
 use Filament\Forms\Components\DatePicker;
-use Filament\Forms\Form;
 use Filament\Forms\Concerns\InteractsWithForms;
 use Filament\Forms\Contracts\HasForms;
+use Filament\Forms\Form;
+use Filament\Pages\Page;
 use Illuminate\Support\Carbon;
 
 class CashFlowReport extends Page implements HasForms
@@ -42,6 +42,7 @@ class CashFlowReport extends Page implements HasForms
                     ->displayFormat('d M Y')
                     ->live()
                     ->required(),
+
                 DatePicker::make('end_date')
                     ->label('Sampai Tanggal')
                     ->native(false)
@@ -61,37 +62,93 @@ class CashFlowReport extends Page implements HasForms
         $startDate = Carbon::parse($startDateStr)->startOfDay();
         $endDate = Carbon::parse($endDateStr)->endOfDay();
 
-        // 1. HITUNG SALDO AWAL (Uang kas sebelum tanggal mulai laporan)
-        $openingIn = FinancialRecord::where('transaction_date', '<', $startDate)->where('type', 'pemasukan')->sum('amount');
-        $openingOut = FinancialRecord::where('transaction_date', '<', $startDate)->where('type', 'pengeluaran')->sum('amount');
-        $openingBalance = $openingIn - $openingOut;
+        /*
+         * Saldo awal kas:
+         * semua transaksi sebelum periode.
+         *
+         * pemasukan/piutang dianggap menambah kas
+         * pengeluaran/hutang dianggap mengurangi kas
+         *
+         * Catatan:
+         * Ini masih pendekatan cash-basis dari FinancialRecord.
+         */
+        $openingRecords = FinancialRecord::query()
+            ->where('transaction_date', '<', $startDate)
+            ->get();
 
-        // 2. AMBIL TRANSAKSI PADA PERIODE TERSEBUT
-        $transactions = FinancialRecord::whereBetween('transaction_date', [$startDate, $endDate])->get();
+        $openingBalance = $this->calculateNetCash($openingRecords);
 
-        // 3. ARUS KAS MASUK (Cash Inflows)
-        $cashInflows = $transactions->where('type', 'pemasukan')->groupBy('category');
-        $totalInflow = $transactions->where('type', 'pemasukan')->sum('amount');
+        $transactions = FinancialRecord::query()
+            ->whereBetween('transaction_date', [$startDate, $endDate])
+            ->get();
 
-        // 4. ARUS KAS KELUAR (Cash Outflows)
-        $cashOutflows = $transactions->where('type', 'pengeluaran')->groupBy('category');
-        $totalOutflow = $transactions->where('type', 'pengeluaran')->sum('amount');
+        $operatingTransactions = $transactions
+            ->where('cash_flow_activity', 'operating');
 
-        // 5. KENAIKAN/PENURUNAN KAS BERSIH
-        $netCashFlow = $totalInflow - $totalOutflow;
+        $investingTransactions = $transactions
+            ->where('cash_flow_activity', 'investing');
 
-        // 6. SALDO AKHIR
+        $financingTransactions = $transactions
+            ->where('cash_flow_activity', 'financing');
+
+        $operatingDetails = $this->buildCashFlowDetails($operatingTransactions);
+        $investingDetails = $this->buildCashFlowDetails($investingTransactions);
+        $financingDetails = $this->buildCashFlowDetails($financingTransactions);
+
+        $totalOperatingCashFlow = $this->calculateNetCash($operatingTransactions);
+        $totalInvestingCashFlow = $this->calculateNetCash($investingTransactions);
+        $totalFinancingCashFlow = $this->calculateNetCash($financingTransactions);
+
+        $netCashFlow = $totalOperatingCashFlow + $totalInvestingCashFlow + $totalFinancingCashFlow;
         $endingBalance = $openingBalance + $netCashFlow;
 
         return [
             'period' => $startDate->format('d M Y') . ' - ' . $endDate->format('d M Y'),
+
             'openingBalance' => $openingBalance,
-            'cashInflows' => $cashInflows,
-            'totalInflow' => $totalInflow,
-            'cashOutflows' => $cashOutflows,
-            'totalOutflow' => $totalOutflow,
+
+            'operatingDetails' => $operatingDetails,
+            'investingDetails' => $investingDetails,
+            'financingDetails' => $financingDetails,
+
+            'totalOperatingCashFlow' => $totalOperatingCashFlow,
+            'totalInvestingCashFlow' => $totalInvestingCashFlow,
+            'totalFinancingCashFlow' => $totalFinancingCashFlow,
+
             'netCashFlow' => $netCashFlow,
             'endingBalance' => $endingBalance,
         ];
+    }
+
+    private function calculateNetCash($records): float
+    {
+        $cashInTypes = ['pemasukan', 'piutang'];
+        $cashOutTypes = ['pengeluaran', 'hutang'];
+
+        $cashIn = $records
+            ->whereIn('type', $cashInTypes)
+            ->sum('amount');
+
+        $cashOut = $records
+            ->whereIn('type', $cashOutTypes)
+            ->sum('amount');
+
+        return (float) $cashIn - (float) $cashOut;
+    }
+
+    private function buildCashFlowDetails($records): array
+    {
+        return $records
+            ->groupBy('category')
+            ->map(function ($items, $category) {
+                return [
+                    'category' => $category ?: 'Lain-lain',
+                    'cash_in' => $items->whereIn('type', ['pemasukan', 'piutang'])->sum('amount'),
+                    'cash_out' => $items->whereIn('type', ['pengeluaran', 'hutang'])->sum('amount'),
+                    'net' => $this->calculateNetCash($items),
+                ];
+            })
+            ->values()
+            ->toArray();
     }
 }

@@ -2,12 +2,12 @@
 
 namespace App\Filament\Pages\Finance;
 
-use Filament\Pages\Page;
 use App\Models\Finance\FinancialRecord;
 use Filament\Forms\Components\DatePicker;
-use Filament\Forms\Form;
 use Filament\Forms\Concerns\InteractsWithForms;
 use Filament\Forms\Contracts\HasForms;
+use Filament\Forms\Form;
+use Filament\Pages\Page;
 use Illuminate\Support\Carbon;
 
 class ProfitAndLossReport extends Page implements HasForms
@@ -22,12 +22,10 @@ class ProfitAndLossReport extends Page implements HasForms
 
     protected static string $view = 'filament.pages.finance.profit-and-loss-report';
 
-    // FIX UTAMA: Di Filament v3, Form State harus dibungkus dalam properti array
     public ?array $data = [];
 
     public function mount(): void
     {
-        // Isi nilai default form
         $this->form->fill([
             'start_date' => Carbon::now()->startOfMonth()->format('Y-m-d'),
             'end_date' => Carbon::now()->endOfMonth()->format('Y-m-d'),
@@ -42,8 +40,9 @@ class ProfitAndLossReport extends Page implements HasForms
                     ->label('Periode Dari')
                     ->native(false)
                     ->displayFormat('d M Y')
-                    ->live() // Auto-refresh saat diubah
+                    ->live()
                     ->required(),
+
                 DatePicker::make('end_date')
                     ->label('Sampai Tanggal')
                     ->native(false)
@@ -51,52 +50,72 @@ class ProfitAndLossReport extends Page implements HasForms
                     ->live()
                     ->required(),
             ])
-            ->statePath('data') // FIX UTAMA: Wajib deklarasi state path
+            ->statePath('data')
             ->columns(2);
     }
 
-    /**
-     * Engine Perhitungan Akuntansi
-     */
     protected function getViewData(): array
     {
-        // Ambil data dari state array
         $startDateStr = $this->data['start_date'] ?? Carbon::now()->startOfMonth()->format('Y-m-d');
         $endDateStr = $this->data['end_date'] ?? Carbon::now()->endOfMonth()->format('Y-m-d');
 
         $startDate = Carbon::parse($startDateStr)->startOfDay();
         $endDate = Carbon::parse($endDateStr)->endOfDay();
 
-        // 1. Ambil semua transaksi di rentang waktu tersebut
-        $transactions = FinancialRecord::whereBetween('transaction_date', [$startDate, $endDate])->get();
+        $transactions = FinancialRecord::query()
+            ->whereBetween('transaction_date', [$startDate, $endDate])
+            ->get();
 
-        // 2. Pendapatan (Semua Pemasukan)
-        $revenueDetails = $transactions->where('type', 'pemasukan')->groupBy('category');
-        $totalRevenue = $transactions->where('type', 'pemasukan')->sum('amount');
+        $revenueTransactions = $transactions->where('account_type', 'revenue');
+        $cogsTransactions = $transactions->where('account_type', 'cogs');
+        $opexTransactions = $transactions->where('account_type', 'operating_expense');
+        $otherIncomeTransactions = $transactions->where('account_type', 'other_income');
+        $otherExpenseTransactions = $transactions->where('account_type', 'other_expense');
 
-        // 3. Harga Pokok Penjualan (HPP)
-        $cogsTransactions = $transactions->where('type', 'pengeluaran')->whereIn('category', ['Purchase Order', 'Purchase']);
+        $revenueDetails = $revenueTransactions->groupBy('category');
+        $cogsDetails = $cogsTransactions->groupBy('category');
+        $opexDetails = $opexTransactions->groupBy('category');
+        $otherIncomeDetails = $otherIncomeTransactions->groupBy('category');
+        $otherExpenseDetails = $otherExpenseTransactions->groupBy('category');
+
+        $totalRevenue = $revenueTransactions->sum('amount');
         $totalCogs = $cogsTransactions->sum('amount');
-
-        // 4. Laba Kotor
         $grossProfit = $totalRevenue - $totalCogs;
 
-        // 5. Biaya Operasional (Opex)
-        $opexTransactions = $transactions->where('type', 'pengeluaran')->whereNotIn('category', ['Purchase Order', 'Purchase']);
-        $opexDetails = $opexTransactions->groupBy('category');
         $totalOpex = $opexTransactions->sum('amount');
+        $operatingProfit = $grossProfit - $totalOpex;
 
-        // 6. Laba Bersih
-        $netProfit = $grossProfit - $totalOpex;
+        $totalOtherIncome = $otherIncomeTransactions->sum('amount');
+        $totalOtherExpense = $otherExpenseTransactions->sum('amount');
+
+        $profitBeforeTax = $operatingProfit + $totalOtherIncome - $totalOtherExpense;
+
+        // Untuk sekarang pajak belum dihitung dari modul khusus, jadi diset 0 dulu.
+        $taxExpense = 0;
+
+        $netProfit = $profitBeforeTax - $taxExpense;
 
         return [
             'period' => $startDate->format('d M Y') . ' - ' . $endDate->format('d M Y'),
+
             'revenueDetails' => $revenueDetails,
+            'cogsDetails' => $cogsDetails,
+            'opexDetails' => $opexDetails,
+            'otherIncomeDetails' => $otherIncomeDetails,
+            'otherExpenseDetails' => $otherExpenseDetails,
+
             'totalRevenue' => $totalRevenue,
             'totalCogs' => $totalCogs,
             'grossProfit' => $grossProfit,
-            'opexDetails' => $opexDetails,
+
             'totalOpex' => $totalOpex,
+            'operatingProfit' => $operatingProfit,
+
+            'totalOtherIncome' => $totalOtherIncome,
+            'totalOtherExpense' => $totalOtherExpense,
+
+            'profitBeforeTax' => $profitBeforeTax,
+            'taxExpense' => $taxExpense,
             'netProfit' => $netProfit,
         ];
     }

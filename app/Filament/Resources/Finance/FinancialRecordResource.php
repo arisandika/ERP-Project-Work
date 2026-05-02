@@ -89,6 +89,44 @@ class FinancialRecordResource extends Resource
                                     ->native(false)
                                     ->prefixIcon('heroicon-o-tag'),
 
+                                Forms\Components\Select::make('account_type')
+                                    ->label('Klasifikasi Akun')
+                                    ->options([
+                                        'revenue' => 'Revenue / Pendapatan',
+                                        'cogs' => 'COGS / HPP',
+                                        'operating_expense' => 'Operating Expense / Biaya Operasional',
+                                        'other_income' => 'Other Income / Pendapatan Lain-lain',
+                                        'other_expense' => 'Other Expense / Beban Lain-lain',
+                                        'asset' => 'Asset / Aset',
+                                        'liability' => 'Liability / Kewajiban',
+                                        'equity' => 'Equity / Modal',
+                                    ])
+                                    ->searchable()
+                                    ->native(false)
+                                    ->prefixIcon('heroicon-o-rectangle-stack')
+                                    ->helperText('Dipakai untuk Laba Rugi dan Neraca.'),
+
+                                Forms\Components\Select::make('cash_flow_activity')
+                                    ->label('Aktivitas Arus Kas')
+                                    ->options([
+                                        'operating' => 'Operating / Operasional',
+                                        'investing' => 'Investing / Investasi',
+                                        'financing' => 'Financing / Pendanaan',
+                                    ])
+                                    ->native(false)
+                                    ->prefixIcon('heroicon-o-arrows-right-left')
+                                    ->helperText('Dipakai untuk laporan Arus Kas.'),
+
+                                Forms\Components\Select::make('normal_balance')
+                                    ->label('Saldo Normal')
+                                    ->options([
+                                        'debit' => 'Debit',
+                                        'credit' => 'Credit',
+                                    ])
+                                    ->native(false)
+                                    ->prefixIcon('heroicon-o-scale')
+                                    ->helperText('Opsional. Bisa dikosongkan, sistem akan mengisi otomatis.'),
+
                                 Forms\Components\TextInput::make('amount')
                                     ->label('Nominal')
                                     ->numeric()
@@ -197,6 +235,34 @@ class FinancialRecordResource extends Resource
                     ->searchable()
                     ->placeholder('—'),
 
+                Tables\Columns\TextColumn::make('account_type')
+                    ->label('Klasifikasi')
+                    ->badge()
+                    ->formatStateUsing(fn (?string $state) => match ($state) {
+                        'revenue' => 'Revenue',
+                        'cogs' => 'HPP',
+                        'operating_expense' => 'Opex',
+                        'other_income' => 'Other Income',
+                        'other_expense' => 'Other Expense',
+                        'asset' => 'Asset',
+                        'liability' => 'Liability',
+                        'equity' => 'Equity',
+                        default => 'Belum Diklasifikasi',
+                    })
+                    ->color(fn (?string $state) => match ($state) {
+                        'revenue' => 'success',
+                        'cogs' => 'danger',
+                        'operating_expense' => 'warning',
+                        'other_income' => 'info',
+                        'other_expense' => 'gray',
+                        'asset' => 'primary',
+                        'liability' => 'danger',
+                        'equity' => 'success',
+                        default => 'gray',
+                    })
+                    ->sortable()
+                    ->toggleable(),
+
                 Tables\Columns\TextColumn::make('description')
                     ->label('Keterangan')
                     ->state(fn ($record) => $record->reimbursement?->description ?? $record->description)
@@ -302,6 +368,29 @@ class FinancialRecordResource extends Resource
 
                         return $indicators;
                     }),
+
+                Tables\Filters\SelectFilter::make('account_type')
+                    ->label('Klasifikasi Akun')
+                    ->options([
+                        'revenue' => 'Revenue',
+                        'cogs' => 'HPP',
+                        'operating_expense' => 'Operating Expense',
+                        'other_income' => 'Other Income',
+                        'other_expense' => 'Other Expense',
+                        'asset' => 'Asset',
+                        'liability' => 'Liability',
+                        'equity' => 'Equity',
+                    ])
+                    ->native(false),
+                    
+                Tables\Filters\SelectFilter::make('cash_flow_activity')
+                    ->label('Aktivitas Arus Kas')
+                    ->options([
+                        'operating' => 'Operating',
+                        'investing' => 'Investing',
+                        'financing' => 'Financing',
+                    ])
+                    ->native(false),
             ])
             ->actions([
                 Tables\Actions\ViewAction::make(),
