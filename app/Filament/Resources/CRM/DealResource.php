@@ -24,9 +24,14 @@ use Illuminate\Database\Eloquent\SoftDeletingScope;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\HtmlString;
 use Illuminate\Validation\ValidationException;
+use App\Filament\Concerns\BelongsToModule;
 
 class DealResource extends Resource
 {
+    use BelongsToModule;
+
+    protected static ?string $module = 'CRM';
+
     protected static ?string $model = Deal::class;
 
     protected static ?string $navigationIcon = 'heroicon-o-briefcase';

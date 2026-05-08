@@ -15,9 +15,13 @@ use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\HtmlString;
+use App\Filament\Concerns\BelongsToModule;
 
 class LeaveResource extends Resource
 {
+    use BelongsToModule;
+    protected static ?string $module = 'HR';
     protected static ?string $model = Leave::class;
 
     protected static ?string $navigationIcon = 'heroicon-o-arrow-right-start-on-rectangle';

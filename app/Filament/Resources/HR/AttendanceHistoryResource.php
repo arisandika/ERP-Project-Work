@@ -15,9 +15,14 @@ use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
 use Illuminate\Support\Carbon;
+use App\Filament\Concerns\BelongsToModule;
 
 class AttendanceHistoryResource extends Resource
 {
+    use BelongsToModule;
+
+    protected static ?string $module = 'HR';
+
     protected static ?string $model = Attendance::class;
 
     protected static ?string $navigationIcon = 'heroicon-o-clipboard-document-check';

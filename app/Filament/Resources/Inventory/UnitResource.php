@@ -13,9 +13,12 @@ use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Carbon;
+use App\Filament\Concerns\BelongsToModule;
 
 class UnitResource extends Resource
 {
+    use BelongsToModule;
+    protected static ?string $module = 'Inventory';
     protected static ?string $model = Unit::class;
 
     protected static ?string $navigationIcon = 'heroicon-o-scale';

@@ -10,9 +10,12 @@ use Filament\Tables;
 use Filament\Tables\Filters\Filter;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
+use App\Filament\Concerns\BelongsToModule;
 
 class InventoryMonitoringResource extends Resource
 {
+    use BelongsToModule;
+    protected static ?string $module = 'Inventory';
     protected static ?string $model = ProductStock::class;
 
     protected static ?string $navigationIcon = 'heroicon-o-chart-bar';

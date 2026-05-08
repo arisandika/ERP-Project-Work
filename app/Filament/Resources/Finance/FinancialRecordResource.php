@@ -19,9 +19,15 @@ use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\HtmlString;
+use App\Filament\Concerns\BelongsToModule;
 
 class FinancialRecordResource extends Resource
 {
+    use BelongsToModule;
+
+    protected static ?string $module = 'Finance';
+
     protected static ?string $model = FinancialRecord::class;
 
     protected static ?string $navigationIcon = 'heroicon-o-banknotes';
@@ -382,7 +388,7 @@ class FinancialRecordResource extends Resource
                         'equity' => 'Equity',
                     ])
                     ->native(false),
-                    
+
                 Tables\Filters\SelectFilter::make('cash_flow_activity')
                     ->label('Aktivitas Arus Kas')
                     ->options([

@@ -12,9 +12,14 @@ use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
 use Illuminate\Support\HtmlString;
+use App\Filament\Concerns\BelongsToModule;
 
 class CustomerResource extends Resource
 {
+    use BelongsToModule;
+
+    protected static ?string $module = 'CRM';
+
     protected static ?string $model = Customer::class;
 
     protected static ?string $navigationIcon = 'heroicon-o-identification';

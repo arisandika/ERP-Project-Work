@@ -9,9 +9,12 @@ use Filament\Forms\Form;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
+use App\Filament\Concerns\BelongsToModule;
 
 class SupplierResource extends Resource
 {
+    use BelongsToModule;
+    protected static ?string $module = 'Procurement';
     protected static ?string $model = Supplier::class;
 
     protected static ?string $navigationIcon = 'heroicon-o-truck';

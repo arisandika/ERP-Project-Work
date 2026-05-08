@@ -15,9 +15,12 @@ use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\Auth;
 use Throwable;
+use App\Filament\Concerns\BelongsToModule;
 
 class PurchaseRequisitionResource extends Resource
 {
+    use BelongsToModule;
+    protected static ?string $module = 'Procurement';
     protected static ?string $model = PurchaseRequisition::class;
     protected static ?string $navigationIcon = 'heroicon-o-clipboard-document-list';
     protected static ?string $navigationGroup = 'Manajemen Procurement';

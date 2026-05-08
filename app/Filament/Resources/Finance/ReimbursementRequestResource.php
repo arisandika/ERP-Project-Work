@@ -18,9 +18,15 @@ use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\HtmlString;
+use App\Filament\Concerns\BelongsToModule;
 
 class ReimbursementRequestResource extends Resource
 {
+    use BelongsToModule;
+
+    protected static ?string $module = 'Finance';
+
     protected static ?string $model = ReimbursementRequest::class;
 
     protected static ?string $navigationIcon = 'heroicon-o-banknotes';

@@ -3,10 +3,10 @@
 namespace App\Filament\Pages\CRM;
 
 use App\Filament\Resources\CRM\DealResource;
+use App\Filament\Concerns\BelongsToModule;
 use App\Models\CRM\Deal;
 use App\Models\CRM\DealStage;
 use BezhanSalleh\FilamentShield\Traits\HasPageShield;
-use Exception;
 use Filament\Actions\Action;
 use Filament\Notifications\Notification;
 use Filament\Pages\Page;
@@ -16,7 +16,23 @@ use Livewire\Attributes\On;
 
 class DealPipeline extends Page
 {
-    use HasPageShield;
+    /**
+     * Resolusi Konflik Trait
+     * Mendeklarasikan prioritas dan membuat alias untuk menggabungkan logika
+     * antara Shield (Role) dan Module (Tenant/Lisensi).
+     */
+    use HasPageShield, BelongsToModule {
+        HasPageShield::canAccess insteadof BelongsToModule;
+        HasPageShield::shouldRegisterNavigation insteadof BelongsToModule;
+
+        HasPageShield::canAccess as shieldCanAccess;
+        HasPageShield::shouldRegisterNavigation as shieldShouldRegisterNavigation;
+
+        BelongsToModule::canAccess as moduleCanAccess;
+        BelongsToModule::shouldRegisterNavigation as moduleShouldRegisterNavigation;
+    }
+
+    protected static ?string $module = 'CRM';
 
     protected static ?string $navigationIcon = 'heroicon-o-view-columns';
 
@@ -38,6 +54,24 @@ class DealPipeline extends Page
 
     public array $sortOrders = [];
 
+    /**
+     * Override method canAccess()
+     * Menggabungkan validasi Permission User DAN Status Modul
+     */
+    public static function canAccess(): bool
+    {
+        return static::shieldCanAccess() && static::moduleCanAccess();
+    }
+
+    /**
+     * Override method shouldRegisterNavigation()
+     * Menu hanya muncul jika User punya akses DAN modul aktif
+     */
+    public static function shouldRegisterNavigation(): bool
+    {
+        return static::shieldShouldRegisterNavigation() && static::moduleShouldRegisterNavigation();
+    }
+
     public function mount(): void
     {
         // Inisialisasi
@@ -49,15 +83,9 @@ class DealPipeline extends Page
         // Mengambil semua Deal Stage beserta Deal di dalamnya
         $stages = DealStage::with([
             'deals' => function ($query) {
-                // Eager load customer dan lead untuk menampilkan nama di card
-                $query->whereNull('deleted_at')
-
-                    ->whereHas('lead', function ($q) {
-                    $q->whereNull('deleted_at');
-                })
-
-                    ->with(['customer', 'lead', 'quotations'])
-
+                // REVISI: Penghapusan redundansi whereNull('deleted_at').
+                // Eloquent SoftDeletes sudah menangani ini secara otomatis.
+                $query->with(['customer', 'lead', 'quotations'])
                     ->select(
                         'id',
                         'nx_customer_id',
@@ -78,7 +106,7 @@ class DealPipeline extends Page
             ->orderBy('sort_order')
             ->get();
 
-        // Terapkan sorting dinamis untuk setiap kolom (jika user memilih opsi urutkan)
+        // Terapkan sorting dinamis untuk setiap kolom
         $stages->each(function ($stage) {
             $sortOrder = $this->sortOrders[$stage->id] ?? 'date_created_newest';
             $stage->deals = $this->applySorting($stage->deals, $sortOrder);
@@ -89,21 +117,22 @@ class DealPipeline extends Page
 
     public function loadDealStages(): void
     {
-        // Hapus cache property agar #[Computed] dijalankan ulang pada request berikutnya
         unset($this->dealStages);
     }
 
-    public function setSortOrder($stageId, $sortOrder)
+    // REVISI: Penambahan type hinting (int|string bergantung pada tipe UUID/ID Anda)
+    public function setSortOrder(int|string $stageId, string $sortOrder): void
     {
         $this->sortOrders[$stageId] = $sortOrder;
         $this->loadDealStages();
     }
 
-    private function applySorting($deals, $sortOrder)
+    // REVISI: Penambahan type hinting
+    private function applySorting(Collection $deals, string $sortOrder): Collection
     {
         switch ($sortOrder) {
             case 'date_created_newest':
-                return $deals->values(); // Default sudah urut dari query
+                return $deals->values();
             case 'date_created_oldest':
                 return $deals->sortBy('created_at')->values();
             case 'value_highest':
@@ -116,17 +145,14 @@ class DealPipeline extends Page
                 })->values();
             case 'name_alphabetical':
                 return $deals->sortBy(function ($deal) {
-                    // Mengurutkan berdasarkan nama Customer atau Lead
                     return $deal->customer?->name ?? $deal->lead?->name ?? 'Z';
                 })->values();
             default:
                 return $deals->values();
         }
     }
-
-    public function moveDeal($dealId, $newStageId): void
+    public function moveDeal(int|string $dealId, int|string $newStageId): void
     {
-        // Pastikan user punya akses
         if (!$this->canMoveDeals()) {
             Notification::make()->title('Akses Ditolak')->danger()->send();
             return;
@@ -135,7 +161,6 @@ class DealPipeline extends Page
         $deal = Deal::with('quotations')->findOrFail($dealId);
         $targetStage = DealStage::findOrFail($newStageId);
 
-        // --- VALIDASI FAKTUAL BARU ---
         $hasWon = $deal->quotations()->where('is_primary', true)->exists();
         $hasQuotations = $deal->quotations()->exists();
         $allRejected = $hasQuotations && $deal->quotations()->where('status', '!=', 'rejected')->count() === 0;
@@ -147,7 +172,7 @@ class DealPipeline extends Page
                 ->body('Deal ini terkunci karena status penawarannya sudah final (Won/Lost).')
                 ->warning()
                 ->send();
-            $this->loadDealStages(); // Batalkan perpindahan di UI
+            $this->loadDealStages();
             return;
         }
 
@@ -162,14 +187,15 @@ class DealPipeline extends Page
                 ->body('Stage Won/Lost hanya bisa diatur secara otomatis melalui status penawaran.')
                 ->danger()
                 ->send();
-            $this->loadDealStages(); // Batalkan perpindahan di UI
+            $this->loadDealStages();
             return;
         }
-        // --- AKHIR VALIDASI FAKTUAL ---
 
-        // Validasi lama (tetap relevan untuk stage non-final)
+        // REVISI: Menghindari fragile query. Gunakan identifier pasti di database.
+        // Ganti 'is_quotation_stage' dengan nama kolom yang Anda buat di DB.
+        // Jika Anda belum mengubah DB, sementara gunakan: ->where('slug', 'penawaran')->first();
         $hasQuotation = $deal->quotations()->exists();
-        $penawaranStage = DealStage::whereRaw('LOWER(name) LIKE ?', ['%penawaran%'])->first();
+        $penawaranStage = DealStage::where('is_quotation_stage', true)->first();
         $penawaranProbability = $penawaranStage?->probability ?? 0;
 
         if (!$hasQuotation && $targetStage->probability >= $penawaranProbability) {
@@ -182,11 +208,8 @@ class DealPipeline extends Page
             return;
         }
 
-        // --- (Sisanya bisa tetap sama, atau bisa disederhanakan) ---
-
         // Jika lolos, simpan perubahan stage
         $deal->nx_deal_stage_id = $newStageId;
-        // Status akan tetap 'open' atau 'on_hold', tidak akan pernah menjadi 'won'/'lost' dari sini.
         $deal->save();
 
         $this->loadDealStages();
@@ -203,7 +226,7 @@ class DealPipeline extends Page
     public function refreshBoard(): void
     {
         $this->loadDealStages();
-        $this->dispatch('deal-updated'); // trigger event ke Alpine JS di blade
+        $this->dispatch('deal-updated');
     }
 
     protected function getHeaderActions(): array

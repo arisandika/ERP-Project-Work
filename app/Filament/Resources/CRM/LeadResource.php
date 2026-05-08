@@ -19,9 +19,15 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\HtmlString;
+use App\Filament\Concerns\BelongsToModule;
+
 
 class LeadResource extends Resource
 {
+    use BelongsToModule;
+
+    protected static ?string $module = 'CRM';
+
     protected static ?string $model = Lead::class;
 
     protected static ?string $navigationIcon = 'heroicon-o-funnel';

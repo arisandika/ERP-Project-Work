@@ -34,9 +34,13 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Str;
 use Picqer\Barcode\BarcodeGeneratorPNG;
+use Throwable;
+use App\Filament\Concerns\BelongsToModule;
 
 class InvoiceResource extends Resource
 {
+    use BelongsToModule;
+    protected static ?string $module = 'Sales';
     protected static ?string $model = Invoice::class;
 
     protected static ?string $navigationIcon = 'heroicon-o-banknotes';

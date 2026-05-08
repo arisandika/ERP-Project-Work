@@ -15,9 +15,12 @@ use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Support\Facades\DB;
+use App\Filament\Concerns\BelongsToModule;
 
 class SerialNumberResource extends Resource
 {
+    use BelongsToModule;
+    protected static ?string $module = 'Inventory';
     protected static ?string $model = SerialNumber::class;
     protected static ?string $navigationIcon = 'heroicon-o-qr-code';
     protected static ?string $navigationGroup = 'Manajemen Inventory';

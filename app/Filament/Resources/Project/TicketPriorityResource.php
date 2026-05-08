@@ -13,9 +13,12 @@ use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
 use Illuminate\Support\Carbon;
+use App\Filament\Concerns\BelongsToModule;
 
 class TicketPriorityResource extends Resource
 {
+    use BelongsToModule;
+    protected static ?string $module = 'Project Management';
     protected static ?string $model = TicketPriority::class;
 
     protected static ?string $navigationIcon = 'heroicon-o-flag';
