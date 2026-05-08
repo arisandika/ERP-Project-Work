@@ -67,7 +67,7 @@ class PurchaseRequisitionResource extends Resource
         ]);
     }
 
-    protected static function requestInformationSection(): Forms\Components\Section
+protected static function requestInformationSection(): Forms\Components\Section
     {
         return Forms\Components\Section::make('Informasi Permintaan')
             ->description('Lengkapi informasi utama pengajuan pembelian.')
@@ -85,7 +85,7 @@ class PurchaseRequisitionResource extends Resource
 
                 Forms\Components\DatePicker::make('request_date')
                     ->label('Tanggal Permintaan')
-                    ->default(now())
+                    ->default(today())
                     ->required()
                     ->native(false)
                     ->prefixIcon('heroicon-o-calendar-days'),
@@ -95,10 +95,10 @@ class PurchaseRequisitionResource extends Resource
                     ->required()
                     ->native(false)
                     ->prefixIcon('heroicon-o-calendar')
-                    ->minDate(fn (Get $get) => $get('request_date') ?: now())
+                    ->minDate(fn (Get $get) => $get('request_date') ?: today())
                     ->rule('after_or_equal:request_date')
                     ->validationMessages([
-                        'after_or_equal' => 'Tanggal dibutuhkan harus sama atau setelah tanggal permintaan.',
+                        'after_or_equal' => 'Tanggal dibutuhkan harus sama dengan atau setelah tanggal permintaan.',
                     ]),
 
                 Forms\Components\Textarea::make('purpose')
@@ -214,32 +214,58 @@ class PurchaseRequisitionResource extends Resource
                     ->counts('items')
                     ->icon('heroicon-o-queue-list'),
 
-                Tables\Columns\TextColumn::make('status')
-                    ->badge()
-                    ->sortable()
-                    ->icon(fn (string $state): string => match ($state) {
-                        PurchaseRequisition::STATUS_DRAFT => 'heroicon-o-pencil-square',
-                        PurchaseRequisition::STATUS_PENDING => 'heroicon-o-clock',
-                        PurchaseRequisition::STATUS_APPROVED => 'heroicon-o-check-circle',
-                        PurchaseRequisition::STATUS_REJECTED => 'heroicon-o-x-circle',
-                        PurchaseRequisition::STATUS_COMPLETED => 'heroicon-o-check-badge',
-                        default => 'heroicon-o-information-circle',
-                    })
-                    ->color(fn (string $state): string => match ($state) {
-                        PurchaseRequisition::STATUS_DRAFT => 'gray',
-                        PurchaseRequisition::STATUS_PENDING => 'warning',
-                        PurchaseRequisition::STATUS_APPROVED => 'success',
-                        PurchaseRequisition::STATUS_REJECTED => 'danger',
-                        PurchaseRequisition::STATUS_COMPLETED => 'primary',
-                        default => 'gray',
-                    })
-                    ->formatStateUsing(fn (string $state): string => match ($state) {
+                Tables\Columns\SelectColumn::make('status')
+                    ->label('Status')
+                    ->options([
                         PurchaseRequisition::STATUS_DRAFT => 'Draft',
                         PurchaseRequisition::STATUS_PENDING => 'Pending',
                         PurchaseRequisition::STATUS_APPROVED => 'Approved',
                         PurchaseRequisition::STATUS_REJECTED => 'Rejected',
                         PurchaseRequisition::STATUS_COMPLETED => 'Completed',
-                        default => ucfirst($state),
+                    ])
+                    ->sortable()
+                    // 1. Otorisasi UI: Hanya user dengan akses tertentu yang bisa melihat dropdown aktif
+                    ->disabled(function (?PurchaseRequisition $record) {
+                        $user = Auth::user();
+                        if (! $user) return true;
+
+                        // Aturan: Hanya yang bisa approve atau kelola semua yang bisa ganti status seenaknya
+                        return ! static::canApproveAny() && ! static::canManageAllDrafts();
+                    })
+                    // 2. Intersepsi Perubahan State (Business Logic)
+                    ->updateStateUsing(function (PurchaseRequisition $record, string $state, string $old) {
+                        $user = Auth::user();
+
+                        try {
+                            // Mapping transisi state ke method Model untuk menjaga enkapsulasi
+                            match ($state) {
+                                PurchaseRequisition::STATUS_APPROVED => $record->approve($user->id),
+
+                                // Catatan: Karena via tabel tidak ada modal input, alasan penolakan akan terisi default.
+                                PurchaseRequisition::STATUS_REJECTED => $record->reject($user->id, 'Ditolak via ubah status tabel tanpa catatan.'),
+
+                                PurchaseRequisition::STATUS_PENDING => $record->submitForApproval(),
+
+                                default => $record->update(['status' => $state]),
+                            };
+
+                            Notification::make()
+                                ->title('Status PR berhasil diperbarui.')
+                                ->success()
+                                ->send();
+
+                            return $state;
+
+                        } catch (\Throwable $e) {
+                            Notification::make()
+                                ->title('Gagal memperbarui status')
+                                ->body($e->getMessage())
+                                ->danger()
+                                ->send();
+
+                            // Rollback visual di tabel ke status sebelumnya jika terjadi error (seperti validasi gagal)
+                            return $old;
+                        }
                     }),
 
                 Tables\Columns\TextColumn::make('approver.name')

@@ -5,9 +5,9 @@ namespace App\Filament\Resources\Procurement;
 use App\Filament\Resources\Procurement\PurchaseOrderResource\Pages;
 use App\Models\Inventory\Product;
 use App\Models\Procurement\PurchaseOrder;
-use App\Models\Procurement\PurchaseRequisition; // DITAMBAHKAN
-use App\Services\Procurement\PurchaseOrderReceiptService;
+use App\Models\Procurement\PurchaseRequisition;
 use App\Models\Finance\FinancialRecord;
+use App\Services\Procurement\PurchaseOrderReceiptService;
 use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Resources\Resource;
@@ -51,9 +51,7 @@ class PurchaseOrderResource extends Resource
         }
 
         $discount = (float) ($get($prefix . 'discount_amount') ?? 0);
-
         $taxRate = (float) ($get($prefix . 'tax_rate') ?? 0);
-
         $taxAmount = ($subtotal - $discount) * ($taxRate / 100);
 
         $set($prefix . 'subtotal', $subtotal);
@@ -67,6 +65,7 @@ class PurchaseOrderResource extends Resource
             ->schema([
                 Forms\Components\Group::make()->schema([
                     Forms\Components\Section::make('Informasi Dokumen PO')
+                        ->disabled(fn (?PurchaseOrder $record) => $record !== null && $record->status !== 'draft')
                         ->schema([
                             Forms\Components\TextInput::make('po_number')
                                 ->label('Nomor PO')
@@ -76,17 +75,15 @@ class PurchaseOrderResource extends Resource
                                 ->required()
                                 ->maxLength(255),
 
-                            // --- BLOK DITAMBAHKAN: Tarik data dari PR ---
                             Forms\Components\Select::make('purchase_requisition_id')
                                 ->label('Berdasarkan PR (Opsional)')
                                 ->options(PurchaseRequisition::where('status', 'approved')->pluck('pr_number', 'id'))
                                 ->searchable()
                                 ->preload()
-                                ->live() // Jadikan AJAX reaktif
+                                ->live()
                                 ->afterStateUpdated(function ($state, Forms\Set $set, Forms\Get $get) {
                                     if (!$state) return;
 
-                                    // Eager load items dan relasi product
                                     $pr = PurchaseRequisition::with('items.product')->find($state);
                                     if (!$pr) return;
 
@@ -95,7 +92,6 @@ class PurchaseOrderResource extends Resource
 
                                     foreach ($pr->items as $item) {
                                         $qty = $item->quantity;
-                                        // Gunakan estimated_price dari PR. Jika 0, fallback ke master harga produk
                                         $price = $item->estimated_price > 0 ? $item->estimated_price : ($item->product->purchase_price ?? 0);
                                         $lineTotal = $qty * $price;
 
@@ -108,16 +104,12 @@ class PurchaseOrderResource extends Resource
                                         $subtotal += $lineTotal;
                                     }
 
-                                    // Inject data ke form repeater 'items'
                                     $set('items', $poItems);
-
-                                    // Trigger kalkulasi ulang
                                     $set('subtotal', $subtotal);
                                     self::updateTotals($get, $set);
                                 })
                                 ->disabled(fn (string $operation): bool => $operation === 'edit')
                                 ->helperText('Memilih PR akan otomatis mengisi daftar barang di bawah.'),
-                            // --- AKHIR BLOK ---
 
                             Forms\Components\Select::make('supplier_id')
                                 ->label('Supplier / Vendor')
@@ -137,10 +129,10 @@ class PurchaseOrderResource extends Resource
                             Forms\Components\Select::make('status')
                                 ->label('Status PO')
                                 ->options([
-                                    'draft' => 'Draft (Belum Dikirim)',
-                                    'sent' => 'Dikirim ke Supplier',
+                                    'draft' => 'Draft',
+                                    'sent' => 'Email Terkirim',
                                     'partial' => 'Diterima Sebagian',
-                                    'completed' => 'Selesai (Masuk Gudang)',
+                                    'completed' => 'Selesai',
                                     'cancelled' => 'Dibatalkan',
                                 ])
                                 ->default('draft')
@@ -149,6 +141,7 @@ class PurchaseOrderResource extends Resource
                         ])->columns(2),
 
                     Forms\Components\Section::make('Daftar Barang (Order Items)')
+                        ->disabled(fn (?PurchaseOrder $record) => $record !== null && $record->status !== 'draft')
                         ->schema([
                             Forms\Components\Repeater::make('items')
                                 ->relationship()
@@ -216,6 +209,7 @@ class PurchaseOrderResource extends Resource
 
                 Forms\Components\Group::make()->schema([
                     Forms\Components\Section::make('Ringkasan Biaya')
+                        ->disabled(fn (?PurchaseOrder $record) => $record !== null && $record->status !== 'draft')
                         ->schema([
                             Forms\Components\TextInput::make('subtotal')
                                 ->label('Subtotal')
@@ -266,6 +260,7 @@ class PurchaseOrderResource extends Resource
                         ]),
 
                     Forms\Components\Section::make('Catatan Tambahan')
+                        ->disabled(fn (?PurchaseOrder $record) => $record !== null && $record->status !== 'draft')
                         ->schema([
                             Forms\Components\Textarea::make('notes')
                                 ->label('Catatan untuk Supplier')
@@ -278,7 +273,6 @@ class PurchaseOrderResource extends Resource
 
     public static function table(Table $table): Table
     {
-        // (Fungsi table tidak perlu diubah, biarkan seperti semula)
         return $table
             ->columns([
                 Tables\Columns\TextColumn::make('po_number')
@@ -303,12 +297,19 @@ class PurchaseOrderResource extends Resource
                     ->badge()
                     ->color(fn (string $state): string => match ($state) {
                         'draft' => 'gray',
-                        'sent' => 'warning',
-                        'partial' => 'info',
+                        'sent' => 'info',
+                        'partial' => 'warning',
                         'completed' => 'success',
                         'cancelled' => 'danger',
                     })
-                    ->formatStateUsing(fn(string $state) => strtoupper($state)),
+                    ->formatStateUsing(fn(string $state) => match($state) {
+                        'draft' => 'DRAFT',
+                        'sent' => 'EMAIL TERKIRIM',
+                        'partial' => 'DITERIMA SEBAGIAN',
+                        'completed' => 'SELESAI',
+                        'cancelled' => 'DIBATALKAN',
+                        default => strtoupper($state),
+                    }),
 
                 Tables\Columns\TextColumn::make('grand_total')
                     ->label('Total Nilai')
@@ -320,49 +321,53 @@ class PurchaseOrderResource extends Resource
                 Tables\Filters\SelectFilter::make('status')
                     ->options([
                         'draft' => 'Draft',
-                        'sent' => 'Dikirim ke Supplier',
+                        'sent' => 'Email Terkirim',
                         'partial' => 'Diterima Sebagian',
                         'completed' => 'Selesai',
-                        'cancelled' => 'Batal',
+                        'cancelled' => 'Dibatalkan',
                     ]),
             ])
             ->actions([
                 Tables\Actions\EditAction::make()
-                    ->visible(fn ($record) => in_array($record->status, ['draft', 'sent'])),
+                    ->visible(fn ($record) => $record->status === 'draft'),
 
                 Tables\Actions\Action::make('mark_as_sent')
                     ->label('Kirim ke Supplier')
                     ->icon('heroicon-o-paper-airplane')
                     ->color('info')
-                    ->visible(fn ($record) => in_array($record->status, ['draft', 'sent']))
+                    ->visible(fn ($record) => $record->status === 'draft')
                     ->requiresConfirmation()
                     ->action(function (PurchaseOrder $record) {
                         $supplierEmail = $record->supplier?->email ?? null;
 
-                        if ($supplierEmail) {
-                            try {
-                                Mail::to($supplierEmail)->send(new PurchaseOrderMail($record));
-
-                                $record->update(['status' => 'sent']);
-
-                                Notification::make()
-                                    ->title('PO Berhasil Dikirim ke Email Supplier')
-                                    ->success()
-                                    ->send();
-                            } catch (\Exception $e) {
-                                Log::error('Gagal mengirim email PO: ' . $e->getMessage());
-
-                                Notification::make()
-                                    ->title('Email Gagal Dikirim')
-                                    ->body('Terjadi kesalahan saat mengirim email ke supplier. Pastikan konfigurasi SMTP benar.')
-                                    ->danger()
-                                    ->send();
-                            }
-                        } else {
+                        if (!$supplierEmail) {
                             Notification::make()
                                 ->title('Email Tidak Dapat Dikirim')
                                 ->body('Supplier tidak memiliki alamat email yang terdaftar.')
                                 ->warning()
+                                ->send();
+
+                            return;
+                        }
+
+                        try {
+                            Mail::to($supplierEmail)->queue(new PurchaseOrderMail($record));
+
+                            $record->update(['status' => 'sent']);
+
+                            Notification::make()
+                                ->title('PO Sedang Diproses')
+                                ->body('Email telah masuk antrean dan segera dikirim ke Supplier.')
+                                ->success()
+                                ->send();
+
+                        } catch (\Exception $e) {
+                            Log::error('Gagal memasukkan email PO ke queue: ' . $e->getMessage());
+
+                            Notification::make()
+                                ->title('Sistem Sibuk / Error')
+                                ->body('Gagal memproses email. Pastikan Queue/SMTP Anda terkonfigurasi dengan benar.')
+                                ->danger()
                                 ->send();
                         }
                     }),

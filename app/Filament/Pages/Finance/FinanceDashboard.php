@@ -113,7 +113,9 @@ class FinanceDashboard extends Page
 
     public function getMonthlySummariesProperty(): Collection
     {
-        return collect(range(1, 12))
+        $endMonth = now()->month;
+
+        return collect(range(1, $endMonth))
             ->map(function (int $month) {
                 $date = Carbon::create($this->selectedYear, $month, 1);
 
@@ -127,10 +129,10 @@ class FinanceDashboard extends Page
                     'sort' => $date->format('Ym'),
                 ]);
             })
-            ->sortByDesc('sort')
+            ->sortBy('sort')
             ->values();
     }
-
+    
     public function getYearlySummariesProperty(): Collection
     {
         return $this->yearOptions
