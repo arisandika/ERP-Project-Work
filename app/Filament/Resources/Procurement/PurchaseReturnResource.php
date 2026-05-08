@@ -1,0 +1,232 @@
+<?php
+
+namespace App\Filament\Resources\Procurement;
+
+use App\Filament\Resources\Procurement\PurchaseReturnResource\Pages;
+use App\Models\Procurement\PurchaseReturn;
+use App\Services\Finance\PurchaseReturnFinancialService;
+use Filament\Forms;
+use Filament\Forms\Form;
+use Filament\Notifications\Notification;
+use Filament\Resources\Resource;
+use Filament\Tables;
+use Filament\Tables\Table;
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Support\Facades\Log;
+
+class PurchaseReturnResource extends Resource
+{
+    protected static ?string $model = PurchaseReturn::class;
+
+    protected static ?string $navigationIcon = 'heroicon-o-arrow-uturn-left';
+    protected static ?string $navigationGroup = 'Manajemen Procurement';
+    protected static ?string $pluralModelLabel = 'Retur Pembelian';
+
+    public static function form(Form $form): Form
+    {
+        return $form->schema([
+            // 1. HEADER SECTION
+            Forms\Components\Section::make('Informasi Dokumen Retur')
+                ->description('Lengkapi detail informasi utama terkait pengembalian barang ke supplier.')
+                ->icon('heroicon-o-document-text') // Penambahan Ikon Section
+                ->schema([
+
+                    Forms\Components\TextInput::make('return_number')
+                        ->label('Nomor Retur')
+                        ->default(fn () => \App\Models\Procurement\PurchaseReturn::previewNextReturnNumber())
+                        ->disabled()
+                        ->dehydrated(false)
+                        ->prefixIcon('heroicon-o-hashtag')
+                        ->helperText('Estimasi nomor. Sistem akan mengunci nomor final saat disimpan untuk mencegah duplikasi.')
+                        ->required(),
+
+                    Forms\Components\DatePicker::make('return_date')
+                        ->label('Tanggal Retur')
+                        ->default(now())
+                        ->required()
+                        ->prefixIcon('heroicon-o-calendar-days')
+                        ->native(false),
+
+                    Forms\Components\Select::make('supplier_id')
+                        ->label('Supplier')
+                        ->relationship('supplier', 'name')
+                        ->searchable()
+                        ->preload()
+                        ->prefixIcon('heroicon-o-building-storefront')
+                        ->required(),
+
+                    Forms\Components\Select::make('resolution_type')
+                        ->label('Tipe Penyelesaian')
+                        ->options([
+                            'credit_note' => 'Potong Hutang Usaha',
+                            'refund' => 'Refund Dana',
+                        ])
+                        ->required()
+                        ->prefixIcon('heroicon-o-arrow-path-rounded-square')
+                        ->helperText('Tentukan bagaimana supplier akan mengganti retur ini.'),
+
+                    Forms\Components\Textarea::make('notes')
+                        ->label('Catatan Tambahan')
+                        ->columnSpanFull(),
+                ])->columns(2),
+
+            // 2. DETAIL SECTION (ITEMS)
+            Forms\Components\Section::make('Item yang Diretur')
+                ->description('Daftar spesifik barang yang akan dikembalikan beserta alasannya.')
+                ->icon('heroicon-o-archive-box-x-mark') // Penambahan Ikon Section
+                ->schema([
+                    Forms\Components\Repeater::make('items')
+                        ->relationship()
+                        ->addActionLabel('Tambah Produk Retur') // UX: Label tombol lebih spesifik
+                        ->schema([
+                            Forms\Components\Select::make('product_id')
+                                ->label('Produk')
+                                ->relationship('product', 'product_name')
+                                ->searchable()
+                                ->preload() // SOLUSI: Agar opsi produk langsung muncul tanpa diketik
+                                ->prefixIcon('heroicon-o-cube')
+                                ->required()
+                                ->columnSpan(2),
+
+                            Forms\Components\TextInput::make('quantity')
+                                ->label('Qty')
+                                ->numeric()
+                                ->required()
+                                ->minValue(1)
+                                ->prefixIcon('heroicon-o-scale')
+                                ->columnSpan(1),
+
+                            Forms\Components\TextInput::make('unit_price')
+                                ->label('Harga Satuan')
+                                ->numeric()
+                                ->required()
+                                ->prefix('Rp')
+                                ->columnSpan(2),
+
+                            Forms\Components\TextInput::make('reason')
+                                ->label('Alasan Retur')
+                                ->required()
+                                ->maxLength(255)
+                                ->prefixIcon('heroicon-o-chat-bubble-bottom-center-text')
+                                ->columnSpan(3),
+                        ])
+                        ->columns(8)
+                        ->defaultItems(1)
+                        ->mutateRelationshipDataBeforeCreateUsing(function (array $data): array {
+                            return $data;
+                        }),
+                ]),
+        ]);
+    }
+
+    public static function table(Table $table): Table
+    {
+        return $table
+            ->columns([
+                Tables\Columns\TextColumn::make('return_number')
+                    ->label('No. Retur')
+                    ->searchable()
+                    ->sortable()
+                    ->icon('heroicon-o-hashtag')
+                    ->weight('bold'),
+
+                Tables\Columns\TextColumn::make('supplier.name')
+                    ->label('Supplier')
+                    ->icon('heroicon-o-building-storefront')
+                    ->searchable(),
+
+                Tables\Columns\TextColumn::make('return_date')
+                    ->label('Tanggal')
+                    ->date('d M Y')
+                    ->icon('heroicon-o-calendar')
+                    ->sortable(),
+
+                Tables\Columns\TextColumn::make('resolution_type')
+                    ->label('Penyelesaian')
+                    ->badge()
+                    ->icon(fn (string $state): string => match ($state) {
+                        'credit_note' => 'heroicon-o-document-minus',
+                        'refund' => 'heroicon-o-banknotes',
+                        default => 'heroicon-o-question-mark-circle',
+                    }) // Penambahan Ikon Dinamis pada Badge
+                    ->formatStateUsing(fn ($state) => match ($state) {
+                        'credit_note' => 'Potong Hutang',
+                        'refund' => 'Refund',
+                        default => 'Belum Ditentukan'
+                    }),
+
+                Tables\Columns\TextColumn::make('status')
+                    ->label('Status')
+                    ->badge()
+                    ->icon(fn (string $state): string => match ($state) {
+                        'draft' => 'heroicon-o-pencil',
+                        'approved' => 'heroicon-o-check-badge',
+                        'shipped' => 'heroicon-o-truck',
+                        'completed' => 'heroicon-o-check-circle',
+                        'cancelled' => 'heroicon-o-x-circle',
+                        default => 'heroicon-o-clock',
+                    }) // Penambahan Ikon Dinamis pada Status
+                    ->color(fn (string $state): string => match ($state) {
+                        'draft' => 'gray',
+                        'approved' => 'info',
+                        'shipped' => 'warning',
+                        'completed' => 'success',
+                        'cancelled' => 'danger',
+                        default => 'gray',
+                    }),
+            ])
+            ->actions([
+                Tables\Actions\EditAction::make()
+                    ->hidden(fn (PurchaseReturn $record): bool => $record->status !== 'draft'),
+
+                Tables\Actions\ViewAction::make(),
+
+                Tables\Actions\Action::make('approve')
+                    ->label('Setujui')
+                    ->icon('heroicon-o-check')
+                    ->color('info')
+                    ->requiresConfirmation()
+                    ->visible(fn (PurchaseReturn $record): bool => $record->status === 'draft')
+                    ->action(fn (PurchaseReturn $record) => $record->update(['status' => 'approved'])),
+
+                Tables\Actions\Action::make('complete')
+                    ->label('Selesaikan (Tarik Dana/Potong Hutang)')
+                    ->icon('heroicon-o-currency-dollar')
+                    ->color('success')
+                    ->requiresConfirmation()
+                    ->modalHeading('Selesaikan Retur Pembelian')
+                    ->modalDescription('Tindakan ini akan mengunci dokumen dan memicu pembaruan pada modul Akuntansi (Hutang/Kas). Lanjutkan?')
+                    ->visible(fn (PurchaseReturn $record): bool => in_array($record->status, ['approved', 'shipped']))
+                    ->action(function (PurchaseReturn $record): void {
+                        try {
+                            app(PurchaseReturnFinancialService::class)->execute($record);
+
+                            Notification::make()
+                                ->title('Retur Berhasil Diselesaikan')
+                                ->body('Data keuangan telah diperbarui secara otomatis.')
+                                ->success()
+                                ->send();
+
+                        } catch (\Exception $e) {
+                            Log::error('Gagal menyelesaikan retur: ' . $e->getMessage());
+
+                            Notification::make()
+                                ->title('Gagal Memproses Transaksi')
+                                ->body($e->getMessage())
+                                ->danger()
+                                ->send();
+                        }
+                    }),
+            ])
+            ->defaultSort('created_at', 'desc');
+    }
+
+    public static function getPages(): array
+    {
+        return [
+            'index' => Pages\ListPurchaseReturns::route('/'),
+            'create' => Pages\CreatePurchaseReturn::route('/create'),
+            'edit' => Pages\EditPurchaseReturn::route('/{record}/edit'),
+        ];
+    }
+}
