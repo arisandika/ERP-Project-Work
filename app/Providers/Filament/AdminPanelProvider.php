@@ -21,6 +21,7 @@ use Illuminate\Session\Middleware\StartSession;
 use Illuminate\View\Middleware\ShareErrorsFromSession;
 use Jeffgreco13\FilamentBreezy\BreezyCore;
 use Leandrocfe\FilamentApexCharts\FilamentApexChartsPlugin;
+use Filament\Navigation\MenuItem;
 
 class AdminPanelProvider extends PanelProvider
 {
@@ -82,12 +83,12 @@ class AdminPanelProvider extends PanelProvider
                 FilamentShieldPlugin::make(),
                 BreezyCore::make()
                     ->myProfile(
-                        shouldRegisterUserMenu: true, 
-                        userMenuLabel: 'My Profile', 
-                        shouldRegisterNavigation: false, 
-                        navigationGroup: 'Settings', 
-                        hasAvatars: false, 
-                        slug: 'my-profile' 
+                        shouldRegisterUserMenu: true,
+                        userMenuLabel: 'My Profile',
+                        shouldRegisterNavigation: false,
+                        navigationGroup: 'Settings',
+                        hasAvatars: false,
+                        slug: 'my-profile'
                     )
             ])
             ->sidebarCollapsibleOnDesktop(false)
@@ -95,6 +96,12 @@ class AdminPanelProvider extends PanelProvider
             ->databaseNotificationsPolling('30s')
             ->globalSearchKeyBindings(['command+k', 'ctrl+k'])
             ->globalSearchDebounce('750ms')
+            ->userMenuItems([
+                'switch_module' => MenuItem::make()
+                    ->label('Ganti Modul')
+                    ->icon('heroicon-o-squares-2x2')
+                    ->url(fn (): string => route('filament.admin.pages.modules')),
+            ])
             ;
     }
 }
