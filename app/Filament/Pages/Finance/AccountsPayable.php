@@ -2,18 +2,38 @@
 
 namespace App\Filament\Pages\Finance;
 
+use App\Filament\Concerns\BelongsToModule;
 use App\Models\Finance\FinancialRecord;
+use BezhanSalleh\FilamentShield\Traits\HasPageShield;
 use Filament\Actions\Action;
 use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
 use Filament\Notifications\Notification;
 use Filament\Pages\Page;
-use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\DB;
+use Throwable;
 
 class AccountsPayable extends Page
 {
+    /**
+     * Resolusi Konflik Trait
+     * Validasi ganda: Permission User (Shield) DAN Status Modul (Tenant/Lisensi).
+     */
+    use HasPageShield, BelongsToModule {
+        HasPageShield::canAccess insteadof BelongsToModule;
+        HasPageShield::shouldRegisterNavigation insteadof BelongsToModule;
+
+        HasPageShield::canAccess as shieldCanAccess;
+        HasPageShield::shouldRegisterNavigation as shieldShouldRegisterNavigation;
+
+        BelongsToModule::canAccess as moduleCanAccess;
+        BelongsToModule::shouldRegisterNavigation as moduleShouldRegisterNavigation;
+    }
+
+    protected static ?string $module = 'finance'; // Set modul ke Finance
+
     protected static ?string $navigationIcon = 'heroicon-o-banknotes';
     protected static ?string $navigationGroup = 'Manajemen Finance';
     protected static ?int $navigationSort = 3;
@@ -24,20 +44,35 @@ class AccountsPayable extends Page
 
     public ?string $selectedReferenceNumber = null;
 
+    public static function canAccess(): bool
+    {
+        return static::shieldCanAccess() && static::moduleCanAccess();
+    }
+
+    public static function shouldRegisterNavigation(): bool
+    {
+        return static::shieldShouldRegisterNavigation() && static::moduleShouldRegisterNavigation();
+    }
+
     protected function getViewData(): array
     {
+        // REFAKTORISASI: Menggunakan Eloquent Subquery untuk menghindari N+1 Query.
+        // Database engine yang akan menjumlahkan total_paid, bukan PHP.
         $debts = FinancialRecord::query()
             ->where('type', 'hutang')
+            ->addSelect([
+                'paid_amount' => FinancialRecord::query()
+                    ->selectRaw('COALESCE(SUM(amount), 0)')
+                    ->whereColumn('reference_number', 'financial_records.reference_number')
+                    ->where('type', 'pengeluaran')
+                    ->where('category', 'Accounts Payable')
+            ])
             ->orderByDesc('transaction_date')
             ->get()
             ->map(function (FinancialRecord $debt) {
-                $paidAmount = FinancialRecord::query()
-                    ->where('type', 'pengeluaran')
-                    ->where('category', 'Accounts Payable')
-                    ->where('reference_number', $debt->reference_number)
-                    ->sum('amount');
-
-                $remainingAmount = max((float) $debt->amount - (float) $paidAmount, 0);
+                // paid_amount sekarang sudah ditarik otomatis dari query di atas
+                $paidAmount = (float) $debt->paid_amount;
+                $remainingAmount = max((float) $debt->amount - $paidAmount, 0);
 
                 return [
                     'id' => $debt->id,
@@ -45,8 +80,8 @@ class AccountsPayable extends Page
                     'transaction_date' => optional($debt->transaction_date)?->format('d M Y'),
                     'description' => $debt->description,
                     'total_amount' => (float) $debt->amount,
-                    'paid_amount' => (float) $paidAmount,
-                    'remaining_amount' => (float) $remainingAmount,
+                    'paid_amount' => $paidAmount,
+                    'remaining_amount' => $remainingAmount,
                     'status' => match (true) {
                         $remainingAmount <= 0 => 'PAID',
                         $paidAmount > 0 => 'PARTIAL',
@@ -121,47 +156,49 @@ class AccountsPayable extends Page
                             ->title('Data hutang tidak ditemukan')
                             ->danger()
                             ->send();
-
                         return;
                     }
 
                     $amount = (float) ($data['amount'] ?? 0);
                     $remaining = (float) $debt['remaining_amount'];
 
-                    if ($amount <= 0) {
+                    // Validasi backend ekstra (Sangat direkomendasikan)
+                    if ($amount <= 0 || $amount > $remaining) {
                         Notification::make()
-                            ->title('Nominal pembayaran tidak valid')
+                            ->title('Nominal pembayaran tidak valid atau melebihi sisa hutang.')
                             ->danger()
                             ->send();
-
                         return;
                     }
 
-                    if ($amount > $remaining) {
+                    // REFAKTORISASI: Bungkus dalam DB::transaction untuk integritas finansial
+                    try {
+                        DB::transaction(function () use ($data, $amount, $debt) {
+                            FinancialRecord::create([
+                                'transaction_date' => $data['transaction_date'],
+                                'type' => 'pengeluaran',
+                                'amount' => $amount,
+                                'category' => 'Accounts Payable',
+                                'description' => $data['description'] ?: 'Pembayaran hutang supplier',
+                                'reference_number' => $debt['reference_number'],
+                                'created_by' => auth()->id(),
+                            ]);
+                        });
+
                         Notification::make()
-                            ->title('Nominal melebihi sisa hutang')
-                            ->danger()
+                            ->title('Pembayaran hutang berhasil dicatat')
+                            ->success()
                             ->send();
 
-                        return;
+                        $this->selectedReferenceNumber = null;
+
+                    } catch (Throwable $e) {
+                        Notification::make()
+                            ->title('Terjadi kesalahan sistem saat memproses pembayaran.')
+                            ->body($e->getMessage())
+                            ->danger()
+                            ->send();
                     }
-
-                    FinancialRecord::create([
-                        'transaction_date' => $data['transaction_date'],
-                        'type' => 'pengeluaran',
-                        'amount' => $amount,
-                        'category' => 'Accounts Payable',
-                        'description' => $data['description'] ?: 'Pembayaran hutang supplier',
-                        'reference_number' => $debt['reference_number'],
-                        'created_by' => auth()->id(),
-                    ]);
-
-                    Notification::make()
-                        ->title('Pembayaran hutang berhasil dicatat')
-                        ->success()
-                        ->send();
-
-                    $this->selectedReferenceNumber = null;
                 }),
         ];
     }
@@ -171,8 +208,7 @@ class AccountsPayable extends Page
         /** @var Collection<int, array> $debts */
         $debts = collect($this->getViewData()['debts']);
 
-        return $debts
-            ->firstWhere('reference_number', $this->selectedReferenceNumber);
+        return $debts->firstWhere('reference_number', $this->selectedReferenceNumber);
     }
 
     public function selectDebt(string $referenceNumber): void

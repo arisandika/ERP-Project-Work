@@ -21,7 +21,7 @@ use App\Filament\Concerns\BelongsToModule;
 class LeaveResource extends Resource
 {
     use BelongsToModule;
-    protected static ?string $module = 'HR';
+    protected static ?string $module = 'hr';
     protected static ?string $model = Leave::class;
 
     protected static ?string $navigationIcon = 'heroicon-o-arrow-right-start-on-rectangle';

@@ -2,17 +2,36 @@
 
 namespace App\Filament\Pages\Finance;
 
+use App\Filament\Concerns\BelongsToModule;
 use App\Models\Finance\FinancialRecord;
+use BezhanSalleh\FilamentShield\Traits\HasPageShield;
 use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Concerns\InteractsWithForms;
 use Filament\Forms\Contracts\HasForms;
 use Filament\Forms\Form;
 use Filament\Pages\Page;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Collection;
 
 class ProfitAndLossReport extends Page implements HasForms
 {
     use InteractsWithForms;
+
+    /**
+     * Resolusi Konflik Trait untuk Keamanan & Multi-Tenant
+     */
+    use HasPageShield, BelongsToModule {
+        HasPageShield::canAccess insteadof BelongsToModule;
+        HasPageShield::shouldRegisterNavigation insteadof BelongsToModule;
+
+        HasPageShield::canAccess as shieldCanAccess;
+        HasPageShield::shouldRegisterNavigation as shieldShouldRegisterNavigation;
+
+        BelongsToModule::canAccess as moduleCanAccess;
+        BelongsToModule::shouldRegisterNavigation as moduleShouldRegisterNavigation;
+    }
+
+    protected static ?string $module = 'finance';
 
     protected static ?string $navigationIcon = 'heroicon-o-document-chart-bar';
     protected static ?string $navigationGroup = 'Manajemen Finance';
@@ -23,6 +42,16 @@ class ProfitAndLossReport extends Page implements HasForms
     protected static string $view = 'filament.pages.finance.profit-and-loss-report';
 
     public ?array $data = [];
+
+    public static function canAccess(): bool
+    {
+        return static::shieldCanAccess() && static::moduleCanAccess();
+    }
+
+    public static function shouldRegisterNavigation(): bool
+    {
+        return static::shieldShouldRegisterNavigation() && static::moduleShouldRegisterNavigation();
+    }
 
     public function mount(): void
     {
@@ -62,37 +91,37 @@ class ProfitAndLossReport extends Page implements HasForms
         $startDate = Carbon::parse($startDateStr)->startOfDay();
         $endDate = Carbon::parse($endDateStr)->endOfDay();
 
-        $transactions = FinancialRecord::query()
+        // REFAKTORISASI: Multi-Column Aggregation.
+        // Melakukan 1 Query saja ke database untuk mengambil SEMUA rekapitulasi Laba Rugi.
+        $aggregates = FinancialRecord::query()
+            ->selectRaw('account_type, COALESCE(category, "Lain-lain") as category_name, SUM(amount) as total_amount')
             ->whereBetween('transaction_date', [$startDate, $endDate])
+            ->whereIn('account_type', ['revenue', 'cogs', 'operating_expense', 'other_income', 'other_expense'])
+            ->groupBy('account_type', 'category_name')
             ->get();
 
-        $revenueTransactions = $transactions->where('account_type', 'revenue');
-        $cogsTransactions = $transactions->where('account_type', 'cogs');
-        $opexTransactions = $transactions->where('account_type', 'operating_expense');
-        $otherIncomeTransactions = $transactions->where('account_type', 'other_income');
-        $otherExpenseTransactions = $transactions->where('account_type', 'other_expense');
+        // Memecah hasil Query tunggal ke masing-masing kelompok akun
+        $revenueDetails = $this->extractDetails($aggregates, 'revenue');
+        $cogsDetails = $this->extractDetails($aggregates, 'cogs');
+        $opexDetails = $this->extractDetails($aggregates, 'operating_expense');
+        $otherIncomeDetails = $this->extractDetails($aggregates, 'other_income');
+        $otherExpenseDetails = $this->extractDetails($aggregates, 'other_expense');
 
-        $revenueDetails = $revenueTransactions->groupBy('category');
-        $cogsDetails = $cogsTransactions->groupBy('category');
-        $opexDetails = $opexTransactions->groupBy('category');
-        $otherIncomeDetails = $otherIncomeTransactions->groupBy('category');
-        $otherExpenseDetails = $otherExpenseTransactions->groupBy('category');
-
-        $totalRevenue = $revenueTransactions->sum('amount');
-        $totalCogs = $cogsTransactions->sum('amount');
+        // Menghitung subtotal menggunakan array_sum langsung dari PHP (sangat ringan karena data sudah matang)
+        $totalRevenue = array_sum(array_column($revenueDetails, 'amount'));
+        $totalCogs = array_sum(array_column($cogsDetails, 'amount'));
         $grossProfit = $totalRevenue - $totalCogs;
 
-        $totalOpex = $opexTransactions->sum('amount');
+        $totalOpex = array_sum(array_column($opexDetails, 'amount'));
         $operatingProfit = $grossProfit - $totalOpex;
 
-        $totalOtherIncome = $otherIncomeTransactions->sum('amount');
-        $totalOtherExpense = $otherExpenseTransactions->sum('amount');
+        $totalOtherIncome = array_sum(array_column($otherIncomeDetails, 'amount'));
+        $totalOtherExpense = array_sum(array_column($otherExpenseDetails, 'amount'));
 
         $profitBeforeTax = $operatingProfit + $totalOtherIncome - $totalOtherExpense;
 
-        // Untuk sekarang pajak belum dihitung dari modul khusus, jadi diset 0 dulu.
+        // Untuk sekarang pajak belum dihitung dari modul khusus
         $taxExpense = 0;
-
         $netProfit = $profitBeforeTax - $taxExpense;
 
         return [
@@ -118,5 +147,22 @@ class ProfitAndLossReport extends Page implements HasForms
             'taxExpense' => $taxExpense,
             'netProfit' => $netProfit,
         ];
+    }
+
+    /**
+     * Helper untuk memfilter koleksi agregat berdasarkan tipe akun
+     */
+    private function extractDetails(Collection $aggregates, string $accountType): array
+    {
+        return $aggregates
+            ->where('account_type', $accountType)
+            ->map(function ($item) {
+                return [
+                    'category' => $item->category_name,
+                    'amount' => (float) $item->total_amount,
+                ];
+            })
+            ->values()
+            ->toArray();
     }
 }

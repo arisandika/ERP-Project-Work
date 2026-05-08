@@ -37,7 +37,7 @@ use App\Filament\Concerns\BelongsToModule;
 class QuotationResource extends Resource
 {
     use BelongsToModule;
-    protected static ?string $module = 'Sales';
+    protected static ?string $module = 'sales';
     protected static ?string $model = Quotation::class;
 
     protected static ?string $navigationIcon = 'heroicon-o-document-text';

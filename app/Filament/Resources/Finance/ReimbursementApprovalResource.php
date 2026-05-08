@@ -24,7 +24,7 @@ class ReimbursementApprovalResource extends Resource
 {
     use BelongsToModule;
 
-    protected static ?string $module = 'Finance';
+    protected static ?string $module = 'finance';
     protected static ?string $model = ReimbursementRequest::class;
 
     protected static ?string $navigationIcon = 'heroicon-o-document-check';

@@ -14,7 +14,7 @@ use App\Filament\Concerns\BelongsToModule;
 class SupplierResource extends Resource
 {
     use BelongsToModule;
-    protected static ?string $module = 'Procurement';
+    protected static ?string $module = 'procurement';
     protected static ?string $model = Supplier::class;
 
     protected static ?string $navigationIcon = 'heroicon-o-truck';

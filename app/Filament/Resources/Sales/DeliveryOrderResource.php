@@ -36,7 +36,7 @@ use App\Filament\Concerns\BelongsToModule;
 class DeliveryOrderResource extends Resource
 {
     use BelongsToModule;
-    protected static ?string $module = 'Sales';
+    protected static ?string $module = 'sales';
     protected static ?string $model = DeliveryOrder::class;
     protected static ?string $navigationIcon = 'heroicon-o-truck';
     protected static ?string $navigationGroup = 'Manajemen Sales';

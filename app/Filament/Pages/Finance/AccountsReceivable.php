@@ -2,7 +2,9 @@
 
 namespace App\Filament\Pages\Finance;
 
+use App\Filament\Concerns\BelongsToModule;
 use App\Models\Finance\FinancialRecord;
+use BezhanSalleh\FilamentShield\Traits\HasPageShield;
 use Filament\Actions\Action;
 use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\Textarea;
@@ -10,9 +12,28 @@ use Filament\Forms\Components\TextInput;
 use Filament\Notifications\Notification;
 use Filament\Pages\Page;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\DB;
+use Throwable;
 
 class AccountsReceivable extends Page
 {
+    /**
+     * Resolusi Konflik Trait
+     * Memastikan akses dibatasi oleh Role User (Shield) dan Modul Tenant.
+     */
+    use HasPageShield, BelongsToModule {
+        HasPageShield::canAccess insteadof BelongsToModule;
+        HasPageShield::shouldRegisterNavigation insteadof BelongsToModule;
+
+        HasPageShield::canAccess as shieldCanAccess;
+        HasPageShield::shouldRegisterNavigation as shieldShouldRegisterNavigation;
+
+        BelongsToModule::canAccess as moduleCanAccess;
+        BelongsToModule::shouldRegisterNavigation as moduleShouldRegisterNavigation;
+    }
+
+    protected static ?string $module = 'finance'; // Set modul ke Finance
+
     protected static ?string $navigationIcon = 'heroicon-o-credit-card';
     protected static ?string $navigationGroup = 'Manajemen Finance';
     protected static ?int $navigationSort = 4;
@@ -23,20 +44,41 @@ class AccountsReceivable extends Page
 
     public ?string $selectedReferenceNumber = null;
 
+    /**
+     * Override method canAccess()
+     */
+    public static function canAccess(): bool
+    {
+        return static::shieldCanAccess() && static::moduleCanAccess();
+    }
+
+    /**
+     * Override method shouldRegisterNavigation()
+     */
+    public static function shouldRegisterNavigation(): bool
+    {
+        return static::shieldShouldRegisterNavigation() && static::moduleShouldRegisterNavigation();
+    }
+
     protected function getViewData(): array
     {
+        // REFAKTORISASI: Subquery Eloquent untuk mencegah N+1 Query.
+        // Menghitung total pembayaran yang diterima langsung di sisi Database.
         $receivables = FinancialRecord::query()
             ->where('type', 'piutang')
+            ->addSelect([
+                'received_amount' => FinancialRecord::query()
+                    ->selectRaw('COALESCE(SUM(amount), 0)')
+                    ->whereColumn('reference_number', 'financial_records.reference_number')
+                    ->where('type', 'pemasukan')
+                    ->where('category', 'Accounts Receivable')
+            ])
             ->orderByDesc('transaction_date')
             ->get()
             ->map(function (FinancialRecord $receivable) {
-                $receivedAmount = FinancialRecord::query()
-                    ->where('type', 'pemasukan')
-                    ->where('category', 'Accounts Receivable')
-                    ->where('reference_number', $receivable->reference_number)
-                    ->sum('amount');
-
-                $remainingAmount = max((float) $receivable->amount - (float) $receivedAmount, 0);
+                // Menggunakan hasil agregasi SQL (tidak ada query database tambahan di sini)
+                $receivedAmount = (float) $receivable->received_amount;
+                $remainingAmount = max((float) $receivable->amount - $receivedAmount, 0);
 
                 return [
                     'id' => $receivable->id,
@@ -44,8 +86,8 @@ class AccountsReceivable extends Page
                     'transaction_date' => optional($receivable->transaction_date)?->format('d M Y'),
                     'description' => $receivable->description,
                     'total_amount' => (float) $receivable->amount,
-                    'received_amount' => (float) $receivedAmount,
-                    'remaining_amount' => (float) $remainingAmount,
+                    'received_amount' => $receivedAmount,
+                    'remaining_amount' => $remainingAmount,
                     'status' => match (true) {
                         $remainingAmount <= 0 => 'PAID',
                         $receivedAmount > 0 => 'PARTIAL',
@@ -127,40 +169,43 @@ class AccountsReceivable extends Page
                     $amount = (float) ($data['amount'] ?? 0);
                     $remaining = (float) $receivable['remaining_amount'];
 
-                    if ($amount <= 0) {
+                    if ($amount <= 0 || $amount > $remaining) {
                         Notification::make()
-                            ->title('Nominal pembayaran tidak valid')
+                            ->title('Nominal pembayaran tidak valid atau melebihi sisa piutang')
                             ->danger()
                             ->send();
 
                         return;
                     }
 
-                    if ($amount > $remaining) {
+                    // REFAKTORISASI: Implementasi DB Transaction untuk integritas pencatatan kas
+                    try {
+                        DB::transaction(function () use ($data, $amount, $receivable) {
+                            FinancialRecord::create([
+                                'transaction_date' => $data['transaction_date'],
+                                'type' => 'pemasukan', // Pembayaran piutang adalah uang masuk
+                                'amount' => $amount,
+                                'category' => 'Accounts Receivable',
+                                'description' => $data['description'] ?: 'Penerimaan pembayaran customer',
+                                'reference_number' => $receivable['reference_number'],
+                                'created_by' => auth()->id(),
+                            ]);
+                        });
+
                         Notification::make()
-                            ->title('Nominal melebihi sisa piutang')
-                            ->danger()
+                            ->title('Pembayaran customer berhasil dicatat')
+                            ->success()
                             ->send();
 
-                        return;
+                        $this->selectedReferenceNumber = null;
+
+                    } catch (Throwable $e) {
+                        Notification::make()
+                            ->title('Gagal mencatat penerimaan.')
+                            ->body($e->getMessage())
+                            ->danger()
+                            ->send();
                     }
-
-                    FinancialRecord::create([
-                        'transaction_date' => $data['transaction_date'],
-                        'type' => 'pemasukan',
-                        'amount' => $amount,
-                        'category' => 'Accounts Receivable',
-                        'description' => $data['description'] ?: 'Penerimaan pembayaran customer',
-                        'reference_number' => $receivable['reference_number'],
-                        'created_by' => auth()->id(),
-                    ]);
-
-                    Notification::make()
-                        ->title('Pembayaran customer berhasil dicatat')
-                        ->success()
-                        ->send();
-
-                    $this->selectedReferenceNumber = null;
                 }),
         ];
     }
@@ -170,8 +215,7 @@ class AccountsReceivable extends Page
         /** @var Collection<int, array> $receivables */
         $receivables = collect($this->getViewData()['receivables']);
 
-        return $receivables
-            ->firstWhere('reference_number', $this->selectedReferenceNumber);
+        return $receivables->firstWhere('reference_number', $this->selectedReferenceNumber);
     }
 
     public function selectReceivable(string $referenceNumber): void

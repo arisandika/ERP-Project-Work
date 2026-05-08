@@ -23,7 +23,7 @@ use App\Filament\Concerns\BelongsToModule;
 class PopupBannerResource extends Resource
 {
     use BelongsToModule;
-    protected static ?string $module = 'Marketing';
+    protected static ?string $module = 'marketing';
     protected static ?string $model = PopupBanner::class;
 
     protected static ?string $navigationIcon = 'heroicon-o-megaphone';

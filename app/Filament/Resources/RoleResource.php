@@ -23,8 +23,10 @@ use App\Filament\Concerns\BelongsToModule;
 class RoleResource extends Resource implements HasShieldPermissions
 {
     use HasShieldFormComponents;
+    
+    use BelongsToModule;
 
-    protected static ?string $module = 'System Management';
+    protected static ?string $module = 'system';
 
     protected static ?string $recordTitleAttribute = 'name';
 

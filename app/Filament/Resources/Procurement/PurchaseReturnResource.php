@@ -18,7 +18,7 @@ class PurchaseReturnResource extends Resource
 {
 
     use BelongsToModule;
-    protected static ?string $module = 'Procurement';
+    protected static ?string $module = 'procurement';
     protected static ?string $model = PurchaseReturn::class;
 
     protected static ?string $navigationIcon = 'heroicon-o-arrow-uturn-left';

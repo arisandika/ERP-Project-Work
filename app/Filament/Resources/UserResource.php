@@ -15,7 +15,7 @@ use App\Filament\Concerns\BelongsToModule;
 class UserResource extends Resource
 {
     use BelongsToModule;
-    protected static ?string $module = 'System Management';
+    protected static ?string $module = 'system';
     protected static ?string $model = User::class;
 
     protected static ?string $navigationIcon = 'heroicon-o-users';

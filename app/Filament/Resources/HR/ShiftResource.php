@@ -21,7 +21,7 @@ use App\Filament\Concerns\BelongsToModule;
 class ShiftResource extends Resource
 {
     use BelongsToModule;
-    protected static ?string $module = 'HR';
+    protected static ?string $module = 'hr';
     protected static ?string $model = Shift::class;
 
     protected static ?string $navigationIcon = 'heroicon-o-clock';

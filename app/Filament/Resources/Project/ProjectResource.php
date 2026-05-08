@@ -24,7 +24,7 @@ use App\Filament\Concerns\BelongsToModule;
 class ProjectResource extends Resource
 {
     use BelongsToModule;
-    protected static ?string $module = 'Project Management';
+    protected static ?string $module = 'project';
     protected static ?string $model = Project::class;
 
     protected static ?string $navigationIcon = 'heroicon-o-square-3-stack-3d';

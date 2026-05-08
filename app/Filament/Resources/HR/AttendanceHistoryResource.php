@@ -21,7 +21,7 @@ class AttendanceHistoryResource extends Resource
 {
     use BelongsToModule;
 
-    protected static ?string $module = 'HR';
+    protected static ?string $module = 'hr';
 
     protected static ?string $model = Attendance::class;
 

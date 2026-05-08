@@ -18,7 +18,7 @@ use App\Filament\Concerns\BelongsToModule;
 class ProductResource extends Resource
 {
     use BelongsToModule;
-    protected static ?string $module = 'Inventory';
+    protected static ?string $module = 'inventory';
     protected static ?string $model = Product::class;
 
     protected static ?string $navigationIcon = 'heroicon-o-cube';

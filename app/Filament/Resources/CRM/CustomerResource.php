@@ -18,7 +18,7 @@ class CustomerResource extends Resource
 {
     use BelongsToModule;
 
-    protected static ?string $module = 'CRM';
+    protected static ?string $module = 'crm';
 
     protected static ?string $model = Customer::class;
 

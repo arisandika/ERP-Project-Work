@@ -26,7 +26,7 @@ use App\Filament\Concerns\BelongsToModule;
 class EmployeeResource extends Resource
 {
     use BelongsToModule;
-    protected static ?string $module = 'HR';
+    protected static ?string $module = 'hr';
     protected static ?string $model = Employee::class;
 
     protected static ?string $navigationIcon = 'heroicon-o-user-group';

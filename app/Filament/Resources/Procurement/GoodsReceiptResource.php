@@ -18,7 +18,7 @@ use App\Filament\Concerns\BelongsToModule;
 class GoodsReceiptResource extends Resource
 {
     use BelongsToModule;
-    protected static ?string $module = 'Procurement';
+    protected static ?string $module = 'procurement';
     protected static ?string $model = GoodsReceipt::class;
     protected static ?string $navigationIcon = 'heroicon-o-inbox-arrow-down';
     protected static ?string $navigationGroup = 'Manajemen Procurement';

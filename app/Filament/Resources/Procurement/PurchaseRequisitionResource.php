@@ -20,7 +20,7 @@ use App\Filament\Concerns\BelongsToModule;
 class PurchaseRequisitionResource extends Resource
 {
     use BelongsToModule;
-    protected static ?string $module = 'Procurement';
+    protected static ?string $module = 'procurement';
     protected static ?string $model = PurchaseRequisition::class;
     protected static ?string $navigationIcon = 'heroicon-o-clipboard-document-list';
     protected static ?string $navigationGroup = 'Manajemen Procurement';

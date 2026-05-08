@@ -20,7 +20,7 @@ use App\Filament\Concerns\BelongsToModule;
 class OfficeResource extends Resource
 {
     use BelongsToModule;
-    protected static ?string $module = 'HR';
+    protected static ?string $module = 'hr';
     protected static ?string $model = Office::class;
 
     protected static ?string $navigationIcon = 'heroicon-o-building-office-2';

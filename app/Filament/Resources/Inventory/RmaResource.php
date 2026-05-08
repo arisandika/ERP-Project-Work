@@ -15,7 +15,7 @@ use App\Filament\Concerns\BelongsToModule;
 class RmaResource extends Resource
 {
     use BelongsToModule;
-    protected static ?string $module = 'Inventory';
+    protected static ?string $module = 'inventory';
     protected static ?string $model = Rma::class;
 
     protected static ?string $navigationIcon = 'heroicon-o-wrench-screwdriver';

@@ -8,7 +8,15 @@
 <?php $attributes = $attributes->except(\Illuminate\View\AnonymousComponent::ignoredParameterNames()); ?>
 <?php endif; ?>
 <?php $component->withAttributes([]); ?>
+    <div class="rounded-2xl bg-white p-6 shadow-sm ring-1 ring-gray-950/5 dark:bg-gray-900 dark:ring-white/10">
+        <h2 class="text-2xl font-bold text-gray-950 dark:text-white">
+            Finance Dashboard
+        </h2>
 
+        <p class="mt-2 text-sm text-gray-500 dark:text-gray-400">
+            Dashboard finance berhasil dibuat 🚀
+        </p>
+    </div>
  <?php echo $__env->renderComponent(); ?>
 <?php endif; ?>
 <?php if (isset($__attributesOriginal166a02a7c5ef5a9331faf66fa665c256)): ?>
@@ -19,4 +27,4 @@
 <?php $component = $__componentOriginal166a02a7c5ef5a9331faf66fa665c256; ?>
 <?php unset($__componentOriginal166a02a7c5ef5a9331faf66fa665c256); ?>
 <?php endif; ?>
-<?php /**PATH D:\Nurul Fauziah\Project Work\Nexicon\ERP-Project-Work\resources\views/filament/pages/dashboard.blade.php ENDPATH**/ ?>
+<?php /**PATH D:\Nurul Fauziah\Project Work\Nexicon\ERP-Project-Work\resources\views/filament/pages/finance/finance-dashboard.blade.php ENDPATH**/ ?>

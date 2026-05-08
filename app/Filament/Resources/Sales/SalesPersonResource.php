@@ -23,7 +23,7 @@ use App\Filament\Concerns\BelongsToModule;
 class SalesPersonResource extends Resource
 {
     use BelongsToModule;
-    protected static ?string $module = 'Sales';
+    protected static ?string $module = 'sales';
     protected static ?string $model = SalesPerson::class;
 
     protected static ?string $navigationIcon = 'heroicon-o-user-group';

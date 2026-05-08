@@ -20,7 +20,7 @@ use App\Filament\Concerns\BelongsToModule;
 class SerialNumberResource extends Resource
 {
     use BelongsToModule;
-    protected static ?string $module = 'Inventory';
+    protected static ?string $module = 'inventory';
     protected static ?string $model = SerialNumber::class;
     protected static ?string $navigationIcon = 'heroicon-o-qr-code';
     protected static ?string $navigationGroup = 'Manajemen Inventory';

@@ -33,7 +33,7 @@ use App\Filament\Concerns\BelongsToModule;
 class SalesOrderResource extends Resource
 {
     use BelongsToModule;
-    protected static ?string $module = 'Sales';
+    protected static ?string $module = 'sales';
     protected static ?string $model = SalesOrder::class;
     protected static ?string $navigationIcon = 'heroicon-o-shopping-bag';
     protected static ?string $navigationGroup = 'Manajemen Sales';

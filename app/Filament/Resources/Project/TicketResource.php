@@ -25,7 +25,7 @@ use App\Filament\Concerns\BelongsToModule;
 class TicketResource extends Resource
 {
     use BelongsToModule;
-    protected static ?string $module = 'Project Management';
+    protected static ?string $module = 'project';
     protected static ?string $model = Ticket::class;
 
     protected static ?string $navigationIcon = 'heroicon-o-ticket';

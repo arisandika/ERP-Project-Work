@@ -19,7 +19,7 @@ use App\Filament\Concerns\BelongsToModule;
 class ServiceResource extends Resource
 {
     use BelongsToModule;
-    protected static ?string $module = 'Inventory';
+    protected static ?string $module = 'inventory';
     protected static ?string $model = Service::class;
 
     protected static ?string $navigationIcon = 'heroicon-o-percent-badge';

@@ -32,7 +32,7 @@ class DealPipeline extends Page
         BelongsToModule::shouldRegisterNavigation as moduleShouldRegisterNavigation;
     }
 
-    protected static ?string $module = 'CRM';
+    protected static ?string $module = 'crm';
 
     protected static ?string $navigationIcon = 'heroicon-o-view-columns';
 

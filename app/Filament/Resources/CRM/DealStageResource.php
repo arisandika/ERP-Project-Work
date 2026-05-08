@@ -21,7 +21,7 @@ class DealStageResource extends Resource
 {
     use BelongsToModule;
 
-    protected static ?string $module = 'CRM';
+    protected static ?string $module = 'crm';
 
     protected static ?string $model = DealStage::class;
 

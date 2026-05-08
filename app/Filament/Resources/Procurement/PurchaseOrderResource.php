@@ -22,7 +22,7 @@ use App\Filament\Concerns\BelongsToModule;
 class PurchaseOrderResource extends Resource
 {
     use BelongsToModule;
-    protected static ?string $module = 'Procurement';
+    protected static ?string $module = 'procurement';
     protected static ?string $model = PurchaseOrder::class;
 
     protected static ?string $navigationIcon = 'heroicon-o-shopping-cart';

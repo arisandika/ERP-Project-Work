@@ -21,7 +21,7 @@ use App\Filament\Concerns\BelongsToModule;
 class LeaveApprovalResource extends Resource
 {
     use BelongsToModule;
-    protected static ?string $module = 'HR';
+    protected static ?string $module = 'hr';
     protected static ?string $model = LeaveRequest::class;
 
     protected static ?string $navigationIcon = 'heroicon-o-check-badge';

@@ -18,7 +18,7 @@ use App\Filament\Concerns\BelongsToModule;
 class PackageResource extends Resource
 {
     use BelongsToModule;
-    protected static ?string $module = 'Inventory';
+    protected static ?string $module = 'inventory';
     protected static ?string $model = Package::class;
 
     protected static ?string $navigationIcon = 'heroicon-o-archive-box';

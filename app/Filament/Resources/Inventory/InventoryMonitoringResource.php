@@ -15,7 +15,7 @@ use App\Filament\Concerns\BelongsToModule;
 class InventoryMonitoringResource extends Resource
 {
     use BelongsToModule;
-    protected static ?string $module = 'Inventory';
+    protected static ?string $module = 'inventory';
     protected static ?string $model = ProductStock::class;
 
     protected static ?string $navigationIcon = 'heroicon-o-chart-bar';
