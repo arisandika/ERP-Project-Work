@@ -10,9 +10,12 @@ use Filament\Forms\Form;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
+use App\Filament\Concerns\BelongsToModule;
 
 class PurchaseInvoiceResource extends Resource
 {
+    use BelongsToModule;
+    protected static ?string $module = 'procurement';
     protected static ?string $model = PurchaseInvoice::class;
     protected static ?string $navigationIcon = 'heroicon-o-document-text';
     protected static ?string $navigationGroup = 'Manajemen Finance'; // Pindah ke wilayah Finance!

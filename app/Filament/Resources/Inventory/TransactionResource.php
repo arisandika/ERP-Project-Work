@@ -8,9 +8,12 @@ use Filament\Forms\Form;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
+use App\Filament\Concerns\BelongsToModule;
 
 class TransactionResource extends Resource
 {
+    use BelongsToModule;
+    protected static ?string $module = 'inventory';
     protected static ?string $model = StockTransaction::class;
     protected static ?string $navigationIcon = 'heroicon-o-arrow-right-circle';
     protected static ?string $navigationGroup = 'Manajemen Inventory';

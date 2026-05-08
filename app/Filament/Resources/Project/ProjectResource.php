@@ -4,7 +4,6 @@ namespace App\Filament\Resources\Project;
 
 use App\Filament\Resources\Project\ProjectResource\Pages;
 use App\Filament\Resources\Project\ProjectResource\Pages\CreateProject;
-use App\Filament\Resources\Project\ProjectResource\RelationManagers;
 use App\Filament\Resources\Project\ProjectResource\RelationManagers\EpicsRelationManager;
 use App\Filament\Resources\Project\ProjectResource\RelationManagers\MembersRelationManager;
 use App\Filament\Resources\Project\ProjectResource\RelationManagers\NotesRelationManager;
@@ -20,9 +19,12 @@ use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
 use Illuminate\Support\Carbon;
+use App\Filament\Concerns\BelongsToModule;
 
 class ProjectResource extends Resource
 {
+    use BelongsToModule;
+    protected static ?string $module = 'project';
     protected static ?string $model = Project::class;
 
     protected static ?string $navigationIcon = 'heroicon-o-square-3-stack-3d';

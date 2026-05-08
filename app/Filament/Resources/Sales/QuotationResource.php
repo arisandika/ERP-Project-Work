@@ -32,9 +32,12 @@ use Illuminate\Database\Eloquent\SoftDeletingScope;
 use App\Services\Sales\QuotationService;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\HtmlString;
+use App\Filament\Concerns\BelongsToModule;
 
 class QuotationResource extends Resource
 {
+    use BelongsToModule;
+    protected static ?string $module = 'sales';
     protected static ?string $model = Quotation::class;
 
     protected static ?string $navigationIcon = 'heroicon-o-document-text';

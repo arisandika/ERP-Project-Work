@@ -10,9 +10,12 @@ use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Support\HtmlString;
+use App\Filament\Concerns\BelongsToModule;
 
 class RmaResource extends Resource
 {
+    use BelongsToModule;
+    protected static ?string $module = 'inventory';
     protected static ?string $model = Rma::class;
 
     protected static ?string $navigationIcon = 'heroicon-o-wrench-screwdriver';

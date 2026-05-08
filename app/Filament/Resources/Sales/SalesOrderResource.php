@@ -28,10 +28,12 @@ use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
-use Illuminate\Database\Eloquent\SoftDeletingScope;
+use App\Filament\Concerns\BelongsToModule;
 
 class SalesOrderResource extends Resource
 {
+    use BelongsToModule;
+    protected static ?string $module = 'sales';
     protected static ?string $model = SalesOrder::class;
     protected static ?string $navigationIcon = 'heroicon-o-shopping-bag';
     protected static ?string $navigationGroup = 'Manajemen Sales';

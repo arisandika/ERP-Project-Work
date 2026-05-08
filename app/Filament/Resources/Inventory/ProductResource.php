@@ -13,9 +13,12 @@ use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
+use App\Filament\Concerns\BelongsToModule;
 
 class ProductResource extends Resource
 {
+    use BelongsToModule;
+    protected static ?string $module = 'inventory';
     protected static ?string $model = Product::class;
 
     protected static ?string $navigationIcon = 'heroicon-o-cube';

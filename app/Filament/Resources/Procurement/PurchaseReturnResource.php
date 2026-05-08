@@ -11,16 +11,20 @@ use Filament\Notifications\Notification;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
-use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\Log;
+use App\Filament\Concerns\BelongsToModule;
 
 class PurchaseReturnResource extends Resource
 {
+
+    use BelongsToModule;
+    protected static ?string $module = 'procurement';
     protected static ?string $model = PurchaseReturn::class;
 
     protected static ?string $navigationIcon = 'heroicon-o-arrow-uturn-left';
     protected static ?string $navigationGroup = 'Manajemen Procurement';
     protected static ?string $pluralModelLabel = 'Retur Pembelian';
+    protected static ?string $slug = 'procurement/purchase-returns';
 
     public static function form(Form $form): Form
     {

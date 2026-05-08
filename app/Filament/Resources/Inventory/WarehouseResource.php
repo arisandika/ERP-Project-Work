@@ -16,9 +16,12 @@ use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
+use App\Filament\Concerns\BelongsToModule;
 
 class WarehouseResource extends Resource
 {
+    use BelongsToModule;
+    protected static ?string $module = 'inventory';
     protected static ?string $model = Warehouse::class;
 
     protected static ?string $navigationIcon = 'heroicon-o-home-modern';

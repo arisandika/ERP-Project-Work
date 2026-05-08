@@ -16,9 +16,12 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\HtmlString;
+use App\Filament\Concerns\BelongsToModule;
 
 class LeaveApprovalResource extends Resource
 {
+    use BelongsToModule;
+    protected static ?string $module = 'hr';
     protected static ?string $model = LeaveRequest::class;
 
     protected static ?string $navigationIcon = 'heroicon-o-check-badge';
@@ -358,7 +361,7 @@ class LeaveApprovalResource extends Resource
                             ->color(fn(string $state) => match ($state) {
                                 'pending' => 'warning',
                                 'approved' => 'success',
-                                
+
                                 default => 'danger',
                             })
                             ->formatStateUsing(function (string $state): string {

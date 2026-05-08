@@ -18,10 +18,15 @@ use Illuminate\Contracts\Support\Arrayable;
 use Illuminate\Support\HtmlString;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rules\Unique;
+use App\Filament\Concerns\BelongsToModule;
 
 class RoleResource extends Resource implements HasShieldPermissions
 {
     use HasShieldFormComponents;
+    
+    use BelongsToModule;
+
+    protected static ?string $module = 'system';
 
     protected static ?string $recordTitleAttribute = 'name';
 

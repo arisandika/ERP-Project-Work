@@ -18,9 +18,13 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\HtmlString;
+use App\Filament\Concerns\BelongsToModule;
 
 class ReimbursementApprovalResource extends Resource
 {
+    use BelongsToModule;
+
+    protected static ?string $module = 'finance';
     protected static ?string $model = ReimbursementRequest::class;
 
     protected static ?string $navigationIcon = 'heroicon-o-document-check';

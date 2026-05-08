@@ -18,9 +18,12 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\HtmlString;
+use App\Filament\Concerns\BelongsToModule;
 
 class SalesPersonResource extends Resource
 {
+    use BelongsToModule;
+    protected static ?string $module = 'sales';
     protected static ?string $model = SalesPerson::class;
 
     protected static ?string $navigationIcon = 'heroicon-o-user-group';

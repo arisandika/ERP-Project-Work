@@ -13,9 +13,13 @@ use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\HtmlString;
+use App\Filament\Concerns\BelongsToModule;
 
 class HolidayResource extends Resource
 {
+    use BelongsToModule;
+    protected static ?string $module = 'hr';
     protected static ?string $model = Holiday::class;
 
     protected static ?string $navigationIcon = 'heroicon-o-calendar-days';
