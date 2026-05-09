@@ -3,64 +3,60 @@
 namespace App\Filament\Pages\Finance;
 
 use App\Filament\Concerns\BelongsToModule;
+use App\Filament\Resources\Finance\FinancialRecordResource\Widgets\FinanceOverview;
+use App\Filament\Widgets\Finance\LatestUnpaidInvoices;
+use App\Filament\Widgets\Finance\LatestUnpaidPurchaseOrders;
 use App\Models\Finance\FinancialRecord;
-use BezhanSalleh\FilamentShield\Traits\HasPageShield;
 use Filament\Pages\Page;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
 
 class GeneralInformation extends Page
 {
-    /**
-     * Resolusi Konflik Trait untuk Keamanan & Multi-Tenant
-     */
-    use HasPageShield, BelongsToModule {
-        HasPageShield::canAccess insteadof BelongsToModule;
-        HasPageShield::shouldRegisterNavigation insteadof BelongsToModule;
-
-        HasPageShield::canAccess as shieldCanAccess;
-        HasPageShield::shouldRegisterNavigation as shieldShouldRegisterNavigation;
-
-        BelongsToModule::canAccess as moduleCanAccess;
-        BelongsToModule::shouldRegisterNavigation as moduleShouldRegisterNavigation;
-    }
+    use BelongsToModule;
 
     protected static ?string $module = 'finance';
 
-    // Mengganti icon agar lebih sesuai dengan "General Info" ketimbang "Dashboard"
-    protected static ?string $navigationIcon = 'heroicon-o-document-text';
+    protected static ?string $navigationIcon = 'heroicon-o-presentation-chart-line';
 
     protected static ?string $navigationGroup = 'Manajemen Finance';
 
     protected static ?int $navigationSort = 1;
 
+    // Memperjelas label di sidebar
+    protected static ?string $navigationLabel = 'General Info';
+
     protected static ?string $title = 'General Info';
 
-    protected static ?string $slug = 'finance/general-info';
+    protected static ?string $slug = 'finance/dashboard';
 
-    // PASTIKAN ANDA JUGA MENGUBAH NAMA FILE BLADE MENJADI general-info.blade.php
-    protected static string $view = 'filament.pages.finance.general-info';
+    protected static string $view = 'filament.pages.finance.general-information';
 
     public string $summaryMode = 'monthly';
 
     public int $selectedYear;
-
-    public static function canAccess(): bool
-    {
-        return static::shieldCanAccess() && static::moduleCanAccess();
-    }
-
-    public static function shouldRegisterNavigation(): bool
-    {
-        return static::shieldShouldRegisterNavigation() && static::moduleShouldRegisterNavigation();
-    }
 
     public function mount(): void
     {
         $this->selectedYear = now()->year;
     }
 
-    // WIDGET TELAH DIHAPUS SESUAI PERMINTAAN UNTUK FOKUS KE GENERAL INFO
+    protected function getHeaderWidgets(): array
+    {
+        return [
+            FinanceOverview::class,
+            LatestUnpaidInvoices::class,
+            LatestUnpaidPurchaseOrders::class,
+        ];
+    }
+
+    public function getHeaderWidgetsColumns(): int | string | array
+    {
+        return [
+            'default' => 1,
+            'xl' => 2,
+        ];
+    }
 
     public function setSummaryMode(string $mode): void
     {
@@ -165,11 +161,11 @@ class GeneralInformation extends Page
     }
 
     /**
-     * REFAKTORISASI: Mengompresi 8 query menjadi 2 query menggunakan SQL Conditional Aggregation.
+     * OPTIMIZED: Mengompresi 8 query menjadi 2 query menggunakan SQL Conditional Aggregation
      */
     protected function calculateSummary(Carbon $startDate, Carbon $endDate): array
     {
-        // Query 1: Menghitung semua pemasukan, pengeluaran, hutang, piutang dalam 1 hit
+        // Query 1: Agregasi semua transaksi berdasarkan tipe dan kategori dalam satu hit
         $periodStats = FinancialRecord::query()
             ->whereBetween('transaction_date', [$startDate, $endDate])
             ->selectRaw("
@@ -182,7 +178,7 @@ class GeneralInformation extends Page
             ")
             ->first();
 
-        // Query 2: Menghitung saldo akhir hingga tanggal tersebut
+        // Query 2: Hitung saldo akhir historis
         $balanceStats = FinancialRecord::query()
             ->where('transaction_date', '<=', $endDate)
             ->selectRaw("

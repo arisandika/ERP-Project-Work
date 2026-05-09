@@ -13,7 +13,7 @@ use Filament\Forms\Form;
 use Filament\Pages\Dashboard\Concerns\HasFiltersForm;
 use Filament\Pages\Dashboard as BaseDashboard;
 
-class SalesDashboard extends BaseDashboard
+class DashboardSales extends BaseDashboard
 {
     use HasFiltersForm;
 

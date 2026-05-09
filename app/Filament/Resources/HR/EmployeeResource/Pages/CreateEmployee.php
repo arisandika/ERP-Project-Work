@@ -18,16 +18,23 @@ class CreateEmployee extends CreateRecord
         return 'Tambah Karyawan';
     }
 
-    protected function handleRecordCreation(array $data): Model
+protected function handleRecordCreation(array $data): Model
     {
         return DB::transaction(function () use ($data) {
 
-            // Buat user baru terlebih dahulu
-            $user = User::create([
-                'name'     => ucwords(strtolower($data['full_name'])),
-                'email'    => $data['email'],
-                'password' => Hash::make($data['password']),
-            ]);
+            // REFAKTORISASI MENTOR: Smart Auto-Link
+            // Cari User berdasarkan email. Jika ketemu, gunakan user tersebut.
+            // Jika tidak ketemu, buat User baru dengan atribut di dalam array kedua.
+            $user = User::firstOrCreate(
+                ['email'    => $data['email']],
+                [
+                    'name'     => ucwords(strtolower($data['full_name'])),
+                    'password' => Hash::make($data['password']),
+                ]
+            );
+
+            // Jika user sudah ada sebelumnya namun input form mengirimkan password baru,
+            // Opsional: Anda bisa menambahkan logika $user->update(['password' => ...]) di sini jika diinginkan.
 
             // Buat data employee yang terhubung dengan user
             $employee = new Employee([
@@ -44,8 +51,8 @@ class CreateEmployee extends CreateRecord
                 'photo'            => $data['photo'] ?? null,
 
                 // Personal information
-                'national_id'      => $data['national_id'] ?? null,     // NIK
-                'identity_number'  => $data['identity_number'] ?? null, // Nomor KTP
+                'national_id'      => $data['national_id'] ?? null,
+                'identity_number'  => $data['identity_number'] ?? null,
                 'birth_place'      => $data['birth_place'] ?? null,
                 'birth_date'       => $data['birth_date'] ?? null,
                 'gender'           => $data['gender'] ?? null,
@@ -56,13 +63,9 @@ class CreateEmployee extends CreateRecord
                 // Permission toggles
                 'can_wfa'          => $data['can_wfa'] ?? false,
                 'can_unlock_shift' => $data['can_unlock_shift'] ?? false,
-
-                // (Optional future fields)
-                // 'face_embeddings'      => $data['face_embeddings'] ?? null,
-                // 'face_embedding_path'  => $data['face_embedding_path'] ?? null,
-                // 'face_landmarks'       => $data['face_landmarks'] ?? null,
             ]);
 
+            // Gunakan metode associate alih-alih set properti manual (Best Practice)
             $employee->user()->associate($user);
             $employee->save();
 
@@ -73,8 +76,8 @@ class CreateEmployee extends CreateRecord
                     ->pluck('name')
                     ->toArray();
 
-                $employee->syncRoles($roleNames);
-                $user->syncRoles($roleNames);
+                // $employee->syncRoles($roleNames);
+                $user->syncRoles($roleNames); // Memastikan User juga mendapat role yang sama
             }
 
             return $employee;

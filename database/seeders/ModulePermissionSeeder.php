@@ -39,7 +39,7 @@ class ModulePermissionSeeder extends Seeder
             'access module attendance',
         ]);
 
-        $this->givePermissionsToRole('hr', [
+        $this->givePermissionsToRole('hr_employees', [
             'access module attendance',
             'access module hr',
             'access module finance',

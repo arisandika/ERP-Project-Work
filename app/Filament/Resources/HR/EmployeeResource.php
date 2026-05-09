@@ -88,6 +88,9 @@ class EmployeeResource extends Resource
                             ->label('Email')
                             ->required()
                             ->email()
+                            // Update: Pastikan email tidak digunakan oleh Employee lain.
+                            // Jika ada yang mendaftarkan email ganda, Filament akan menampilkan pesan error UI dengan rapi.
+                            ->unique(table: 'nx_employees', column: 'email', ignoreRecord: true)
                             ->prefixIcon('heroicon-o-envelope')
                             ->dehydrated(fn($state, $record, string $operation) =>
                                 $operation === 'create' ||
@@ -103,6 +106,7 @@ class EmployeeResource extends Resource
                             ->password()
                             ->revealable()
                             ->prefixIcon('heroicon-o-lock-closed')
+                            ->helperText('Jika email sudah terdaftar di sistem, kata sandi ini akan diabaikan.')
                             ->required(fn(string $operation): bool => $operation === 'create'),
 
                         Forms\Components\TextInput::make('phone_number')
