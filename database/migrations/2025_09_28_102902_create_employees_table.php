@@ -20,7 +20,6 @@ return new class extends Migration {
             $table->unsignedBigInteger('shift_id')->nullable();      // FK to nx_shifts
 
             // Identification
-            $table->string('national_id')->nullable();     // NIK
             $table->string('identity_number')->nullable(); // No. KTP
 
             // Personal Information

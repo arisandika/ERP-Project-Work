@@ -2,6 +2,7 @@
 namespace App\Filament\Resources\HR;
 
 use App\Filament\Resources\HR\AttendanceResource\Pages;
+use App\Infolists\Components\AttendanceMapEntry;
 use App\Models\HR\Attendance;
 use Filament\Forms;
 use Filament\Forms\Form;
@@ -243,22 +244,13 @@ class AttendanceResource extends Resource
                         TextEntry::make('note')
                             ->label('Catatan')
                             ->placeholder('—'),
+                    ]),
 
-                        ImageEntry::make('face_snapshot_in')
-                            ->label('Foto Presensi Masuk')
-                            ->placeholder('—')
-                            ->extraImgAttributes([
-                                'style' => 'width: 100%; height: auto; object-fit: cover;',
-                                'class' => 'w-full rounded-2xl'
-                            ]),
-
-                        ImageEntry::make('face_snapshot_out')
-                            ->label('Foto Presensi Keluar')
-                            ->placeholder('—')
-                            ->extraImgAttributes([
-                                'style' => 'width: 100%; height: auto; object-fit: cover;',
-                                'class' => 'w-full rounded-2xl'
-                            ]),
+                Section::make('Lokasi Presensi')
+                    ->schema([
+                        AttendanceMapEntry::make('map')
+                            ->label('')
+                            ->columnSpanFull(),
                     ]),
 
                 Section::make('Pengelolaan Data')

@@ -4,6 +4,7 @@ namespace App\Filament\Pages\Project;
 
 use App\Exports\TicketsExport;
 use App\Filament\Actions\ExportTicketsAction;
+use App\Filament\Concerns\BelongsToModule;
 use App\Filament\Resources\Project\TicketResource;
 use App\Models\HR\Employee;
 use App\Models\Project\Project;
@@ -22,7 +23,7 @@ use Maatwebsite\Excel\Facades\Excel;
 
 class ProjectBoard extends Page
 {
-    use HasPageShield;
+    use BelongsToModule;
 
     protected static ?string $navigationIcon = 'heroicon-o-view-columns';
 

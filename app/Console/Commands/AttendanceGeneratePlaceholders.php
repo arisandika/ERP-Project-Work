@@ -4,30 +4,42 @@ namespace App\Console\Commands;
 
 use App\Models\HR\Attendance;
 use App\Models\HR\Employee;
+use App\Models\HR\Holiday;
 use Illuminate\Console\Command;
 use Illuminate\Support\Carbon;
 
 class AttendanceGeneratePlaceholders extends Command
 {
     protected $signature = 'attendance:generate-placeholders';
-    protected $description = 'Membuat data presensi kosong (placeholder) untuk semua karyawan aktif di awal hari.';
+    protected $description = 'Membuat data presensi untuk semua karyawan aktif di awal hari.';
 
     public function handle()
     {
         $today = Carbon::today();
         $this->info("Memulai pembuatan placeholder untuk tanggal: " . $today->format('Y-m-d'));
 
-        // Jangan generate di hari Sabtu atau Minggu
-        if ($today->isWeekend()) {
-            $this->info('Hari ini weekend, tidak ada placeholder yang dibuat.');
-            return 0;
+        // Cek Kondisi Hari Ini
+        $isWeekend = $today->isWeekend();
+        $holiday = Holiday::whereDate('date', $today)->first();
+
+        // Tentukan default status dan catatan
+        $defaultStatus = 'belum_presensi';
+        $defaultNote = 'Menunggu presensi...';
+
+        if ($isWeekend) {
+            $defaultStatus = 'libur';
+            $defaultNote = 'Libur Akhir Pekan (Sabtu/Minggu)';
+            $this->info("Hari ini akhir pekan. Menggenerate data dengan status 'libur'.");
+        } elseif ($holiday) {
+            $defaultStatus = 'libur';
+            $defaultNote = 'Libur Nasional: ' . $holiday->name;
+            $this->info("Hari ini Libur Nasional ({$holiday->name}). Menggenerate data dengan status 'libur'.");
         }
 
         $employees = Employee::where('status', 'Aktif')->get();
         $generatedCount = 0;
 
         foreach ($employees as $employee) {
-            // Gunakan firstOrCreate untuk mencegah duplikat jika command dijalankan ulang
             Attendance::firstOrCreate(
                 [
                     'employee_id' => $employee->id,
@@ -35,14 +47,14 @@ class AttendanceGeneratePlaceholders extends Command
                 ],
                 [
                     'shift_id' => $employee->shift_id,
-                    'status' => 'belum_presensi',
-                    'note' => 'Menunggu presensi...'
+                    'status' => $defaultStatus,
+                    'note' => $defaultNote
                 ]
             );
             $generatedCount++;
         }
 
-        $this->info("Selesai. {$generatedCount} placeholder presensi berhasil dibuat.");
+        $this->info("Selesai. {$generatedCount} data presensi berhasil dibuat.");
         return 0;
     }
 }

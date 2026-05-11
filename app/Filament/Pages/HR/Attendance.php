@@ -1,6 +1,7 @@
 <?php
 namespace App\Filament\Pages\HR;
 
+use App\Filament\Concerns\BelongsToModule;
 use App\Models\HR\Attendance as AttendanceModel;
 use BezhanSalleh\FilamentShield\Traits\HasPageShield;
 use Filament\Pages\Page;
@@ -8,7 +9,9 @@ use Illuminate\Support\Facades\Auth;
 
 class Attendance extends Page
 {
-    use HasPageShield;
+    use BelongsToModule;
+
+    protected static ?string $module = 'attendance';
 
     protected static ?string $navigationIcon = 'heroicon-o-viewfinder-circle';
 

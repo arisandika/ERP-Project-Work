@@ -28,7 +28,6 @@ class Employee extends Model
         'user_id',
         'department_id',
         'office_id',
-        'national_id',     // NIK
         'identity_number', // No. KTP
         'full_name',
         'birth_place',

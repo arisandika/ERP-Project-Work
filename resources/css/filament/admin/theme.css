@@ -189,7 +189,7 @@
 }
 
 .fi-dropdown-panel {
-    @apply rounded-2xl bg-secondary-light dark:bg-secondary-dark shadow-none ring-1 ring-border-light dark:ring-border-dark !important;
+    @apply rounded-2xl bg-secondary-light dark:bg-secondary-dark shadow-none ring-1 ring-border-light dark:ring-border-dark max-w-[15rem] p-1 !important;
 }
 
 .fi-dropdown-list-item {

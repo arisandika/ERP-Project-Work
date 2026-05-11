@@ -6,5 +6,5 @@ use Filament\Infolists\Components\Entry;
 
 class ProjectDocumentList extends Entry
 {
-    protected string $view = 'infolists.components.project-document-list';
+    protected string $view = 'filament.infolists.components.project-document-list';
 }

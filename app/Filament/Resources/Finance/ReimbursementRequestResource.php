@@ -25,7 +25,7 @@ class ReimbursementRequestResource extends Resource
 {
     use BelongsToModule;
 
-    protected static ?string $module = 'finance';
+    protected static ?string $module = 'attendance';
 
     protected static ?string $model = ReimbursementRequest::class;
 

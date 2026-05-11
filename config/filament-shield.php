@@ -73,7 +73,8 @@ return [
         ],
 
         'widgets' => [
-            'AccountWidget', 'FilamentInfoWidget',
+            'AccountWidget',
+            'FilamentInfoWidget',
         ],
 
         'resources' => [],
@@ -89,4 +90,16 @@ return [
         'enabled' => true,
     ],
 
+    'custom_permissions' => [
+        'module.access.attendance',
+        'module.access.hr',
+        'module.access.finance',
+        'module.access.sales',
+        'module.access.procurement',
+        'module.access.inventory',
+        'module.access.crm',
+        'module.access.marketing',
+        'module.access.project',
+        'module.access.system',
+    ],
 ];

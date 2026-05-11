@@ -276,7 +276,7 @@
                 <div class="grid grid-cols-1 gap-6 md:col-span-5">
                     <div class="flex items-center gap-4 p-6 fi-section rounded-2xl">
                         <div
-                            class="flex items-center justify-center w-12 h-12 rounded-full bg-main-light ring-1 ring-border-light">
+                            class="flex items-center justify-center w-12 h-12 rounded-full bg-secondary-light dark:bg-secondary-dark ring-1 ring-border-light dark:ring-border-dark">
                             <x-heroicon-o-clock class="w-6 h-6 text-gray-700 dark:text-gray-500" />
                         </div>
                         <div class="text-left">

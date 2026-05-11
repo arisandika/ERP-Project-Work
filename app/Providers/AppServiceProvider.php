@@ -15,6 +15,7 @@ use App\Observers\LeaveRequestObserver;
 use App\Observers\ReimbursementRequestObserver;
 use App\Observers\ProductStockObserver;
 use App\Observers\DeliveryOrderObserver;
+use App\Observers\RoleObserver;
 use App\Observers\SalesOrderObserver;
 use App\Observers\RmaObserver;
 use Filament\Support\Colors\Color;
@@ -24,6 +25,9 @@ use Illuminate\Support\Facades\App;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Database\Eloquent\Relations\Relation;
 use App\Http\Responses\LoginResponse;
+use Spatie\Permission\Models\Role;
+use Spatie\Permission\Models\Permission;
+use Spatie\Permission\PermissionRegistrar;
 use Filament\Http\Responses\Auth\Contracts\LoginResponse as LoginResponseContract;
 
 class AppServiceProvider extends ServiceProvider
@@ -53,5 +57,54 @@ class AppServiceProvider extends ServiceProvider
         SalesOrder::observe(SalesOrderObserver::class);
         ReimbursementRequest::observe(ReimbursementRequestObserver::class);
         Rma::observe(RmaObserver::class);
+
+        Role::observe(RoleObserver::class);
+
+        // Auto clear permission cache setiap ada perubahan role/permission
+        Role::saved(function () {
+            app()[PermissionRegistrar::class]->forgetCachedPermissions();
+        });
+
+        Role::deleted(function () {
+            app()[PermissionRegistrar::class]->forgetCachedPermissions();
+        });
+
+        Permission::saved(function () {
+            app()[PermissionRegistrar::class]->forgetCachedPermissions();
+        });
+
+        Permission::deleted(function () {
+            app()[PermissionRegistrar::class]->forgetCachedPermissions();
+        });
+
+        \Illuminate\Support\Facades\DB::listen(function ($query) {
+            if (
+                str_contains($query->sql, 'role_has_permissions') ||
+                str_contains($query->sql, 'model_has_permissions') ||
+                str_contains($query->sql, 'model_has_roles')
+            ) {
+                app()[PermissionRegistrar::class]->forgetCachedPermissions();
+            }
+        });
+
+        \Spatie\Permission\Models\Role::updating(function ($role) {
+            // Simpan module permissions yang dimiliki role sebelum Shield overwrite
+            $role->_modulePermissionsBackup = $role->permissions
+                ->filter(fn($p) => str_starts_with($p->name, 'module.access.'))
+                ->pluck('name')
+                ->toArray();
+        });
+
+        \Spatie\Permission\Models\Role::updated(function ($role) {
+            // Kembalikan module permissions yang mungkin terhapus Shield
+            if (!empty($role->_modulePermissionsBackup)) {
+                $current = $role->permissions->pluck('name')->toArray();
+                $missing = array_diff($role->_modulePermissionsBackup, $current);
+
+                if (!empty($missing)) {
+                    $role->givePermissionTo($missing);
+                }
+            }
+        });
     }
 }

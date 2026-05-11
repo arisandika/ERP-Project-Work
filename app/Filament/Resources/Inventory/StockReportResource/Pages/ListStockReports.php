@@ -54,7 +54,7 @@ class ListStockReports extends ListRecords
             Notification::make()
                 ->warning()
                 ->title('Peringatan: Stock Siap Jual Rendah')
-                ->body("Terdapat **{$lowStockCount} item** stok rendah | **{$criticalCount} kritis** | **{$outOfStockCount} habis**")
+                ->body("Terdapat {$lowStockCount} item stok rendah, {$criticalCount} kritis, {$outOfStockCount} habis")
                 ->persistent()
                 ->send();
         }

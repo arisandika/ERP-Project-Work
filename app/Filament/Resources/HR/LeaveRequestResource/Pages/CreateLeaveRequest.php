@@ -206,16 +206,22 @@ class CreateLeaveRequest extends CreateRecord
          */
         $hasClockIn = Attendance::query()
             ->where('employee_id', $employee->id)
-            ->whereBetween('date', [$start, $end])
+            // Format ke Y-m-d agar query DB akurat murni hanya mencocokkan tanggal
+            ->whereBetween('date', [
+                $start->format('Y-m-d'),
+                $end->format('Y-m-d')
+            ])
+            // Mengecek apakah jam masuk sudah terisi (sudah absen)
             ->whereNotNull('clock_in')
             ->exists();
 
         if ($hasClockIn) {
             Notification::make()
                 ->title('Pengajuan Cuti Gagal')
-                ->body('Anda tidak dapat mengajukan cuti karena sudah melakukan presensi (Check-in) pada tanggal tersebut.')
+                ->body('Anda tidak dapat mengajukan cuti karena Anda sudah melakukan presensi masuk (Check-in) pada rentang tanggal tersebut.')
                 ->danger()
                 ->send();
+
             $this->halt();
         }
 
@@ -224,7 +230,10 @@ class CreateLeaveRequest extends CreateRecord
          */
         $isMarkedAbsent = Attendance::query()
             ->where('employee_id', $employee->id)
-            ->whereBetween('date', [$start, $end])
+            ->whereBetween('date', [
+                $start->format('Y-m-d'),
+                $end->format('Y-m-d')
+            ])
             ->where('status', 'absen')
             ->exists();
 

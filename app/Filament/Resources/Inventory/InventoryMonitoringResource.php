@@ -99,7 +99,7 @@ class InventoryMonitoringResource extends Resource
             ])
             ->actions([
                 Tables\Actions\Action::make('view')
-                    ->label('View Product')
+                    ->label('View')
                     ->icon('heroicon-o-eye')
                     ->color('gray')
                     ->url(

@@ -2,6 +2,7 @@
 
 namespace App\Filament\Pages\Project;
 
+use App\Filament\Concerns\BelongsToModule;
 use App\Models\Project\Project;
 use App\Models\Project\Ticket;
 use BezhanSalleh\FilamentShield\Traits\HasPageShield;
@@ -14,7 +15,7 @@ use Log;
 
 class TicketTimeline extends Page
 {
-    use HasPageShield;
+    use BelongsToModule;
     
     protected static ?string $navigationIcon = 'heroicon-o-calendar';
 

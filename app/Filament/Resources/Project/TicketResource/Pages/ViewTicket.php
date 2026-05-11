@@ -170,7 +170,7 @@ class ViewTicket extends ViewRecord
                     ->schema([
                         TextEntry::make('histories')
                             ->hiddenLabel()
-                            ->view('infolists.components.ticket-history'),
+                            ->view('filament.infolists.components.ticket-history'),
                     ]),
 
                 Section::make('Pengelolaan Data')
