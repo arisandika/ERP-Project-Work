@@ -83,7 +83,7 @@
 }
 
 .fi-btn {
-    @apply px-4 py-2.5 rounded-full hover:bg-main-primary/90 dark:hover:bg-main-primary/90 !important;
+    @apply px-4 py-2.5 rounded-full !important;
 }
 
 .fi-ta-ctn {
