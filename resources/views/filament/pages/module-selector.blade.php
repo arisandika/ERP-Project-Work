@@ -1,546 +1,213 @@
 <x-filament-panels::page>
 
-{{-- ===================== STYLES ===================== --}}
-<style>
-    .fi-header,
-    .fi-sidebar { display: none !important; }
-
-    .fi-main {
-        width: 100% !important;
-        max-width: none !important;
-        margin-left: 0 !important;
-        margin-inline-start: 0 !important;
-        padding: 0 !important;
-    }
-
-    .fi-main-ctn,
-    .fi-page {
-        width: 100% !important;
-        max-width: none !important;
-        background: transparent !important;
-    }
-
-    .fi-topbar {
-        left: 0 !important;
-        inset-inline-start: 0 !important;
-    }
-
-    /* ── Page ── */
-    .erp-gateway {
-        min-height: calc(100vh - 4.5rem);
-        background:
-            radial-gradient(ellipse at top left,  rgba(99,102,241,0.05) 0%, transparent 45%),
-            radial-gradient(ellipse at top right, rgba(16,185,129,0.04) 0%, transparent 45%),
-            rgb(var(--gray-100));
-    }
-
-    .dark .erp-gateway {
-        background:
-            radial-gradient(ellipse at top left,  rgba(99,102,241,0.07) 0%, transparent 45%),
-            radial-gradient(ellipse at top right, rgba(16,185,129,0.05) 0%, transparent 45%),
-            rgb(var(--gray-950));
-    }
-
-    .erp-wrapper {
-        width: min(100% - 3rem, 1180px);
-        margin-inline: auto;
-        padding-block: 36px;
-    }
-
-    /* ── Topbar ── */
-    .erp-topbar {
-        margin-bottom: 32px;
-    }
-
-    .erp-system-badge {
-        display: inline-flex;
-        align-items: center;
-        gap: 8px;
-        background: rgb(var(--gray-50));
-        border: 1px solid rgb(var(--gray-200));
-        border-radius: 999px;
-        padding: 6px 14px;
-        font-size: 11px;
-        font-weight: 700;
-        letter-spacing: 0.08em;
-        text-transform: uppercase;
-        color: rgb(var(--gray-400));
-        box-shadow: 0 1px 3px rgba(0,0,0,0.04);
-    }
-
-    .dark .erp-system-badge {
-        background: rgb(var(--gray-800));
-        border-color: rgb(var(--gray-700));
-        color: rgb(var(--gray-500));
-    }
-
-    .erp-system-badge-dot {
-        width: 6px;
-        height: 6px;
-        border-radius: 50%;
-        background: #22c55e;
-        box-shadow: 0 0 0 2px rgba(34,197,94,0.2);
-        flex-shrink: 0;
-    }
-
-    /* ── Hero ── */
-    .erp-hero { margin-bottom: 24px; }
-
-    .erp-hero-title {
-        font-size: 28px;
-        font-weight: 800;
-        color: rgb(var(--gray-950));
-        letter-spacing: -0.025em;
-        margin: 0 0 8px;
-        line-height: 1.2;
-    }
-
-    .dark .erp-hero-title {
-        color: rgb(var(--gray-50));
-    }
-
-    .erp-hero-sub {
-        font-size: 13.5px;
-        color: rgb(var(--gray-400));
-        margin: 0;
-    }
-
-    .erp-hero-sub strong {
-        color: rgb(var(--gray-600));
-        font-weight: 600;
-    }
-
-    .dark .erp-hero-sub strong {
-        color: rgb(var(--gray-300));
-    }
-
-    /* ── Meta ── */
-    .erp-meta { margin-bottom: 20px; }
-
-    .erp-count-pill {
-        display: inline-flex;
-        align-items: center;
-        gap: 6px;
-        background: rgb(var(--gray-50));
-        border: 1px solid rgb(var(--gray-200));
-        border-radius: 999px;
-        padding: 5px 13px;
-        font-size: 12px;
-        color: rgb(var(--gray-400));
-        box-shadow: 0 1px 2px rgba(0,0,0,0.03);
-    }
-
-    .dark .erp-count-pill {
-        background: rgb(var(--gray-800));
-        border-color: rgb(var(--gray-700));
-        color: rgb(var(--gray-500));
-    }
-
-    .erp-count-pill strong {
-        color: rgb(var(--gray-600));
-        font-weight: 700;
-    }
-
-    .dark .erp-count-pill strong {
-        color: rgb(var(--gray-300));
-    }
-
-    .erp-divider {
-        height: 1px;
-        background: rgb(var(--gray-200));
-        margin-bottom: 20px;
-    }
-
-    .dark .erp-divider {
-        background: rgb(var(--gray-800));
-    }
-
-    /* ── Grid ── */
-    .erp-grid {
-        display: grid;
-        grid-template-columns: repeat(2, 1fr);
-        gap: 12px;
-    }
-
-    @media (min-width: 768px)  { .erp-grid { grid-template-columns: repeat(3, 1fr); } }
-    @media (min-width: 1100px) { .erp-grid { grid-template-columns: repeat(4, 1fr); } }
-
-    /* ── Card ── */
-    .erp-card {
-        position: relative;
-        background: rgb(var(--gray-50));
-        border: 1px solid rgb(var(--gray-200));
-        border-radius: 16px;
-        padding: 18px;
-        cursor: pointer;
-        text-align: left;
-        width: 100%;
-        overflow: hidden;
-        box-shadow: 0 1px 3px rgba(15,23,42,0.04), 0 1px 2px rgba(15,23,42,0.03);
-        transition: transform 160ms ease, border-color 160ms ease, box-shadow 160ms ease;
-    }
-
-    .dark .erp-card {
-        background: rgb(var(--gray-900));
-        border-color: rgb(var(--gray-800));
-        box-shadow: 0 1px 3px rgba(0,0,0,0.2);
-    }
-
-    .erp-card::before {
-        content: "";
-        position: absolute;
-        top: -24px;
-        right: -24px;
-        width: 96px;
-        height: 96px;
-        border-radius: 50%;
-        background: var(--glow);
-        filter: blur(32px);
-        opacity: 0.15;
-        pointer-events: none;
-        transition: opacity 160ms ease, transform 160ms ease;
-    }
-
-    .dark .erp-card::before { opacity: 0.3; }
-
-    .erp-card::after {
-        content: "";
-        position: absolute;
-        left: 20px;
-        right: 20px;
-        bottom: 0;
-        height: 3px;
-        border-radius: 999px 999px 0 0;
-        background: var(--accent);
-        opacity: 0;
-        transform: scaleX(0.5);
-        transition: opacity 160ms ease, transform 160ms ease;
-    }
-
-    .erp-card:hover {
-        transform: translateY(-3px);
-        border-color: var(--accent);
-        box-shadow:
-            0 8px 24px rgba(15,23,42,0.08),
-            0 0 0 1px var(--accent);
-    }
-
-    .dark .erp-card:hover {
-        box-shadow:
-            0 8px 24px rgba(0,0,0,0.3),
-            0 0 0 1px var(--accent);
-    }
-
-    .erp-card:hover::before {
-        opacity: 0.35;
-        transform: scale(1.2);
-    }
-
-    .dark .erp-card:hover::before { opacity: 0.55; }
-
-    .erp-card:hover::after {
-        opacity: 1;
-        transform: scaleX(1);
-    }
-
-    /* ── Card internals ── */
-    .erp-card-top {
-        display: flex;
-        align-items: flex-start;
-        justify-content: space-between;
-        margin-bottom: 14px;
-    }
-
-    .erp-card-icon {
-        width: 42px;
-        height: 42px;
-        border-radius: 12px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        background: var(--icon-bg);
-        border: 1px solid var(--icon-border);
-        color: var(--accent);
-        flex-shrink: 0;
-        position: relative;
-        z-index: 1;
-    }
-
-    .erp-card-icon svg { width: 20px; height: 20px; }
-
-    .erp-card-tag {
-        font-size: 9px;
-        font-weight: 700;
-        letter-spacing: 0.07em;
-        text-transform: uppercase;
-        color: var(--accent);
-        background: var(--tag-bg);
-        border: 1px solid var(--icon-border);
-        border-radius: 999px;
-        padding: 3px 9px;
-        position: relative;
-        z-index: 1;
-    }
-
-    .erp-card-label {
-        font-size: 14px;
-        font-weight: 800;
-        color: rgb(var(--gray-900));
-        margin: 0 0 5px;
-        letter-spacing: -0.01em;
-        position: relative;
-        z-index: 1;
-    }
-
-    .dark .erp-card-label {
-        color: rgb(var(--gray-100));
-    }
-
-    .erp-card-desc {
-        font-size: 11.5px;
-        color: rgb(var(--gray-400));
-        line-height: 1.6;
-        margin: 0 0 16px;
-        display: -webkit-box;
-        -webkit-line-clamp: 2;
-        -webkit-box-orient: vertical;
-        overflow: hidden;
-        position: relative;
-        z-index: 1;
-    }
-
-    .dark .erp-card-desc {
-        color: rgb(var(--gray-500));
-    }
-
-    .erp-card-footer {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        border-top: 1px solid rgb(var(--gray-100));
-        padding-top: 12px;
-        position: relative;
-        z-index: 1;
-    }
-
-    .dark .erp-card-footer {
-        border-top-color: rgb(var(--gray-800));
-    }
-
-    .erp-cta-text {
-        font-size: 11px;
-        font-weight: 600;
-        color: rgb(var(--gray-300));
-        transition: color 160ms ease;
-    }
-
-    .dark .erp-cta-text {
-        color: rgb(var(--gray-600));
-    }
-
-    .erp-card:hover .erp-cta-text { color: var(--accent); }
-
-    .erp-arrow {
-        width: 26px;
-        height: 26px;
-        border-radius: 50%;
-        background: rgb(var(--gray-100));
-        border: 1px solid rgb(var(--gray-200));
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        color: rgb(var(--gray-300));
-        transition: background 160ms ease, color 160ms ease, border-color 160ms ease, transform 160ms ease;
-        flex-shrink: 0;
-    }
-
-    .dark .erp-arrow {
-        background: rgb(var(--gray-800));
-        border-color: rgb(var(--gray-700));
-        color: rgb(var(--gray-600));
-    }
-
-    .erp-arrow svg { width: 13px; height: 13px; }
-
-    .erp-card:hover .erp-arrow {
-        background: var(--accent);
-        color: #fff;
-        border-color: var(--accent);
-        transform: translateX(2px);
-    }
-
-    /* ── Empty state ── */
-    .erp-empty {
-        border: 1px solid rgb(var(--warning-200));
-        background: rgb(var(--warning-50));
-        border-radius: 16px;
-        padding: 24px;
-        display: flex;
-        align-items: flex-start;
-        gap: 14px;
-        box-shadow: 0 1px 3px rgba(0,0,0,0.04);
-    }
-
-    .dark .erp-empty {
-        border-color: rgb(var(--warning-800));
-        background: rgb(var(--warning-950));
-    }
-
-    .erp-empty-icon {
-        width: 40px;
-        height: 40px;
-        border-radius: 10px;
-        background: rgb(var(--warning-100));
-        border: 1px solid rgb(var(--warning-200));
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        color: rgb(var(--warning-600));
-        flex-shrink: 0;
-    }
-
-    .dark .erp-empty-icon {
-        background: rgb(var(--warning-900));
-        border-color: rgb(var(--warning-800));
-        color: rgb(var(--warning-400));
-    }
-
-    .erp-empty-icon svg { width: 20px; height: 20px; }
-
-    .erp-empty-title {
-        font-size: 13px;
-        font-weight: 700;
-        color: rgb(var(--warning-800));
-        margin: 0 0 4px;
-    }
-
-    .dark .erp-empty-title {
-        color: rgb(var(--warning-200));
-    }
-
-    .erp-empty-desc {
-        font-size: 12px;
-        color: rgb(var(--warning-700));
-        margin: 0;
-        line-height: 1.6;
-    }
-
-    .dark .erp-empty-desc {
-        color: rgb(var(--warning-400));
-    }
-
-    @media (max-width: 640px) {
-        .erp-wrapper { padding-block: 20px; }
-        .erp-hero-title { font-size: 22px; }
-        .erp-card { padding: 14px; }
-    }
-</style>
-
-@php
-    $modules = $this->getModules();
-    $user    = auth()->user();
-
-    $moduleStyles = [
-        'attendance'  => ['accent' => '#3b82f6', 'glow' => 'rgba(59,130,246,0.9)',   'icon_bg' => 'rgba(59,130,246,0.08)',  'icon_border' => 'rgba(59,130,246,0.2)',   'tag_bg' => 'rgba(59,130,246,0.07)'],
-        'hr'          => ['accent' => '#6366f1', 'glow' => 'rgba(99,102,241,0.9)',   'icon_bg' => 'rgba(99,102,241,0.08)',  'icon_border' => 'rgba(99,102,241,0.2)',   'tag_bg' => 'rgba(99,102,241,0.07)'],
-        'finance'     => ['accent' => '#10b981', 'glow' => 'rgba(16,185,129,0.9)',   'icon_bg' => 'rgba(16,185,129,0.08)',  'icon_border' => 'rgba(16,185,129,0.2)',   'tag_bg' => 'rgba(16,185,129,0.07)'],
-        'sales'       => ['accent' => '#8b5cf6', 'glow' => 'rgba(139,92,246,0.9)',   'icon_bg' => 'rgba(139,92,246,0.08)',  'icon_border' => 'rgba(139,92,246,0.2)',   'tag_bg' => 'rgba(139,92,246,0.07)'],
-        'procurement' => ['accent' => '#f59e0b', 'glow' => 'rgba(245,158,11,0.9)',   'icon_bg' => 'rgba(245,158,11,0.08)',  'icon_border' => 'rgba(245,158,11,0.2)',   'tag_bg' => 'rgba(245,158,11,0.07)'],
-        'inventory'   => ['accent' => '#64748b', 'glow' => 'rgba(100,116,139,0.9)',  'icon_bg' => 'rgba(100,116,139,0.08)', 'icon_border' => 'rgba(100,116,139,0.2)',  'tag_bg' => 'rgba(100,116,139,0.07)'],
-        'crm'         => ['accent' => '#06b6d4', 'glow' => 'rgba(6,182,212,0.9)',    'icon_bg' => 'rgba(6,182,212,0.08)',   'icon_border' => 'rgba(6,182,212,0.2)',    'tag_bg' => 'rgba(6,182,212,0.07)'],
-        'marketing'   => ['accent' => '#ec4899', 'glow' => 'rgba(236,72,153,0.9)',   'icon_bg' => 'rgba(236,72,153,0.08)',  'icon_border' => 'rgba(236,72,153,0.2)',   'tag_bg' => 'rgba(236,72,153,0.07)'],
-        'system'      => ['accent' => '#94a3b8', 'glow' => 'rgba(148,163,184,0.9)',  'icon_bg' => 'rgba(148,163,184,0.08)', 'icon_border' => 'rgba(148,163,184,0.2)',  'tag_bg' => 'rgba(148,163,184,0.07)'],
-    ];
-@endphp
-
-<div class="erp-gateway">
-    <div class="erp-wrapper">
-
-        {{-- ── Topbar ──────────────────────────────────────────────── --}}
-        <div class="erp-topbar">
-            <div class="erp-system-badge">
-                <span class="erp-system-badge-dot"></span>
-                INTERAERP &nbsp;·&nbsp; Module Gateway
-            </div>
-        </div>
-
-        {{-- ── Hero ────────────────────────────────────────────────── --}}
-        <div class="erp-hero">
-            <h1 class="erp-hero-title">Pilih Modul</h1>
-            <p class="erp-hero-sub">
-                Selamat datang, <strong>{{ $user?->name ?? 'User' }}</strong>.
-                Pilih area kerja sesuai role kamu.
-            </p>
-        </div>
-
-        {{-- ── Meta ────────────────────────────────────────────────── --}}
-        @if ($modules->isNotEmpty())
-            <div class="erp-meta">
-                <div class="erp-count-pill">
-                    <strong>{{ $modules->count() }}</strong> modul tersedia
-                </div>
-            </div>
-        @endif
-
-        <div class="erp-divider"></div>
-
-        {{-- ── Empty State ──────────────────────────────────────────── --}}
-        @if ($modules->isEmpty())
-            <div class="erp-empty">
-                <div class="erp-empty-icon">
-                    <x-filament::icon icon="heroicon-o-exclamation-triangle" />
-                </div>
-                <div>
-                    <p class="erp-empty-title">Belum ada modul yang bisa diakses</p>
-                    <p class="erp-empty-desc">
-                        Akun kamu belum memiliki permission modul apapun.
-                        Silakan hubungi administrator untuk mengatur role.
-                    </p>
+    <style>
+        .fi-header,
+        .fi-sidebar,
+        .fi-topbar-open-sidebar-btn {
+            display: none !important;
+        }
+
+        .fi-main {
+            width: 100% !important;
+            max-width: none !important;
+            margin-left: 0 !important;
+            margin-inline-start: 0 !important;
+            padding: 0 !important;
+        }
+
+        .fi-main-ctn,
+        .fi-page {
+            width: 100% !important;
+            max-width: none !important;
+            background: transparent !important;
+        }
+
+        .fi-topbar {
+            left: 0 !important;
+            inset-inline-start: 0 !important;
+        }
+
+        /* Card pseudo-element effects yang tidak bisa dilakukan Tailwind murni */
+        .module-card::before {
+            content: "";
+            position: absolute;
+            top: -32px;
+            right: -32px;
+            width: 100px;
+            height: 100px;
+            border-radius: 50%;
+            background: var(--card-glow);
+            filter: blur(40px);
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 200ms ease;
+        }
+
+        .module-card:hover::before {
+            opacity: 0.2;
+        }
+
+        .dark .module-card:hover::before {
+            opacity: 0.35;
+        }
+
+        .module-card::after {
+            content: "";
+            position: absolute;
+            bottom: 0;
+            left: 16px;
+            right: 16px;
+            height: 0px;
+            border-radius: 999px 999px 0 0;
+            background: var(--card-accent);
+            opacity: 0;
+            transform: scaleX(0.4);
+            transition: opacity 200ms ease, transform 200ms ease;
+        }
+
+        .module-card:hover::after {
+            opacity: 1;
+            transform: scaleX(1);
+        }
+
+        .module-card:hover .card-arrow {
+            background: var(--card-accent) !important;
+            border-color: var(--card-accent) !important;
+            color: #fff !important;
+            transform: translateX(2px);
+        }
+
+        .module-card:hover .card-cta {
+            color: var(--card-accent) !important;
+        }
+
+        .module-card:hover {
+            border-color: var(--card-accent) !important;
+        }
+    </style>
+
+    @php
+        $modules = $this->getModules();
+        $user = auth()->user();
+
+        $moduleConfig = [
+            'attendance' => ['accent' => '#3b82f6', 'glow' => '#3b82f6', 'icon_bg' => 'bg-blue-50 dark:bg-blue-950/40', 'icon_color' => 'text-blue-600 dark:text-blue-400', 'icon_border' => 'ring-blue-200 dark:ring-blue-800', 'tag' => 'bg-blue-50 text-blue-600 ring-blue-200 dark:bg-blue-950/40 dark:text-blue-400 dark:ring-blue-800'],
+            'hr' => ['accent' => '#6366f1', 'glow' => '#6366f1', 'icon_bg' => 'bg-indigo-50 dark:bg-indigo-950/40', 'icon_color' => 'text-indigo-600 dark:text-indigo-400', 'icon_border' => 'ring-indigo-200 dark:ring-indigo-800', 'tag' => 'bg-indigo-50 text-indigo-600 ring-indigo-200 dark:bg-indigo-950/40 dark:text-indigo-400 dark:ring-indigo-800'],
+            'finance' => ['accent' => '#10b981', 'glow' => '#10b981', 'icon_bg' => 'bg-emerald-50 dark:bg-emerald-950/40', 'icon_color' => 'text-emerald-600 dark:text-emerald-400', 'icon_border' => 'ring-emerald-200 dark:ring-emerald-800', 'tag' => 'bg-emerald-50 text-emerald-600 ring-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-400 dark:ring-emerald-800'],
+            'sales' => ['accent' => '#8b5cf6', 'glow' => '#8b5cf6', 'icon_bg' => 'bg-violet-50 dark:bg-violet-950/40', 'icon_color' => 'text-violet-600 dark:text-violet-400', 'icon_border' => 'ring-violet-200 dark:ring-violet-800', 'tag' => 'bg-violet-50 text-violet-600 ring-violet-200 dark:bg-violet-950/40 dark:text-violet-400 dark:ring-violet-800'],
+            'procurement' => ['accent' => '#f59e0b', 'glow' => '#f59e0b', 'icon_bg' => 'bg-amber-50 dark:bg-amber-950/40', 'icon_color' => 'text-amber-600 dark:text-amber-400', 'icon_border' => 'ring-amber-200 dark:ring-amber-800', 'tag' => 'bg-amber-50 text-amber-600 ring-amber-200 dark:bg-amber-950/40 dark:text-amber-400 dark:ring-amber-800'],
+            'inventory' => ['accent' => '#64748b', 'glow' => '#64748b', 'icon_bg' => 'bg-slate-100 dark:bg-slate-800/60', 'icon_color' => 'text-slate-600 dark:text-slate-400', 'icon_border' => 'ring-slate-200 dark:ring-slate-700', 'tag' => 'bg-slate-100 text-slate-600 ring-slate-200 dark:bg-slate-800/60 dark:text-slate-400 dark:ring-slate-700'],
+            'crm' => ['accent' => '#06b6d4', 'glow' => '#06b6d4', 'icon_bg' => 'bg-cyan-50 dark:bg-cyan-950/40', 'icon_color' => 'text-cyan-600 dark:text-cyan-400', 'icon_border' => 'ring-cyan-200 dark:ring-cyan-800', 'tag' => 'bg-cyan-50 text-cyan-600 ring-cyan-200 dark:bg-cyan-950/40 dark:text-cyan-400 dark:ring-cyan-800'],
+            'marketing' => ['accent' => '#ec4899', 'glow' => '#ec4899', 'icon_bg' => 'bg-pink-50 dark:bg-pink-950/40', 'icon_color' => 'text-pink-600 dark:text-pink-400', 'icon_border' => 'ring-pink-200 dark:ring-pink-800', 'tag' => 'bg-pink-50 text-pink-600 ring-pink-200 dark:bg-pink-950/40 dark:text-pink-400 dark:ring-pink-800'],
+            'system' => ['accent' => '#94a3b8', 'glow' => '#94a3b8', 'icon_bg' => 'bg-slate-100 dark:bg-slate-800/60', 'icon_color' => 'text-slate-500 dark:text-slate-400', 'icon_border' => 'ring-slate-200 dark:ring-slate-700', 'tag' => 'bg-slate-100 text-slate-500 ring-slate-200 dark:bg-slate-800/60 dark:text-slate-400 dark:ring-slate-700'],
+        ];
+    @endphp
+
+    <div class="min-h-screen bg-main-light dark:bg-main-dark">
+        <div class="w-full px-4 pb-10 mx-auto max-w-7xl sm:px-8 lg:px-10">
+
+            {{-- ── Header ──────────────────────────────────────────────── --}}
+            <div class="flex items-center justify-center mb-10 md:justify-start">
+                {{-- Logo --}}
+                <div class="flex items-center gap-3">
+                    <img src="{{ asset('assets/logo-dark.png') }}" alt="Logo" class="h-8 dark:hidden">
+                    <img src="{{ asset('assets/logo-light.png') }}" alt="Logo" class="hidden h-8 dark:block">
                 </div>
             </div>
 
-        {{-- ── Module Grid ──────────────────────────────────────────── --}}
-        @else
-            <div class="erp-grid">
-                @foreach ($modules as $module)
-                    @php
-                        $s = $moduleStyles[$module['key']] ?? $moduleStyles['system'];
-                    @endphp
+            {{-- ── Hero ────────────────────────────────────────────────── --}}
+            <div class="mb-12 text-center">
+                <h1 class="text-2xl font-bold tracking-tight text-black dark:text-white sm:text-3xl">
+                    Pilih Modul
+                </h1>
+                <p class="mt-2 text-base text-gray-500 dark:text-gray-400">
+                    Selamat datang kembali, <span
+                        class="font-semibold text-gray-700 dark:text-gray-300">{{ $user?->name ?? 'User' }}</span>.
+                    Pilih area kerja yang ingin kamu buka.
+                </p>
+            </div>
 
-                    <button
-                        type="button"
-                        wire:click="selectModule('{{ $module['key'] }}')"
-                        class="erp-card"
-                        style="
-                            --accent: {{ $s['accent'] }};
-                            --glow: {{ $s['glow'] }};
-                            --icon-bg: {{ $s['icon_bg'] }};
-                            --icon-border: {{ $s['icon_border'] }};
-                            --tag-bg: {{ $s['tag_bg'] }};
-                        "
-                    >
-                        <div class="erp-card-top">
-                            <div class="erp-card-icon">
-                                <x-filament::icon :icon="$module['icon']" />
+            {{-- ── Empty State ──────────────────────────────────────────── --}}
+            @if ($modules->isEmpty())
+                <div
+                    class="flex items-start gap-4 p-5 rounded-xl ring-1 ring-amber-200 bg-amber-50 dark:ring-amber-800 dark:bg-amber-950/30">
+                    <div
+                        class="flex items-center justify-center rounded-lg w-9 h-9 bg-amber-100 dark:bg-amber-900/40 ring-1 ring-amber-200 dark:ring-amber-800 text-amber-600 dark:text-amber-400 shrink-0">
+                        <x-filament::icon icon="heroicon-o-exclamation-triangle" class="w-5 h-5" />
+                    </div>
+                    <div>
+                        <p class="text-sm font-semibold text-amber-800 dark:text-amber-200">Belum ada modul yang bisa
+                            diakses</p>
+                        <p class="mt-1 text-sm leading-relaxed text-amber-700 dark:text-amber-400">
+                            Akun kamu belum memiliki permission modul apapun. Hubungi administrator untuk mengatur hak
+                            akses.
+                        </p>
+                    </div>
+                </div>
+
+                {{-- ── Module Grid ──────────────────────────────────────────── --}}
+            @else
+                <div class="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4 sm:gap-6">
+                    @foreach ($modules as $module)
+                        @php
+                            $cfg = $moduleConfig[$module['key']] ?? $moduleConfig['system'];
+                        @endphp
+
+                        <button type="button" wire:click="selectModule('{{ $module['key'] }}')" class="module-card group relative flex flex-col p-4 sm:p-5 text-left rounded-2xl
+                                       ring-1 ring-border-light dark:ring-border-dark
+                                       bg-secondary-light dark:bg-secondary-dark
+                                       shadow-sm overflow-hidden
+                                       transition-all duration-200 ease-out
+                                       hover:-translate-y-0.5 hover:shadow-md"
+                            style="--card-accent: {{ $cfg['accent'] }}; --card-glow: {{ $cfg['glow'] }};">
+                            {{-- Top row: icon + badge --}}
+                            <div class="flex items-start justify-between mb-4">
+                                <div
+                                    class="flex items-center justify-center w-10 h-10 rounded-xl ring-1 {{ $cfg['icon_bg'] }} {{ $cfg['icon_border'] }} {{ $cfg['icon_color'] }} shrink-0">
+                                    <x-filament::icon :icon="$module['icon']" class="w-5 h-5" />
+                                </div>
                             </div>
-                            <span class="erp-card-tag">Modul</span>
-                        </div>
 
-                        <p class="erp-card-label">{{ $module['label'] }}</p>
-                        <p class="erp-card-desc">{{ $module['description'] }}</p>
+                            {{-- Label --}}
+                            <p class="mb-1 text-base font-bold leading-tight text-black dark:text-white">
+                                {{ $module['label'] }}
+                            </p>
 
-                        <div class="erp-card-footer">
-                            <span class="erp-cta-text">Buka modul</span>
-                            <span class="erp-arrow">
-                                <x-filament::icon icon="heroicon-o-arrow-right" />
-                            </span>
-                        </div>
-                    </button>
-                @endforeach
-            </div>
-        @endif
+                            {{-- Description --}}
+                            <p class="flex-1 mb-4 text-sm text-gray-500 dark:text-gray-400">
+                                {{ $module['description'] }}
+                            </p>
 
+                            {{-- Footer --}}
+                            <div
+                                class="flex items-center justify-between pt-3 border-t border-border-light dark:border-border-dark">
+                                <span
+                                    class="text-sm font-medium text-gray-600 transition-colors duration-200 card-cta dark:text-gray-500">
+                                    Buka modul
+                                </span>
+                                <span
+                                    class="flex items-center justify-center w-6 h-6 text-gray-400 transition-all duration-200 rounded-full card-arrow ring-1 ring-border-light dark:ring-border-dark bg-main-light dark:bg-main-dark dark:text-gray-600">
+                                    <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5"
+                                            d="M9 5l7 7-7 7" />
+                                    </svg>
+                                </span>
+                            </div>
+                        </button>
+                    @endforeach
+                </div>
+            @endif
+
+            {{-- ── Meta bar ─────────────────────────────────────────────── --}}
+            @if ($modules->isNotEmpty())
+                <div class="flex justify-center pb-6 mt-10">
+                    <span
+                        class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg ring-1 ring-border-light dark:ring-border-dark bg-secondary-light dark:bg-secondary-dark text-sm font-medium text-gray-500 dark:text-gray-400">
+                        <strong class="text-gray-700 dark:text-gray-300">{{ $modules->count() }}</strong> modul tersedia untuk role kamu
+                    </span>
+                </div>
+            @endif
+        </div>
     </div>
-</div>
 
 </x-filament-panels::page>

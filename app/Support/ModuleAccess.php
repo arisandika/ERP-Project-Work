@@ -16,17 +16,39 @@ class ModuleAccess
     {
         $user = Auth::user();
 
-        if (! $user) {
+        if (!$user) {
             return collect();
         }
 
         return self::all()
-            ->filter(fn (array $module): bool => $user->can($module['permission']))
+            ->filter(fn(array $module): bool => $user->can($module['permission']))
+            ->filter(fn(array $module): bool => !(
+                $module['key'] === 'attendance' && $user->hasRole('super_admin')
+            ))
             ->values();
     }
 
     public static function current(): ?string
     {
+        // Deteksi dari route name yang sedang diakses
+        $routeName = request()->route()?->getName() ?? '';
+
+        foreach (config('erp-modules', []) as $key => $module) {
+            // Route HR: filament.admin.resources.hr.departments.index
+            // Cek dengan .key. supaya tidak false positive
+            // misal key 'hr' tidak match 'filament.admin.pages.hr-dashboard'
+            if (
+                str_contains($routeName, ".{$key}.") ||
+                str_contains($routeName, ".{$key}-") ||
+                str_ends_with($routeName, ".{$key}")
+            ) {
+                return $key;
+            }
+        }
+
+        // Fallback ke session — untuk halaman dashboard modul
+        // yang route name-nya tidak selalu mengandung key modul
+        // contoh: filament.admin.pages.hr-dashboard
         return session('active_module');
     }
 
@@ -34,7 +56,7 @@ class ModuleAccess
     {
         $activeModule = self::current();
 
-        if (! $activeModule) {
+        if (!$activeModule) {
             return null;
         }
 
@@ -45,13 +67,13 @@ class ModuleAccess
     {
         $user = Auth::user();
 
-        if (! $user) {
+        if (!$user) {
             return false;
         }
 
         $module = self::all()->get($moduleKey);
 
-        if (! $module) {
+        if (!$module) {
             return false;
         }
 
@@ -63,6 +85,7 @@ class ModuleAccess
         return self::current() === $moduleKey;
     }
 
+    // Masih dipakai untuk dashboard modul dan selectModule()
     public static function setActive(string $moduleKey): void
     {
         session(['active_module' => $moduleKey]);
@@ -79,7 +102,6 @@ class ModuleAccess
 
         if ($modules->count() === 1) {
             $module = $modules->first();
-
             self::setActive($module['key']);
 
             if (isset($module['route']) && route_exists($module['route'])) {
@@ -91,7 +113,7 @@ class ModuleAccess
     }
 }
 
-if (! function_exists('route_exists')) {
+if (!function_exists('route_exists')) {
     function route_exists(string $name): bool
     {
         return app('router')->has($name);

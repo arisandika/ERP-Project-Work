@@ -52,10 +52,20 @@ class AttendanceController extends Controller
             return redirect()->back();
         }
 
-        // 2. Cek apakah hari ini adalah Hari Libur Nasional
+        // 2. BLOKIR MUTLAK JIKA AKHIR PEKAN (SABTU / MINGGU)
+        if (now()->isWeekend()) {
+            Notification::make()
+                ->title('Tidak Bisa Presensi')
+                ->body('Hari ini adalah akhir pekan (Sabtu/Minggu). Sistem presensi ditutup.')
+                ->danger()
+                ->persistent()
+                ->send();
+            return redirect()->back();
+        }
+
+        // 3. BLOKIR MUTLAK JIKA HARI LIBUR NASIONAL
         $holiday = Holiday::whereDate('date', $today)->first();
 
-        // BLOKIR MUTLAK JIKA HARI LIBUR (Tanpa terkecuali)
         if ($holiday) {
             Notification::make()
                 ->title('Tidak Bisa Presensi')
@@ -206,12 +216,20 @@ class AttendanceController extends Controller
             ->whereDate('date', $today)
             ->first();
 
-        // Cek Hari Libur saat mau Clock Out
+        // 1. BLOKIR JIKA AKHIR PEKAN (Jika belum pernah clock in)
+        if (now()->isWeekend() && (!$attendance || !$attendance->clock_in)) {
+            Notification::make()
+                ->title('Sistem Ditutup')
+                ->body('Hari ini adalah akhir pekan (Sabtu/Minggu). Sistem ditutup.')
+                ->danger()
+                ->persistent()
+                ->send();
+            return redirect()->back();
+        }
+
+        // 2. BLOKIR JIKA HARI LIBUR (Jika belum pernah clock in)
         $holiday = Holiday::whereDate('date', $today)->first();
 
-        // BLOKIR MUTLAK JIKA HARI LIBUR
-        // Catatan: Jika entah bagaimana karyawan sudah berhasil Clock In (misal data libur diinput belakangan),
-        // kita tetap mengizinkan dia Clock Out agar datanya tidak error menggantung.
         if ($holiday && (!$attendance || !$attendance->clock_in)) {
             Notification::make()
                 ->title('Tidak Bisa Presensi Keluar')

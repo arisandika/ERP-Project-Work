@@ -44,7 +44,7 @@
         </div>
 
         <div id="map-container" class="relative overflow-hidden rounded-lg" data-navigate-once wire:ignore>
-            <div id="map" class="relative h-[450px] w-full rounded-lg z-[1]"></div>
+            <div id="map" class="relative h-[450px] w-full rounded-lg z-10"></div>
 
             <div id="map-loading-overlay"
                 class="absolute inset-0 bg-white/70 dark:bg-gray-900/60 backdrop-blur-sm flex items-center justify-center hidden z-[1000] transition-all">

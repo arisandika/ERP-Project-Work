@@ -14,4 +14,12 @@ class DashboardHR extends Page
     protected static ?string $navigationIcon = 'heroicon-o-document-text';
 
     protected static string $view = 'filament.pages.hr.dashboard-hr';
+
+    protected static ?string $slug = 'hr/dashboard';
+
+    protected static string $routePath = 'hr/dashboard';
+
+    protected static ?string $navigationLabel = 'Dashboard HR';
+
+    protected static ?string $title = 'Dashboard HR';
 }

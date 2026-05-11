@@ -2,6 +2,7 @@
 
 namespace App\Filament\Pages\HR;
 
+use App\Filament\Concerns\BelongsToModule;
 use App\Models\HR\Holiday;
 use Filament\Actions\Action;
 use Filament\Infolists\Components\Section;
@@ -10,6 +11,8 @@ use Filament\Pages\Page;
 
 class HolidayCalendar extends Page
 {
+    use BelongsToModule;
+    
     protected static ?string $navigationIcon = 'heroicon-o-calendar';
 
     protected static ?int $navigationSort = 9;

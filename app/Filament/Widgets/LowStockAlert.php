@@ -87,19 +87,6 @@ class LowStockAlert extends BaseWidget
                         ])
                     )
                     ->openUrlInNewTab(),
-
-                Tables\Actions\Action::make('restock')
-                    ->label('Tambah Stock')
-                    ->icon('heroicon-o-arrow-up-tray')
-                    ->color('success')
-                    ->url(
-                        fn(ProductStock $record): string =>
-                        route('filament.admin.resources.inventory.transactions.create', [
-                            // Mengoper parameter agar form transaksi langsung terisi
-                            'product' => $record->product->id,
-                            'warehouse' => $record->warehouse->id,
-                        ])
-                    ),
             ])
             ->emptyStateHeading('Semua Stock Tersedia Aman')
             ->emptyStateDescription('Tidak ada Product dengan stock siap jual yang rendah saat ini.')

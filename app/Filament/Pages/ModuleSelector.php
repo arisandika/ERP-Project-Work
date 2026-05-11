@@ -22,7 +22,7 @@ class ModuleSelector extends Page
     {
         // Setiap masuk halaman pilih modul, kosongkan dulu active module.
         // Jadi sidebar module lama tidak kebawa.
-        ModuleAccess::forgetActive();
+        // ModuleAccess::forgetActive();
     }
 
     public function getModules(): Collection

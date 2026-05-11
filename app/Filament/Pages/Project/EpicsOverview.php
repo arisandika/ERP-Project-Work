@@ -2,6 +2,7 @@
 
 namespace App\Filament\Pages\Project;
 
+use App\Filament\Concerns\BelongsToModule;
 use App\Models\Project\Epic;
 use App\Models\Project\Project;
 use BezhanSalleh\FilamentShield\Traits\HasPageShield;
@@ -12,7 +13,7 @@ use Livewire\Attributes\On;
 
 class EpicsOverview extends Page
 {
-    use HasPageShield;
+    use BelongsToModule;
     
     protected static ?string $navigationIcon = 'heroicon-o-bookmark';
 

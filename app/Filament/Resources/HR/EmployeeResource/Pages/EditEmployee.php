@@ -72,7 +72,6 @@ class EditEmployee extends EditRecord
                 'photo'            => $data['photo'] ?? $record->photo,
 
                 // Personal information
-                'national_id'      => $data['national_id'] ?? $record->national_id,
                 'identity_number'  => $data['identity_number'] ?? $record->identity_number,
                 'birth_place'      => $data['birth_place'] ?? $record->birth_place,
                 'birth_date'       => $data['birth_date'] ?? $record->birth_date,

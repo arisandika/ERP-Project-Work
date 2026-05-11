@@ -55,15 +55,8 @@ class EmployeeResource extends Resource
             ->schema([
                 Forms\Components\Section::make('Informasi Pribadi')
                     ->schema([
-                        Forms\Components\TextInput::make('national_id')
-                            ->label('NIK')
-                            ->required()
-                            ->numeric()
-                            ->maxLength(20)
-                            ->prefixIcon('heroicon-o-identification'),
-
                         Forms\Components\TextInput::make('identity_number')
-                            ->label('No. KTP')
+                            ->label('NIK (KTP)')
                             ->required()
                             ->numeric()
                             ->maxLength(20)
@@ -596,12 +589,8 @@ class EmployeeResource extends Resource
                 Section::make('Informasi Tambahan Pribadi')
                     ->columns(2)
                     ->schema([
-                        TextEntry::make('national_id')
-                            ->label('NIK')
-                            ->placeholder('—'),
-
                         TextEntry::make('identity_number')
-                            ->label('No. KTP')
+                            ->label('NIK (KTP)')
                             ->placeholder('—'),
 
                         TextEntry::make('birth_place')

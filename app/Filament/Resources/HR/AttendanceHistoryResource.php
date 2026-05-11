@@ -2,12 +2,14 @@
 namespace App\Filament\Resources\HR;
 
 use App\Filament\Resources\HR\AttendanceHistoryResource\Pages;
+use App\Infolists\Components\AttendanceMapEntry;
 use App\Models\HR\Attendance;
 use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Infolists\Components\ImageEntry;
 use Filament\Infolists\Components\Section;
 use Filament\Infolists\Components\TextEntry;
+use Filament\Infolists\Components\View;
 use Filament\Infolists\Infolist;
 use Filament\Resources\Resource;
 use Filament\Tables;
@@ -21,7 +23,7 @@ class AttendanceHistoryResource extends Resource
 {
     use BelongsToModule;
 
-    protected static ?string $module = 'hr';
+    protected static ?string $module = 'attendance';
 
     protected static ?string $model = Attendance::class;
 
@@ -31,7 +33,7 @@ class AttendanceHistoryResource extends Resource
 
     protected static ?int $navigationSort = 3;
 
-    protected static ?string $slug = 'hr/attendance-history';
+    protected static ?string $slug = 'attendance-history';
 
     protected static ?string $pluralModelLabel = 'Riwayat Presensi';
 
@@ -244,22 +246,13 @@ class AttendanceHistoryResource extends Resource
                         TextEntry::make('note')
                             ->label('Catatan')
                             ->placeholder('—'),
+                    ]),
 
-                        ImageEntry::make('face_snapshot_in')
-                            ->label('Foto Presensi Masuk')
-                            ->placeholder('—')
-                            ->extraImgAttributes([
-                                'style' => 'width: 100%; height: auto; object-fit: cover;',
-                                'class' => 'w-full rounded-2xl'
-                            ]),
-
-                        ImageEntry::make('face_snapshot_out')
-                            ->label('Foto Presensi Keluar')
-                            ->placeholder('—')
-                            ->extraImgAttributes([
-                                'style' => 'width: 100%; height: auto; object-fit: cover;',
-                                'class' => 'w-full rounded-2xl'
-                            ]),
+                Section::make('Lokasi Presensi')
+                    ->schema([
+                        AttendanceMapEntry::make('map')
+                            ->label('')
+                            ->columnSpanFull(),
                     ]),
 
                 Section::make('Pengelolaan Data')

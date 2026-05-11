@@ -2,6 +2,7 @@
 
 namespace App\Filament\Pages\Project;
 
+use App\Filament\Concerns\BelongsToModule;
 use App\Models\Project\Project;
 use BezhanSalleh\FilamentShield\Traits\HasPageShield;
 use Filament\Pages\Page;
@@ -9,7 +10,7 @@ use Illuminate\Support\Carbon;
 
 class ProjectTimeline extends Page
 {
-    use HasPageShield;
+    use BelongsToModule;
     
     protected static ?string $navigationIcon = 'heroicon-o-calendar-days';
 

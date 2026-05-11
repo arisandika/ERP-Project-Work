@@ -3,7 +3,7 @@
 namespace App\Console\Commands;
 
 use App\Models\HR\Attendance;
-use App\Models\HR\Holiday; // <-- Import model Holiday
+use App\Models\HR\Holiday;
 use Illuminate\Console\Command;
 use Illuminate\Support\Carbon;
 
@@ -17,23 +17,34 @@ class AttendanceMarkAbsent extends Command
         $today = Carbon::today();
         $this->info("Memulai finalisasi presensi untuk tanggal: " . $today->format('Y-m-d'));
 
-        // Jangan proses Alpha jika hari ini Sabtu atau Minggu
-        if ($today->isWeekend()) {
-            $this->info('Hari ini weekend, tidak ada proses alpha yang dijalankan.');
-            return 0;
-        }
-
-        // Jangan proses Alpha jika hari ini adalah Hari Libur
+        $isWeekend = $today->isWeekend();
         $holiday = Holiday::whereDate('date', $today)->first();
-        if ($holiday) {
-            $this->info("Hari ini adalah hari libur ({$holiday->name}), tidak ada proses alpha yang dijalankan.");
+
+        // Base query — selalu exclude employee milik super_admin
+        $baseQuery = Attendance::whereDate('date', $today)
+            ->whereHas('employee.user', function ($query) {
+                $query->whereDoesntHave('roles', function ($q) {
+                    $q->where('name', 'super_admin');
+                });
+            });
+
+        if ($isWeekend || $holiday) {
+            $note = $isWeekend
+                ? 'Libur Akhir Pekan (Sabtu/Minggu)'
+                : 'Libur Nasional: ' . $holiday->name;
+
+            $updatedCount = (clone $baseQuery)
+                ->where('status', 'belum_presensi')
+                ->update([
+                    'status' => 'libur',
+                    'note' => $note,
+                ]);
+
+            $this->info("Hari ini libur. {$updatedCount} data yang menggantung disesuaikan menjadi status 'libur'.");
             return 0;
         }
 
-        // Cari semua record yang statusnya masih 'belum_presensi' hari ini
-        $absentees = Attendance::whereDate('date', $today)
-            ->where('status', 'belum_presensi');
-
+        $absentees = (clone $baseQuery)->where('status', 'belum_presensi');
         $count = $absentees->count();
 
         if ($count > 0) {
@@ -43,7 +54,7 @@ class AttendanceMarkAbsent extends Command
             ]);
         }
 
-        $this->info("Selesai. {$count} karyawan ditandai sebagai Absen.");
+        $this->info("Selesai. {$count} karyawan ditandai sebagai Absen (Alpha).");
         return 0;
     }
 }

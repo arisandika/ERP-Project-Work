@@ -3,106 +3,49 @@
 namespace Database\Seeders;
 
 use Illuminate\Database\Seeder;
-use Spatie\Permission\Models\Permission;
 use Spatie\Permission\Models\Role;
+use Spatie\Permission\Models\Permission;
+use Spatie\Permission\PermissionRegistrar;
 
 class ModulePermissionSeeder extends Seeder
 {
     public function run(): void
     {
-        $modulePermissions = [
-            'access module attendance',
-            'access module hr',
-            'access module inventory',
-            'access module procurement',
-            'access module finance',
-            'access module crm',
-            'access module sales',
-            'access module project',
-            'access module marketing',
-            'access module system',
-        ];
+        app()[PermissionRegistrar::class]->forgetCachedPermissions();
 
-        foreach ($modulePermissions as $permission) {
-            Permission::findOrCreate($permission, 'web');
+        $roleModules = config('module-role-permissions', []);
+
+        $allModulePermissions = collect(config('erp-modules'))
+            ->map(fn($m) => $m['permission'])
+            ->values();
+
+        foreach ($roleModules as $roleName => $modules) {
+            $role = Role::whereName($roleName)->first();
+
+            if (!$role) {
+                $this->command->warn("Role [{$roleName}] tidak ditemukan, dilewati.");
+                continue;
+            }
+
+            // Pertahankan CRUD yang sudah ada, jangan disentuh
+            $existingNonModulePermissions = $role->permissions
+                ->whereNotIn('name', $allModulePermissions)
+                ->pluck('name');
+
+            // Permission modul sesuai config
+            $modulePermissions = collect($modules)
+                ->map(fn($key) => "module.access.{$key}")
+                ->filter(fn($name) => Permission::whereName($name)->exists())
+                ->values();
+
+            $role->syncPermissions(
+                $existingNonModulePermissions->merge($modulePermissions)->toArray()
+            );
+
+            $this->command->info("✓ Role [{$roleName}] → " . implode(', ', $modules));
         }
 
-        /*
-        |--------------------------------------------------------------------------
-        | Contoh mapping role
-        |--------------------------------------------------------------------------
-        | Sesuaikan nama role dengan role yang sudah ada di database.
-        | Kalau nama role lu beda, tinggal ubah string-nya.
-        */
-
-        $this->givePermissionsToRole('staff', [
-            'access module attendance',
-        ]);
-
-        $this->givePermissionsToRole('hr_employees', [
-            'access module attendance',
-            'access module hr',
-            'access module finance',
-        ]);
-
-        $this->givePermissionsToRole('finance', [
-            'access module finance',
-        ]);
-
-        $this->givePermissionsToRole('sales', [
-            'access module sales',
-        ]);
-
-        $this->givePermissionsToRole('procurement', [
-            'access module procurement',
-            'access module inventory',
-        ]);
-
-        $this->givePermissionsToRole('project_manager', [
-            'access module project',
-        ]);
-
-        $this->givePermissionsToRole('marketing', [
-            'access module marketing',
-        ]);
-
-        $this->givePermissionsToRole('admin', [
-            'access module attendance',
-            'access module hr',
-            'access module inventory',
-            'access module procurement',
-            'access module finance',
-            'access module crm',
-            'access module sales',
-            'access module project',
-            'access module marketing',
-        ]);
-
-        $this->givePermissionsToRole('manager', [
-            'access module attendance',
-            'access module hr',
-            'access module inventory',
-            'access module procurement',
-            'access module finance',
-            'access module crm',
-            'access module sales',
-            'access module project',
-            'access module marketing',
-            'access module system',
-        ]);
-
-        $this->givePermissionsToRole('owner', $modulePermissions);
-        $this->givePermissionsToRole('super_admin', $modulePermissions);
-    }
-
-    private function givePermissionsToRole(string $roleName, array $permissions): void
-    {
-        $role = Role::where('name', $roleName)->first();
-
-        if (! $role) {
-            return;
-        }
-
-        $role->givePermissionTo($permissions);
+        app()[PermissionRegistrar::class]->forgetCachedPermissions();
+        $this->command->info('Module permissions seeding selesai.');
     }
 }

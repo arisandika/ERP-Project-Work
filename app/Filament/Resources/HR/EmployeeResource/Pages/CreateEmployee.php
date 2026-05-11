@@ -51,7 +51,6 @@ protected function handleRecordCreation(array $data): Model
                 'photo'            => $data['photo'] ?? null,
 
                 // Personal information
-                'national_id'      => $data['national_id'] ?? null,
                 'identity_number'  => $data['identity_number'] ?? null,
                 'birth_place'      => $data['birth_place'] ?? null,
                 'birth_date'       => $data['birth_date'] ?? null,
