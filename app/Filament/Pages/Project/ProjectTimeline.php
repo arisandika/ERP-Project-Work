@@ -11,6 +11,8 @@ use Illuminate\Support\Carbon;
 class ProjectTimeline extends Page
 {
     use BelongsToModule;
+
+    protected static ?string $module = 'project';
     
     protected static ?string $navigationIcon = 'heroicon-o-calendar-days';
 

@@ -16,6 +16,8 @@ use Log;
 class TicketTimeline extends Page
 {
     use BelongsToModule;
+
+    protected static ?string $module = 'project';
     
     protected static ?string $navigationIcon = 'heroicon-o-calendar';
 
