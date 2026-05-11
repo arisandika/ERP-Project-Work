@@ -14,6 +14,8 @@ use Livewire\Attributes\On;
 class EpicsOverview extends Page
 {
     use BelongsToModule;
+
+    protected static ?string $module = 'project';
     
     protected static ?string $navigationIcon = 'heroicon-o-bookmark';
 

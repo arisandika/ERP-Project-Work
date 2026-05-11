@@ -25,6 +25,8 @@ class ProjectBoard extends Page
 {
     use BelongsToModule;
 
+    protected static ?string $module = 'project';
+
     protected static ?string $navigationIcon = 'heroicon-o-view-columns';
 
     protected static string $view = 'filament.pages.project.project-board';
