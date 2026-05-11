@@ -86,25 +86,5 @@ class AppServiceProvider extends ServiceProvider
                 app()[PermissionRegistrar::class]->forgetCachedPermissions();
             }
         });
-
-        \Spatie\Permission\Models\Role::updating(function ($role) {
-            // Simpan module permissions yang dimiliki role sebelum Shield overwrite
-            $role->_modulePermissionsBackup = $role->permissions
-                ->filter(fn($p) => str_starts_with($p->name, 'module.access.'))
-                ->pluck('name')
-                ->toArray();
-        });
-
-        \Spatie\Permission\Models\Role::updated(function ($role) {
-            // Kembalikan module permissions yang mungkin terhapus Shield
-            if (!empty($role->_modulePermissionsBackup)) {
-                $current = $role->permissions->pluck('name')->toArray();
-                $missing = array_diff($role->_modulePermissionsBackup, $current);
-
-                if (!empty($missing)) {
-                    $role->givePermissionTo($missing);
-                }
-            }
-        });
     }
 }
