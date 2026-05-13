@@ -314,13 +314,13 @@ class GoodsReceiptResource extends Resource
                     ->searchable()
                     ->limit(30),
 
-                Tables\Columns\TextColumn::make('purchaseOrder.po_number')
-                    ->label('Ref. PO')
-                    ->searchable()
-                    // Menampilkan No PO sekaligus Judul PO-nya di baris tabel (jika ada)
-                    ->formatStateUsing(fn (string $state, $record): string =>
-                        $record->purchaseOrder ? $record->purchaseOrder->po_number . ' - ' . $record->purchaseOrder->title : $state
-                    ),
+                // Tables\Columns\TextColumn::make('purchaseOrder.po_number')
+                //     ->label('Ref. PO')
+                //     ->searchable()
+                //     // Menampilkan No PO sekaligus Judul PO-nya di baris tabel (jika ada)
+                //     ->formatStateUsing(fn (string $state, $record): string =>
+                //         $record->purchaseOrder ? $record->purchaseOrder->po_number . ' - ' . $record->purchaseOrder->title : $state
+                //     ),
 
                 Tables\Columns\TextColumn::make('supplier.name')
                     ->label('Supplier'),
