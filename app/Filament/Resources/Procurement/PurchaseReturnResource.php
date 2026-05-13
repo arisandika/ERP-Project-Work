@@ -25,6 +25,7 @@ class PurchaseReturnResource extends Resource
     protected static ?string $navigationGroup = 'Manajemen Procurement';
     protected static ?string $pluralModelLabel = 'Retur Pembelian';
     protected static ?string $slug = 'procurement/purchase-returns';
+    protected static ?int $navigationSort = 5;
 
     public static function form(Form $form): Form
     {

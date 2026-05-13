@@ -17,7 +17,6 @@ use App\Observers\ProductStockObserver;
 use App\Observers\DeliveryOrderObserver;
 use App\Observers\RoleObserver;
 use App\Observers\SalesOrderObserver;
-use App\Observers\RmaObserver;
 use Filament\Support\Colors\Color;
 use Filament\Support\Facades\FilamentColor;
 use Illuminate\Support\Carbon;
@@ -56,7 +55,6 @@ class AppServiceProvider extends ServiceProvider
         DeliveryOrder::observe(DeliveryOrderObserver::class);
         SalesOrder::observe(SalesOrderObserver::class);
         ReimbursementRequest::observe(ReimbursementRequestObserver::class);
-        Rma::observe(RmaObserver::class);
 
         Role::observe(RoleObserver::class);
 

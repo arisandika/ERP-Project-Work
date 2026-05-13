@@ -1,1 +1,0 @@
-<x-heroicon-o-map-pin class="w-6 h-6" />
