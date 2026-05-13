@@ -16,7 +16,6 @@ use App\Filament\Concerns\BelongsToModule;
 
 class PurchaseReturnResource extends Resource
 {
-
     use BelongsToModule;
     protected static ?string $module = 'procurement';
     protected static ?string $model = PurchaseReturn::class;
@@ -33,32 +32,44 @@ class PurchaseReturnResource extends Resource
             // 1. HEADER SECTION
             Forms\Components\Section::make('Informasi Dokumen Retur')
                 ->description('Lengkapi detail informasi utama terkait pengembalian barang ke supplier.')
-                ->icon('heroicon-o-document-text') // Penambahan Ikon Section
+                ->icon('heroicon-o-document-text')
                 ->schema([
-
+                    // Baris 1: Nomor Retur (1 Kolom) & Judul Retur (2 Kolom)
                     Forms\Components\TextInput::make('return_number')
                         ->label('Nomor Retur')
                         ->default(fn () => \App\Models\Procurement\PurchaseReturn::previewNextReturnNumber())
                         ->disabled()
                         ->dehydrated(false)
                         ->prefixIcon('heroicon-o-hashtag')
-                        ->helperText('Estimasi nomor. Sistem akan mengunci nomor final saat disimpan untuk mencegah duplikasi.')
-                        ->required(),
-
-                    Forms\Components\DatePicker::make('return_date')
-                        ->label('Tanggal Retur')
-                        ->default(now())
+                        ->helperText('Sistem akan mengunci nomor final saat disimpan.')
                         ->required()
-                        ->prefixIcon('heroicon-o-calendar-days')
-                        ->native(false),
+                        ->columnSpan(1),
 
+                    Forms\Components\TextInput::make('title')
+                        ->label('Nama / Judul Retur')
+                        ->placeholder('Contoh: Retur Laptop Rusak Layar Batch 1')
+                        ->required()
+                        ->maxLength(255)
+                        ->columnSpan(2)
+                        ->extraInputAttributes(['class' => 'text-xl font-bold border-t-0 border-l-0 border-r-0 border-b-2 border-gray-300 focus:ring-0 px-0 bg-transparent']),
+
+                    // Baris 2: Supplier, Tanggal, & Penyelesaian
                     Forms\Components\Select::make('supplier_id')
                         ->label('Supplier')
                         ->relationship('supplier', 'name')
                         ->searchable()
                         ->preload()
                         ->prefixIcon('heroicon-o-building-storefront')
-                        ->required(),
+                        ->required()
+                        ->columnSpan(1),
+
+                    Forms\Components\DatePicker::make('return_date')
+                        ->label('Tanggal Retur')
+                        ->default(now())
+                        ->required()
+                        ->prefixIcon('heroicon-o-calendar-days')
+                        ->native(false)
+                        ->columnSpan(1),
 
                     Forms\Components\Select::make('resolution_type')
                         ->label('Tipe Penyelesaian')
@@ -68,27 +79,29 @@ class PurchaseReturnResource extends Resource
                         ])
                         ->required()
                         ->prefixIcon('heroicon-o-arrow-path-rounded-square')
-                        ->helperText('Tentukan bagaimana supplier akan mengganti retur ini.'),
+                        ->helperText('Cara supplier mengganti retur ini.')
+                        ->columnSpan(1),
 
+                    // Baris 3: Catatan
                     Forms\Components\Textarea::make('notes')
                         ->label('Catatan Tambahan')
                         ->columnSpanFull(),
-                ])->columns(2),
+                ])->columns(3), // <-- Diubah menjadi 3 kolom agar rapi
 
             // 2. DETAIL SECTION (ITEMS)
             Forms\Components\Section::make('Item yang Diretur')
                 ->description('Daftar spesifik barang yang akan dikembalikan beserta alasannya.')
-                ->icon('heroicon-o-archive-box-x-mark') // Penambahan Ikon Section
+                ->icon('heroicon-o-archive-box-x-mark')
                 ->schema([
                     Forms\Components\Repeater::make('items')
                         ->relationship()
-                        ->addActionLabel('Tambah Produk Retur') // UX: Label tombol lebih spesifik
+                        ->addActionLabel('Tambah Produk Retur')
                         ->schema([
                             Forms\Components\Select::make('product_id')
                                 ->label('Produk')
                                 ->relationship('product', 'product_name')
                                 ->searchable()
-                                ->preload() // SOLUSI: Agar opsi produk langsung muncul tanpa diketik
+                                ->preload()
                                 ->prefixIcon('heroicon-o-cube')
                                 ->required()
                                 ->columnSpan(2),
@@ -135,6 +148,12 @@ class PurchaseReturnResource extends Resource
                     ->icon('heroicon-o-hashtag')
                     ->weight('bold'),
 
+                // Menambahkan Kolom Title di Tabel
+                Tables\Columns\TextColumn::make('title')
+                    ->label('Nama Dokumen')
+                    ->searchable()
+                    ->limit(30),
+
                 Tables\Columns\TextColumn::make('supplier.name')
                     ->label('Supplier')
                     ->icon('heroicon-o-building-storefront')
@@ -153,7 +172,7 @@ class PurchaseReturnResource extends Resource
                         'credit_note' => 'heroicon-o-document-minus',
                         'refund' => 'heroicon-o-banknotes',
                         default => 'heroicon-o-question-mark-circle',
-                    }) // Penambahan Ikon Dinamis pada Badge
+                    })
                     ->formatStateUsing(fn ($state) => match ($state) {
                         'credit_note' => 'Potong Hutang',
                         'refund' => 'Refund',
@@ -163,44 +182,61 @@ class PurchaseReturnResource extends Resource
                 Tables\Columns\TextColumn::make('status')
                     ->label('Status')
                     ->badge()
-                    ->icon(fn (string $state): string => match ($state) {
+                    ->icon(fn (string $state): string => match (strtolower($state)) {
                         'draft' => 'heroicon-o-pencil',
                         'approved' => 'heroicon-o-check-badge',
                         'shipped' => 'heroicon-o-truck',
                         'completed' => 'heroicon-o-check-circle',
                         'cancelled' => 'heroicon-o-x-circle',
                         default => 'heroicon-o-clock',
-                    }) // Penambahan Ikon Dinamis pada Status
-                    ->color(fn (string $state): string => match ($state) {
+                    })
+                    ->color(fn (string $state): string => match (strtolower($state)) {
                         'draft' => 'gray',
                         'approved' => 'info',
                         'shipped' => 'warning',
                         'completed' => 'success',
                         'cancelled' => 'danger',
                         default => 'gray',
-                    }),
+                    })
+                    // Mengubah string status asli menjadi Kapital
+                    ->formatStateUsing(fn(string $state) => strtoupper($state)),
             ])
             ->actions([
                 Tables\Actions\EditAction::make()
+                    ->icon('heroicon-s-pencil-square')
+                    ->iconButton()
                     ->hidden(fn (PurchaseReturn $record): bool => $record->status !== 'draft'),
 
-                Tables\Actions\ViewAction::make(),
+                Tables\Actions\ViewAction::make()
+                    ->icon('heroicon-s-eye')
+                    ->iconButton(),
 
-                Tables\Actions\Action::make('approve')
-                    ->label('Setujui')
-                    ->icon('heroicon-o-check')
-                    ->color('info')
+                // MENGGANTI TOMBOL APPROVE MENJADI KIRIM BARANG (SHIPPED)
+                Tables\Actions\Action::make('ship_return')
+                    ->label('Kirim')
+                    ->tooltip('Kirim Barang ke Supplier')
+                    ->icon('heroicon-s-truck') // Ikon Solid Truk
+                    ->color('warning')
+                    ->iconButton()
                     ->requiresConfirmation()
-                    ->visible(fn (PurchaseReturn $record): bool => $record->status === 'draft')
-                    ->action(fn (PurchaseReturn $record) => $record->update(['status' => 'approved'])),
+                    ->modalHeading('Kirim Retur ke Supplier')
+                    ->modalDescription('Apakah barang fisik sudah diserahkan ke kurir / supplier? Status akan diubah menjadi SHIPPED.')
+                    ->visible(fn (PurchaseReturn $record): bool => in_array($record->status, ['draft', 'approved']))
+                    ->action(function (PurchaseReturn $record) {
+                        $record->update(['status' => 'shipped']);
+                        Notification::make()->title('Status Berubah: Barang Dikirim')->success()->send();
+                    }),
 
+                // TOMBOL SELESAIKAN (COMPLETE)
                 Tables\Actions\Action::make('complete')
-                    ->label('Selesaikan (Tarik Dana/Potong Hutang)')
-                    ->icon('heroicon-o-currency-dollar')
+                    ->label('Selesai')
+                    ->tooltip('Selesaikan & Perbarui Keuangan')
+                    ->icon('heroicon-s-currency-dollar') // Ikon Solid Uang
                     ->color('success')
+                    ->iconButton()
                     ->requiresConfirmation()
                     ->modalHeading('Selesaikan Retur Pembelian')
-                    ->modalDescription('Tindakan ini akan mengunci dokumen dan memicu pembaruan pada modul Akuntansi (Hutang/Kas). Lanjutkan?')
+                    ->modalDescription('Tindakan ini akan memicu pembaruan pada modul Akuntansi (Hutang terpotong / Kas bertambah). Lanjutkan?')
                     ->visible(fn (PurchaseReturn $record): bool => in_array($record->status, ['approved', 'shipped']))
                     ->action(function (PurchaseReturn $record): void {
                         try {
