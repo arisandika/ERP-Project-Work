@@ -310,7 +310,7 @@ class GoodsReceiptResource extends Resource
 
                 // Menampilkan Judul GR di Tabel
                 Tables\Columns\TextColumn::make('title')
-                    ->label('Nama Penerimaan')
+                    ->label('Nama Dokumen')
                     ->searchable()
                     ->limit(30),
 
