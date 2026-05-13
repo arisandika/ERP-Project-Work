@@ -32,20 +32,32 @@ class GoodsReceiptResource extends Resource
                 ->schema([
                     Forms\Components\Section::make('Informasi Surat Jalan Penerimaan')
                         ->schema([
+                            // Baris 1: No GR (1 kolom) & Judul GR (2 kolom)
                             Forms\Components\TextInput::make('gr_number')
                                 ->label('No. Penerimaan (GR)')
                                 ->disabled()
                                 ->dehydrated(false)
                                 ->afterStateHydrated(function (Forms\Components\TextInput $component, ?GoodsReceipt $record) {
                                     $component->state($record?->gr_number ?? GoodsReceipt::generateGRNumber());
-                                }),
+                                })
+                                ->columnSpan(1),
 
+                            Forms\Components\TextInput::make('title')
+                                ->label('Nama / Judul Penerimaan')
+                                ->placeholder('Contoh: Penerimaan Laptop Batch 1')
+                                ->required()
+                                ->maxLength(255)
+                                ->columnSpan(2) // Agar inputan membentang
+                                ->extraInputAttributes(['class' => 'text-xl font-normal border-t-0 border-l-0 border-r-0 border-b-2 border-gray-300 focus:ring-0 px-0 bg-transparent']),
+
+                            // Baris 2: Pemilihan PO, Supplier, & Gudang
                             Forms\Components\Select::make('purchase_order_id')
                                 ->label('Dari Purchase Order (PO)')
+                                // Modifikasi agar menampilkan No PO dan Nama PO
                                 ->options(
-                                    PurchaseOrder::query()
-                                        ->whereIn('status', ['sent', 'partial'])
-                                        ->pluck('po_number', 'id')
+                                    PurchaseOrder::whereIn('status', ['sent', 'partial'])
+                                        ->get()
+                                        ->mapWithKeys(fn ($po) => [$po->id => $po->po_number . ' - ' . $po->title])
                                 )
                                 ->searchable()
                                 ->preload()
@@ -56,7 +68,6 @@ class GoodsReceiptResource extends Resource
                                         $set('supplier_id', null);
                                         $set('supplier_name', null);
                                         $set('items', []);
-
                                         return;
                                     }
 
@@ -66,7 +77,6 @@ class GoodsReceiptResource extends Resource
                                         $set('supplier_id', null);
                                         $set('supplier_name', null);
                                         $set('items', []);
-
                                         return;
                                     }
 
@@ -100,14 +110,16 @@ class GoodsReceiptResource extends Resource
 
                                     $set('items', $grItems);
                                 })
-                                ->disabled(fn (string $operation): bool => $operation === 'edit'),
+                                ->disabled(fn (string $operation): bool => $operation === 'edit')
+                                ->columnSpan(1),
 
                             Forms\Components\Hidden::make('supplier_id'),
 
                             Forms\Components\TextInput::make('supplier_name')
                                 ->label('Supplier')
                                 ->disabled()
-                                ->dehydrated(false),
+                                ->dehydrated(false)
+                                ->columnSpan(1),
 
                             Forms\Components\Select::make('warehouse_id')
                                 ->label('Masuk ke Gudang')
@@ -116,20 +128,24 @@ class GoodsReceiptResource extends Resource
                                         ->where('is_active', true)
                                         ->pluck('warehouse_name', 'id')
                                 )
-                                ->required(),
+                                ->required()
+                                ->columnSpan(1),
 
+                            // Baris 3: Tanggal & Surat Jalan
                             Forms\Components\DatePicker::make('receipt_date')
                                 ->label('Tanggal Diterima')
                                 ->default(now())
                                 ->required()
                                 ->native(false)
-                                ->displayFormat('d M Y'),
+                                ->displayFormat('d M Y')
+                                ->columnSpan(1),
 
                             Forms\Components\TextInput::make('delivery_note_number')
                                 ->label('No. Surat Jalan Supplier')
-                                ->placeholder('Misal: SJ-12345'),
+                                ->placeholder('Misal: SJ-12345')
+                                ->columnSpan(2), // Mengisi sisa kolom agar rapi
                         ])
-                        ->columns(2),
+                        ->columns(3), // <-- Diubah menjadi 3 kolom
 
                     Forms\Components\Section::make('Ceklis Barang Fisik & Scan SN')
                         ->schema([
@@ -292,9 +308,19 @@ class GoodsReceiptResource extends Resource
                     ->sortable()
                     ->weight('bold'),
 
+                // Menampilkan Judul GR di Tabel
+                Tables\Columns\TextColumn::make('title')
+                    ->label('Nama Penerimaan')
+                    ->searchable()
+                    ->limit(30),
+
                 Tables\Columns\TextColumn::make('purchaseOrder.po_number')
                     ->label('Ref. PO')
-                    ->searchable(),
+                    ->searchable()
+                    // Menampilkan No PO sekaligus Judul PO-nya di baris tabel (jika ada)
+                    ->formatStateUsing(fn (string $state, $record): string =>
+                        $record->purchaseOrder ? $record->purchaseOrder->po_number . ' - ' . $record->purchaseOrder->title : $state
+                    ),
 
                 Tables\Columns\TextColumn::make('supplier.name')
                     ->label('Supplier'),
@@ -307,8 +333,9 @@ class GoodsReceiptResource extends Resource
                     ->label('Penerima (Gudang)'),
 
                 Tables\Columns\TextColumn::make('status')
+                    ->label('Status')
                     ->badge()
-                    ->color(fn (string $state): string => match ($state) {
+                    ->color(fn (string $state): string => match (strtolower($state)) {
                         'draft' => 'gray',
                         'completed' => 'success',
                         'cancelled' => 'danger',
