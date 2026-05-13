@@ -88,7 +88,7 @@ class PurchaseRequisitionResource extends Resource
                     ->required()
                     ->maxLength(255)
                     ->columnSpan(2)
-                    ->extraInputAttributes(['class' => 'text-xl font-bold border-t-0 border-l-0 border-r-0 border-b-2 border-gray-300 focus:ring-0 px-0 bg-transparent']),
+                    ->extraInputAttributes(['class' => 'text-xl font-normal border-t-0 border-l-0 border-r-0 border-b-2 border-gray-300 focus:ring-0 px-0 bg-transparent']),
 
                 Forms\Components\DatePicker::make('request_date')
                     ->label('Tanggal Permintaan')
