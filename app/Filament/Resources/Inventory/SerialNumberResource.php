@@ -9,6 +9,7 @@ use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Infolists\Components\Section;
 use Filament\Infolists\Components\TextEntry;
+use Filament\Infolists\Components\Grid;
 use Filament\Infolists\Infolist;
 use Filament\Notifications\Notification;
 use Filament\Resources\Resource;
@@ -20,6 +21,7 @@ use App\Filament\Concerns\BelongsToModule;
 class SerialNumberResource extends Resource
 {
     use BelongsToModule;
+
     protected static ?string $module = 'inventory';
     protected static ?string $model = SerialNumber::class;
     protected static ?string $navigationIcon = 'heroicon-o-qr-code';
@@ -70,14 +72,19 @@ class SerialNumberResource extends Resource
                     ->weight('semibold')
                     ->copyable()
                     ->copyMessage('SN berhasil disalin')
-                    ->icon('heroicon-o-qr-code'),
+                    ->icon('heroicon-o-qr-code')
+                    ->width('220px')
+                    ->extraAttributes([
+                        'class' => 'sticky-column',
+                    ]),
 
                 Tables\Columns\TextColumn::make('product.product_name')
                     ->label('Nama Product')
                     ->searchable()
                     ->sortable()
                     ->limit(30)
-                    ->description(fn($record) => $record->product->product_code ?? '-'),
+                    ->description(fn($record) => $record->product->product_code ?? '-')
+                    ->width('250px'),
 
                 Tables\Columns\TextColumn::make('warehouse.warehouse_name')
                     ->label('Lokasi Gudang')
@@ -85,7 +92,8 @@ class SerialNumberResource extends Resource
                     ->sortable()
                     ->badge()
                     ->color('gray')
-                    ->icon('heroicon-o-building-storefront'),
+                    ->icon('heroicon-o-building-storefront')
+                    ->width('180px'),
 
                 Tables\Columns\TextColumn::make('status')
                     ->label('Status Unit')
@@ -99,20 +107,42 @@ class SerialNumberResource extends Resource
                         SerialNumber::STATUS_LOST => 'danger',
                         default => 'gray',
                     })
-                    ->formatStateUsing(fn(string $state): string => str_replace('_', ' ', $state)),
+                    ->formatStateUsing(fn(string $state): string => str_replace('_', ' ', $state))
+                    ->width('150px'),
+
+                Tables\Columns\TextColumn::make('supplier.name')
+                    ->label('Supplier Asal')
+                    ->searchable()
+                    ->toggleable()
+                    ->width('200px'),
+
+                Tables\Columns\TextColumn::make('customer.name')
+                    ->label('Klien / Pembeli')
+                    ->searchable()
+                    ->toggleable()
+                    ->width('200px'),
+
+                Tables\Columns\TextColumn::make('warranty_expired_at')
+                    ->label('Garansi Habis')
+                    ->date('d M Y')
+                    ->sortable()
+                    ->toggleable()
+                    ->width('150px'),
 
                 Tables\Columns\TextColumn::make('inbound_date')
                     ->label('Tgl Masuk')
                     ->date('d M Y')
                     ->sortable()
-                    ->toggleable(),
+                    ->toggleable()
+                    ->width('150px'),
 
                 Tables\Columns\TextColumn::make('outbound_date')
                     ->label('Tgl Keluar')
                     ->date('d M Y')
                     ->sortable()
                     ->placeholder('Belum Keluar')
-                    ->toggleable(),
+                    ->toggleable()
+                    ->width('150px'),
             ])
             ->filters([
                 Tables\Filters\SelectFilter::make('product_id')
@@ -132,12 +162,17 @@ class SerialNumberResource extends Resource
                     ->options(SerialNumber::getAllStatuses()),
             ])
             ->actions([
-                Tables\Actions\ViewAction::make(),
+                Tables\Actions\ViewAction::make()
+                    ->icon('heroicon-s-eye')
+                    ->iconButton()
+                    ->tooltip('Lihat Riwayat & Detail'),
 
                 Tables\Actions\Action::make('mark_as_defective')
                     ->label('Lapor Rusak')
-                    ->icon('heroicon-o-exclamation-triangle')
+                    ->icon('heroicon-s-exclamation-triangle')
                     ->color('danger')
+                    ->iconButton()
+                    ->tooltip('Laporkan Barang Rusak')
                     ->visible(fn($record) => $record->status === SerialNumber::STATUS_AVAILABLE)
                     ->requiresConfirmation()
                     ->modalHeading('Laporkan Barang Rusak / Afkir')
@@ -182,8 +217,10 @@ class SerialNumberResource extends Resource
 
                 Tables\Actions\Action::make('mark_as_lost')
                     ->label('Tandai Hilang')
-                    ->icon('heroicon-o-x-circle')
+                    ->icon('heroicon-s-x-circle')
                     ->color('danger')
+                    ->iconButton()
+                    ->tooltip('Tandai Barang Hilang')
                     ->visible(fn($record) => in_array($record->status, [
                         SerialNumber::STATUS_AVAILABLE,
                         SerialNumber::STATUS_RESERVED,
@@ -237,45 +274,95 @@ class SerialNumberResource extends Resource
     {
         return $infolist
             ->schema([
-                Section::make('Informasi Serial Number')
-                    ->columns(2)
-                    ->schema([
-                        TextEntry::make('serial_number')
-                            ->label('Serial Number'),
+                Grid::make(3)->schema([
+                    // BLOK 1: INFORMASI UNIT UTAMA
+                    Section::make('Informasi Unit')
+                        ->icon('heroicon-o-cube')
+                        ->columnSpan(1)
+                        ->schema([
+                            TextEntry::make('serial_number')
+                                ->label('Serial Number')
+                                ->weight('bold')
+                                ->copyable(),
 
-                        TextEntry::make('status')
-                            ->label('Status')
-                            ->badge(),
+                            TextEntry::make('status')
+                                ->label('Status Terkini')
+                                ->badge()
+                                ->color(fn(string $state): string => match ($state) {
+                                    SerialNumber::STATUS_AVAILABLE => 'success',
+                                    SerialNumber::STATUS_RESERVED => 'warning',
+                                    SerialNumber::STATUS_ON_DELIVERY => 'info',
+                                    SerialNumber::STATUS_SOLD => 'gray',
+                                    SerialNumber::STATUS_DEFECTIVE,
+                                    SerialNumber::STATUS_LOST => 'danger',
+                                    default => 'gray',
+                                })
+                                ->formatStateUsing(fn(string $state): string => str_replace('_', ' ', $state)),
 
-                        TextEntry::make('product.product_name')
-                            ->label('Nama Product'),
+                            TextEntry::make('product.product_name')
+                                ->label('Nama Product'),
 
-                        TextEntry::make('product.product_code')
-                            ->label('Kode Product'),
+                            TextEntry::make('product.product_code')
+                                ->label('Kode Product'),
 
-                        TextEntry::make('warehouse.warehouse_name')
-                            ->label('Gudang'),
+                            TextEntry::make('warehouse.warehouse_name')
+                                ->label('Posisi Gudang')
+                                ->icon('heroicon-o-building-storefront'),
+                        ]),
 
-                        TextEntry::make('inbound_date')
-                            ->label('Tanggal Masuk')
-                            ->date('d M Y'),
+                    // BLOK 2: RIWAYAT MASUK (INBOUND)
+                    Section::make('Riwayat Masuk (Hulu)')
+                        ->icon('heroicon-o-arrow-down-tray')
+                        ->columnSpan(1)
+                        ->schema([
+                            TextEntry::make('inbound_date')
+                                ->label('Tanggal Masuk (Inbound)')
+                                ->date('d F Y')
+                                ->placeholder('-'),
 
-                        TextEntry::make('outbound_date')
-                            ->label('Tanggal Keluar')
-                            ->date('d M Y')
-                            ->placeholder('Belum Keluar'),
-                    ]),
+                            TextEntry::make('supplier.name')
+                                ->label('Dari Supplier')
+                                ->placeholder('Tidak diketahui / Saldo Awal'),
 
-                Section::make('Pelacakan')
+                            TextEntry::make('purchaseOrder.po_number')
+                                ->label('Berdasarkan Nomor PO')
+                                ->placeholder('Tidak ada referensi PO'),
+                        ]),
+
+                    // BLOK 3: RIWAYAT KELUAR (OUTBOUND) & GARANSI
+                    Section::make('Riwayat Keluar (Hilir)')
+                        ->icon('heroicon-o-arrow-up-tray')
+                        ->columnSpan(1)
+                        ->schema([
+                            TextEntry::make('outbound_date')
+                                ->label('Tanggal Keluar (Outbound)')
+                                ->date('d F Y')
+                                ->placeholder('Belum Keluar / Masih di Gudang'),
+
+                            TextEntry::make('customer.name')
+                                ->label('Terjual ke Klien')
+                                ->placeholder('Belum dialokasikan ke Klien'),
+
+                            TextEntry::make('warranty_expired_at')
+                                ->label('Masa Berlaku Garansi')
+                                ->date('d F Y')
+                                ->placeholder('Tidak ada data garansi')
+                                ->badge()
+                                ->color(fn ($state) => \Carbon\Carbon::parse($state)->isPast() ? 'danger' : 'success'),
+                        ]),
+                ]),
+
+                Section::make('Audit Trail Sistem')
+                    ->collapsed()
                     ->columns(2)
                     ->schema([
                         TextEntry::make('created_at')
                             ->label('Data Dibuat')
-                            ->dateTime('d M Y H:i'),
+                            ->dateTime('d M Y H:i:s'),
 
                         TextEntry::make('updated_at')
                             ->label('Terakhir Diperbarui')
-                            ->dateTime('d M Y H:i'),
+                            ->dateTime('d M Y H:i:s'),
                     ]),
             ]);
     }

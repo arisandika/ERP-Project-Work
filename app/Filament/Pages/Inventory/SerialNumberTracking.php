@@ -97,14 +97,17 @@ class SerialNumberTracking extends Page implements HasForms
             return;
         }
 
-        // Optimized Query dengan Eager Loading
+        /**
+         * Optimized Query dengan Eager Loading.
+         * FIX: Pastikan kolom yang dipanggil di :id,col1,col2 memang ada di tabel masing-masing.
+         */
         $record = SerialNumber::query()
             ->with([
                 'product:id,product_name,product_code',
                 'warehouse:id,warehouse_name',
-                'supplier:id,supplier_name,name',
-                'purchaseOrder:id,po_number,purchase_order_number',
-                'customer:id,customer_name,name',
+                'supplier:id,name', // Sesuaikan jika kolomnya 'supplier_name'
+                'purchaseOrder:id,po_number', // FIX: Hapus 'purchase_order_number' karena tidak ada di DB
+                'customer:id,customer_name', // Sesuaikan jika kolomnya 'name'
             ])
             ->where('serial_number', $serialNumber)
             ->first();
@@ -128,8 +131,8 @@ class SerialNumberTracking extends Page implements HasForms
             'product_code' => $record->product->product_code ?? '-',
             'warehouse_name' => $record->warehouse->warehouse_name ?? '-',
             'status' => str($record->status)->replace('_', ' ')->title(),
-            'supplier_name' => $record->supplier->supplier_name ?? $record->supplier->name ?? '-',
-            'purchase_order_number' => $record->purchaseOrder->po_number ?? $record->purchaseOrder->purchase_order_number ?? '-',
+            'supplier_name' => $record->supplier->name ?? $record->supplier->supplier_name ?? '-',
+            'purchase_order_number' => $record->purchaseOrder->po_number ?? '-',
             'customer_name' => $record->customer->customer_name ?? $record->customer->name ?? '-',
             'inbound_date' => $record->inbound_date ? Carbon::parse($record->inbound_date)->format('d M Y') : '-',
             'outbound_date' => $record->outbound_date ? Carbon::parse($record->outbound_date)->format('d M Y') : 'Stok Tersedia',

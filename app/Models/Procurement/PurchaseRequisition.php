@@ -15,6 +15,33 @@ class PurchaseRequisition extends Model
 
     protected $guarded = ['id'];
 
+    protected $fillable = [
+        'pr_number',
+        'title', // Field baru: Nama/Judul Permintaan
+        'request_date',
+        'required_date',
+        'purpose',
+        'status',
+        'priority', // Tambahan: Priority (Low, Medium, High) ala Odoo
+        'requested_by',
+        'submitted_by',
+        'approved_by',
+        'submitted_at',
+        'approved_at',
+        'rejection_note',
+    ];
+
+    // Tambahkan Priority Constants
+    public const PRIORITY_LOW = '1';
+    public const PRIORITY_MEDIUM = '2';
+    public const PRIORITY_HIGH = '3';
+
+    // Tambahkan Method hitung Total (Sangat berguna buat Approver)
+    public function getTotalEstimatedPriceAttribute()
+    {
+        return $this->items->sum(fn($item) => $item->quantity * $item->estimated_price);
+    }
+
     protected $casts = [
         'request_date' => 'date',
         'required_date' => 'date',

@@ -19,11 +19,17 @@ class SerialNumber extends Model
         'serial_number',
         'status',
         'supplier_id',
-        'purchase_order_id', // <-- WAJIB MASUK: Hasil migration kita tadi
-        'customer_id',       // <-- DIPERBAIKI: Sebelumnya Anda ketik client_id
+        'purchase_order_id',
+        'customer_id',
         'inbound_date',
         'outbound_date',
         'warranty_expired_at',
+    ];
+
+    protected $casts = [
+        'inbound_date' => 'date',
+        'outbound_date' => 'date',
+        'warranty_expired_at' => 'date',
     ];
 
     // --- 1. DAFTAR KONSTANTA STATUS SN (STATE MACHINE) ---

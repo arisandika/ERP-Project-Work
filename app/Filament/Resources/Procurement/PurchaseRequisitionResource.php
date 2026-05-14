@@ -12,14 +12,15 @@ use Filament\Notifications\Notification;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
-use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\Auth;
-use Throwable;
+use Illuminate\Database\Eloquent\Builder;
 use App\Filament\Concerns\BelongsToModule;
+use Filament\Support\Enums\FontWeight;
 
 class PurchaseRequisitionResource extends Resource
 {
     use BelongsToModule;
+
     protected static ?string $module = 'procurement';
     protected static ?string $model = PurchaseRequisition::class;
     protected static ?string $navigationIcon = 'heroicon-o-clipboard-document-list';
@@ -31,31 +32,29 @@ class PurchaseRequisitionResource extends Resource
     public static function getNavigationBadge(): ?string
     {
         $user = Auth::user();
-
-        if (! $user) {
-            return null;
-        }
+        if (! $user) return null;
 
         $query = static::getModel()::query();
 
-        if (static::canApproveAny()) {
-            $count = $query->where('status', PurchaseRequisition::STATUS_PENDING)->count();
-        } else {
-            $count = $query
-                ->where('requested_by', $user->id)
-                ->whereIn('status', [
-                    PurchaseRequisition::STATUS_DRAFT,
-                    PurchaseRequisition::STATUS_PENDING,
-                ])
+        $count = static::canApproveAny()
+            ? $query->where('status', 'pending')->count()
+            : $query->where('requested_by', $user->id)
+                ->whereIn('status', ['draft', 'pending'])
                 ->count();
-        }
 
         return $count > 0 ? (string) $count : null;
     }
 
-    public static function getNavigationBadgeColor(): ?string
+    public static function getEloquentQuery(): Builder
     {
-        return 'warning';
+        $query = parent::getEloquentQuery();
+        $user = auth()->user();
+
+        if ($user && ! $user->hasAnyRole(['super_admin', 'admin'])) {
+            return $query->where('requested_by', $user->id);
+        }
+
+        return $query;
     }
 
     public static function form(Form $form): Form
@@ -70,28 +69,34 @@ class PurchaseRequisitionResource extends Resource
         ]);
     }
 
-protected static function requestInformationSection(): Forms\Components\Section
+    protected static function requestInformationSection(): Forms\Components\Section
     {
         return Forms\Components\Section::make('Informasi Permintaan')
             ->description('Lengkapi informasi utama pengajuan pembelian.')
             ->icon('heroicon-o-document-text')
             ->schema([
-                Forms\Components\TextInput::make('pr_number_preview')
+                Forms\Components\TextInput::make('pr_number')
                     ->label('No. PR')
                     ->disabled()
                     ->dehydrated(false)
                     ->prefixIcon('heroicon-o-hashtag')
-                    ->helperText('Nomor PR final akan dibuat otomatis saat data disimpan.')
-                    ->afterStateHydrated(function (Forms\Components\TextInput $component, ?PurchaseRequisition $record) {
-                        $component->state($record?->pr_number ?? PurchaseRequisition::generatePRNumber());
-                    }),
+                    ->default(fn () => PurchaseRequisition::generatePRNumber())
+                    ->columnSpan(1),
+
+                Forms\Components\TextInput::make('title')
+                    ->label('Nama / Judul Permintaan')
+                    ->required()
+                    ->maxLength(255)
+                    ->columnSpan(2)
+                    ->extraInputAttributes(['class' => 'text-xl font-normal border-t-0 border-l-0 border-r-0 border-b-2 border-gray-300 focus:ring-0 px-0 bg-transparent']),
 
                 Forms\Components\DatePicker::make('request_date')
                     ->label('Tanggal Permintaan')
                     ->default(today())
                     ->required()
                     ->native(false)
-                    ->prefixIcon('heroicon-o-calendar-days'),
+                    ->prefixIcon('heroicon-o-calendar-days')
+                    ->columnSpan(1),
 
                 Forms\Components\DatePicker::make('required_date')
                     ->label('Tanggal Dibutuhkan')
@@ -99,471 +104,191 @@ protected static function requestInformationSection(): Forms\Components\Section
                     ->native(false)
                     ->prefixIcon('heroicon-o-calendar')
                     ->minDate(fn (Get $get) => $get('request_date') ?: today())
-                    ->rule('after_or_equal:request_date')
-                    ->validationMessages([
-                        'after_or_equal' => 'Tanggal dibutuhkan harus sama dengan atau setelah tanggal permintaan.',
-                    ]),
+                    ->columnSpan(1),
+
+                Forms\Components\Placeholder::make('status_preview')
+                    ->label('Status Saat Ini')
+                    ->content(fn (?PurchaseRequisition $record) => strtoupper($record?->status ?? 'draft')),
 
                 Forms\Components\Textarea::make('purpose')
                     ->label('Tujuan / Alasan Pembelian')
                     ->required()
                     ->rows(3)
-                    ->columnSpanFull()
-                    ->placeholder('Contoh: pembelian laptop untuk tim operasional')
-                    ->helperText('Jelaskan alasan pembelian secara singkat dan jelas.'),
-
-                Forms\Components\Placeholder::make('status_preview')
-                    ->label('Status')
-                    ->content(fn (?PurchaseRequisition $record) => match ($record?->status) {
-                        PurchaseRequisition::STATUS_PENDING => 'Pending',
-                        PurchaseRequisition::STATUS_APPROVED => 'Approved',
-                        PurchaseRequisition::STATUS_REJECTED => 'Rejected',
-                        PurchaseRequisition::STATUS_COMPLETED => 'Completed',
-                        default => 'Draft',
-                    }),
+                    ->columnSpanFull(),
             ])
-            ->columns(2);
+            ->columns(3);
     }
 
     protected static function itemsSection(): Forms\Components\Section
     {
         return Forms\Components\Section::make('Daftar Barang')
-            ->description('Tambahkan item yang ingin diajukan dalam PR.')
             ->icon('heroicon-o-queue-list')
             ->schema([
                 Forms\Components\Repeater::make('items')
                     ->relationship()
                     ->label('Item PR')
-                    ->minItems(1)
-                    ->defaultItems(1)
-                    ->live()
-                    ->addActionLabel('Tambah Item')
+                    ->live(debounce: 500)
                     ->schema([
                         Forms\Components\Select::make('product_id')
                             ->label('Barang')
-                            ->options(fn () => Product::query()
-                                ->orderBy('product_name')
-                                ->pluck('product_name', 'id'))
+                            ->options(fn () => Product::pluck('product_name', 'id'))
                             ->searchable()
                             ->preload()
                             ->required()
-                            ->disableOptionsWhenSelectedInSiblingRepeaterItems()
-                            ->prefixIcon('heroicon-o-cube'),
+                            ->columnSpan(2),
 
                         Forms\Components\TextInput::make('quantity')
                             ->label('Kuantitas')
                             ->numeric()
                             ->required()
-                            ->minValue(1)
                             ->default(1)
-                            ->prefixIcon('heroicon-o-calculator'),
+                            ->minValue(1)
+                            ->columnSpan(1),
 
                         Forms\Components\TextInput::make('estimated_price')
-                            ->label('Estimasi Harga Satuan')
+                            ->label('Harga Estimasi')
                             ->numeric()
                             ->prefix('Rp')
-                            ->nullable()
-                            ->minValue(0)
-                            ->placeholder('Opsional')
-                            ->prefixIcon('heroicon-o-banknotes'),
-
-                        Forms\Components\Textarea::make('notes')
-                            ->label('Keterangan Spesifik')
-                            ->rows(2)
-                            ->columnSpanFull()
-                            ->placeholder('Contoh: warna hitam, spesifikasi tertentu, merek tertentu'),
+                            ->required()
+                            ->columnSpan(1),
                     ])
-                    ->columns(3)
+                    ->columns(4)
                     ->columnSpanFull()
-                    ->addable(fn (?PurchaseRequisition $record) => static::canModifyDraft($record))
-                    ->deletable(fn (?PurchaseRequisition $record) => static::canModifyDraft($record))
-                    ->reorderable(fn (?PurchaseRequisition $record) => static::canModifyDraft($record))
-                    ->disabled(fn (?PurchaseRequisition $record) => $record ? ! static::canModifyDraft($record) : false),
+                    ->addActionLabel('Tambah Item')
+                    ->defaultItems(1),
+
+                Forms\Components\Placeholder::make('total_preview')
+                    ->label('Total Estimasi')
+                    ->content(function (Get $get) {
+                        $total = collect($get('items'))->reduce(function ($carry, $item) {
+                            return $carry + (floatval($item['quantity'] ?? 0) * floatval($item['estimated_price'] ?? 0));
+                        }, 0);
+
+                        return 'Rp ' . number_format($total, 0, ',', '.');
+                    })
+                    ->extraAttributes(['class' => 'text-right text-xl font-bold text-primary-600']),
             ]);
     }
 
     public static function table(Table $table): Table
     {
         return $table
-            ->modifyQueryUsing(fn (Builder $query): Builder => $query->with(['requester', 'approver', 'items']))
             ->columns([
                 Tables\Columns\TextColumn::make('pr_number')
                     ->label('No. PR')
+                    ->weight(FontWeight::Bold)
                     ->searchable()
-                    ->sortable()
-                    ->weight('bold')
-                    ->icon('heroicon-o-hashtag'),
+                    ->copyable(),
+
+                Tables\Columns\TextColumn::make('title')
+                    ->label('Nama Permintaan')
+                    ->searchable()
+                    ->limit(30),
 
                 Tables\Columns\TextColumn::make('requester.name')
                     ->label('Peminta')
-                    ->searchable()
-                    ->placeholder('-')
-                    ->icon('heroicon-o-user'),
+                    ->sortable(),
+
+                Tables\Columns\TextColumn::make('status')
+                    ->label('Status')
+                    ->badge()
+                    ->color(fn (string $state): string => match ($state) {
+                        'draft' => 'gray',
+                        'pending' => 'warning',
+                        'approved' => 'success',
+                        'rejected' => 'danger',
+                        default => 'gray',
+                    })
+                    ->formatStateUsing(fn (string $state): string => strtoupper($state)),
 
                 Tables\Columns\TextColumn::make('request_date')
                     ->label('Tgl Minta')
                     ->date('d M Y')
-                    ->sortable()
-                    ->icon('heroicon-o-calendar-days'),
-
-                Tables\Columns\TextColumn::make('required_date')
-                    ->label('Tgl Dibutuhkan')
-                    ->date('d M Y')
-                    ->sortable()
-                    ->icon('heroicon-o-calendar'),
-
-                Tables\Columns\TextColumn::make('items_count')
-                    ->label('Jumlah Item')
-                    ->counts('items')
-                    ->icon('heroicon-o-queue-list'),
-
-                Tables\Columns\SelectColumn::make('status')
-                    ->label('Status')
-                    ->options([
-                        PurchaseRequisition::STATUS_DRAFT => 'Draft',
-                        PurchaseRequisition::STATUS_PENDING => 'Pending',
-                        PurchaseRequisition::STATUS_APPROVED => 'Approved',
-                        PurchaseRequisition::STATUS_REJECTED => 'Rejected',
-                        PurchaseRequisition::STATUS_COMPLETED => 'Completed',
-                    ])
-                    ->sortable()
-                    // 1. Otorisasi UI: Hanya user dengan akses tertentu yang bisa melihat dropdown aktif
-                    ->disabled(function (?PurchaseRequisition $record) {
-                        $user = Auth::user();
-                        if (! $user) return true;
-
-                        // Aturan: Hanya yang bisa approve atau kelola semua yang bisa ganti status seenaknya
-                        return ! static::canApproveAny() && ! static::canManageAllDrafts();
-                    })
-                    // 2. Intersepsi Perubahan State (Business Logic)
-                    ->updateStateUsing(function (PurchaseRequisition $record, string $state, string $old) {
-                        $user = Auth::user();
-
-                        try {
-                            // Mapping transisi state ke method Model untuk menjaga enkapsulasi
-                            match ($state) {
-                                PurchaseRequisition::STATUS_APPROVED => $record->approve($user->id),
-
-                                // Catatan: Karena via tabel tidak ada modal input, alasan penolakan akan terisi default.
-                                PurchaseRequisition::STATUS_REJECTED => $record->reject($user->id, 'Ditolak via ubah status tabel tanpa catatan.'),
-
-                                PurchaseRequisition::STATUS_PENDING => $record->submitForApproval(),
-
-                                default => $record->update(['status' => $state]),
-                            };
-
-                            Notification::make()
-                                ->title('Status PR berhasil diperbarui.')
-                                ->success()
-                                ->send();
-
-                            return $state;
-
-                        } catch (\Throwable $e) {
-                            Notification::make()
-                                ->title('Gagal memperbarui status')
-                                ->body($e->getMessage())
-                                ->danger()
-                                ->send();
-
-                            // Rollback visual di tabel ke status sebelumnya jika terjadi error (seperti validasi gagal)
-                            return $old;
-                        }
-                    }),
-
-                Tables\Columns\TextColumn::make('approver.name')
-                    ->label('Disetujui Oleh')
-                    ->placeholder('-')
-                    ->icon('heroicon-o-user-circle')
-                    ->toggleable(isToggledHiddenByDefault: true),
-
-                Tables\Columns\TextColumn::make('approved_at')
-                    ->label('Tgl Approval')
-                    ->dateTime('d M Y H:i')
-                    ->placeholder('-')
-                    ->icon('heroicon-o-check-badge')
-                    ->toggleable(isToggledHiddenByDefault: true),
-
-                Tables\Columns\TextColumn::make('rejection_note')
-                    ->label('Alasan Penolakan')
-                    ->limit(40)
-                    ->placeholder('-')
-                    ->icon('heroicon-o-exclamation-triangle')
-                    ->toggleable(isToggledHiddenByDefault: true),
-
-                Tables\Columns\TextColumn::make('created_at')
-                    ->label('Dibuat')
-                    ->dateTime('d M Y H:i')
-                    ->sortable()
-                    ->icon('heroicon-o-clock')
-                    ->toggleable(isToggledHiddenByDefault: true),
+                    ->sortable(),
             ])
-            ->filters([
-                Tables\Filters\SelectFilter::make('status')
-                    ->options([
-                        PurchaseRequisition::STATUS_DRAFT => 'Draft',
-                        PurchaseRequisition::STATUS_PENDING => 'Pending',
-                        PurchaseRequisition::STATUS_APPROVED => 'Approved',
-                        PurchaseRequisition::STATUS_REJECTED => 'Rejected',
-                        PurchaseRequisition::STATUS_COMPLETED => 'Completed',
-                    ]),
-
-                Tables\Filters\Filter::make('request_date')
-                    ->form([
-                        Forms\Components\DatePicker::make('from')
-                            ->label('Dari')
-                            ->prefixIcon('heroicon-o-calendar'),
-                        Forms\Components\DatePicker::make('until')
-                            ->label('Sampai')
-                            ->prefixIcon('heroicon-o-calendar'),
-                    ])
-                    ->query(function (Builder $query, array $data): Builder {
-                        return $query
-                            ->when(
-                                $data['from'] ?? null,
-                                fn (Builder $query, $date): Builder => $query->whereDate('request_date', '>=', $date)
-                            )
-                            ->when(
-                                $data['until'] ?? null,
-                                fn (Builder $query, $date): Builder => $query->whereDate('request_date', '<=', $date)
-                            );
-                    }),
-            ])
+            ->defaultSort('created_at', 'desc')
             ->actions([
+                // Aksi Edit (Menggunakan ikon solid agar konsisten)
                 Tables\Actions\EditAction::make()
-                    ->icon('heroicon-o-pencil-square')
-                    ->visible(fn (PurchaseRequisition $record): bool => static::canModifyDraft($record)),
+                    ->icon('heroicon-s-pencil-square')
+                    ->iconButton()
+                    ->visible(fn ($record) => strtolower($record->status) === 'draft'),
 
-                Tables\Actions\Action::make('submit')
-                    ->label('Ajukan Approval')
-                    ->icon('heroicon-o-paper-airplane')
+                // TOMBOL SUBMIT (Solid Icon + Tooltip)
+                Tables\Actions\Action::make('submit_action')
+                    ->label('Submit')
+                    ->tooltip('Submit PR')
+                    ->icon('heroicon-s-paper-airplane') // Menggunakan Solid Icon
                     ->color('info')
+                    ->iconButton()
+                    ->visible(fn ($record) => strtolower($record->status) === 'draft')
                     ->requiresConfirmation()
-                    ->modalHeading('Ajukan Purchase Requisition')
-                    ->modalDescription('Pastikan data dan item sudah benar sebelum diajukan.')
-                    ->visible(fn (PurchaseRequisition $record): bool => static::canSubmit($record))
-                    ->action(function (PurchaseRequisition $record) {
-                        try {
-                            $record->submitForApproval();
-
-                            Notification::make()
-                                ->title('PR berhasil diajukan untuk persetujuan.')
-                                ->success()
-                                ->send();
-
-                            return redirect(static::getUrl('index'));
-                        } catch (Throwable $e) {
-                            Notification::make()
-                                ->title('PR gagal diajukan')
-                                ->body($e->getMessage())
-                                ->danger()
-                                ->send();
-
-                            return null;
-                        }
+                    ->action(function ($record) {
+                        $record->update(['status' => 'pending']);
+                        Notification::make()->title('PR Submitted Successfully')->success()->send();
                     }),
 
-                Tables\Actions\Action::make('approve')
-                    ->label('Setujui')
-                    ->icon('heroicon-o-check-circle')
+                // TOMBOL APPROVE (Solid Icon + Tooltip)
+                Tables\Actions\Action::make('approve_button')
+                    ->label('Approve')
+                    ->tooltip('Approve PR')
+                    ->icon('heroicon-s-check-circle') // Menggunakan Solid Icon
                     ->color('success')
+                    ->iconButton()
+                    ->visible(fn ($record) =>
+                        strtolower($record->status) === 'pending' &&
+                        static::canApproveAny() &&
+                        $record->requested_by != auth()->id()
+                    )
                     ->requiresConfirmation()
-                    ->modalHeading('Setujui Purchase Requisition')
-                    ->visible(fn (PurchaseRequisition $record): bool => static::canApprove($record))
-                    ->action(function (PurchaseRequisition $record): void {
-                        $record->approve(Auth::id());
-
-                        Notification::make()
-                            ->title('PR berhasil disetujui.')
-                            ->success()
-                            ->send();
+                    ->action(function ($record) {
+                        $record->update([
+                            'status' => 'approved',
+                            'approved_by' => auth()->id(),
+                            'approved_at' => now(),
+                        ]);
+                        Notification::make()->title('PR Approved')->success()->send();
                     }),
 
-                Tables\Actions\Action::make('reject')
-                    ->label('Tolak')
-                    ->icon('heroicon-o-x-circle')
+                // TOMBOL REJECT (Solid Icon + Tooltip)
+                Tables\Actions\Action::make('reject_button')
+                    ->label('Reject')
+                    ->tooltip('Reject PR')
+                    ->icon('heroicon-s-x-circle') // Menggunakan Solid Icon
                     ->color('danger')
-                    ->visible(fn (PurchaseRequisition $record): bool => static::canReject($record))
-                    ->form([
-                        Forms\Components\Textarea::make('reason')
-                            ->label('Alasan Penolakan')
-                            ->required()
-                            ->rows(3)
-                            ->placeholder('Masukkan alasan penolakan')
-                            ->helperText('Alasan ini akan disimpan sebagai catatan penolakan.'),
-                    ])
-                    ->action(function (PurchaseRequisition $record, array $data): void {
-                        $record->reject(Auth::id(), $data['reason']);
-
-                        Notification::make()
-                            ->title('PR berhasil ditolak.')
-                            ->danger()
-                            ->send();
+                    ->iconButton()
+                    ->visible(fn ($record) =>
+                        strtolower($record->status) === 'pending' &&
+                        static::canApproveAny() &&
+                        $record->requested_by != auth()->id()
+                    )
+                    ->requiresConfirmation()
+                    ->action(function ($record) {
+                        $record->update([
+                            'status' => 'rejected',
+                            'approved_by' => auth()->id(),
+                            'approved_at' => now(),
+                        ]);
+                        Notification::make()->title('PR Rejected')->danger()->send();
                     }),
             ])
             ->bulkActions([
-                Tables\Actions\DeleteBulkAction::make()
-                    ->visible(fn (): bool => static::canDeleteAny()),
-            ])
-            ->defaultSort('created_at', 'desc');
+                Tables\Actions\BulkActionGroup::make([
+                    Tables\Actions\DeleteBulkAction::make(),
+                ]),
+            ]);
     }
 
-    public static function canViewAny(): bool
-    {
-        $user = Auth::user();
-
-        if (! $user) {
-            return false;
-        }
-
-        return $user->hasAnyRole(['Super Admin', 'admin'])
-            || $user->can('view_any_procurement::purchase::requisition');
+    public static function canViewAny(): bool {
+        return Auth::user()?->hasAnyRole(['super_admin', 'admin']) || Auth::user()?->can('view_any_procurement::purchase::requisition');
     }
 
-    public static function canCreate(): bool
-    {
-        $user = Auth::user();
-
-        if (! $user) {
-            return false;
-        }
-
-        return $user->hasAnyRole(['Super Admin', 'admin'])
-            || $user->can('create_procurement::purchase::requisition');
+    public static function canCreate(): bool {
+        return Auth::user()?->hasAnyRole(['super_admin', 'admin']) || Auth::user()?->can('create_procurement::purchase::requisition');
     }
 
-    public static function canEdit($record): bool
-    {
-        return static::canModifyDraft($record);
-    }
-
-    public static function canDelete($record): bool
-    {
-        $user = Auth::user();
-
-        if (! $user) {
-            return false;
-        }
-
-        return $record->isDraft()
-            && (static::ownsRecord($record) || static::canManageAllDrafts())
-            && (
-                $user->hasAnyRole(['Super Admin', 'admin'])
-                || $user->can('delete_procurement::purchase::requisition')
-            );
-    }
-
-    public static function canDeleteAny(): bool
-    {
-        $user = Auth::user();
-
-        if (! $user) {
-            return false;
-        }
-
-        return $user->hasAnyRole(['Super Admin', 'admin'])
-            || $user->can('delete_any_procurement::purchase::requisition');
-    }
-
-    protected static function canManageAllDrafts(): bool
-    {
-        $user = Auth::user();
-
-        if (! $user) {
-            return false;
-        }
-
-        return $user->hasAnyRole(['Super Admin', 'admin'])
-            || $user->can('update_any_procurement::purchase::requisition');
-    }
-
-    protected static function canApproveAny(): bool
-    {
-        $user = Auth::user();
-
-        if (! $user) {
-            return false;
-        }
-
-        return $user->hasAnyRole(['Super Admin', 'admin'])
-            || $user->can('approve_procurement::purchase::requisition');
-    }
-
-    protected static function ownsRecord(PurchaseRequisition $record): bool
-    {
-        return (int) $record->requested_by === (int) Auth::id();
-    }
-
-    protected static function canModifyDraft(?PurchaseRequisition $record): bool
-    {
-        $user = Auth::user();
-
-        if (! $user) {
-            return false;
-        }
-
-        if (! $record) {
-            return $user->hasAnyRole(['Super Admin', 'admin'])
-                || $user->can('create_procurement::purchase::requisition');
-        }
-
-        if (! $record->isDraft()) {
-            return false;
-        }
-
-        if (
-            ! $user->can('update_procurement::purchase::requisition')
-            && ! static::canManageAllDrafts()
-            && ! $user->hasAnyRole(['Super Admin', 'admin'])
-        ) {
-            return false;
-        }
-
-        return static::canManageAllDrafts()
-            || static::ownsRecord($record)
-            || $user->hasAnyRole(['Super Admin', 'admin']);
-    }
-
-    protected static function canSubmit(PurchaseRequisition $record): bool
-    {
-        $user = Auth::user();
-
-        if (! $user || ! $record->isDraft()) {
-            return false;
-        }
-
-        if (
-            ! $user->can('update_procurement::purchase::requisition')
-            && ! static::canManageAllDrafts()
-            && ! $user->hasAnyRole(['Super Admin', 'admin'])
-        ) {
-            return false;
-        }
-
-        return static::canManageAllDrafts()
-            || static::ownsRecord($record)
-            || $user->hasAnyRole(['Super Admin', 'admin']);
-    }
-
-    protected static function canApprove(PurchaseRequisition $record): bool
-    {
-        $user = Auth::user();
-
-        if (! $user) return false;
-
-        if (! $record->isPending()) return false;
-
-        if ((int) $record->requested_by === (int) $user->id) {
-            return false;
-        }
-
-        return $user->hasAnyRole(['Super Admin','super_admin', 'admin'])
-            || $user->can('approve_procurement::purchase::requisition');
-    }
-
-    protected static function canReject(PurchaseRequisition $record): bool
-    {
-        return $record->isPending() && static::canApproveAny();
+    protected static function canApproveAny(): bool {
+        return Auth::user()?->hasAnyRole(['super_admin', 'admin', 'manager']) || Auth::user()?->can('approve_procurement::purchase::requisition');
     }
 
     public static function getPages(): array

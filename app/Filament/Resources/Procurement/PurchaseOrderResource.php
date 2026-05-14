@@ -70,17 +70,32 @@ class PurchaseOrderResource extends Resource
                     Forms\Components\Section::make('Informasi Dokumen PO')
                         ->disabled(fn (?PurchaseOrder $record) => $record !== null && $record->status !== 'draft')
                         ->schema([
+                            // Baris 1: No PO (1 kolom) dan Judul PO (2 kolom)
                             Forms\Components\TextInput::make('po_number')
                                 ->label('Nomor PO')
                                 ->default(fn () => PurchaseOrder::generatePONumber())
                                 ->disabled()
                                 ->dehydrated()
                                 ->required()
-                                ->maxLength(255),
+                                ->maxLength(255)
+                                ->columnSpan(1),
 
+                            Forms\Components\TextInput::make('title')
+                                ->label('Nama / Judul PO')
+                                ->placeholder('Contoh: PO Pengadaan Laptop Baru')
+                                ->required()
+                                ->maxLength(255)
+                                ->columnSpan(2)
+                                ->extraInputAttributes(['class' => 'text-xl font-normal border-t-0 border-l-0 border-r-0 border-b-2 border-gray-300 focus:ring-0 px-0 bg-transparent']),
+
+                            // Baris 2: PR, Supplier, Status
                             Forms\Components\Select::make('purchase_requisition_id')
                                 ->label('Berdasarkan PR (Opsional)')
-                                ->options(PurchaseRequisition::where('status', 'approved')->pluck('pr_number', 'id'))
+                                ->options(
+                                    PurchaseRequisition::where('status', 'approved')
+                                        ->get()
+                                        ->mapWithKeys(fn ($pr) => [$pr->id => $pr->pr_number . ' - ' . $pr->title])
+                                )
                                 ->searchable()
                                 ->preload()
                                 ->live()
@@ -112,36 +127,43 @@ class PurchaseOrderResource extends Resource
                                     self::updateTotals($get, $set);
                                 })
                                 ->disabled(fn (string $operation): bool => $operation === 'edit')
-                                ->helperText('Memilih PR akan otomatis mengisi daftar barang di bawah.'),
+                                ->helperText('Otomatis mengisi daftar barang.')
+                                ->columnSpan(1),
 
                             Forms\Components\Select::make('supplier_id')
                                 ->label('Supplier / Vendor')
                                 ->relationship('supplier', 'name')
                                 ->searchable()
                                 ->preload()
-                                ->required(),
-
-                            Forms\Components\DatePicker::make('order_date')
-                                ->label('Tanggal Pemesanan')
-                                ->default(now())
-                                ->required(),
-
-                            Forms\Components\DatePicker::make('expected_delivery_date')
-                                ->label('Estimasi Tanggal Tiba'),
+                                ->required()
+                                ->columnSpan(1),
 
                             Forms\Components\Select::make('status')
                                 ->label('Status PO')
                                 ->options([
                                     'draft' => 'Draft',
-                                    'sent' => 'Email Terkirim',
-                                    'partial' => 'Diterima Sebagian',
-                                    'completed' => 'Selesai',
-                                    'cancelled' => 'Dibatalkan',
+                                    'sent' => 'Sent',
+                                    'partial' => 'Partial',
+                                    'completed' => 'Completed',
+                                    'cancelled' => 'Cancelled',
                                 ])
                                 ->default('draft')
                                 ->required()
-                                ->disabled(fn (string $operation): bool => $operation === 'create'),
-                        ])->columns(2),
+                                ->disabled(fn (string $operation): bool => $operation === 'create')
+                                ->columnSpan(1),
+
+                            // Baris 3: Tanggal
+                            Forms\Components\DatePicker::make('order_date')
+                                ->label('Tanggal Pemesanan')
+                                ->default(now())
+                                ->required()
+                                ->columnSpan(1),
+
+                            Forms\Components\DatePicker::make('expected_delivery_date')
+                                ->label('Estimasi Tanggal Tiba')
+                                ->columnSpan(1),
+
+                        ])->columns(3), // <-- Diubah menjadi 3 kolom agar rapi
 
                     Forms\Components\Section::make('Daftar Barang (Order Items)')
                         ->disabled(fn (?PurchaseOrder $record) => $record !== null && $record->status !== 'draft')
@@ -285,6 +307,11 @@ class PurchaseOrderResource extends Resource
                     ->weight('semibold')
                     ->copyable(),
 
+                Tables\Columns\TextColumn::make('title')
+                    ->label('Nama PO')
+                    ->searchable()
+                    ->limit(30),
+
                 Tables\Columns\TextColumn::make('supplier.name')
                     ->label('Supplier')
                     ->searchable()
@@ -298,21 +325,15 @@ class PurchaseOrderResource extends Resource
                 Tables\Columns\TextColumn::make('status')
                     ->label('Status')
                     ->badge()
-                    ->color(fn (string $state): string => match ($state) {
+                    ->color(fn (string $state): string => match (strtolower($state)) {
                         'draft' => 'gray',
                         'sent' => 'info',
                         'partial' => 'warning',
                         'completed' => 'success',
                         'cancelled' => 'danger',
+                        default => 'gray',
                     })
-                    ->formatStateUsing(fn(string $state) => match($state) {
-                        'draft' => 'DRAFT',
-                        'sent' => 'EMAIL TERKIRIM',
-                        'partial' => 'DITERIMA SEBAGIAN',
-                        'completed' => 'SELESAI',
-                        'cancelled' => 'DIBATALKAN',
-                        default => strtoupper($state),
-                    }),
+                    ->formatStateUsing(fn(string $state) => strtoupper($state)),
 
                 Tables\Columns\TextColumn::make('grand_total')
                     ->label('Total Nilai')
@@ -324,10 +345,10 @@ class PurchaseOrderResource extends Resource
                 Tables\Filters\SelectFilter::make('status')
                     ->options([
                         'draft' => 'Draft',
-                        'sent' => 'Email Terkirim',
-                        'partial' => 'Diterima Sebagian',
-                        'completed' => 'Selesai',
-                        'cancelled' => 'Dibatalkan',
+                        'sent' => 'Sent',
+                        'partial' => 'Partial',
+                        'completed' => 'Completed',
+                        'cancelled' => 'Cancelled',
                     ]),
             ])
             ->actions([
