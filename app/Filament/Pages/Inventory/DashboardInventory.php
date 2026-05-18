@@ -3,15 +3,65 @@
 namespace App\Filament\Pages\Inventory;
 
 use App\Filament\Concerns\BelongsToModule;
-use Filament\Pages\Page;
+use App\Filament\Resources\Inventory\ProductResource;
+use App\Filament\Widgets\Inventory\CategoryValuationChart;
+use App\Filament\Widgets\Inventory\InventoryStatsOverview;
+use App\Filament\Widgets\Inventory\MovementAnalysisChart;
+use App\Filament\Widgets\Inventory\StockWarehouseChart;
+use App\Filament\Resources\Inventory\InventoryMonitoringResource;
+use Filament\Pages\Dashboard;
+use Filament\Actions\Action;
 
-class DashboardInventory extends Page
+class DashboardInventory extends Dashboard
 {
     use BelongsToModule;
 
+    protected static string $routePath = 'dashboard-inventory';
+
     protected static ?string $module = 'inventory';
+    protected static ?string $navigationIcon = 'heroicon-o-presentation-chart-line';
+    protected static ?string $navigationGroup = 'Manajemen Inventory';
+    protected static ?string $title = 'Dashboard';
 
-    protected static ?string $navigationIcon = 'heroicon-o-document-text';
+    public static function canAccess(): bool
+    {
+        return auth()->user()->hasAnyRole(['super_admin', 'manager', 'inventory_employees']);
+    }
 
-    protected static string $view = 'filament.pages.inventory.dashboard-inventory';
+    protected function getHeaderActions(): array
+    {
+        return [
+            // Action::make('createProduct')
+            //     ->label('Produk Baru')
+            //     ->icon('heroicon-m-plus')
+            //     ->url(ProductResource::getUrl('create')),
+
+            // Action::make('stockReport')
+            //     ->label('Laporan Stok')
+            //     ->icon('heroicon-m-document-text')
+            //     ->color('gray')
+            //     ->url('/admin/inventory/stock-reports'),
+
+            Action::make('liveMonitor')
+                ->label('Live Monitor')
+                ->icon('heroicon-m-chart-bar')
+                ->color('gray')
+                ->url(InventoryMonitoringResource::getUrl('index')),
+        ];
+    }
+
+    public function getWidgets(): array
+    {
+        return [
+            InventoryStatsOverview::class,
+            MovementAnalysisChart::class,
+            CategoryValuationChart::class,
+            StockWarehouseChart::class,
+        ];
+    }
+
+    public function getColumns(): int | string | array
+    {
+        return 2;
+    }
 }

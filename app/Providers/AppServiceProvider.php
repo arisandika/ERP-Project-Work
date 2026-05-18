@@ -4,19 +4,18 @@ namespace App\Providers;
 
 use App\Models\HR\LeaveRequest;
 use App\Models\Finance\ReimbursementRequest;
-use App\Models\Inventory\Rma;
-use App\Models\Sales\Invoice;
 use App\Models\Sales\DeliveryOrder;
 use App\Models\Sales\SalesOrder;
 use App\Models\Inventory\Product;
 use App\Models\Inventory\ProductStock;
-use App\Observers\InvoiceObserver;
+use App\Models\Inventory\StockTransaction;
 use App\Observers\LeaveRequestObserver;
 use App\Observers\ReimbursementRequestObserver;
 use App\Observers\ProductStockObserver;
 use App\Observers\DeliveryOrderObserver;
 use App\Observers\RoleObserver;
 use App\Observers\SalesOrderObserver;
+use App\Observers\StockTransactionObserver;
 use Filament\Support\Colors\Color;
 use Filament\Support\Facades\FilamentColor;
 use Illuminate\Support\Carbon;
@@ -55,6 +54,7 @@ class AppServiceProvider extends ServiceProvider
         DeliveryOrder::observe(DeliveryOrderObserver::class);
         SalesOrder::observe(SalesOrderObserver::class);
         ReimbursementRequest::observe(ReimbursementRequestObserver::class);
+        StockTransaction::observe(StockTransactionObserver::class);
 
         Role::observe(RoleObserver::class);
 
