@@ -31,18 +31,20 @@ return [
     ],
     'crm_employees' => [
         'attendance',
+        'sales',
         'crm',
     ],
     'sales_employees' => [
         'attendance',
         'sales',
+        'crm',
     ],
     'marketing_employees' => [
         'attendance',
         'marketing',
     ],
-    'project`_employees' => [
+    'project_employees' => [
         'attendance',
-        'project`',
+        'project',
     ],
 ];

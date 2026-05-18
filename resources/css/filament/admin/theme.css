@@ -161,7 +161,7 @@
 }
 
 .fi-tabs {
-    @apply bg-accent-light dark:bg-accent-dark p-1 rounded-full shadow-none ring-1 ring-border-light dark:ring-border-dark !important;
+    @apply bg-accent-light dark:bg-accent-dark p-2 rounded-2xl md:rounded-full shadow-none ring-1 ring-border-light dark:ring-border-dark !important;
 }
 
 .fi-tabs-item.fi-tabs-item-active {
@@ -337,4 +337,8 @@ select.grow.cursor-pointer {
     .rounded-r-md {
         @apply rounded-r-lg !important;
     }
+}
+
+.fi-in-tabs {
+    @apply bg-secondary-light dark:bg-secondary-dark rounded-2xl md:rounded-3xl shadow-none ring-1 ring-border-light dark:ring-border-dark !important;
 }

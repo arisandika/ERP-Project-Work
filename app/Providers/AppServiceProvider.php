@@ -4,11 +4,11 @@ namespace App\Providers;
 
 use App\Models\HR\LeaveRequest;
 use App\Models\Finance\ReimbursementRequest;
+use App\Models\Inventory\StockTransaction;
 use App\Models\Sales\DeliveryOrder;
 use App\Models\Sales\SalesOrder;
 use App\Models\Inventory\Product;
 use App\Models\Inventory\ProductStock;
-use App\Models\Inventory\StockTransaction;
 use App\Observers\LeaveRequestObserver;
 use App\Observers\ReimbursementRequestObserver;
 use App\Observers\ProductStockObserver;
@@ -34,6 +34,7 @@ class AppServiceProvider extends ServiceProvider
     {
         $this->app->bind(LoginResponseContract::class, LoginResponse::class);
     }
+
     public function boot(): void
     {
         App::setLocale('id');
@@ -84,5 +85,11 @@ class AppServiceProvider extends ServiceProvider
                 app()[PermissionRegistrar::class]->forgetCachedPermissions();
             }
         });
+
+
+        Relation::morphMap([
+            'employee' => \App\Models\HR\Employee::class,
+            'salesperson' => \App\Models\Sales\SalesPerson::class,
+        ]);
     }
 }

@@ -20,12 +20,29 @@ class ModuleAccess
             return collect();
         }
 
-        return self::all()
+        // Cache per user per request — hindari re-query permission
+        // di setiap pemanggilan ulang dalam satu request yang sama
+        static $cache = [];
+        $userId = $user->getKey();
+
+        if (isset($cache[$userId])) {
+            return $cache[$userId];
+        }
+
+        // Preload semua permissions sekaligus supaya ->can() tidak
+        // trigger query baru per iterasi (butuh Spatie v6+)
+        $user->loadMissing('roles.permissions', 'permissions');
+
+        $result = self::all()
             ->filter(fn(array $module): bool => $user->can($module['permission']))
             ->filter(fn(array $module): bool => !(
                 $module['key'] === 'attendance' && $user->hasRole('super_admin')
             ))
             ->values();
+
+        $cache[$userId] = $result;
+
+        return $result;
     }
 
     public static function current(): ?string

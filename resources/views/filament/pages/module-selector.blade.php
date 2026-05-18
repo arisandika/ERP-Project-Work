@@ -89,6 +89,21 @@
     @php
         $modules = $this->getModules();
         $user = auth()->user();
+        $isSuperAdmin = $user?->hasRole('super_admin') ?? false;
+
+        // Ambil data yang sudah diproses di PHP Class
+        $infoMessage = $this->attendanceInfo['message'] ?? null;
+        $infoType = $this->attendanceInfo['type'] ?? 'info';
+        $pill = $this->pillData; // Data untuk kapsul kecil
+
+        // Greeting berdasarkan jam
+        $hour = now()->hour;
+        $greeting = match (true) {
+            $hour >= 5 && $hour < 11 => 'Selamat pagi',
+            $hour >= 11 && $hour < 15 => 'Selamat siang',
+            $hour >= 15 && $hour < 18 => 'Selamat sore',
+            default => 'Selamat malam',
+        };
 
         $moduleConfig = [
             'attendance' => ['accent' => '#3b82f6', 'glow' => '#3b82f6', 'icon_bg' => 'bg-blue-50 dark:bg-blue-950/40', 'icon_color' => 'text-blue-600 dark:text-blue-400', 'icon_border' => 'ring-blue-200 dark:ring-blue-800', 'tag' => 'bg-blue-50 text-blue-600 ring-blue-200 dark:bg-blue-950/40 dark:text-blue-400 dark:ring-blue-800'],
@@ -103,111 +118,272 @@
         ];
     @endphp
 
-    <div class="min-h-screen bg-main-light dark:bg-main-dark">
-        <div class="w-full px-4 pb-10 mx-auto max-w-7xl sm:px-8 lg:px-10">
+    <div class="flex flex-col items-center min-h-screen px-4 pb-8 sm:px-6 lg:px-8">
 
-            {{-- ── Header ──────────────────────────────────────────────── --}}
-            <div class="flex items-center justify-center mb-10 md:justify-start">
-                {{-- Logo --}}
-                <div class="flex items-center gap-3">
-                    <img src="{{ asset('assets/logo-dark.png') }}" alt="Logo" class="h-8 dark:hidden">
-                    <img src="{{ asset('assets/logo-light.png') }}" alt="Logo" class="hidden h-8 dark:block">
-                </div>
+        {{-- TOP BAR --}}
+        <div class="flex items-center justify-between w-full max-w-6xl pb-6 mb-4">
+            {{-- Logo --}}
+            <div class="flex items-center gap-3">
+                <img src="{{ asset('assets/logo-dark.png') }}" alt="Logo" class="h-8 dark:hidden">
+                <img src="{{ asset('assets/logo-light.png') }}" alt="Logo" class="hidden h-8 dark:block">
             </div>
 
-            {{-- ── Hero ────────────────────────────────────────────────── --}}
-            <div class="mb-12 text-center">
-                <h1 class="text-2xl font-bold tracking-tight text-black dark:text-white sm:text-3xl">
-                    Pilih Modul
-                </h1>
-                <p class="mt-2 text-base text-gray-500 dark:text-gray-400">
-                    Selamat datang kembali, <span
-                        class="font-semibold text-gray-700 dark:text-gray-300">{{ $user?->name ?? 'User' }}</span>.
-                    Pilih area kerja yang ingin kamu buka.
-                </p>
-            </div>
-
-            {{-- ── Empty State ──────────────────────────────────────────── --}}
-            @if ($modules->isEmpty())
-                <div
-                    class="flex items-start gap-4 p-5 rounded-xl ring-1 ring-amber-200 bg-amber-50 dark:ring-amber-800 dark:bg-amber-950/30">
-                    <div
-                        class="flex items-center justify-center rounded-lg w-9 h-9 bg-amber-100 dark:bg-amber-900/40 ring-1 ring-amber-200 dark:ring-amber-800 text-amber-600 dark:text-amber-400 shrink-0">
-                        <x-filament::icon icon="heroicon-o-exclamation-triangle" class="w-5 h-5" />
-                    </div>
-                    <div>
-                        <p class="text-sm font-semibold text-amber-800 dark:text-amber-200">Belum ada modul yang bisa
-                            diakses</p>
-                        <p class="mt-1 text-sm leading-relaxed text-amber-700 dark:text-amber-400">
-                            Akun kamu belum memiliki permission modul apapun. Hubungi administrator untuk mengatur hak
-                            akses.
-                        </p>
-                    </div>
-                </div>
-
-                {{-- ── Module Grid ──────────────────────────────────────────── --}}
-            @else
-                <div class="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4 sm:gap-6">
-                    @foreach ($modules as $module)
-                        @php
-                            $cfg = $moduleConfig[$module['key']] ?? $moduleConfig['system'];
-                        @endphp
-
-                        <button type="button" wire:click="selectModule('{{ $module['key'] }}')" class="module-card group relative flex flex-col p-4 sm:p-5 text-left rounded-2xl
-                                       ring-1 ring-border-light dark:ring-border-dark
-                                       bg-secondary-light dark:bg-secondary-dark
-                                       shadow-sm overflow-hidden
-                                       transition-all duration-200 ease-out
-                                       hover:-translate-y-0.5 hover:shadow-md"
-                            style="--card-accent: {{ $cfg['accent'] }}; --card-glow: {{ $cfg['glow'] }};">
-                            {{-- Top row: icon + badge --}}
-                            <div class="flex items-start justify-between mb-4">
-                                <div
-                                    class="flex items-center justify-center w-10 h-10 rounded-xl ring-1 {{ $cfg['icon_bg'] }} {{ $cfg['icon_border'] }} {{ $cfg['icon_color'] }} shrink-0">
-                                    <x-filament::icon :icon="$module['icon']" class="w-5 h-5" />
-                                </div>
-                            </div>
-
-                            {{-- Label --}}
-                            <p class="mb-1 text-base font-bold leading-tight text-black dark:text-white">
-                                {{ $module['label'] }}
-                            </p>
-
-                            {{-- Description --}}
-                            <p class="flex-1 mb-4 text-sm text-gray-500 dark:text-gray-400">
-                                {{ $module['description'] }}
-                            </p>
-
-                            {{-- Footer --}}
-                            <div
-                                class="flex items-center justify-between pt-3 border-t border-border-light dark:border-border-dark">
-                                <span
-                                    class="text-sm font-medium text-gray-600 transition-colors duration-200 card-cta dark:text-gray-500">
-                                    Buka modul
-                                </span>
-                                <span
-                                    class="flex items-center justify-center w-6 h-6 text-gray-400 transition-all duration-200 rounded-full card-arrow ring-1 ring-border-light dark:ring-border-dark bg-main-light dark:bg-main-dark dark:text-gray-600">
-                                    <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5"
-                                            d="M9 5l7 7-7 7" />
-                                    </svg>
-                                </span>
-                            </div>
-                        </button>
-                    @endforeach
-                </div>
-            @endif
-
-            {{-- ── Meta bar ─────────────────────────────────────────────── --}}
-            @if ($modules->isNotEmpty())
-                <div class="flex justify-center pb-6 mt-10">
-                    <span
-                        class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg ring-1 ring-border-light dark:ring-border-dark bg-secondary-light dark:bg-secondary-dark text-sm font-medium text-gray-500 dark:text-gray-400">
-                        <strong class="text-gray-700 dark:text-gray-300">{{ $modules->count() }}</strong> modul tersedia untuk role kamu
-                    </span>
+            {{-- Jam & Tanggal --}}
+            @if(!$isSuperAdmin)
+                <div class="text-right">
+                    <p class="text-xs text-gray-500 dark:text-gray-400" id="header-date">Memuat...</p>
+                    <p class="text-base font-bold tracking-tight text-gray-800 tabular-nums dark:text-gray-100"
+                        id="header-time">--:--:--</p>
                 </div>
             @endif
         </div>
+
+        {{-- HERO / GREETING --}}
+        <div class="w-full max-w-4xl mb-6 text-center">
+            <p class="mb-1 text-sm text-gray-500 dark:text-gray-400">
+                {{ $greeting }}, <span
+                    class="font-semibold text-gray-700 dark:text-gray-300">{{ $user?->name ?? 'User' }}</span> 👋
+            </p>
+            <h1 class="text-2xl font-bold tracking-tight text-gray-900 sm:text-3xl dark:text-white">
+                Pilih modul kerja
+            </h1>
+            <p class="mt-2 text-sm text-gray-500 dark:text-gray-400">
+                Akses semua area sistem dari satu tempat. Klik modul yang ingin kamu buka.
+            </p>
+        </div>
+
+        {{-- INFO PILLS (Department, Role, Shift, Cuti, Libur) --}}
+        @if(!$isSuperAdmin && $user?->employee)
+            <div class="flex flex-wrap justify-center w-full gap-2 mb-6 max-w-7xl">
+
+                {{-- Role User --}}
+                @if($pill['role'])
+                    <span
+                        class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-full bg-slate-100 text-slate-700 ring-1 ring-slate-200 dark:bg-slate-800/60 dark:text-slate-300 dark:ring-slate-700">
+                        <x-filament::icon icon="heroicon-o-identification" class="w-3.5 h-3.5" /> {{ $pill['role'] }}
+                    </span>
+                @endif
+
+                {{-- Departemen --}}
+                @if($pill['department'])
+                    <span
+                        class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-full bg-violet-50 text-violet-700 ring-1 ring-violet-200 dark:bg-violet-950/40 dark:text-violet-300 dark:ring-violet-800">
+                        <x-filament::icon icon="heroicon-o-building-office" class="w-3.5 h-3.5" /> {{ $pill['department'] }}
+                    </span>
+                @endif
+
+                {{-- Status Hari (Kerja / Libur) --}}
+                @if($pill['is_weekend'])
+                    <span
+                        class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-full bg-emerald-50 text-emerald-700 ring-1 ring-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-300 dark:ring-emerald-800">
+                        <x-filament::icon icon="heroicon-o-sun" class="w-3.5 h-3.5" /> Sedang akhir pekan
+                    </span>
+                @else
+                    <span
+                        class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-full bg-blue-50 text-blue-700 ring-1 ring-blue-200 dark:bg-blue-950/40 dark:text-blue-300 dark:ring-blue-800">
+                        <x-filament::icon icon="heroicon-o-briefcase" class="w-3.5 h-3.5" /> Hari kerja aktif
+                    </span>
+                @endif
+
+                {{-- Shift Kerja --}}
+                @if($pill['shift'])
+                    <span
+                        class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-full bg-indigo-50 text-indigo-700 ring-1 ring-indigo-200 dark:bg-indigo-950/40 dark:text-indigo-300 dark:ring-indigo-800">
+                        <x-filament::icon icon="heroicon-o-clock" class="w-3.5 h-3.5" />
+                        <strong class="ml-1">{{ $pill['shift'] }}</strong>
+                    </span>
+                @endif
+
+                {{-- Cuti yang sedang berlangsung atau akan datang --}}
+                @if($pill['upcoming_leave'])
+                    @php
+                        $cStart = \Carbon\Carbon::parse($pill['upcoming_leave']['start']);
+                        $cEnd = \Carbon\Carbon::parse($pill['upcoming_leave']['end']);
+                        $isNow = $cStart->isToday() || ($cStart->isPast() && $cEnd->isFuture()) || $cEnd->isToday();
+                    @endphp
+                    <span
+                        class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-full ring-1
+                                            {{ $isNow ? 'bg-emerald-50 text-emerald-700 ring-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-300 dark:ring-emerald-800' : 'bg-amber-50 text-amber-700 ring-amber-200 dark:bg-amber-950/40 dark:text-amber-300 dark:ring-amber-800' }}">
+                        <x-filament::icon icon="heroicon-o-paper-airplane" class="w-3.5 h-3.5" />
+                        @if($isNow)
+                            Sedang cuti s/d {{ $cEnd->translatedFormat('d M') }}
+                        @else
+                            Cuti: {{ $cStart->translatedFormat('d M') }} - {{ $cEnd->translatedFormat('d M') }}
+                        @endif
+                    </span>
+                @endif
+
+                {{-- Libur Nasional Terdekat --}}
+                @if($pill['upcoming_holiday'])
+                    @php
+                        $hDate = \Carbon\Carbon::parse($pill['upcoming_holiday']['date']);
+                        $isToday = $hDate->isToday();
+                        $selisih = now()->diffInDays($hDate, false);
+                    @endphp
+                    <span
+                        class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-full ring-1
+                                            {{ $isToday ? 'bg-emerald-50 text-emerald-700 ring-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-300 dark:ring-emerald-800' : 'bg-gray-100 text-gray-600 ring-gray-200 dark:bg-gray-800 dark:text-gray-400 dark:ring-gray-700' }}">
+                        <x-filament::icon icon="heroicon-o-star" class="w-3.5 h-3.5" />
+                        @if($isToday)
+                            Libur: {{ $pill['upcoming_holiday']['name'] }}
+                        @elseif($selisih <= 7)
+                            {{ $pill['upcoming_holiday']['name'] }} — {{ $selisih }} hari lagi
+                        @else
+                            Libur: {{ $hDate->translatedFormat('d M') }} ({{ $pill['upcoming_holiday']['name'] }})
+                        @endif
+                    </span>
+                @endif
+
+            </div>
+        @endif
+
+        {{-- STATUS BANNER PRESENSI --}}
+        @if(!$isSuperAdmin && $infoMessage)
+            @php
+                [$bgBanner, $ringBanner, $textBanner] = match ($infoType) {
+                    'warning' => ['bg-amber-50 dark:bg-amber-950/30', 'ring-amber-300 dark:ring-amber-800', 'text-amber-800 dark:text-amber-300'],
+                    'success' => ['bg-emerald-50 dark:bg-emerald-950/30', 'ring-emerald-300 dark:ring-emerald-800', 'text-emerald-800 dark:text-emerald-300'],
+                    'danger' => ['bg-rose-50 dark:bg-rose-950/30', 'ring-rose-300 dark:ring-rose-800', 'text-rose-800 dark:text-rose-300'],
+                    default => ['bg-blue-50 dark:bg-blue-950/30', 'ring-blue-300 dark:ring-blue-800', 'text-blue-800 dark:text-blue-300'],
+                };
+                $icon = match ($infoType) {
+                    'warning' => 'heroicon-o-exclamation-triangle',
+                    'success' => 'heroicon-o-check-circle',
+                    'danger' => 'heroicon-o-x-circle',
+                    default => 'heroicon-o-information-circle',
+                };
+            @endphp
+            <div
+                class="flex hover:underline-offset-4 items-center w-full max-w-2xl gap-4 p-4 mb-10 shadow-sm rounded-xl ring-1 {{ $bgBanner }} {{ $ringBanner }} {{ $textBanner }}">
+                <x-filament::icon :icon="$icon" class="w-5 h-5 shrink-0" />
+                <p class="flex-1 text-sm leading-relaxed">{!! $infoMessage !!}</p>
+            </div>
+        @endif
+
+        {{-- MODULE GRID --}}
+        @if($modules->isEmpty())
+            <div
+                class="flex items-start w-full max-w-6xl gap-4 p-5 rounded-xl ring-1 ring-amber-200 bg-amber-50 dark:ring-amber-800 dark:bg-amber-950/30">
+                <div
+                    class="flex items-center justify-center rounded-lg w-9 h-9 bg-amber-100 dark:bg-amber-900/40 ring-1 ring-amber-200 dark:ring-amber-800 text-amber-600 dark:text-amber-400 shrink-0">
+                    <x-filament::icon icon="heroicon-o-exclamation-triangle" class="w-5 h-5" />
+                </div>
+                <div>
+                    <p class="text-sm font-semibold text-amber-800 dark:text-amber-200">Belum ada modul yang bisa diakses
+                    </p>
+                    <p class="mt-1 text-sm leading-relaxed text-amber-700 dark:text-amber-400">
+                        Akun kamu belum memiliki permission modul apapun. Hubungi administrator untuk mengatur hak akses.
+                    </p>
+                </div>
+            </div>
+
+        @else
+            <div class="grid w-full max-w-6xl grid-cols-2 gap-6 sm:grid-cols-3 lg:grid-cols-4">
+                @foreach($modules as $module)
+                    @php $cfg = $moduleConfig[$module['key']] ?? $moduleConfig['system']; @endphp
+
+                    <button type="button" wire:click="selectModule('{{ $module['key'] }}')" class="module-card group relative flex flex-col p-4 sm:p-5 text-left rounded-2xl
+                                                       ring-1 ring-border-light dark:ring-border-dark
+                                                       bg-secondary-light dark:bg-secondary-dark
+                                                       shadow-sm overflow-hidden
+                                                       transition-all duration-200 ease-out
+                                                       hover:-translate-y-0.5 hover:shadow-md"
+                        style="--card-accent: {{ $cfg['accent'] }}; --card-glow: {{ $cfg['glow'] }};">
+                        {{-- Top row: icon + badge --}}
+                        <div class="flex items-start justify-between mb-4">
+                            <div
+                                class="flex items-center justify-center w-10 h-10 rounded-xl ring-1 {{ $cfg['icon_bg'] }} {{ $cfg['icon_border'] }} {{ $cfg['icon_color'] }} shrink-0">
+                                <x-filament::icon :icon="$module['icon']" class="w-5 h-5" />
+                            </div>
+                        </div>
+
+                        {{-- Label --}}
+                        <p class="mb-1 text-base font-bold leading-tight text-black dark:text-white">
+                            {{ $module['label'] }}
+                        </p>
+
+                        {{-- Description --}}
+                        <p class="flex-1 mb-4 text-sm text-gray-500 dark:text-gray-400">
+                            {{ $module['description'] }}
+                        </p>
+
+                        {{-- Footer --}}
+                        {{-- Footer --}}
+                        <div
+                            class="flex items-center justify-between pt-3 border-t border-border-light dark:border-border-dark">
+
+                            {{-- Teks Buka Modul / Memuat --}}
+                            <span
+                                class="text-sm font-medium text-gray-600 transition-colors duration-200 card-cta dark:text-gray-500">
+                                <span wire:loading.remove wire:target="selectModule('{{ $module['key'] }}')">
+                                    Buka modul
+                                </span>
+                                <span wire:loading wire:target="selectModule('{{ $module['key'] }}')">
+                                    Memuat...
+                                </span>
+                            </span>
+
+                            {{-- Lingkaran Icon (Panah / Spinner) --}}
+                            <span
+                                class="flex items-center justify-center w-6 h-6 text-gray-400 transition-all duration-200 rounded-full card-arrow ring-1 ring-border-light dark:ring-border-dark bg-main-light dark:bg-main-dark dark:text-gray-600">
+
+                                {{-- Ikon Panah (Tampil saat normal) --}}
+                                <svg wire:loading.remove wire:target="selectModule('{{ $module['key'] }}')" class="w-3 h-3"
+                                    fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 5l7 7-7 7" />
+                                </svg>
+
+                                {{-- Ikon Spinner Loading (Tampil saat di-klik) --}}
+                                <svg wire:loading wire:target="selectModule('{{ $module['key'] }}')"
+                                    class="w-3 h-3 animate-spin" fill="none" viewBox="0 0 24 24">
+                                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4">
+                                    </circle>
+                                    <path class="opacity-75" fill="currentColor"
+                                        d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
+                                </svg>
+
+                            </span>
+                        </div>
+                    </button>
+                @endforeach
+            </div>
+        @endif
+
+        {{-- FOOTER --}}
+        @if($modules->isNotEmpty())
+            <div class="flex items-center justify-center gap-2 pt-8 pb-2 mt-6">
+                <span
+                    class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-gray-500 bg-secondary-light rounded-full dark:bg-secondary-dark dark:text-gray-400 ring-1 ring-border-light dark:ring-border-dark">
+                    <svg class="w-3.5 h-3.5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h7" />
+                    </svg>
+                    <strong class="text-gray-700 dark:text-gray-300">{{ $modules->count() }}</strong> modul aktif untuk role
+                    kamu
+                </span>
+            </div>
+        @endif
+
     </div>
+
+    @push('scripts')
+        <script>
+            function updateDashboardDateTime() {
+                const dateEl = document.getElementById('header-date');
+                const timeEl = document.getElementById('header-time');
+                if (!dateEl || !timeEl) return;
+                const now = new Date();
+                const days = ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'];
+                const months = ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Ags', 'Sep', 'Okt', 'Nov', 'Des'];
+                dateEl.textContent = `${days[now.getDay()]}, ${now.getDate()} ${months[now.getMonth()]} ${now.getFullYear()}`;
+                const h = String(now.getHours()).padStart(2, '0');
+                const m = String(now.getMinutes()).padStart(2, '0');
+                const s = String(now.getSeconds()).padStart(2, '0');
+                timeEl.textContent = `${h}:${m}:${s}`;
+            }
+            setInterval(updateDashboardDateTime, 1000);
+            document.addEventListener("DOMContentLoaded", updateDashboardDateTime);
+            document.addEventListener("livewire:navigated", updateDashboardDateTime);
+        </script>
+    @endpush
 
 </x-filament-panels::page>

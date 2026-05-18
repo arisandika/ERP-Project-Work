@@ -12,6 +12,8 @@ use Filament\Pages\Page;
 class HolidayCalendar extends Page
 {
     use BelongsToModule;
+
+    protected static ?string $module = 'hr';
     
     protected static ?string $navigationIcon = 'heroicon-o-calendar';
 

@@ -53,8 +53,12 @@ class DealsRelationManager extends RelationManager
                                     ->disabled()
                                     ->dehydrated()
                                     ->unique(ignoreRecord: true)
-                                    ->default(fn() => $this->generateDealNumber())
                                     ->prefixIcon('heroicon-o-hashtag'),
+
+                                Forms\Components\TextInput::make('title')
+                                    ->label('Nama / Judul Deal')
+                                    ->required()
+                                    ->maxLength(100),
 
                                 Forms\Components\Select::make('nx_lead_id')
                                     ->label('Lead')
@@ -64,18 +68,39 @@ class DealsRelationManager extends RelationManager
                                     ->searchable()
                                     ->preload()
                                     ->required()
-                                    ->default($leadId)
-                                    ->disabled(
-                                        fn(string $context) =>
-                                        $context === 'edit' || filled($leadId)
-                                    )
+                                    ->default(fn() => request()->query('nx_lead_id'))
+                                    ->disabled(fn(string $context) => $context === 'edit' || filled(request()->query('nx_lead_id')))
                                     ->dehydrated()
                                     ->getOptionLabelFromRecordUsing(function ($record) {
                                         if (!$record)
                                             return 'Tanpa Lead';
-                                        return $record->trashed()
-                                            ? "{$record->name} (Terhapus)"
-                                            : $record->name;
+                                        return $record->trashed() ? "{$record->name} (Terhapus)" : $record->name;
+                                    })
+                                    ->prefixIcon('heroicon-o-funnel')
+
+                                    ->createOptionForm(fn(Form $form) => LeadResource::form($form)->getComponents())
+                                    ->createOptionAction(fn(\Filament\Forms\Components\Actions\Action $action) => $action->modalWidth('4xl'))
+                                    ->createOptionUsing(function (array $data) {
+                                        // Otomatis isi created_by untuk lead baru
+                                        if (empty($data['created_by'])) {
+                                            $data['created_by'] = Employee::where('user_id', auth()->id())->value('id');
+                                        }
+
+                                        // Simpan Lead baru ke database
+                                        $lead = Lead::create($data);
+
+                                        // Kembalikan ID lead yang baru dibuat agar terpilih di select
+                                        return $lead->id;
+                                    })
+                                    //-------------------------------
+
+                                    ->default(fn() => request()->query('nx_lead_id'))
+                                    ->disabled(fn(string $context) => $context === 'edit' || filled(request()->query('nx_lead_id')))
+                                    ->dehydrated()
+                                    ->getOptionLabelFromRecordUsing(function ($record) {
+                                        if (!$record)
+                                            return 'Tanpa Lead';
+                                        return $record->trashed() ? "{$record->name} (Terhapus)" : $record->name;
                                     })
                                     ->prefixIcon('heroicon-o-funnel'),
 
@@ -154,7 +179,7 @@ class DealsRelationManager extends RelationManager
                                     }),
 
                                 Forms\Components\Select::make('created_by')
-                                    ->label('Dibuat Oleh (Sales)')
+                                    ->label('Dibuat Oleh')
                                     ->relationship('createdBy', 'full_name')
                                     ->default(fn() => Employee::where('user_id', auth()->id())->value('id'))
                                     ->disabled()
@@ -263,6 +288,11 @@ class DealsRelationManager extends RelationManager
                     ->sortable()
                     ->weight('semibold')
                     ->copyable(),
+
+                Tables\Columns\TextColumn::make('title')
+                    ->label('Nama Deal')
+                    ->searchable()
+                    ->limit(30),
 
                 Tables\Columns\TextColumn::make('customer_or_lead')
                     ->label('Lead / Customer')

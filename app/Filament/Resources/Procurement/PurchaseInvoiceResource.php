@@ -15,7 +15,7 @@ use App\Filament\Concerns\BelongsToModule;
 class PurchaseInvoiceResource extends Resource
 {
     use BelongsToModule;
-    protected static ?string $module = 'procurement';
+    protected static ?string $module = 'finance';
     protected static ?string $model = PurchaseInvoice::class;
     protected static ?string $navigationIcon = 'heroicon-o-document-text';
     protected static ?string $navigationGroup = 'Manajemen Finance'; // Pindah ke wilayah Finance!
@@ -66,10 +66,12 @@ class PurchaseInvoiceResource extends Resource
                                 ->required()
                                 ->live()
                                 ->afterStateUpdated(function ($state, Forms\Set $set, Forms\Get $get) {
-                                    if (!$state) return;
+                                    if (!$state)
+                                        return;
 
                                     $po = PurchaseOrder::with(['items.product', 'supplier'])->find($state);
-                                    if (!$po) return;
+                                    if (!$po)
+                                        return;
 
                                     $set('supplier_id', $po->supplier_id);
 
@@ -83,12 +85,12 @@ class PurchaseInvoiceResource extends Resource
 
                                             $piItems[] = [
                                                 'purchase_order_item_id' => $item->id,
-                                                'product_id'             => $item->product_id,
-                                                'product_name'           => $item->product->product_name,
-                                                'max_qty'                => $item->quantity_received,
-                                                'quantity_billed'        => $item->quantity_received, // Default tagih semua yang diterima
-                                                'unit_price'             => $item->unit_price,
-                                                'total_price'            => $lineTotal,
+                                                'product_id' => $item->product_id,
+                                                'product_name' => $item->product->product_name,
+                                                'max_qty' => $item->quantity_received,
+                                                'quantity_billed' => $item->quantity_received, // Default tagih semua yang diterima
+                                                'unit_price' => $item->unit_price,
+                                                'total_price' => $lineTotal,
                                             ];
                                             $subtotal += $lineTotal;
                                         }
@@ -102,7 +104,7 @@ class PurchaseInvoiceResource extends Resource
                                     $set('tax_amount', $taxAmount);
                                     $set('grand_total', $subtotal + $taxAmount);
                                 })
-                                ->disabled(fn (string $operation): bool => $operation === 'edit'),
+                                ->disabled(fn(string $operation): bool => $operation === 'edit'),
 
                             Forms\Components\Hidden::make('supplier_id'),
 
@@ -143,7 +145,7 @@ class PurchaseInvoiceResource extends Resource
                                         ->required()
                                         ->minValue(1)
                                         // PENGUNCIAN AUDIT: Tagihan tidak boleh melebihi fisik di gudang
-                                        ->maxValue(fn (Forms\Get $get) => $get('max_qty'))
+                                        ->maxValue(fn(Forms\Get $get) => $get('max_qty'))
                                         ->live(debounce: 500)
                                         ->afterStateUpdated(function ($state, Forms\Set $set, Forms\Get $get) {
                                             $price = (float) ($get('unit_price') ?? 0);
@@ -180,10 +182,10 @@ class PurchaseInvoiceResource extends Resource
                         ->schema([
                             Forms\Components\TextInput::make('subtotal')->disabled()->dehydrated()->prefix('Rp')->default(0),
                             Forms\Components\TextInput::make('tax_rate')->label('PPN (%)')->numeric()->default(11)->live(debounce: 500)
-                                ->afterStateUpdated(fn (Forms\Get $get, Forms\Set $set) => self::updateTotals($get, $set))->suffix('%')->dehydrated(false),
+                                ->afterStateUpdated(fn(Forms\Get $get, Forms\Set $set) => self::updateTotals($get, $set))->suffix('%')->dehydrated(false),
                             Forms\Components\Hidden::make('tax_amount'),
                             Forms\Components\TextInput::make('discount_amount')->label('Diskon')->numeric()->default(0)->live(debounce: 500)
-                                ->afterStateUpdated(fn (Forms\Get $get, Forms\Set $set) => self::updateTotals($get, $set))->prefix('Rp'),
+                                ->afterStateUpdated(fn(Forms\Get $get, Forms\Set $set) => self::updateTotals($get, $set))->prefix('Rp'),
                             Forms\Components\TextInput::make('grand_total')->label('Grand Total Tagihan')->disabled()->dehydrated()->prefix('Rp')
                                 ->extraInputAttributes(['style' => 'font-size: 1.5rem; font-weight: bold; color: #dc2626;']), // Merah karena ini hutang
                         ]),
@@ -198,7 +200,7 @@ class PurchaseInvoiceResource extends Resource
                 Tables\Columns\TextColumn::make('invoice_number')->label('No. Internal')->searchable()->weight('bold'),
                 Tables\Columns\TextColumn::make('vendor_invoice_number')->label('No. Vendor')->searchable(),
                 Tables\Columns\TextColumn::make('supplier.name')->label('Supplier'),
-                Tables\Columns\TextColumn::make('due_date')->label('Jatuh Tempo')->date('d M Y')->color(fn ($record) => $record->due_date < now() && $record->status !== 'paid' ? 'danger' : 'gray'),
+                Tables\Columns\TextColumn::make('due_date')->label('Jatuh Tempo')->date('d M Y')->color(fn($record) => $record->due_date < now() && $record->status !== 'paid' ? 'danger' : 'gray'),
                 Tables\Columns\TextColumn::make('grand_total')->label('Total Tagihan')->money('IDR', true)->weight('bold'),
                 Tables\Columns\TextColumn::make('status')
                     ->badge()
@@ -210,7 +212,7 @@ class PurchaseInvoiceResource extends Resource
                     })->formatStateUsing(fn($state) => strtoupper($state)),
             ])
             ->actions([
-                Tables\Actions\EditAction::make()->visible(fn ($record) => $record->status === 'unpaid'),
+                Tables\Actions\EditAction::make()->visible(fn($record) => $record->status === 'unpaid'),
                 Tables\Actions\ViewAction::make(),
             ])
             ->defaultSort('created_at', 'desc');
