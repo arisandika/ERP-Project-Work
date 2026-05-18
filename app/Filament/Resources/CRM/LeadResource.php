@@ -56,12 +56,6 @@ class LeadResource extends Resource
                     ->schema([
                         Forms\Components\Grid::make(2)
                             ->schema([
-                                Forms\Components\TextInput::make('name')
-                                    ->label(fn(Forms\Get $get) => $get('customer_type') === 'company' ? 'Nama Perusahaan' : 'Nama Individu')
-                                    ->required()
-                                    ->maxLength(150)
-                                    ->prefixIcon('heroicon-o-building-office'),
-
                                 Forms\Components\Select::make('customer_type')
                                     ->label('Tipe')
                                     ->options([
@@ -72,6 +66,12 @@ class LeadResource extends Resource
                                     ->native(false)
                                     ->prefixIcon('heroicon-o-identification')
                                     ->live(),
+
+                                Forms\Components\TextInput::make('name')
+                                    ->label(fn(Forms\Get $get) => $get('customer_type') === 'company' ? 'Nama Perusahaan' : 'Nama Individu')
+                                    ->required()
+                                    ->maxLength(150)
+                                    ->prefixIcon('heroicon-o-building-office'),
 
                                 Forms\Components\TextInput::make('email')
                                     ->label('Email')

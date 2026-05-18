@@ -5,6 +5,7 @@ namespace App\Models\CRM;
 use App\Models\HR\Employee;
 use App\Models\Sales\Quotation;
 use App\Models\CRM\Customer;
+use App\Models\SalesActivity\VisitAssignment;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -20,6 +21,7 @@ class Deal extends Model
         'nx_lead_id',
         'nx_customer_id',
         'nx_deal_stage_id',
+        'title',
         'deal_number',
         'deal_date',
         'estimated_value',
@@ -35,18 +37,18 @@ class Deal extends Model
         'closed_at' => 'datetime',
     ];
 
-    // -------------------------------------------------------------------------
+    //----------------------------------------------------------------------
     // Constants
-    // -------------------------------------------------------------------------
+    //----------------------------------------------------------------------
 
     const STATUS_OPEN = 'open';
     const STATUS_CLOSED_WON = 'won';
     const STATUS_CLOSED_LOST = 'lost';
     const STATUS_ON_HOLD = 'on_hold';
 
-    // -------------------------------------------------------------------------
+    //----------------------------------------------------------------------
     // Relations
-    // -------------------------------------------------------------------------
+    //----------------------------------------------------------------------
 
     public function lead(): BelongsTo
     {
@@ -78,9 +80,9 @@ class Deal extends Model
         return $this->belongsTo(Employee::class, 'created_by');
     }
 
-    // -------------------------------------------------------------------------
+    //----------------------------------------------------------------------
     // Helpers
-    // -------------------------------------------------------------------------
+    //----------------------------------------------------------------------
 
     public function isClosed(): bool
     {
@@ -97,9 +99,9 @@ class Deal extends Model
             ->exists();
     }
 
-    // -------------------------------------------------------------------------
+    //----------------------------------------------------------------------
     // Actions
-    // -------------------------------------------------------------------------
+    //----------------------------------------------------------------------
 
     /**
      * Tutup deal sebagai Won.
@@ -128,9 +130,16 @@ class Deal extends Model
         ]);
     }
 
-    // -------------------------------------------------------------------------
+
+
+    public function visitAssignments(): HasMany
+    {
+        return $this->hasMany(VisitAssignment::class, 'nx_deal_id');
+    }
+
+    //----------------------------------------------------------------------
     // Lifecycle Hooks
-    // -------------------------------------------------------------------------
+    //----------------------------------------------------------------------
 
     protected static function booted(): void
     {

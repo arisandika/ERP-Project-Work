@@ -32,7 +32,8 @@ class PurchaseRequisitionResource extends Resource
     public static function getNavigationBadge(): ?string
     {
         $user = Auth::user();
-        if (! $user) return null;
+        if (!$user)
+            return null;
 
         $query = static::getModel()::query();
 
@@ -50,7 +51,7 @@ class PurchaseRequisitionResource extends Resource
         $query = parent::getEloquentQuery();
         $user = auth()->user();
 
-        if ($user && ! $user->hasAnyRole(['super_admin', 'admin'])) {
+        if ($user && !$user->hasAnyRole(['super_admin', 'admin'])) {
             return $query->where('requested_by', $user->id);
         }
 
@@ -80,7 +81,7 @@ class PurchaseRequisitionResource extends Resource
                     ->disabled()
                     ->dehydrated(false)
                     ->prefixIcon('heroicon-o-hashtag')
-                    ->default(fn () => PurchaseRequisition::generatePRNumber())
+                    ->default(fn() => PurchaseRequisition::generatePRNumber())
                     ->columnSpan(1),
 
                 Forms\Components\TextInput::make('title')
@@ -103,12 +104,12 @@ class PurchaseRequisitionResource extends Resource
                     ->required()
                     ->native(false)
                     ->prefixIcon('heroicon-o-calendar')
-                    ->minDate(fn (Get $get) => $get('request_date') ?: today())
+                    ->minDate(fn(Get $get) => $get('request_date') ?: today())
                     ->columnSpan(1),
 
                 Forms\Components\Placeholder::make('status_preview')
                     ->label('Status Saat Ini')
-                    ->content(fn (?PurchaseRequisition $record) => strtoupper($record?->status ?? 'draft')),
+                    ->content(fn(?PurchaseRequisition $record) => strtoupper($record?->status ?? 'draft')),
 
                 Forms\Components\Textarea::make('purpose')
                     ->label('Tujuan / Alasan Pembelian')
@@ -131,7 +132,7 @@ class PurchaseRequisitionResource extends Resource
                     ->schema([
                         Forms\Components\Select::make('product_id')
                             ->label('Barang')
-                            ->options(fn () => Product::pluck('product_name', 'id'))
+                            ->options(fn() => Product::pluck('product_name', 'id'))
                             ->searchable()
                             ->preload()
                             ->required()
@@ -192,14 +193,14 @@ class PurchaseRequisitionResource extends Resource
                 Tables\Columns\TextColumn::make('status')
                     ->label('Status')
                     ->badge()
-                    ->color(fn (string $state): string => match ($state) {
+                    ->color(fn(string $state): string => match ($state) {
                         'draft' => 'gray',
                         'pending' => 'warning',
                         'approved' => 'success',
                         'rejected' => 'danger',
                         default => 'gray',
                     })
-                    ->formatStateUsing(fn (string $state): string => strtoupper($state)),
+                    ->formatStateUsing(fn(string $state): string => strtoupper($state)),
 
                 Tables\Columns\TextColumn::make('request_date')
                     ->label('Tgl Minta')
@@ -210,9 +211,10 @@ class PurchaseRequisitionResource extends Resource
             ->actions([
                 // Aksi Edit (Menggunakan ikon solid agar konsisten)
                 Tables\Actions\EditAction::make()
+                    ->label('Edit')
                     ->icon('heroicon-s-pencil-square')
-                    ->iconButton()
-                    ->visible(fn ($record) => strtolower($record->status) === 'draft'),
+                    // Menghilangkan iconButton agar label selalu tampil
+                    ->visible(fn($record) => strtolower($record->status) === 'draft'),
 
                 // TOMBOL SUBMIT (Solid Icon + Tooltip)
                 Tables\Actions\Action::make('submit_action')
@@ -220,8 +222,8 @@ class PurchaseRequisitionResource extends Resource
                     ->tooltip('Submit PR')
                     ->icon('heroicon-s-paper-airplane') // Menggunakan Solid Icon
                     ->color('info')
-                    ->iconButton()
-                    ->visible(fn ($record) => strtolower($record->status) === 'draft')
+                    // Menghilangkan iconButton agar label selalu tampil
+                    ->visible(fn($record) => strtolower($record->status) === 'draft')
                     ->requiresConfirmation()
                     ->action(function ($record) {
                         $record->update(['status' => 'pending']);
@@ -234,8 +236,9 @@ class PurchaseRequisitionResource extends Resource
                     ->tooltip('Approve PR')
                     ->icon('heroicon-s-check-circle') // Menggunakan Solid Icon
                     ->color('success')
-                    ->iconButton()
-                    ->visible(fn ($record) =>
+                    // Menghilangkan iconButton agar label selalu tampil
+                    ->visible(
+                        fn($record) =>
                         strtolower($record->status) === 'pending' &&
                         static::canApproveAny() &&
                         $record->requested_by != auth()->id()
@@ -256,8 +259,9 @@ class PurchaseRequisitionResource extends Resource
                     ->tooltip('Reject PR')
                     ->icon('heroicon-s-x-circle') // Menggunakan Solid Icon
                     ->color('danger')
-                    ->iconButton()
-                    ->visible(fn ($record) =>
+                    // Menghilangkan iconButton agar label selalu tampil
+                    ->visible(
+                        fn($record) =>
                         strtolower($record->status) === 'pending' &&
                         static::canApproveAny() &&
                         $record->requested_by != auth()->id()
@@ -279,15 +283,18 @@ class PurchaseRequisitionResource extends Resource
             ]);
     }
 
-    public static function canViewAny(): bool {
+    public static function canViewAny(): bool
+    {
         return Auth::user()?->hasAnyRole(['super_admin', 'admin']) || Auth::user()?->can('view_any_procurement::purchase::requisition');
     }
 
-    public static function canCreate(): bool {
+    public static function canCreate(): bool
+    {
         return Auth::user()?->hasAnyRole(['super_admin', 'admin']) || Auth::user()?->can('create_procurement::purchase::requisition');
     }
 
-    protected static function canApproveAny(): bool {
+    protected static function canApproveAny(): bool
+    {
         return Auth::user()?->hasAnyRole(['super_admin', 'admin', 'manager']) || Auth::user()?->can('approve_procurement::purchase::requisition');
     }
 

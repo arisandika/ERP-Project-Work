@@ -96,7 +96,7 @@ class PurchaseOrderReceiptService
                 }
             }
 
-            // --- REQUIREMENT PERUSAHAAN: INTEGRASI FINANCE (HUTANG DAGANG) ---
+            // REQUIREMENT PERUSAHAAN: INTEGRASI FINANCE (HUTANG DAGANG)
             if ($totalReceivedValueToday > 0) {
                 // Tambahkan proporsi pajak jika ada (Berdasarkan rate pajak PO)
                 $taxRate = $lockedPo->subtotal > 0 ? ($lockedPo->tax_amount / $lockedPo->subtotal) : 0;

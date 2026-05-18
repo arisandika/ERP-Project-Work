@@ -9,12 +9,14 @@ use App\Models\Project\Notification;
 use App\Models\Project\Project;
 use App\Models\Project\Ticket;
 use App\Models\Sales\Quotation;
+use App\Models\SalesActivity\VisitAssignment;
 use App\Models\User;
 use Filament\Panel;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\MorphMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Spatie\Permission\Traits\HasRoles;
 
@@ -106,6 +108,11 @@ class Employee extends Model
     public function internalQuotations(): HasMany
     {
         return $this->hasMany(Quotation::class, 'internal_pic_id');
+    }
+
+    public function visitAssignments(): MorphMany
+    {
+        return $this->morphMany(VisitAssignment::class, 'assigned_to');
     }
 
     // ================================ //

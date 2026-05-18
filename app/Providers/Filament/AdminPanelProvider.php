@@ -46,7 +46,7 @@ class AdminPanelProvider extends PanelProvider
                 'light' => Color::hex('#ffffff'),
                 'dark' => Color::hex('#1c2433'),
             ])
-            ->font('Poppins')
+            ->font('Plus Jakarta Sans')
             ->brandName('Nexicon ERP Dashboard')
             ->brandLogo(fn() => view('filament.admin.logo'))
             ->favicon(url('favicon.ico'))

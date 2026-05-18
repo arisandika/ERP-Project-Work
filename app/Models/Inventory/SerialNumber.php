@@ -32,7 +32,7 @@ class SerialNumber extends Model
         'warranty_expired_at' => 'date',
     ];
 
-    // --- 1. DAFTAR KONSTANTA STATUS SN (STATE MACHINE) ---
+    // 1. DAFTAR KONSTANTA STATUS SN (STATE MACHINE)
     // Mencegah typo dan mempermudah pemanggilan di Service / Controller
     public const STATUS_AVAILABLE   = 'AVAILABLE';
     public const STATUS_RESERVED    = 'RESERVED';
@@ -58,7 +58,7 @@ class SerialNumber extends Model
         ];
     }
 
-    // --- 2. RELASI DATABASE ---
+    // 2. RELASI DATABASE
 
     public function product()
     {

@@ -22,6 +22,7 @@ use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Blade;
 use Illuminate\Support\HtmlString;
 use App\Filament\Concerns\BelongsToModule;
+use Spatie\Permission\Models\Role;
 
 class EmployeeResource extends Resource
 {
@@ -70,12 +71,14 @@ class EmployeeResource extends Resource
 
                         Forms\Components\Select::make('roles')
                             ->label('Role')
-                            ->required()
-                            ->relationship('roles', 'name')
-                            ->searchable()
+                            ->multiple()
+                            ->options(fn() => Role::pluck('name', 'id')->toArray())
                             ->preload()
+                            ->searchable()
+                            ->required()
                             ->native(false)
-                            ->prefixIcon('heroicon-o-shield-check'),
+                            ->prefixIcon('heroicon-o-shield-check')
+                            ->dehydrated(false),
 
                         Forms\Components\TextInput::make('email')
                             ->label('Email')
@@ -248,9 +251,9 @@ class EmployeeResource extends Resource
                         Forms\Components\Select::make('status')
                             ->label('Status Karyawan')
                             ->options([
-                                'Aktif' => 'Aktif',
-                                'Mengundurkan Diri' => 'Mengundurkan Diri',
-                                'Diberhentikan' => 'Diberhentikan',
+                                'active' => 'Active',
+                                'resigned' => 'Resigned',
+                                'terminated' => 'Terminated',
                             ])
                             ->native(false)
                             ->prefixIcon('heroicon-o-check-circle'),
@@ -339,9 +342,9 @@ class EmployeeResource extends Resource
                 Tables\Columns\BadgeColumn::make('status')
                     ->sortable()
                     ->colors([
-                        'success' => 'Aktif',
-                        'gray' => 'Mengundurkan Diri',
-                        'danger' => 'Diberhentikan',
+                        'success' => 'active',
+                        'gray' => 'resigned',
+                        'danger' => 'terminated',
                     ])
                     ->formatStateUsing(fn(string $state): string => ucwords(str_replace('_', ' ', $state)))
                     ->placeholder('—'),
@@ -390,9 +393,9 @@ class EmployeeResource extends Resource
                 Tables\Filters\SelectFilter::make('status')
                     ->label('Status Karyawan')
                     ->options([
-                        'Aktif' => 'Aktif',
-                        'Mengundurkan Diri' => 'Mengundurkan Diri',
-                        'Diberhentikan' => 'Diberhentikan',
+                        'active' => 'active',
+                        'resigned' => 'resigned',
+                        'terminated' => 'terminated',
                     ])
                     ->native(false),
 
@@ -514,15 +517,15 @@ class EmployeeResource extends Resource
                             ->label('Status Karyawan')
                             ->badge()
                             ->color(fn(string $state): string => match ($state) {
-                                'Aktif', 'active' => 'success',
-                                'Mengundurkan Diri', 'resigned' => 'danger',
-                                'Diberhentikan', 'terminated' => 'danger',
+                                'active' => 'success',
+                                'resigned' => 'danger',
+                                'terminated' => 'danger',
                                 default => 'danger',
                             })
                             ->formatStateUsing(fn(string $state) => match ($state) {
-                                'Aktif', 'active' => 'Aktif',
-                                'Mengundurkan Diri', 'resigned' => 'Mengundurkan Diri',
-                                'Diberhentikan', 'terminated' => 'Diberhentikan',
+                                'active' => 'Active',
+                                'resigned' => 'Resigned',
+                                'terminated' => 'Terminated',
 
                                 default => ucwords(
                                     str_replace('_', ' ', $state)

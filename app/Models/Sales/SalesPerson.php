@@ -16,7 +16,6 @@ class SalesPerson extends Model
 
     protected $fillable = [
         'type',
-        'employee_id',
         'full_name',
         'email',
         'phone',
