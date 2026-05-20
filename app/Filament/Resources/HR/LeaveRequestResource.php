@@ -29,7 +29,7 @@ class LeaveRequestResource extends Resource
 
     protected static ?string $navigationIcon = 'heroicon-o-calendar-days';
 
-    protected static ?string $navigationGroup = 'Manajemen Presensi ✅';
+    protected static ?string $navigationGroup = 'Manajemen Presensi';
 
     protected static ?int $navigationSort = 2;
 

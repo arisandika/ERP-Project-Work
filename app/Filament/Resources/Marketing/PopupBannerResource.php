@@ -28,7 +28,7 @@ class PopupBannerResource extends Resource
 
     protected static ?string $navigationIcon = 'heroicon-o-megaphone';
 
-    protected static ?string $navigationGroup = 'Manajemen Marketing ✅';
+    protected static ?string $navigationGroup = 'Manajemen Marketing';
 
     protected static ?int $navigationSort = 2;
 

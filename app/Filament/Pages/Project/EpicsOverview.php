@@ -25,7 +25,7 @@ class EpicsOverview extends Page
 
     protected static string $routePath = 'pm/epics-overview';
 
-    protected static ?string $navigationGroup = 'Manajemen Project ✅';
+    protected static ?string $navigationGroup = 'Manajemen Project';
 
     protected static ?string $navigationLabel = 'Epics Overview';
 

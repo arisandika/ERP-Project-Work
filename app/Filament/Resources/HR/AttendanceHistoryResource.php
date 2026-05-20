@@ -29,7 +29,7 @@ class AttendanceHistoryResource extends Resource
 
     protected static ?string $navigationIcon = 'heroicon-o-clipboard-document-check';
 
-    protected static ?string $navigationGroup = 'Manajemen Presensi ✅';
+    protected static ?string $navigationGroup = 'Manajemen Presensi';
 
     protected static ?int $navigationSort = 3;
 

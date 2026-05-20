@@ -342,3 +342,7 @@ select.grow.cursor-pointer {
 .fi-in-tabs {
     @apply bg-secondary-light dark:bg-secondary-dark rounded-2xl md:rounded-3xl shadow-none ring-1 ring-border-light dark:ring-border-dark !important;
 }
+
+.fi-dropdown-panel:has(.fi-ta-filters) {
+    @apply !max-w-[19rem] !important;
+}

@@ -35,7 +35,7 @@ class ProjectBoard extends Page
 
     protected static string $routePath = 'pm/project-board';
 
-    protected static ?string $navigationGroup = 'Manajemen Project ✅';
+    protected static ?string $navigationGroup = 'Manajemen Project';
 
     protected static ?string $navigationLabel = 'Project Board';
 

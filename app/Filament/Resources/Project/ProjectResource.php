@@ -29,7 +29,7 @@ class ProjectResource extends Resource
 
     protected static ?string $navigationIcon = 'heroicon-o-square-3-stack-3d';
 
-    protected static ?string $navigationGroup = 'Manajemen Project ✅';
+    protected static ?string $navigationGroup = 'Manajemen Project';
 
     protected static ?int $navigationSort = 1;
 
