@@ -217,7 +217,7 @@
                         <form action="<?php echo e(route('attendance.clockout')); ?>" method="POST"
                             class="p-6 fi-section rounded-2xl ring-1" aria-labelledby="clock-out-title" id="clockout-form">
                             <?php echo csrf_field(); ?>
-                            <h2 id="clock-out-title" class="text-base font-medium">Sudah selesai kerja?</h2>
+                            <h2 id="clock-out-title" class="text-base font-semibold">Sudah selesai kerja?</h2>
 
                             <div class="grid grid-cols-1 gap-6 pt-6 md:gap-4">
                                 

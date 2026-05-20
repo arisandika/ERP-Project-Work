@@ -138,13 +138,11 @@
             </div>
 
             
-            <?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if BLOCK]><![endif]--><?php endif; ?><?php if(!$isSuperAdmin): ?>
-                <div class="text-right">
-                    <p class="text-xs text-gray-500 dark:text-gray-400" id="header-date">Memuat...</p>
-                    <p class="text-base font-bold tracking-tight text-gray-800 tabular-nums dark:text-gray-100"
-                        id="header-time">--:--:--</p>
-                </div>
-            <?php endif; ?><?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if ENDBLOCK]><![endif]--><?php endif; ?>
+            <div class="text-right">
+                <p class="text-sm text-gray-500 dark:text-gray-400" id="header-date">Memuat...</p>
+                <p class="text-base font-bold tracking-tight text-gray-800 tabular-nums dark:text-gray-100"
+                    id="header-time">--:--:--</p>
+            </div>
         </div>
 
         
@@ -309,7 +307,7 @@
                     ?>
                     <span
                         class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-full ring-1
-                                            <?php echo e($isNow ? 'bg-emerald-50 text-emerald-700 ring-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-300 dark:ring-emerald-800' : 'bg-amber-50 text-amber-700 ring-amber-200 dark:bg-amber-950/40 dark:text-amber-300 dark:ring-amber-800'); ?>">
+                                                    <?php echo e($isNow ? 'bg-emerald-50 text-emerald-700 ring-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-300 dark:ring-emerald-800' : 'bg-amber-50 text-amber-700 ring-amber-200 dark:bg-amber-950/40 dark:text-amber-300 dark:ring-amber-800'); ?>">
                         <?php if (isset($component)) { $__componentOriginalbfc641e0710ce04e5fe02876ffc6f950 = $component; } ?>
 <?php if (isset($attributes)) { $__attributesOriginalbfc641e0710ce04e5fe02876ffc6f950 = $attributes; } ?>
 <?php $component = Illuminate\View\AnonymousComponent::resolve(['view' => 'filament::components.icon','data' => ['icon' => 'heroicon-o-paper-airplane','class' => 'w-3.5 h-3.5']] + (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag ? $attributes->all() : [])); ?>
@@ -349,7 +347,7 @@
                     ?>
                     <span
                         class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-full ring-1
-                                            <?php echo e($isToday ? 'bg-emerald-50 text-emerald-700 ring-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-300 dark:ring-emerald-800' : 'bg-gray-100 text-gray-600 ring-gray-200 dark:bg-gray-800 dark:text-gray-400 dark:ring-gray-700'); ?>">
+                                                    <?php echo e($isToday ? 'bg-emerald-50 text-emerald-700 ring-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-300 dark:ring-emerald-800' : 'bg-gray-100 text-gray-600 ring-gray-200 dark:bg-gray-800 dark:text-gray-400 dark:ring-gray-700'); ?>">
                         <?php if (isset($component)) { $__componentOriginalbfc641e0710ce04e5fe02876ffc6f950 = $component; } ?>
 <?php if (isset($attributes)) { $__attributesOriginalbfc641e0710ce04e5fe02876ffc6f950 = $attributes; } ?>
 <?php $component = Illuminate\View\AnonymousComponent::resolve(['view' => 'filament::components.icon','data' => ['icon' => 'heroicon-o-star','class' => 'w-3.5 h-3.5']] + (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag ? $attributes->all() : [])); ?>
@@ -468,11 +466,11 @@
                     <?php $cfg = $moduleConfig[$module['key']] ?? $moduleConfig['system']; ?>
 
                     <button type="button" wire:click="selectModule('<?php echo e($module['key']); ?>')" class="module-card group relative flex flex-col p-4 sm:p-5 text-left rounded-2xl
-                                                       ring-1 ring-border-light dark:ring-border-dark
-                                                       bg-secondary-light dark:bg-secondary-dark
-                                                       shadow-sm overflow-hidden
-                                                       transition-all duration-200 ease-out
-                                                       hover:-translate-y-0.5 hover:shadow-md"
+                                                               ring-1 ring-border-light dark:ring-border-dark
+                                                               bg-secondary-light dark:bg-secondary-dark
+                                                               shadow-sm overflow-hidden
+                                                               transition-all duration-200 ease-out
+                                                               hover:-translate-y-0.5 hover:shadow-md"
                         style="--card-accent: <?php echo e($cfg['accent']); ?>; --card-glow: <?php echo e($cfg['glow']); ?>;">
                         
                         <div class="flex items-start justify-between mb-4">
