@@ -26,7 +26,7 @@ class LeaveApprovalResource extends Resource
 
     protected static ?string $navigationIcon = 'heroicon-o-check-badge';
 
-    protected static ?string $navigationGroup = 'Manajemen HR ✅';
+    protected static ?string $navigationGroup = 'Manajemen HR';
 
     protected static ?int $navigationSort = 7;
 

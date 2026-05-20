@@ -25,7 +25,7 @@ class HolidayCalendar extends Page
 
     protected static string $routePath = 'hr/calendar';
 
-    protected static ?string $navigationGroup = 'Manajemen HR ✅';
+    protected static ?string $navigationGroup = 'Manajemen HR';
 
     protected static ?string $navigationLabel = 'Kalender Libur';
 

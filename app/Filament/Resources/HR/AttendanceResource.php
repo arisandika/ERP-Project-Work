@@ -28,7 +28,7 @@ class AttendanceResource extends Resource
 
     protected static ?string $navigationIcon = 'heroicon-o-computer-desktop';
 
-    protected static ?string $navigationGroup = 'Manajemen HR ✅';
+    protected static ?string $navigationGroup = 'Manajemen HR';
 
     protected static ?int $navigationSort = 6;
 

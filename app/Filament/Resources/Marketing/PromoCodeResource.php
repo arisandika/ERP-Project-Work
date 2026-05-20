@@ -26,7 +26,7 @@ class PromoCodeResource extends Resource
 
     protected static ?string $navigationIcon = 'heroicon-o-ticket';
 
-    protected static ?string $navigationGroup = 'Manajemen Marketing ✅';
+    protected static ?string $navigationGroup = 'Manajemen Marketing';
 
     protected static ?int $navigationSort = 1;
 
