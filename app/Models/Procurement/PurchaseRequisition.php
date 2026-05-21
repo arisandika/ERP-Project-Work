@@ -3,13 +3,14 @@
 namespace App\Models\Procurement;
 
 use App\Models\User;
+use App\Traits\GeneratesDocumentNumber;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use RuntimeException;
 
 class PurchaseRequisition extends Model
 {
-    use SoftDeletes;
+    use SoftDeletes, GeneratesDocumentNumber;
 
     protected $table = 'nx_purchase_requisitions';
 
@@ -17,12 +18,12 @@ class PurchaseRequisition extends Model
 
     protected $fillable = [
         'pr_number',
-        'title', // Field baru: Nama/Judul Permintaan
+        'title',
         'request_date',
         'required_date',
         'purpose',
         'status',
-        'priority', // Tambahan: Priority (Low, Medium, High) ala Odoo
+        'priority',
         'requested_by',
         'submitted_by',
         'approved_by',
@@ -31,12 +32,10 @@ class PurchaseRequisition extends Model
         'rejection_note',
     ];
 
-    // Tambahkan Priority Constants
     public const PRIORITY_LOW = '1';
     public const PRIORITY_MEDIUM = '2';
     public const PRIORITY_HIGH = '3';
 
-    // Tambahkan Method hitung Total (Sangat berguna buat Approver)
     public function getTotalEstimatedPriceAttribute()
     {
         return $this->items->sum(fn($item) => $item->quantity * $item->estimated_price);
@@ -151,40 +150,10 @@ class PurchaseRequisition extends Model
         ]);
     }
 
+    // Ubah function ini untuk memanggil Trait (Format: PR-2605-001)
     public static function generatePRNumber(): string
     {
-        $romanMonths = [
-            1 => 'I',
-            2 => 'II',
-            3 => 'III',
-            4 => 'IV',
-            5 => 'V',
-            6 => 'VI',
-            7 => 'VII',
-            8 => 'VIII',
-            9 => 'IX',
-            10 => 'X',
-            11 => 'XI',
-            12 => 'XII',
-        ];
-
-        $month = now()->month;
-        $year = now()->year;
-        $prefix = 'PR/NEX/' . $romanMonths[$month] . '/' . $year;
-
-        $lastPr = self::withTrashed()
-            ->where('pr_number', 'like', '%/' . $prefix)
-            ->orderByDesc('id')
-            ->first();
-
-        $sequence = 1;
-
-        if ($lastPr?->pr_number) {
-            $parts = explode('/', $lastPr->pr_number);
-            $sequence = ((int) ($parts[0] ?? 0)) + 1;
-        }
-
-        return str_pad((string) $sequence, 3, '0', STR_PAD_LEFT) . '/' . $prefix;
+        return self::generateDocNumber('PR', 'pr_number');
     }
 
     protected static function booted(): void

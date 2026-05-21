@@ -3,6 +3,7 @@
 namespace App\Models\Procurement;
 
 use App\Models\User;
+use App\Traits\GeneratesDocumentNumber;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -10,10 +11,13 @@ use Illuminate\Support\Facades\Auth;
 
 class PurchaseOrder extends Model
 {
+    use GeneratesDocumentNumber;
+
     protected $table = 'nx_purchase_orders';
 
     protected $fillable = [
         'po_number',
+        'title',
         'supplier_id',
         'purchase_requisition_id',
         'order_date',
@@ -77,6 +81,11 @@ class PurchaseOrder extends Model
         return $this->hasMany(\App\Models\Finance\PurchaseOrderPayment::class, 'purchase_order_id');
     }
 
+    public static function generatePONumber(): string
+    {
+        return self::generateDocNumber('PO-NEX', 'po_number');
+    }
+
     protected static function booted(): void
     {
         static::creating(function (self $model): void {
@@ -93,6 +102,7 @@ class PurchaseOrder extends Model
             }
         });
 
+        // Trigger otomatis untuk mengubah PR menjadi Completed saat PO dibuat
         static::created(function (self $model): void {
             if ($model->purchase_requisition_id) {
                 PurchaseRequisition::whereKey($model->purchase_requisition_id)
@@ -101,33 +111,5 @@ class PurchaseOrder extends Model
                     ]);
             }
         });
-    }
-
-    public static function generatePONumber(): string
-    {
-        $romanMonths = [
-            1 => 'I', 2 => 'II', 3 => 'III', 4 => 'IV', 5 => 'V', 6 => 'VI',
-            7 => 'VII', 8 => 'VIII', 9 => 'IX', 10 => 'X', 11 => 'XI', 12 => 'XII',
-        ];
-
-        $month = now()->month;
-        $year = now()->year;
-        $company = 'NEX';
-        $code = 'PO';
-
-        $prefix = "{$code}/{$company}/{$romanMonths[$month]}/{$year}";
-
-        $lastPo = self::where('po_number', 'like', "%/{$prefix}")
-            ->orderByDesc('id')
-            ->first();
-
-        $sequence = 1;
-
-        if ($lastPo?->po_number) {
-            $parts = explode('/', $lastPo->po_number);
-            $sequence = ((int) ($parts[0] ?? 0)) + 1;
-        }
-
-        return str_pad((string) $sequence, 3, '0', STR_PAD_LEFT) . "/{$prefix}";
     }
 }
