@@ -26,11 +26,24 @@ class ProcurementDashboard extends BaseDashboard
     }
 
     protected static ?string $module = 'procurement';
+
     protected static ?string $navigationIcon = 'heroicon-o-presentation-chart-line';
+
     protected static ?string $navigationGroup = 'Manajemen Procurement';
+
     protected static ?int $navigationSort = 0;
+
     protected static string $routePath = 'procurement-dashboard';
-    protected static ?string $title = 'Procurement Analytics';
+
+    protected static ?string $title = 'Dashboard';
+
+    public function getColumns(): int | string | array
+    {
+        return [
+            'md' => 12,
+            'xl' => 12,
+        ];
+    }
 
     public static function canAccess(): bool
     {
@@ -44,42 +57,55 @@ class ProcurementDashboard extends BaseDashboard
 
     public function filtersForm(Form $form): Form
     {
-        return $form->schema([
-            Section::make('Analytic Filters')
-                ->schema([
-                    DatePicker::make('startDate')
-                        ->label('Periode Awal')
-                        ->native(false)
-                        ->maxDate(now()),
+        return $form
+            ->schema([
+                Section::make()
+                    ->heading('Dashboard Filter')
+                    ->description('Sesuaikan periode dan supplier untuk melihat insight procurement.')
+                    ->schema([
+                        DatePicker::make('startDate')
+                            ->label('Start Date')
+                            ->native(false)
+                            ->maxDate(now()),
 
-                    DatePicker::make('endDate')
-                        ->label('Periode Akhir')
-                        ->native(false)
-                        ->maxDate(now())
-                        ->afterOrEqual('startDate'),
+                        DatePicker::make('endDate')
+                            ->label('End Date')
+                            ->native(false)
+                            ->afterOrEqual('startDate')
+                            ->maxDate(now()),
 
-                    Select::make('supplier_id')
-                        ->label('Filter Supplier')
-                        ->searchable()
-                        ->getSearchResultsUsing(fn (string $search): array => Supplier::query()
-                            ->where('name', 'like', "%{$search}%")
-                            ->limit(50)
-                            ->pluck('name', 'id')
-                            ->toArray()
-                        )
-                        ->getOptionLabelUsing(fn ($value): ?string => Supplier::find($value)?->name),
-                ])
-                ->columns(3)
-                ->collapsed(false),
-        ]);
+                        Select::make('supplier_id')
+                            ->label('Supplier')
+                            ->searchable()
+                            ->preload()
+                            ->placeholder('All Suppliers')
+                            ->getSearchResultsUsing(fn (string $search): array => Supplier::query()
+                                ->where('name', 'like', "%{$search}%")
+                                ->limit(50)
+                                ->pluck('name', 'id')
+                                ->toArray()
+                            )
+                            ->getOptionLabelUsing(
+                                fn ($value): ?string => Supplier::find($value)?->name
+                            ),
+                    ])
+                    ->columns(3)
+                    ->collapsible()
+                    ->persistCollapsed(),
+            ]);
     }
 
     public function getWidgets(): array
     {
         return [
             \App\Filament\Widgets\Procurement\ProcurementStatsOverview::class,
+
             \App\Filament\Widgets\Procurement\ProcurementMonthlyCostChart::class,
+
             \App\Filament\Widgets\Procurement\ProcurementPoStatusChart::class,
+
+            \App\Filament\Widgets\Procurement\PendingRequisitionTable::class,
+
             \App\Filament\Widgets\Procurement\ProcurementLatestPoTable::class,
         ];
     }

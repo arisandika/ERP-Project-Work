@@ -10,24 +10,29 @@ use Filament\Widgets\TableWidget as BaseWidget;
 
 class ProcurementLatestPoTable extends BaseWidget
 {
-    protected static ?int $sort = 4;
-    protected int|string|array $columnSpan = 'full';
+    protected static ?int $sort = 5;
+    protected int|string|array $columnSpan = 12;
     protected static ?string $heading = 'Purchase Order Terbaru';
 
     public function table(Table $table): Table
     {
         return $table
             ->query(
-                PurchaseOrder::query()->latest('created_at')->limit(5)
+                PurchaseOrder::query()
+                    ->with('supplier')
+                    ->latest('created_at')
+                    ->limit(5)
             )
             ->columns([
                 Tables\Columns\TextColumn::make('po_number')
                     ->label('Nomor PO')
                     ->searchable()
-                    ->weight('bold'),
+                    ->weight('bold')
+                    ->copyable(),
 
                 Tables\Columns\TextColumn::make('supplier.name')
-                    ->label('Supplier'),
+                    ->label('Supplier')
+                    ->icon('heroicon-m-building-office'),
 
                 Tables\Columns\TextColumn::make('order_date')
                     ->label('Tanggal Order')
@@ -35,7 +40,8 @@ class ProcurementLatestPoTable extends BaseWidget
 
                 Tables\Columns\TextColumn::make('grand_total')
                     ->label('Total')
-                    ->money('IDR', locale: 'id'),
+                    ->money('IDR', locale: 'id')
+                    ->alignment('right'),
 
                 Tables\Columns\TextColumn::make('status')
                     ->badge()
