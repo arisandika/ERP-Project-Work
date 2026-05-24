@@ -32,11 +32,11 @@ class ProfitAndLossReport extends Page implements HasForms
     }
 
     protected static ?string $module = 'finance';
-
-    protected static ?string $navigationIcon = 'heroicon-o-document-chart-bar';
     protected static ?string $navigationGroup = 'Manajemen Finance';
     protected static ?int $navigationSort = 4;
-    protected static ?string $title = 'Laporan Laba Rugi';
+    protected static ?string $navigationIcon = 'heroicon-o-chart-bar';
+    protected static ?string $title = 'Profit & Loss Report';
+    protected static ?string $navigationLabel = 'Profit & Loss';
     protected static ?string $slug = 'finance/profit-and-loss';
 
     protected static string $view = 'filament.pages.finance.profit-and-loss-report';

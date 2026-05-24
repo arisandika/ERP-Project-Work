@@ -9,48 +9,54 @@ use Filament\Widgets\TableWidget as BaseWidget;
 
 class LatestUnpaidPurchaseOrders extends BaseWidget
 {
-    protected static ?string $heading = '🟡 Hutang Supplier (A/P) Menunggu';
+    protected static ?string $heading = 'Outstanding Payables';
+
     protected static ?int $sort = 3;
+
+    protected int | string | array $columnSpan = [
+        'xl' => 6,
+    ];
 
     public function table(Table $table): Table
     {
         return $table
             ->query(
-                PurchaseOrder::whereIn('status', ['sent', 'partial'])
-                    ->orderBy('created_at', 'asc')
+                PurchaseOrder::query()
+                    ->whereIn('status', ['sent', 'partial'])
+                    ->latest()
                     ->limit(5)
             )
+
+            ->striped()
+
             ->columns([
+
                 Tables\Columns\TextColumn::make('po_number')
-                    ->label('No. PO')
-                    ->weight('bold')
+                    ->label('PO Number')
+                    ->weight('semibold')
                     ->color('primary')
-                    ->size('sm'),
+                    ->searchable(),
 
                 Tables\Columns\TextColumn::make('supplier.name')
                     ->label('Supplier')
-                    ->limit(15)
-                    ->size('sm'),
+                    ->limit(20),
 
                 Tables\Columns\TextColumn::make('status')
-                    ->label('Status')
                     ->badge()
                     ->color(fn (string $state): string => match ($state) {
                         'sent' => 'warning',
                         'partial' => 'info',
                         default => 'gray',
-                    })
-                    ->formatStateUsing(fn(string $state) => strtoupper($state))
-                    ->size('sm'),
+                    }),
 
                 Tables\Columns\TextColumn::make('grand_total')
-                    ->label('Total')
-                    ->money('IDR', true)
-                    ->color('danger')
+                    ->label('Outstanding')
+                    ->money('IDR', locale: 'id')
+                    ->alignRight()
                     ->weight('bold')
-                    ->size('sm'),
+                    ->color('danger'),
             ])
-            ->paginated(false)
-            ->striped();
+
+            ->paginated(false);
     }
 }

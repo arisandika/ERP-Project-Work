@@ -17,8 +17,8 @@ class PurchaseInvoiceResource extends Resource
     use BelongsToModule;
     protected static ?string $module = 'finance';
     protected static ?string $model = PurchaseInvoice::class;
-    protected static ?string $navigationIcon = 'heroicon-o-document-text';
-    protected static ?string $navigationGroup = 'Manajemen Finance'; // Pindah ke wilayah Finance!
+    protected static ?string $navigationIcon = 'heroicon-o-receipt-percent';
+    protected static ?string $navigationGroup = 'Manajemen Finance';
     protected static ?int $navigationSort = 1;
     protected static ?string $pluralModelLabel = 'Purchase Invoices (Tagihan)';
 
