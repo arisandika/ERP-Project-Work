@@ -3,54 +3,50 @@
 namespace App\Filament\Widgets\Procurement;
 
 use App\Models\Procurement\PurchaseOrder;
+use App\Enums\Procurement\PurchaseOrderStatus;
 use Filament\Tables;
 use Filament\Tables\Table;
-use Filament\Widgets\TableWidget as BaseWidget; // <-- Pastikan extends TableWidget, BUKAN Widget biasa
+use Filament\Widgets\TableWidget as BaseWidget;
 
 class ProcurementLatestPoTable extends BaseWidget
 {
-    protected static ?string $heading = 'Purchase Order Terakhir';
-    protected static ?int $sort = 3;
-    protected int | string | array $columnSpan = 'full';
-
-    // Kunci biar cuma muncul di dashboard procurement
-    public static function canView(): bool
-    {
-        return request()->routeIs('filament.admin.pages.procurement-dashboard')
-            || request()->routeIs('livewire.update');
-    }
+    protected static ?int $sort = 4;
+    protected int|string|array $columnSpan = 'full';
+    protected static ?string $heading = 'Purchase Order Terbaru';
 
     public function table(Table $table): Table
     {
         return $table
             ->query(
-                PurchaseOrder::query()->latest()->limit(5)
+                PurchaseOrder::query()->latest('created_at')->limit(5)
             )
             ->columns([
                 Tables\Columns\TextColumn::make('po_number')
                     ->label('Nomor PO')
+                    ->searchable()
                     ->weight('bold'),
+
                 Tables\Columns\TextColumn::make('supplier.name')
                     ->label('Supplier'),
+
                 Tables\Columns\TextColumn::make('order_date')
-                    ->label('Tgl Pesan')
+                    ->label('Tanggal Order')
                     ->date('d M Y'),
-                Tables\Columns\TextColumn::make('status')
-                    ->label('Status')
-                    ->badge()
-                    ->color(fn (string $state): string => match ($state) {
-                        'draft' => 'gray',
-                        'sent' => 'warning',
-                        'partial' => 'info',
-                        'completed' => 'success',
-                        'cancelled' => 'danger',
-                    })
-                    ->formatStateUsing(fn(string $state) => strtoupper($state)),
+
                 Tables\Columns\TextColumn::make('grand_total')
-                    ->label('Total Nilai')
-                    ->money('IDR', true)
-                    ->weight('bold'),
+                    ->label('Total')
+                    ->money('IDR', locale: 'id'),
+
+                Tables\Columns\TextColumn::make('status')
+                    ->badge()
+                    ->color(fn (PurchaseOrderStatus $state): string => match ($state) {
+                        PurchaseOrderStatus::DRAFT     => 'gray',
+                        PurchaseOrderStatus::SENT      => 'info',
+                        PurchaseOrderStatus::PARTIAL   => 'warning',
+                        PurchaseOrderStatus::COMPLETED => 'success',
+                        PurchaseOrderStatus::CANCELLED => 'danger',
+                    }),
             ])
-            ->paginated(false); // Matikan pagination biar ringkas
+            ->paginated(false);
     }
 }

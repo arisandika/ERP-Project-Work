@@ -2,51 +2,83 @@
 
 namespace App\Filament\Widgets\Procurement;
 
-use App\Models\Procurement\PurchaseOrder;
+use App\Models\Procurement\PurchaseInvoice;
+use App\Enums\Procurement\PurchaseInvoiceStatus;
 use Filament\Widgets\ChartWidget;
-use Illuminate\Support\Facades\DB;
+use Filament\Widgets\Concerns\InteractsWithPageFilters;
+use Illuminate\Support\Carbon;
+use Illuminate\Database\Eloquent\Builder;
 
 class ProcurementMonthlyCostChart extends ChartWidget
 {
-    protected static ?string $heading = 'Pengeluaran PO per Bulan';
-    protected static ?int $sort = 2; // Biar sebelahan persis sama Pie Chart
+    use InteractsWithPageFilters;
+
+    protected static ?string $heading = 'Analisis Tren Pengeluaran';
+    protected static ?int $sort = 3;
+    protected int|string|array $columnSpan = 'full';
 
     protected function getData(): array
     {
-        // Ambil data total PO per bulan di tahun ini
-        $data = PurchaseOrder::select(
-                DB::raw('MONTH(created_at) as month'),
-                DB::raw('SUM(grand_total) as total')
-            )
-            ->whereYear('created_at', now()->year)
-            ->whereNotIn('status', ['cancelled']) // Abaikan yang batal
-            ->groupBy('month')
-            ->pluck('total', 'month')
+        $supplierId = $this->filters['supplier_id'] ?? null;
+        $sixMonthsAgo = Carbon::now()->subMonths(5)->startOfMonth();
+
+        // Optimasi: Hanya satu kueri ke database
+        $results = PurchaseInvoice::query()
+            ->selectRaw('SUM(grand_total) as total, DATE_FORMAT(invoice_date, "%Y-%m") as month_year')
+            ->where('invoice_date', '>=', $sixMonthsAgo)
+            // Memanggil Enum dengan benar:
+            ->where('status', '!=', PurchaseInvoiceStatus::CANCELLED)
+            ->when($supplierId, fn (Builder $q) => $q->where('supplier_id', $supplierId))
+            ->groupBy('month_year')
+            ->orderBy('month_year', 'asc')
+            ->pluck('total', 'month_year')
             ->toArray();
 
-        $chartData = [];
-        $months = ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agt', 'Sep', 'Okt', 'Nov', 'Des'];
+        $data = [];
+        $labels = [];
 
-        // Looping 12 bulan biar grafiknya full dari Jan - Des
-        for ($i = 1; $i <= 12; $i++) {
-            $chartData[] = $data[$i] ?? 0;
+        // Mapping hasil ke 6 bulan terakhir
+        for ($i = 5; $i >= 0; $i--) {
+            $month = Carbon::now()->subMonths($i);
+            $key = $month->format('Y-m');
+
+            $labels[] = $month->translatedFormat('M Y');
+            // Jika data bulan tersebut tidak ada, set ke 0
+            $data[] = (float) ($results[$key] ?? 0);
         }
 
         return [
             'datasets' => [
                 [
-                    'label' => 'Total Nilai PO (Rp)',
-                    'data' => $chartData,
-                    'backgroundColor' => '#3b82f6', // Warna biru yang nyambung sama tema
-                    'borderRadius' => 4,
+                    'label' => 'Total Nilai Pembelian (IDR)',
+                    'data' => $data,
+                    'fill' => 'start',
+                    'borderColor' => '#10b981',
+                    'backgroundColor' => 'rgba(16, 185, 129, 0.1)',
                 ],
             ],
-            'labels' => $months,
+            'labels' => $labels,
         ];
     }
 
     protected function getType(): string
     {
-        return 'bar';
+        return 'line';
+    }
+
+    protected function getOptions(): array
+    {
+        return [
+            'elements' => [
+                'line' => ['tension' => 0.4],
+            ],
+            'scales' => [
+                'y' => [
+                    'ticks' => [
+                        'callback' => fn ($value) => 'Rp' . number_format($value / 1000000, 1) . 'M',
+                    ],
+                ],
+            ],
+        ];
     }
 }

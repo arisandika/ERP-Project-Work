@@ -21,17 +21,13 @@ use App\Filament\Concerns\BelongsToModule;
 class WarehouseResource extends Resource
 {
     use BelongsToModule;
+
     protected static ?string $module = 'inventory';
     protected static ?string $model = Warehouse::class;
-
     protected static ?string $navigationIcon = 'heroicon-o-home-modern';
-
     protected static ?string $navigationGroup = 'Manajemen Inventory';
-
     protected static ?int $navigationSort = 3;
-
     protected static ?string $slug = 'inventory/warehouses';
-
     protected static ?string $pluralModelLabel = 'Gudang';
 
     public static function form(Form $form): Form
@@ -60,22 +56,25 @@ class WarehouseResource extends Resource
                                     ->label('No. Telepon')
                                     ->tel()
                                     ->maxLength(20)
+                                    ->regex('/^([0-9\s\-\+\(\)]*)$/') // Proteksi karakter aneh
                                     ->placeholder('08xx-xxxx-xxxx')
                                     ->prefixIcon('heroicon-o-phone'),
 
                                 Forms\Components\TextInput::make('maps_url')
                                     ->label('Link Google Maps')
                                     ->url()
-                                    ->placeholder('https://maps.google.com/...')
+                                    ->maxLength(255) // Validasi panjang URL agar tidak DB Error
+                                    ->placeholder('http://maps.google.com/...')
                                     ->prefixIcon('heroicon-o-map-pin'),
                             ]),
 
                         Forms\Components\Textarea::make('location')
                             ->label('Lokasi')
                             ->required()
-                            ->maxLength(255)
+                            // ->maxLength(255) Dihapus agar user bisa input alamat panjang.
+                            // Pastikan di database field location bertipe TEXT, bukan VARCHAR.
                             ->rows(3)
-                            ->placeholder('Masukkan alamat lengkap gudang')
+                            ->placeholder('Masukkan alamat lengkap gudang (Jalan, RT/RW, Kelurahan, dll)')
                             ->columnSpanFull(),
 
                         Forms\Components\Toggle::make('is_active')
@@ -131,13 +130,10 @@ class WarehouseResource extends Resource
                     ->color('info')
                     ->suffix(' Items'),
 
+                // Kolom Total Qty sekarang jauh lebih bersih (Menggunakan Model Accessor)
                 Tables\Columns\TextColumn::make('total_qty')
                     ->label('Total Stock')
-                    ->getStateUsing(fn($record) =>
-                        ($record->sum_qty_available ?? 0) +
-                        ($record->sum_qty_reserved ?? 0) +
-                        ($record->sum_qty_on_delivery ?? 0)
-                    )
+                    ->getStateUsing(fn(Warehouse $record) => $record->total_stock)
                     ->numeric()
                     ->sortable()
                     ->badge()
@@ -208,15 +204,12 @@ class WarehouseResource extends Resource
                     })
                     ->indicateUsing(function (array $data): array {
                         $indicators = [];
-
                         if ($data['created_from'] ?? null) {
                             $indicators[] = 'Created from ' . Carbon::parse($data['created_from'])->toFormattedDateString();
                         }
-
                         if ($data['created_until'] ?? null) {
                             $indicators[] = 'Created until ' . Carbon::parse($data['created_until'])->toFormattedDateString();
                         }
-
                         return $indicators;
                     }),
             ])
@@ -225,7 +218,9 @@ class WarehouseResource extends Resource
                 Tables\Actions\EditAction::make(),
                 Tables\Actions\DeleteAction::make()
                     ->requiresConfirmation()
-                    ->modalDescription('Gudang hanya dapat dihapus jika tidak memiliki data stock.'),
+                    // Proteksi keamanan sesungguhnya: Tombol ter-disable jika masih ada relasi stok
+                    ->disabled(fn (Warehouse $record): bool => $record->hasStocks())
+                    ->tooltip(fn (Warehouse $record): ?string => $record->hasStocks() ? 'Gudang tidak dapat dihapus karena masih ada stok tersimpan.' : null),
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([
@@ -234,6 +229,7 @@ class WarehouseResource extends Resource
             ])
             ->defaultSort('created_at', 'desc')
             ->modifyQueryUsing(function ($query) {
+                // Di sini data kalkulasi di query di awal agar tidak menyebabkan N+1 di table
                 $query->withCount([
                     'stocks as total_products' => function ($q) {
                         $q->select(DB::raw('COUNT(DISTINCT product_id)'));
@@ -271,18 +267,15 @@ class WarehouseResource extends Resource
                             ->label('Jumlah Product')
                             ->badge()
                             ->color('info')
-                            ->state(fn(Warehouse $record) => $record->stocks()->distinct('product_id')->count('product_id'))
+                            ->state(fn(Warehouse $record) => $record->total_products)
                             ->suffix(' items'),
 
                         TextEntry::make('total_qty')
                             ->label('Total Stock')
                             ->badge()
                             ->color('success')
-                            ->state(fn(Warehouse $record) =>
-                                $record->stocks()->sum('qty_available') +
-                                $record->stocks()->sum('qty_reserved') +
-                                $record->stocks()->sum('qty_on_delivery')
-                            )
+                            // Panggil properti dari model (Sangat rapi & tidak redundant)
+                            ->state(fn(Warehouse $record) => $record->total_stock)
                             ->suffix(' unit'),
                     ]),
 

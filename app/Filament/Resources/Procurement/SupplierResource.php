@@ -27,110 +27,151 @@ class SupplierResource extends Resource
     {
         return $form
             ->schema([
-                // SECTION 1: IDENTITAS (HEADER)
-                Forms\Components\Section::make('Informasi Utama')
-                    ->description('Detail dasar identitas entitas supplier.')
+                Forms\Components\Group::make()
                     ->schema([
-                        Forms\Components\TextInput::make('name')
-                            ->label('Nama Perusahaan / Supplier')
-                            ->required()
-                            ->maxLength(255)
-                            ->placeholder('Masukkan nama PT atau Individu')
-                            ->columnSpanFull(),
-
-                        Forms\Components\Grid::make([
-                            'default' => 1,
-                            'md'      => 3,
-                        ])
+                        // SECTION 1: IDENTITAS
+                        Forms\Components\Section::make('Informasi Utama')
+                            ->description('Detail dasar identitas entitas supplier.')
                             ->schema([
-                                Forms\Components\TextInput::make('supplier_code')
-                                    ->label('Kode Supplier')
-                                    ->disabled()
-                                    ->dehydrated(),
+                                Forms\Components\TextInput::make('name')
+                                    ->label('Nama Perusahaan / Supplier / Toko')
+                                    ->required()
+                                    ->maxLength(255)
+                                    ->placeholder('Contoh: PT. Maju Jaya / Toko Makmur Shopee')
+                                    ->columnSpanFull(),
 
-                                Forms\Components\Select::make('status')
-                                    ->options([
-                                        'active'      => 'Aktif',
-                                        'inactive'    => 'Non-Aktif',
-                                        'blacklisted' => 'Blacklist'
-                                    ])
-                                    ->default('active')
-                                    ->native(false),
+                                Forms\Components\Grid::make(3)
+                                    ->schema([
+                                        // FIELD YANG SUDAH DIREVISI AGAR LANGSUNG MUNCUL DI UI
+                                        Forms\Components\TextInput::make('supplier_code')
+                                            ->label('Kode Supplier')
+                                            ->required()
+                                            ->unique(ignoreRecord: true)
+                                            ->disabled()
+                                            ->dehydrated()
+                                            ->default(function () {
+                                                $prefix = 'SUP-' . date('Y') . '-';
+                                                $lastSupplier = Supplier::where('supplier_code', 'like', $prefix . '%')
+                                                    ->latest('id')
+                                                    ->first();
 
-                                Forms\Components\Checkbox::make('is_company')
-                                    ->label('Apakah Perusahaan?')
-                                    ->default(true)
-                                    ->inline(false),
-                            ]),
-                    ]),
+                                                $number = $lastSupplier ? ((int) substr($lastSupplier->supplier_code, -3)) + 1 : 1;
+                                                return $prefix . str_pad($number, 3, '0', STR_PAD_LEFT);
+                                            }),
 
-                // SECTION 2: KONTAK & ALAMAT
-                Forms\Components\Section::make('Kontak & Alamat')
-                    ->schema([
-                        Forms\Components\Grid::make([
-                            'default' => 1,
-                            'md'      => 2,
-                        ])
-                            ->schema([
-                                Forms\Components\TextInput::make('contact_person')
-                                    ->label('Nama PIC Supplier')
-                                    ->placeholder('Masukan nama PIC atau Penanggungjawab'),
+                                        Forms\Components\Select::make('category')
+                                            ->label('Kategori Entitas')
+                                            ->options([
+                                                'company' => 'Perusahaan (PT/CV)',
+                                                'individual' => 'Individu / Perorangan',
+                                                'marketplace' => 'Marketplace (Shopee, dll)',
+                                            ])
+                                            ->required()
+                                            ->default('company')
+                                            ->native(false),
 
-                                Forms\Components\TextInput::make('tax_id')
-                                    ->label('NPWP / Tax ID'),
-
-                                Forms\Components\TextInput::make('phone')
-                                    ->label('No. WhatsApp')
-                                    ->tel(),
-
-                                Forms\Components\TextInput::make('email')
-                                    ->label('Email Utama')
-                                    ->email(),
+                                        Forms\Components\Select::make('status')
+                                            ->label('Status')
+                                            ->options([
+                                                'active'      => 'Aktif',
+                                                'inactive'    => 'Non-Aktif',
+                                                'blacklisted' => 'Blacklist'
+                                            ])
+                                            ->default('active')
+                                            ->native(false),
+                                    ]),
 
                                 Forms\Components\Textarea::make('address')
                                     ->label('Alamat Lengkap')
                                     ->rows(3)
                                     ->columnSpanFull(),
                             ]),
-                    ]),
 
-                // SECTION 3: KEUANGAN
-                Forms\Components\Section::make('Informasi Keuangan')
-                    ->schema([
-                        Forms\Components\Grid::make([
-                            'default' => 1,
-                            'md'      => 3,
-                        ])
+                        // SECTION 2: KEUANGAN
+                        Forms\Components\Section::make('Informasi Keuangan & Pembayaran')
                             ->schema([
-                                Forms\Components\TextInput::make('bank_name')
-                                    ->label('Nama Bank'),
+                                Forms\Components\Grid::make(2)
+                                    ->schema([
+                                        Forms\Components\TextInput::make('tax_id')
+                                            ->label('NPWP / NIK (Jika Individu)'),
 
-                                Forms\Components\TextInput::make('bank_account_number')
-                                    ->label('No. Rekening'),
+                                        Forms\Components\Select::make('payment_term')
+                                            ->label('Term of Payment')
+                                            ->options([
+                                                'cod'    => 'Cash On Delivery (COD)',
+                                                'net_7'  => 'Net 7 Days',
+                                                'net_30' => 'Net 30 Days',
+                                                'net_45' => 'Net 45 Days'
+                                            ])
+                                            ->native(false),
+                                    ]),
 
-                                Forms\Components\TextInput::make('bank_account_name')
-                                    ->label('Atas Nama Rekening'),
+                                Forms\Components\Grid::make(3)
+                                    ->schema([
+                                        Forms\Components\TextInput::make('bank_name')
+                                            ->label('Nama Bank')
+                                            ->placeholder('Contoh: BCA / Mandiri'),
 
-                                Forms\Components\Select::make('payment_term')
-                                    ->label('Term of Payment')
-                                    ->options([
-                                        'cod'    => 'COD',
-                                        'net_30' => '30 Days',
-                                        'net_45' => '45 Days'
-                                    ])
-                                    ->native(false),
+                                        Forms\Components\TextInput::make('bank_account_number')
+                                            ->label('No. Rekening')
+                                            ->numeric(),
 
-                                Forms\Components\Select::make('currency')
-                                    ->label('Mata Uang')
-                                    ->options([
-                                        'IDR' => 'IDR',
-                                        'USD' => 'USD'
-                                    ])
-                                    ->default('IDR')
-                                    ->native(false),
+                                        Forms\Components\TextInput::make('bank_account_name')
+                                            ->label('Atas Nama Rekening'),
+                                    ]),
                             ]),
-                    ]),
-            ]);
+                    ])->columnSpan(['lg' => 2]),
+
+                // SIDEBAR: PIC & KONTAK TAMBAHAN
+                Forms\Components\Group::make()
+                    ->schema([
+                        Forms\Components\Section::make('Primary PIC (Penanggung Jawab)')
+                            ->schema([
+                                Forms\Components\TextInput::make('contact_person')
+                                    ->label('Nama PIC')
+                                    ->required(),
+
+                                Forms\Components\TextInput::make('pic_position')
+                                    ->label('Jabatan PIC')
+                                    ->placeholder('Contoh: Sales Manager / Owner'),
+
+                                Forms\Components\TextInput::make('phone')
+                                    ->label('No. Telepon / WhatsApp')
+                                    ->tel()
+                                    ->regex('/^([0-9\s\-\+\(\)]*)$/')
+                                    ->required(),
+
+                                Forms\Components\TextInput::make('email')
+                                    ->label('Email PIC')
+                                    ->email(),
+                            ]),
+
+                        // REPEATER UNTUK KONTAK TAMBAHAN
+                        Forms\Components\Section::make('Kontak Tambahan (Opsional)')
+                            ->description('Kontak gudang, finance, logistik, dll.')
+                            ->collapsed()
+                            ->schema([
+                                Forms\Components\Repeater::make('contacts')
+                                    ->relationship()
+                                    ->schema([
+                                        Forms\Components\Select::make('type')
+                                            ->label('Tipe Kontak')
+                                            ->options([
+                                                'finance' => 'Finance / Invoice',
+                                                'delivery' => 'Pengiriman / Logistik',
+                                                'other' => 'Lainnya'
+                                            ])
+                                            ->native(false)
+                                            ->required(),
+                                        Forms\Components\TextInput::make('name')->label('Nama')->required(),
+                                        Forms\Components\TextInput::make('phone')->label('Telepon')->tel(),
+                                    ])
+                                    ->itemLabel(fn (array $state): ?string => $state['name'] ?? null)
+                                    ->addActionLabel('Tambah Kontak')
+                                    ->columns(1),
+                            ])
+                    ])->columnSpan(['lg' => 1]),
+            ])->columns(3);
     }
 
     public static function table(Table $table): Table
@@ -139,14 +180,35 @@ class SupplierResource extends Resource
             ->columns([
                 Tables\Columns\TextColumn::make('supplier_code')
                     ->label('Kode')
-                    ->fontFamily('mono'),
+                    ->searchable()
+                    ->sortable()
+                    ->fontFamily('mono')
+                    ->weight('bold'),
 
                 Tables\Columns\TextColumn::make('name')
-                    ->label('Nama Supplier')
-                    ->searchable(),
+                    ->label('Nama Entitas')
+                    ->searchable()
+                    ->sortable(),
+
+                Tables\Columns\TextColumn::make('category')
+                    ->label('Kategori')
+                    ->badge()
+                    ->color(fn (string $state): string => match ($state) {
+                        'company' => 'info',
+                        'individual' => 'success',
+                        'marketplace' => 'warning',
+                        default => 'gray',
+                    })
+                    ->formatStateUsing(fn ($state) => ucfirst($state)),
 
                 Tables\Columns\TextColumn::make('contact_person')
-                    ->label('PIC'),
+                    ->label('PIC Utama')
+                    ->description(fn (Supplier $record): string => $record->pic_position ?? 'Tidak ada jabatan')
+                    ->searchable(),
+
+                Tables\Columns\TextColumn::make('phone')
+                    ->label('Kontak')
+                    ->icon('heroicon-m-phone'),
 
                 Tables\Columns\TextColumn::make('status')
                     ->badge()
@@ -156,6 +218,15 @@ class SupplierResource extends Resource
                         'blacklisted' => 'danger',
                         default       => 'gray'
                     }),
+            ])
+            ->filters([
+                Tables\Filters\SelectFilter::make('category')
+                    ->label('Kategori Supplier')
+                    ->options([
+                        'company' => 'Perusahaan',
+                        'individual' => 'Individu',
+                        'marketplace' => 'Marketplace',
+                    ]),
             ])
             ->actions([
                 Tables\Actions\EditAction::make(),

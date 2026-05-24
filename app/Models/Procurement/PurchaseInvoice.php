@@ -25,12 +25,8 @@ class PurchaseInvoice extends Model
         'discount_amount' => 'decimal:2',
         'grand_total' => 'decimal:2',
         'total_paid' => 'decimal:2',
+        'status' => \App\Enums\Procurement\PurchaseInvoiceStatus::class,
     ];
-
-    public const STATUS_UNPAID = 'unpaid';
-    public const STATUS_PARTIAL = 'partial';
-    public const STATUS_PAID = 'paid';
-    public const STATUS_CANCELLED = 'cancelled';
 
     public function purchaseOrder(): BelongsTo
     {

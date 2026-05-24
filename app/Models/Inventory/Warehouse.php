@@ -1,4 +1,5 @@
 <?php
+
 namespace App\Models\Inventory;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -41,13 +42,33 @@ class Warehouse extends Model
     // Get total products in warehouse
     public function getTotalProductsAttribute(): int
     {
-        return $this->stocks()->distinct('product_id')->count('id');
+        // Jika sudah di-load dengan withCount dari Filament, gunakan attribute tersebut
+        if (array_key_exists('total_products', $this->attributes)) {
+            return (int) $this->total_products;
+        }
+        return $this->stocks()->distinct('product_id')->count('product_id');
     }
 
     // Get total stock quantity in warehouse
     public function getTotalStockAttribute(): int
     {
-        return $this->stocks()->sum('qty');
+        // Cek apakah data aggregate dari Filament Table (withSum) sudah ada untuk performa
+        if (array_key_exists('sum_qty_available', $this->attributes)) {
+            return ($this->sum_qty_available ?? 0) +
+                   ($this->sum_qty_reserved ?? 0) +
+                   ($this->sum_qty_on_delivery ?? 0);
+        }
+
+        // Fallback untuk Infolist / pemanggilan biasa
+        return (int) $this->stocks()
+            ->selectRaw('COALESCE(SUM(qty_available), 0) + COALESCE(SUM(qty_reserved), 0) + COALESCE(SUM(qty_on_delivery), 0) as total')
+            ->value('total');
+    }
+
+    // Cek apakah gudang memiliki stok (untuk proteksi delete)
+    public function hasStocks(): bool
+    {
+        return $this->stocks()->exists();
     }
 
     // Get low stock items in this warehouse
@@ -57,8 +78,9 @@ class Warehouse extends Model
             ->with('product')
             ->get()
             ->filter(function ($stock) {
+                // Asumsi field qty_available yang digunakan untuk cek threshold
                 $threshold = 10;
-                return $stock->qty < $threshold;
+                return $stock->qty_available < $threshold;
             });
     }
 

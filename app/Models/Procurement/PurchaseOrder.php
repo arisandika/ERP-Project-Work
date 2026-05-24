@@ -38,13 +38,8 @@ class PurchaseOrder extends Model
         'tax_amount' => 'decimal:2',
         'discount_amount' => 'decimal:2',
         'grand_total' => 'decimal:2',
+        'status' => \App\Enums\Procurement\PurchaseOrderStatus::class,
     ];
-
-    public const STATUS_DRAFT = 'draft';
-    public const STATUS_SENT = 'sent';
-    public const STATUS_PARTIAL = 'partial';
-    public const STATUS_COMPLETED = 'completed';
-    public const STATUS_CANCELLED = 'cancelled';
 
     public function supplier(): BelongsTo
     {
@@ -98,8 +93,9 @@ class PurchaseOrder extends Model
             }
 
             if (blank($model->status)) {
-                $model->status = self::STATUS_DRAFT;
+                $model->status = \App\Enums\Procurement\PurchaseOrderStatus::DRAFT;
             }
+
         });
 
         // Trigger otomatis untuk mengubah PR menjadi Completed saat PO dibuat
@@ -107,7 +103,7 @@ class PurchaseOrder extends Model
             if ($model->purchase_requisition_id) {
                 PurchaseRequisition::whereKey($model->purchase_requisition_id)
                     ->update([
-                        'status' => PurchaseRequisition::STATUS_COMPLETED,
+                        'status' => \App\Models\Procurement\PurchaseRequisition::STATUS_COMPLETED,
                     ]);
             }
         });
