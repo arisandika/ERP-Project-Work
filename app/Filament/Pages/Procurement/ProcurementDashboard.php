@@ -3,16 +3,18 @@
 namespace App\Filament\Pages\Procurement;
 
 use App\Filament\Concerns\BelongsToModule;
+use App\Models\Procurement\Supplier;
 use BezhanSalleh\FilamentShield\Traits\HasPageShield;
+use Filament\Forms\Components\DatePicker;
+use Filament\Forms\Components\Section;
+use Filament\Forms\Components\Select;
+use Filament\Forms\Form;
+use Filament\Pages\Dashboard\Concerns\HasFiltersForm;
 use Filament\Pages\Dashboard as BaseDashboard;
 
 class ProcurementDashboard extends BaseDashboard
 {
-    /**
-     * Resolusi Konflik Trait
-     * Kita harus menggabungkan logika Shield (Permission) dan Modul (Tenant Access).
-     */
-    use HasPageShield, BelongsToModule {
+    use HasPageShield, BelongsToModule, HasFiltersForm {
         HasPageShield::canAccess insteadof BelongsToModule;
         HasPageShield::shouldRegisterNavigation insteadof BelongsToModule;
 
@@ -23,43 +25,87 @@ class ProcurementDashboard extends BaseDashboard
         BelongsToModule::shouldRegisterNavigation as moduleShouldRegisterNavigation;
     }
 
-    // Identitas Modul untuk pengecekan BelongsToModule
     protected static ?string $module = 'procurement';
 
     protected static ?string $navigationIcon = 'heroicon-o-presentation-chart-line';
+
     protected static ?string $navigationGroup = 'Manajemen Procurement';
+
     protected static ?int $navigationSort = 0;
 
     protected static string $routePath = 'procurement-dashboard';
-    protected static ?string $title = 'Dashboard Procurement';
 
-    /**
-     * Override akses: Halaman hanya bisa diakses jika:
-     * 1. User memiliki permission/role (Shield)
-     * 2. Modul Procurement aktif (BelongsToModule)
-     */
+    protected static ?string $title = 'Dashboard';
+
+    public function getColumns(): int | string | array
+    {
+        return [
+            'md' => 12,
+            'xl' => 12,
+        ];
+    }
+
     public static function canAccess(): bool
     {
         return static::shieldCanAccess() && static::moduleCanAccess();
     }
 
-    /**
-     * Pastikan navigasi di sidebar juga mengikuti aturan yang sama
-     */
     public static function shouldRegisterNavigation(): bool
     {
         return static::shieldShouldRegisterNavigation() && static::moduleShouldRegisterNavigation();
     }
 
-    /**
-     * Pendaftaran Widget
-     */
+    public function filtersForm(Form $form): Form
+    {
+        return $form
+            ->schema([
+                Section::make()
+                    ->heading('Dashboard Filter')
+                    ->description('Sesuaikan periode dan supplier untuk melihat insight procurement.')
+                    ->schema([
+                        DatePicker::make('startDate')
+                            ->label('Start Date')
+                            ->native(false)
+                            ->maxDate(now()),
+
+                        DatePicker::make('endDate')
+                            ->label('End Date')
+                            ->native(false)
+                            ->afterOrEqual('startDate')
+                            ->maxDate(now()),
+
+                        Select::make('supplier_id')
+                            ->label('Supplier')
+                            ->searchable()
+                            ->preload()
+                            ->placeholder('All Suppliers')
+                            ->getSearchResultsUsing(fn (string $search): array => Supplier::query()
+                                ->where('name', 'like', "%{$search}%")
+                                ->limit(50)
+                                ->pluck('name', 'id')
+                                ->toArray()
+                            )
+                            ->getOptionLabelUsing(
+                                fn ($value): ?string => Supplier::find($value)?->name
+                            ),
+                    ])
+                    ->columns(3)
+                    ->collapsible()
+                    ->persistCollapsed(),
+            ]);
+    }
+
     public function getWidgets(): array
     {
         return [
             \App\Filament\Widgets\Procurement\ProcurementStatsOverview::class,
-            \App\Filament\Widgets\Procurement\ProcurementPoStatusChart::class,
+
             \App\Filament\Widgets\Procurement\ProcurementMonthlyCostChart::class,
+
+            \App\Filament\Widgets\Procurement\ProcurementPoStatusChart::class,
+
+            \App\Filament\Widgets\Procurement\PendingRequisitionTable::class,
+
             \App\Filament\Widgets\Procurement\ProcurementLatestPoTable::class,
         ];
     }

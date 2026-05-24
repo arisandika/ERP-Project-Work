@@ -3,44 +3,31 @@
 namespace App\Models\Procurement;
 
 use App\Models\User;
+use App\Traits\GeneratesDocumentNumber;
+use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use RuntimeException;
 
 class PurchaseRequisition extends Model
 {
-    use SoftDeletes;
+    use SoftDeletes, GeneratesDocumentNumber;
 
     protected $table = 'nx_purchase_requisitions';
 
     protected $guarded = ['id'];
 
-    protected $fillable = [
-        'pr_number',
-        'title', // Field baru: Nama/Judul Permintaan
-        'request_date',
-        'required_date',
-        'purpose',
-        'status',
-        'priority', // Tambahan: Priority (Low, Medium, High) ala Odoo
-        'requested_by',
-        'submitted_by',
-        'approved_by',
-        'submitted_at',
-        'approved_at',
-        'rejection_note',
-    ];
-
-    // Tambahkan Priority Constants
     public const PRIORITY_LOW = '1';
     public const PRIORITY_MEDIUM = '2';
     public const PRIORITY_HIGH = '3';
 
-    // Tambahkan Method hitung Total (Sangat berguna buat Approver)
-    public function getTotalEstimatedPriceAttribute()
-    {
-        return $this->items->sum(fn($item) => $item->quantity * $item->estimated_price);
-    }
+    public const STATUS_DRAFT = 'draft';
+    public const STATUS_PENDING = 'pending';
+    public const STATUS_APPROVED = 'approved';
+    public const STATUS_REJECTED = 'rejected';
+    public const STATUS_COMPLETED = 'completed';
 
     protected $casts = [
         'request_date' => 'date',
@@ -49,33 +36,34 @@ class PurchaseRequisition extends Model
         'approved_at' => 'datetime',
     ];
 
-    public const STATUS_DRAFT = 'draft';
-    public const STATUS_PENDING = 'pending';
-    public const STATUS_APPROVED = 'approved';
-    public const STATUS_REJECTED = 'rejected';
-    public const STATUS_COMPLETED = 'completed';
+    protected function totalEstimatedPrice(): Attribute
+    {
+        return Attribute::make(
+            get: fn () => $this->items()->sum(\Illuminate\Support\Facades\DB::raw('quantity * estimated_price'))
+        );
+    }
 
-    public function items()
+    public function items(): HasMany
     {
         return $this->hasMany(PurchaseRequisitionItem::class, 'purchase_requisition_id');
     }
 
-    public function requester()
+    public function requester(): BelongsTo
     {
         return $this->belongsTo(User::class, 'requested_by');
     }
 
-    public function submitter()
+    public function submitter(): BelongsTo
     {
         return $this->belongsTo(User::class, 'submitted_by');
     }
 
-    public function approver()
+    public function approver(): BelongsTo
     {
         return $this->belongsTo(User::class, 'approved_by');
     }
 
-    public function purchaseOrders()
+    public function purchaseOrders(): HasMany
     {
         return $this->hasMany(PurchaseOrder::class, 'purchase_requisition_id');
     }
@@ -90,28 +78,13 @@ class PurchaseRequisition extends Model
         return $this->status === self::STATUS_PENDING;
     }
 
-    public function isApproved(): bool
-    {
-        return $this->status === self::STATUS_APPROVED;
-    }
-
-    public function isRejected(): bool
-    {
-        return $this->status === self::STATUS_REJECTED;
-    }
-
-    public function isCompleted(): bool
-    {
-        return $this->status === self::STATUS_COMPLETED;
-    }
-
     public function submitForApproval(): void
     {
         if (! $this->isDraft()) {
             throw new RuntimeException('Hanya PR dengan status draft yang bisa diajukan.');
         }
 
-        if ($this->items()->count() === 0) {
+        if (! $this->items()->exists()) {
             throw new RuntimeException('Purchase Requisition harus memiliki minimal 1 item.');
         }
 
@@ -150,41 +123,9 @@ class PurchaseRequisition extends Model
             'rejection_note' => $reason,
         ]);
     }
-
     public static function generatePRNumber(): string
     {
-        $romanMonths = [
-            1 => 'I',
-            2 => 'II',
-            3 => 'III',
-            4 => 'IV',
-            5 => 'V',
-            6 => 'VI',
-            7 => 'VII',
-            8 => 'VIII',
-            9 => 'IX',
-            10 => 'X',
-            11 => 'XI',
-            12 => 'XII',
-        ];
-
-        $month = now()->month;
-        $year = now()->year;
-        $prefix = 'PR/NEX/' . $romanMonths[$month] . '/' . $year;
-
-        $lastPr = self::withTrashed()
-            ->where('pr_number', 'like', '%/' . $prefix)
-            ->orderByDesc('id')
-            ->first();
-
-        $sequence = 1;
-
-        if ($lastPr?->pr_number) {
-            $parts = explode('/', $lastPr->pr_number);
-            $sequence = ((int) ($parts[0] ?? 0)) + 1;
-        }
-
-        return str_pad((string) $sequence, 3, '0', STR_PAD_LEFT) . '/' . $prefix;
+        return self::generateDocNumber('PR', 'pr_number');
     }
 
     protected static function booted(): void

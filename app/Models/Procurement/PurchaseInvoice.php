@@ -3,6 +3,7 @@
 namespace App\Models\Procurement;
 
 use App\Models\User;
+use App\Traits\GeneratesDocumentNumber;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -10,7 +11,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class PurchaseInvoice extends Model
 {
-    use SoftDeletes;
+    use SoftDeletes, GeneratesDocumentNumber;
 
     protected $table = 'nx_purchase_invoices';
 
@@ -24,12 +25,8 @@ class PurchaseInvoice extends Model
         'discount_amount' => 'decimal:2',
         'grand_total' => 'decimal:2',
         'total_paid' => 'decimal:2',
+        'status' => \App\Enums\Procurement\PurchaseInvoiceStatus::class,
     ];
-
-    public const STATUS_UNPAID = 'unpaid';
-    public const STATUS_PARTIAL = 'partial';
-    public const STATUS_PAID = 'paid';
-    public const STATUS_CANCELLED = 'cancelled';
 
     public function purchaseOrder(): BelongsTo
     {
@@ -60,6 +57,8 @@ class PurchaseInvoice extends Model
     {
         $totalPaid = (float) $this->payments()->sum('amount');
         $grandTotal = (float) $this->grand_total;
+
+        // Penggunaan tolerance 0.01 sangat bagus untuk mengatasi isu floating point!
         $tolerance = 0.01;
 
         if ($totalPaid >= ($grandTotal - $tolerance)) {
@@ -76,33 +75,10 @@ class PurchaseInvoice extends Model
         ]);
     }
 
+    // 2. Ganti isi function ini untuk memanggil Trait
     public static function generatePINumber(): string
     {
-        $romanMonths = [
-            1 => 'I', 2 => 'II', 3 => 'III', 4 => 'IV', 5 => 'V', 6 => 'VI',
-            7 => 'VII', 8 => 'VIII', 9 => 'IX', 10 => 'X', 11 => 'XI', 12 => 'XII',
-        ];
-
-        $month = now()->month;
-        $year = now()->year;
-        $company = 'NEX';
-        $code = 'PI';
-
-        $prefix = "{$code}/{$company}/{$romanMonths[$month]}/{$year}";
-
-        $lastPi = self::withTrashed()
-            ->where('invoice_number', 'like', "%/{$prefix}")
-            ->orderByDesc('id')
-            ->first();
-
-        $sequence = 1;
-
-        if ($lastPi?->invoice_number) {
-            $parts = explode('/', $lastPi->invoice_number);
-            $sequence = ((int) ($parts[0] ?? 0)) + 1;
-        }
-
-        return str_pad((string) $sequence, 3, '0', STR_PAD_LEFT) . "/{$prefix}";
+        return self::generateDocNumber('PI', 'invoice_number');
     }
 
     protected static function booted(): void

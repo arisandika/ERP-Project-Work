@@ -30,7 +30,7 @@ class FinancialRecordResource extends Resource
 
     protected static ?string $model = FinancialRecord::class;
 
-    protected static ?string $navigationIcon = 'heroicon-o-banknotes';
+    protected static ?string $navigationIcon = 'heroicon-o-book-open';
     protected static ?string $navigationGroup = 'Manajemen Finance';
     protected static ?int $navigationSort = 2;
     protected static ?string $slug = 'finance/financial-records';

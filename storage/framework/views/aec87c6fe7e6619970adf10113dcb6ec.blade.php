@@ -1,1 +1,0 @@
-@livewire("sales.deal-quotation-list", ["dealId" => $dealId])

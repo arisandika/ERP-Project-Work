@@ -34,10 +34,11 @@ class AccountsPayable extends Page
 
     protected static ?string $module = 'finance'; // Set modul ke Finance
 
-    protected static ?string $navigationIcon = 'heroicon-o-banknotes';
     protected static ?string $navigationGroup = 'Manajemen Finance';
     protected static ?int $navigationSort = 3;
-    protected static ?string $title = 'Account Payable (Hutang Supplier)';
+    protected static ?string $navigationIcon = 'heroicon-o-arrow-down-circle';
+    protected static ?string $title = 'Accounts Payable';
+    protected static ?string $navigationLabel = 'Accounts Payable';
     protected static ?string $slug = 'finance/accounts-payable';
 
     protected static string $view = 'filament.pages.finance.accounts-payable';

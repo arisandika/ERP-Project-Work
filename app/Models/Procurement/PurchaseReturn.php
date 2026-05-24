@@ -7,15 +7,16 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use Illuminate\Support\Facades\DB;
+use App\Traits\GeneratesDocumentNumber;
 use App\Models\User;
-// Pastikan Anda mengimpor model Supplier dan GoodsReceipt yang sesuai dengan namespace Anda
 
 class PurchaseReturn extends Model
 {
-    use HasFactory, SoftDeletes;
+    // 1. Tambahkan Trait di sini
+    use HasFactory, SoftDeletes, GeneratesDocumentNumber;
 
     protected $table = 'nx_purchase_returns';
+
     protected $guarded = ['id'];
 
     public function items(): HasMany
@@ -40,9 +41,9 @@ class PurchaseReturn extends Model
 
     protected static function booted(): void
     {
-        static::creating(function (PurchaseReturn $model) {
-
-            if (auth()->check()) {
+        static::creating(function (self $model) {
+            // Pengecekan auth yang lebih rapi
+            if (blank($model->created_by) && auth()->check()) {
                 $model->created_by = auth()->id();
             }
 
@@ -52,44 +53,20 @@ class PurchaseReturn extends Model
         });
     }
 
-    public static function previewNextReturnNumber(): string
+    /**
+     * Generate nomor otomatis format PRT-2605-001
+     */
+    public static function generateReturnNumber(): string
     {
-        $romanMonths = [
-            1 => 'I', 2 => 'II', 3 => 'III', 4 => 'IV', 5 => 'V', 6 => 'VI',
-            7 => 'VII', 8 => 'VIII', 9 => 'IX', 10 => 'X', 11 => 'XI', 12 => 'XII',
-        ];
-
-        $prefix = "PRT/NEX/" . $romanMonths[now()->month] . "/" . now()->year;
-
-        $lastReturn = self::withTrashed()
-            ->where('return_number', 'like', "%/{$prefix}")
-            ->orderByDesc('id')
-            ->first();
-
-        $sequence = $lastReturn ? ((int) explode('/', $lastReturn->return_number)[0]) + 1 : 1;
-
-        return str_pad((string) $sequence, 3, '0', STR_PAD_LEFT) . "/{$prefix}";
+        return self::generateDocNumber('PRT', 'return_number');
     }
 
-    private static function generateReturnNumber(): string
+    /**
+     * Karena metode dari Trait kita tidak langsung menyimpan ke database (hanya SELECT),
+     * kita bisa menggunakan fungsi yang persis sama untuk preview di form Filament.
+     */
+    public static function previewNextReturnNumber(): string
     {
-        return DB::transaction(function () {
-            $romanMonths = [
-                1 => 'I', 2 => 'II', 3 => 'III', 4 => 'IV', 5 => 'V', 6 => 'VI',
-                7 => 'VII', 8 => 'VIII', 9 => 'IX', 10 => 'X', 11 => 'XI', 12 => 'XII',
-            ];
-
-            $prefix = "PRT/NEX/" . $romanMonths[now()->month] . "/" . now()->year;
-
-            $lastReturn = self::withTrashed()
-                ->where('return_number', 'like', "%/{$prefix}")
-                ->lockForUpdate()
-                ->orderByDesc('id')
-                ->first();
-
-            $sequence = $lastReturn ? ((int) explode('/', $lastReturn->return_number)[0]) + 1 : 1;
-
-            return str_pad((string) $sequence, 3, '0', STR_PAD_LEFT) . "/{$prefix}";
-        });
+        return self::generateDocNumber('PRT', 'return_number');
     }
 }

@@ -17,16 +17,15 @@ class GeneralInformation extends Page
 
     protected static ?string $module = 'finance';
 
-    protected static ?string $navigationIcon = 'heroicon-o-presentation-chart-line';
-
     protected static ?string $navigationGroup = 'Manajemen Finance';
 
+    protected static ?string $navigationIcon = 'heroicon-o-chart-bar-square';
+
+    protected static ?string $navigationLabel = 'Finance Overview';
+
+    protected static ?string $title = 'Finance Overview';
+
     protected static ?int $navigationSort = 1;
-
-    // Memperjelas label di sidebar
-    protected static ?string $navigationLabel = 'General Info';
-
-    protected static ?string $title = 'General Info';
 
     protected static ?string $slug = 'finance/dashboard';
 

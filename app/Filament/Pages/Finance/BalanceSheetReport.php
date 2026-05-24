@@ -32,11 +32,11 @@ class BalanceSheetReport extends Page implements HasForms
     }
 
     protected static ?string $module = 'finance';
-
-    protected static ?string $navigationIcon = 'heroicon-o-scale';
     protected static ?string $navigationGroup = 'Manajemen Finance';
     protected static ?int $navigationSort = 6;
-    protected static ?string $title = 'Laporan Neraca';
+    protected static ?string $navigationIcon = 'heroicon-o-scale';
+    protected static ?string $title = 'Balance Sheet';
+    protected static ?string $navigationLabel = 'Balance Sheet';
     protected static ?string $slug = 'finance/balance-sheet';
 
     protected static string $view = 'filament.pages.finance.balance-sheet-report';

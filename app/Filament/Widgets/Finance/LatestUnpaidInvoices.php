@@ -10,44 +10,63 @@ use Illuminate\Support\Carbon;
 
 class LatestUnpaidInvoices extends BaseWidget
 {
-    protected static ?string $heading = '🔴 Piutang Klien (A/R) Jatuh Tempo';
+    protected static ?string $heading = 'Outstanding Receivables';
+
     protected static ?int $sort = 2;
+
+    protected int | string | array $columnSpan = [
+        'xl' => 6,
+    ];
 
     public function table(Table $table): Table
     {
         return $table
             ->query(
-                Invoice::whereIn('status', ['sent', 'partial'])
-                    ->orderBy('due_date', 'asc')
-                    ->limit(5) // Dibatasi 5 dari database langsung
+                Invoice::query()
+                    ->whereIn('status', ['sent', 'partial'])
+                    ->orderBy('due_date')
+                    ->limit(5)
             )
+
+            ->striped()
+
             ->columns([
+
                 Tables\Columns\TextColumn::make('invoice_number')
-                    ->label('Invoice') // Teks dipendekkan
-                    ->weight('bold')
+                    ->label('Invoice')
+                    ->weight('semibold')
                     ->color('primary')
-                    ->size('sm'), // Ukuran font dikecilkan agar muat
+                    ->searchable(),
 
                 Tables\Columns\TextColumn::make('customer.name')
-                    ->label('Klien')
-                    ->limit(15) // Jika nama PT kepanjangan, dipotong pake titik-titik
-                    ->size('sm'), // Hapus searchable() agar bar pencarian hilang
+                    ->label('Client')
+                    ->limit(20),
 
                 Tables\Columns\TextColumn::make('due_date')
-                    ->label('Tempo')
-                    ->date('d M y') // Format tanggal dipendekkan (ex: 12 Mar 26)
+                    ->label('Due Date')
+                    ->date('d M Y')
                     ->badge()
-                    ->color(fn ($state) => Carbon::parse($state)->isPast() ? 'danger' : 'warning')
-                    ->size('sm'),
+                    ->icon(
+                        fn ($state) =>
+                        Carbon::parse($state)->isPast()
+                            ? 'heroicon-m-exclamation-triangle'
+                            : 'heroicon-m-clock'
+                    )
+                    ->color(
+                        fn ($state) =>
+                        Carbon::parse($state)->isPast()
+                            ? 'danger'
+                            : 'warning'
+                    ),
 
                 Tables\Columns\TextColumn::make('remaining_balance')
-                    ->label('Sisa')
-                    ->money('IDR', true)
-                    ->color('danger')
+                    ->label('Outstanding')
+                    ->money('IDR', locale: 'id')
+                    ->alignRight()
                     ->weight('bold')
-                    ->size('sm'),
+                    ->color('danger'),
             ])
-            ->paginated(false) // HAPUS fungsi paginasi di bawah tabel
-            ->striped(); // Tambahkan efek zebra / belang-belang
+
+            ->paginated(false);
     }
 }

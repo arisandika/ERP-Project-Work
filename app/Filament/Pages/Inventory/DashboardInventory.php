@@ -20,7 +20,7 @@ class DashboardInventory extends Dashboard
 
     protected static ?string $module = 'inventory';
     protected static ?string $navigationIcon = 'heroicon-o-presentation-chart-line';
-    protected static ?string $navigationGroup = 'Manajemen Inventory';
+    // protected static ?string $navigationGroup = 'Manajemen Inventory';
     protected static ?string $title = 'Dashboard';
 
     public static function canAccess(): bool

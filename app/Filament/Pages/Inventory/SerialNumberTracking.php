@@ -6,13 +6,17 @@ use App\Filament\Concerns\BelongsToModule;
 use App\Models\Inventory\SerialNumber;
 use App\Models\Inventory\StockTransaction;
 use BezhanSalleh\FilamentShield\Traits\HasPageShield;
+use Filament\Forms\Components\Grid;
 use Filament\Forms\Components\TextInput;
+use Filament\Forms\Components\ViewField;
 use Filament\Forms\Concerns\InteractsWithForms;
 use Filament\Forms\Contracts\HasForms;
 use Filament\Forms\Form;
+use Filament\Forms\Set;
 use Filament\Notifications\Notification;
 use Filament\Pages\Page;
 use Illuminate\Support\Carbon;
+use Livewire\Component;
 
 class SerialNumberTracking extends Page implements HasForms
 {
@@ -70,13 +74,42 @@ class SerialNumberTracking extends Page implements HasForms
     {
         return $form
             ->schema([
-                TextInput::make('serial_number')
-                    ->label('Serial Number')
-                    ->placeholder('Scan atau ketik SN, contoh: SN009')
-                    ->required()
-                    ->autofocus()
-                    ->extraInputAttributes([
-                        'wire:keydown.enter.prevent' => 'search',
+                Grid::make(2)
+                    ->schema([
+                        TextInput::make('serial_number')
+                            ->label('Serial Number')
+                            ->placeholder('Scan (Alat) atau ketik SN...')
+                            ->required()
+                            ->autofocus()
+                            ->extraInputAttributes([
+                                'wire:keydown.enter.prevent' => 'search',
+                            ])
+                            ->columnSpan(1),
+
+                        ViewField::make('camera_sn')
+                            ->label('Scan Kamera Barcode/QR')
+                            ->view('filament.forms.components.camera-scanner')
+                            ->live()
+                            ->afterStateUpdated(function (?string $state, Set $set, Component $livewire) {
+                                if (blank($state)) {
+                                    return;
+                                }
+
+                                // 1. Isi input serial_number dengan hasil scan
+                                $set('serial_number', trim($state));
+
+                                // 2. Reset state kamera agar siap digunakan kembali
+                                $set('camera_sn', null);
+
+                                // 3. OTOMATIS eksekusi fungsi pencarian tanpa perlu klik tombol "Cari"
+                                $livewire->search();
+
+                                Notification::make()
+                                    ->title("Mencari SN: {$state}")
+                                    ->success()
+                                    ->send();
+                            })
+                            ->columnSpan(1),
                     ]),
             ])
             ->statePath('data');
@@ -99,15 +132,14 @@ class SerialNumberTracking extends Page implements HasForms
 
         /**
          * Optimized Query dengan Eager Loading.
-         * FIX: Pastikan kolom yang dipanggil di :id,col1,col2 memang ada di tabel masing-masing.
          */
         $record = SerialNumber::query()
             ->with([
                 'product:id,product_name,product_code',
                 'warehouse:id,warehouse_name',
-                'supplier:id,name', // Sesuaikan jika kolomnya 'supplier_name'
-                'purchaseOrder:id,po_number', // FIX: Hapus 'purchase_order_number' karena tidak ada di DB
-                'customer:id,customer_name', // Sesuaikan jika kolomnya 'name'
+                'supplier:id,name',
+                'purchaseOrder:id,po_number',
+                'customer:id,customer_name',
             ])
             ->where('serial_number', $serialNumber)
             ->first();

@@ -1,1 +1,0 @@
-@livewire("sales-activity.deal-visit-list", ["dealId" => $dealId])

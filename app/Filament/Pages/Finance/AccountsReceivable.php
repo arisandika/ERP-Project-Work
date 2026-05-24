@@ -32,12 +32,12 @@ class AccountsReceivable extends Page
         BelongsToModule::shouldRegisterNavigation as moduleShouldRegisterNavigation;
     }
 
-    protected static ?string $module = 'finance'; // Set modul ke Finance
-
-    protected static ?string $navigationIcon = 'heroicon-o-credit-card';
+    protected static ?string $module = 'finance';
     protected static ?string $navigationGroup = 'Manajemen Finance';
     protected static ?int $navigationSort = 4;
-    protected static ?string $title = 'Account Receivable (Piutang Customer)';
+    protected static ?string $navigationIcon = 'heroicon-o-arrow-up-circle';
+    protected static ?string $title = 'Accounts Receivable';
+    protected static ?string $navigationLabel = 'Accounts Receivable';
     protected static ?string $slug = 'finance/accounts-receivable';
 
     protected static string $view = 'filament.pages.finance.accounts-receivable';

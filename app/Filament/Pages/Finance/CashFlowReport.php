@@ -32,11 +32,11 @@ class CashFlowReport extends Page implements HasForms
     }
 
     protected static ?string $module = 'finance';
-
-    protected static ?string $navigationIcon = 'heroicon-o-arrows-right-left';
     protected static ?string $navigationGroup = 'Manajemen Finance';
     protected static ?int $navigationSort = 5;
-    protected static ?string $title = 'Laporan Arus Kas';
+    protected static ?string $navigationIcon = 'heroicon-o-arrows-right-left';
+    protected static ?string $title = 'Cash Flow Report';
+    protected static ?string $navigationLabel = 'Cash Flow';
     protected static ?string $slug = 'finance/cash-flow';
 
     protected static string $view = 'filament.pages.finance.cash-flow-report';
