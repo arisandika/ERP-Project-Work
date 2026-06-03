@@ -21,7 +21,7 @@ jobs:
           key: ${{ secrets.SSH_KEY }}
           port: 2223
           script: |
-            cd ~/public_html/domains/erp.arihub.my.id
+            cd ~/public_html/domains/erp.toondangan.com
 
             echo "📦 Pull latest code from GitHub..."
             git fetch origin
