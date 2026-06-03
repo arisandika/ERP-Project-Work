@@ -20,7 +20,7 @@ jobs:
           username: ${{ secrets.SSH_USER }}
           key: ${{ secrets.SSH_KEY }}
           passphrase: ${{ secrets.SSH_PASSPHRASE }}
-          port: 2223
+          port: 2222
           script: |
             cd ~/public_html/domains/erp.toondangan.com
 
