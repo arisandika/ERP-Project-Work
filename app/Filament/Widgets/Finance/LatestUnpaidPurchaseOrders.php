@@ -2,6 +2,7 @@
 
 namespace App\Filament\Widgets\Finance;
 
+use App\Enums\Procurement\PurchaseOrderStatus;
 use App\Models\Procurement\PurchaseOrder;
 use Filament\Tables;
 use Filament\Tables\Table;
@@ -22,15 +23,15 @@ class LatestUnpaidPurchaseOrders extends BaseWidget
         return $table
             ->query(
                 PurchaseOrder::query()
-                    ->whereIn('status', ['sent', 'partial'])
+                    ->whereIn('status', [
+                        PurchaseOrderStatus::SENT,
+                        PurchaseOrderStatus::PARTIAL
+                    ])
                     ->latest()
                     ->limit(5)
             )
-
             ->striped()
-
             ->columns([
-
                 Tables\Columns\TextColumn::make('po_number')
                     ->label('PO Number')
                     ->weight('semibold')
@@ -42,12 +43,7 @@ class LatestUnpaidPurchaseOrders extends BaseWidget
                     ->limit(20),
 
                 Tables\Columns\TextColumn::make('status')
-                    ->badge()
-                    ->color(fn (string $state): string => match ($state) {
-                        'sent' => 'warning',
-                        'partial' => 'info',
-                        default => 'gray',
-                    }),
+                    ->badge(),
 
                 Tables\Columns\TextColumn::make('grand_total')
                     ->label('Outstanding')
@@ -56,7 +52,6 @@ class LatestUnpaidPurchaseOrders extends BaseWidget
                     ->weight('bold')
                     ->color('danger'),
             ])
-
             ->paginated(false);
     }
 }

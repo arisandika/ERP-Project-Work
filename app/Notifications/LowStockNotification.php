@@ -38,7 +38,7 @@ class LowStockNotification extends Notification
             ? $this->productStock->warehouse->warehouse_name 
             : 'All Warehouses';
         
-        $qty = $this->currentQty ?? ($this->productStock ? $this->productStock->qty : $this->product->total_stock);
+        $qty = $this->currentQty ?? ($this->productStock ? $this->productStock->qty_available : $this->product->total_stock);
 
         return [
             'product_id' => $this->product->id,
@@ -66,7 +66,7 @@ class LowStockNotification extends Notification
             ? $productStock->warehouse->warehouse_name 
             : 'All Warehouses';
         
-        $qty = $currentQty ?? ($productStock ? $productStock->qty : $product->total_stock);
+        $qty = $currentQty ?? ($productStock ? $productStock->qty_available : $product->total_stock);
 
         $notification = FilamentNotification::make()
             ->warning()

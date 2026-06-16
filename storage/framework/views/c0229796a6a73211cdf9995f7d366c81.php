@@ -340,7 +340,7 @@
 <?php unset($__componentOriginal40a3de7997c05e5562c4104d90e9b634); ?>
 <?php endif; ?>
 
-    <?php if(! app()->runningUnitTests() && ! app()->runningInConsole()): ?>
+    <?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if BLOCK]><![endif]--><?php endif; ?><?php if(! app()->runningUnitTests() && ! app()->runningInConsole()): ?>
         <?php if (isset($component)) { $__componentOriginal1e2fb8a385bff5b6574eeb687cee100b = $component; } ?>
 <?php if (isset($attributes)) { $__attributesOriginal1e2fb8a385bff5b6574eeb687cee100b = $attributes; } ?>
 <?php $component = Illuminate\View\AnonymousComponent::resolve(['view' => 'laravel-exceptions-renderer::components.section-container','data' => ['class' => 'pb-0 sm:pb-0']] + (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag ? $attributes->all() : [])); ?>
@@ -381,7 +381,7 @@
 <?php $component = $__componentOriginal1e2fb8a385bff5b6574eeb687cee100b; ?>
 <?php unset($__componentOriginal1e2fb8a385bff5b6574eeb687cee100b); ?>
 <?php endif; ?>
-    <?php endif; ?>
+    <?php endif; ?><?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if ENDBLOCK]><![endif]--><?php endif; ?>
  <?php echo $__env->renderComponent(); ?>
 <?php endif; ?>
 <?php if (isset($__attributesOriginalbbd4eeea836234825f7514ed20d2d52d)): ?>

@@ -20,7 +20,7 @@ class PurchaseInvoiceResource extends Resource
     protected static ?string $navigationIcon = 'heroicon-o-receipt-percent';
     protected static ?string $navigationGroup = 'Manajemen Finance';
     protected static ?int $navigationSort = 1;
-    protected static ?string $pluralModelLabel = 'Purchase Invoices (Tagihan)';
+    protected static ?string $pluralModelLabel = 'Purchase Invoices';
 
     public static function updateTotals(Forms\Get $get, Forms\Set $set): void
     {
@@ -57,7 +57,6 @@ class PurchaseInvoiceResource extends Resource
                                 ->required()
                                 ->placeholder('Contoh: INV-SUP-001'),
 
-                            // THREE-WAY MATCHING: Pilih PO yang sudah ada barang masuknya
                             Forms\Components\Select::make('purchase_order_id')
                                 ->label('Berdasarkan PO')
                                 ->options(PurchaseOrder::whereIn('status', ['partial', 'completed'])->pluck('po_number', 'id'))
@@ -79,7 +78,6 @@ class PurchaseInvoiceResource extends Resource
                                     $subtotal = 0;
 
                                     foreach ($po->items as $item) {
-                                        // HANYA MUNCULKAN BARANG YANG SUDAH DITERIMA GUDANG
                                         if ($item->quantity_received > 0) {
                                             $lineTotal = $item->quantity_received * $item->unit_price;
 
@@ -88,7 +86,7 @@ class PurchaseInvoiceResource extends Resource
                                                 'product_id' => $item->product_id,
                                                 'product_name' => $item->product->product_name,
                                                 'max_qty' => $item->quantity_received,
-                                                'quantity_billed' => $item->quantity_received, // Default tagih semua yang diterima
+                                                'quantity_billed' => $item->quantity_received,
                                                 'unit_price' => $item->unit_price,
                                                 'total_price' => $lineTotal,
                                             ];
@@ -98,7 +96,6 @@ class PurchaseInvoiceResource extends Resource
                                     $set('items', $piItems);
                                     $set('subtotal', $subtotal);
 
-                                    // Set ulang total
                                     $taxRate = (float) ($get('tax_rate') ?? 0);
                                     $taxAmount = $subtotal * ($taxRate / 100);
                                     $set('tax_amount', $taxAmount);
@@ -143,8 +140,6 @@ class PurchaseInvoiceResource extends Resource
                                         ->label('Qty Ditagihkan')
                                         ->numeric()
                                         ->required()
-                                        ->minValue(1)
-                                        // PENGUNCIAN AUDIT: Tagihan tidak boleh melebihi fisik di gudang
                                         ->maxValue(fn(Forms\Get $get) => $get('max_qty'))
                                         ->live(debounce: 500)
                                         ->afterStateUpdated(function ($state, Forms\Set $set, Forms\Get $get) {

@@ -72,15 +72,16 @@ $__split = function ($name, $params = []) {
 [$__name, $__params] = $__split($widgetClass,
             [...(($widget instanceof \Filament\Widgets\WidgetConfiguration) ? [...$widget->widget::getDefaultProperties(), ...$widget->getProperties()] : $widget::getDefaultProperties()), ...$data],);
 
-$key = "{$widgetClass}-{$widgetKey}";
+$__key = "{$widgetClass}-{$widgetKey}";
 
-$key ??= \Livewire\Features\SupportCompiledWireKeys\SupportCompiledWireKeys::generateKey('lw-3140723949-0', "{$widgetClass}-{$widgetKey}");
+$__key ??= \Livewire\Features\SupportCompiledWireKeys\SupportCompiledWireKeys::generateKey('lw-3140723949-0', $__key);
 
-$__html = app('livewire')->mount($__name, $__params, $key);
+$__html = app('livewire')->mount($__name, $__params, $__key);
 
 echo $__html;
 
 unset($__html);
+unset($__key);
 unset($__name);
 unset($__params);
 unset($__split);

@@ -319,7 +319,7 @@ class QuotationsRelationManager extends RelationManager
                             return;
                         }
 
-                        Mail::to($emailTarget)->send(new QuotationSent($record));
+                        Mail::to($emailTarget)->queue(new QuotationSent($record));
 
                         $record->update(['status' => 'sent']);
 

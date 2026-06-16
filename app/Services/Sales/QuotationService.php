@@ -26,7 +26,7 @@ class QuotationService
             return false;
         }
 
-        Mail::to($emailTarget)->send(new QuotationSent($quotation));
+        Mail::to($emailTarget)->queue(new QuotationSent($quotation));
         $quotation->update(['status' => 'sent']);
 
         return true;

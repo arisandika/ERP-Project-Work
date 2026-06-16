@@ -162,15 +162,16 @@ $__split = function ($name, $params = []) {
 };
 [$__name, $__params] = $__split(Filament\Livewire\Notifications::class);
 
-$key = null;
+$__key = null;
 
-$key ??= \Livewire\Features\SupportCompiledWireKeys\SupportCompiledWireKeys::generateKey('lw-981408656-0', null);
+$__key ??= \Livewire\Features\SupportCompiledWireKeys\SupportCompiledWireKeys::generateKey('lw-981408656-0', $__key);
 
-$__html = app('livewire')->mount($__name, $__params, $key);
+$__html = app('livewire')->mount($__name, $__params, $__key);
 
 echo $__html;
 
 unset($__html);
+unset($__key);
 unset($__name);
 unset($__params);
 unset($__split);
