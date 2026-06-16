@@ -18,7 +18,7 @@ class ProductStockObserver
     public function updated(ProductStock $productStock): void
     {
         // Ganti 'qty' menjadi 'qty_available'
-        if ($productStock->wasChanged('qty')) {
+        if ($productStock->wasChanged('qty_available')) {
             $this->checkLowStock($productStock);
         }
     }
@@ -27,7 +27,7 @@ class ProductStockObserver
     {
         try {
             $product = $productStock->product;
-            $currentQty = $productStock->qty;
+            $currentQty = $productStock->qty_available;
 
             // Praktik ERP: Threshold harus dinamis, ambil dari master produk.
             // Jika tidak ada di tabel produk, gunakan fallback angka statis.

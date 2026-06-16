@@ -84,6 +84,7 @@ class DeliveryOrder extends Model
 
         $last = self::withTrashed()
             ->where('do_number', 'like', $prefixLike)
+            ->lockForUpdate()
             ->orderByDesc('id')
             ->value('do_number');
 

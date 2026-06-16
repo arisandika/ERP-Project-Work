@@ -87,7 +87,7 @@ class OperationalAlertTable extends BaseWidget
                         }
 
                         try {
-                            Mail::to($email)->send(new InvoiceReminderMail($record));
+                            Mail::to($email)->queue(new InvoiceReminderMail($record));
 
                             Notification::make()
                                 ->title('Terkirim')

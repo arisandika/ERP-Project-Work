@@ -80,6 +80,21 @@ class SalesOrder extends Model
         return $this->hasMany(\App\Models\Sales\DeliveryOrder::class, 'nx_sales_order_id');
     }
 
+    public static function generateOrderNumber(): string
+    {
+        $roman = ['I', 'II', 'III', 'IV', 'V', 'VI', 'VII', 'VIII', 'IX', 'X', 'XI', 'XII'][now()->month - 1];
+        $prefix = "%/SO/NEX/{$roman}/" . now()->year;
+        $last = self::withTrashed()
+            ->where('order_number', 'like', $prefix)
+            ->lockForUpdate()
+            ->orderByDesc('id')
+            ->value('order_number');
+
+        $seq = $last ? ((int) explode('/', $last)[0]) + 1 : 1;
+
+        return str_pad((string) $seq, 3, '0', STR_PAD_LEFT) . "/SO/NEX/{$roman}/" . now()->year;
+    }
+
     protected static function booted(): void
     {
         static::creating(function (SalesOrder $salesOrder) {

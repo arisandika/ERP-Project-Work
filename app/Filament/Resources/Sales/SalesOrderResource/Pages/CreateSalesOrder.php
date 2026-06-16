@@ -24,7 +24,7 @@ class CreateSalesOrder extends CreateRecord
         parent::mount();
 
         $this->form->fill([
-            'order_number'   => $this->generateOrderNumber(),
+            'order_number'   => SalesOrder::generateOrderNumber(),
             'nx_employee_id' => auth()->user()?->employee?->id,
             'order_date'     => now()->toDateString(),
         ]);
@@ -32,9 +32,9 @@ class CreateSalesOrder extends CreateRecord
 
     protected function handleRecordCreation(array $data): Model
     {
-        $data['order_number'] = $this->generateOrderNumber();
-
         return DB::transaction(function () use ($data) {
+            $data['order_number'] = SalesOrder::generateOrderNumber();
+
             $service = app(SalesOrderService::class);
 
             // 1. Buat SO dulu di dalam transaction
@@ -75,19 +75,5 @@ class CreateSalesOrder extends CreateRecord
             ->danger()
             ->persistent()
             ->send();
-    }
-
-    private function generateOrderNumber(): string
-    {
-        $roman = ['I', 'II', 'III', 'IV', 'V', 'VI', 'VII', 'VIII', 'IX', 'X', 'XI', 'XII'][now()->month - 1];
-        $prefix = "%/SO/NEX/{$roman}/" . now()->year;
-        $last = SalesOrder::withTrashed()
-            ->where('order_number', 'like', $prefix)
-            ->orderByDesc('id')
-            ->value('order_number');
-
-        $seq = $last ? ((int) explode('/', $last)[0]) + 1 : 1;
-
-        return str_pad((string) $seq, 3, '0', STR_PAD_LEFT) . "/SO/NEX/{$roman}/" . now()->year;
     }
 }

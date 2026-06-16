@@ -57,14 +57,12 @@ class AccountsPayable extends Page
 
     protected function getViewData(): array
     {
-        // REFAKTORISASI: Menggunakan Eloquent Subquery untuk menghindari N+1 Query.
-        // Database engine yang akan menjumlahkan total_paid, bukan PHP.
         $debts = FinancialRecord::query()
             ->where('type', 'hutang')
             ->addSelect([
                 'paid_amount' => FinancialRecord::query()
                     ->selectRaw('COALESCE(SUM(amount), 0)')
-                    ->whereColumn('reference_number', 'financial_records.reference_number')
+                    ->whereColumn('reference_number', 'nx_financial_records.reference_number')
                     ->where('type', 'pengeluaran')
                     ->where('category', 'Accounts Payable')
             ])

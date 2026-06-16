@@ -22,7 +22,7 @@ class CreateInvoice extends CreateRecord
         parent::mount();
 
         $this->form->fill([
-            'invoice_number' => $this->generateInvoiceNumber(),
+            'invoice_number' => Invoice::generateInvoiceNumber(),
             'nx_employee_id' => auth()->user()?->employee?->id,
             'invoice_date' => now()->toDateString(),
             'due_date' => now()->addDays(7)->toDateString(),
@@ -38,7 +38,7 @@ class CreateInvoice extends CreateRecord
 
     protected function mutateFormDataBeforeCreate(array $data): array
     {
-        $data['invoice_number'] = $this->generateInvoiceNumber();
+        $data['invoice_number'] = Invoice::generateInvoiceNumber();
 
         $items = $data['items'] ?? [];
 
@@ -66,6 +66,8 @@ class CreateInvoice extends CreateRecord
     protected function handleRecordCreation(array $data): Model
     {
         return DB::transaction(function () use ($data) {
+            $data['invoice_number'] = Invoice::generateInvoiceNumber();
+
             $items = $data['items'] ?? [];
             unset($data['items']);
 
@@ -89,31 +91,5 @@ class CreateInvoice extends CreateRecord
 
             return $invoice;
         });
-    }
-
-    private function generateInvoiceNumber(): string
-    {
-        $roman = ['I', 'II', 'III', 'IV', 'V', 'VI', 'VII', 'VIII', 'IX', 'X', 'XI', 'XII'][now()->month - 1];
-        $year = now()->year;
-        $company = 'NEX';
-        $code = 'INV';
-
-        $prefixLike = "%/{$code}/{$company}/{$roman}/{$year}";
-
-        $last = Invoice::withTrashed()
-            ->where('invoice_number', 'like', $prefixLike)
-            ->orderByDesc('id')
-            ->value('invoice_number');
-
-        $seq = 1;
-
-        if ($last) {
-            $parts = explode('/', $last);
-            $seq = ((int) ($parts[0] ?? 0)) + 1;
-        }
-
-        $seqStr = str_pad((string) $seq, 3, '0', STR_PAD_LEFT);
-
-        return "{$seqStr}/{$code}/{$company}/{$roman}/{$year}";
     }
 }

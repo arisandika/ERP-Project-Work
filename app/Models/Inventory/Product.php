@@ -81,7 +81,7 @@ class Product extends Model
     // === ACCESSORS ===
     public function getTotalStockAttribute(): int
     {
-        return $this->productStocks()->sum('qty');
+        return $this->productStocks()->sum('qty_available');
     }
 
     // Accessor legacy (tetap ada untuk backward compatibility)
@@ -114,7 +114,7 @@ class Product extends Model
     {
         return static::with(['unit', 'category', 'productStocks.warehouse'])
             ->whereHas('productStocks', function ($query) {
-                $query->where('qty', '<=', 10);
+                $query->where('qty_available', '<=', 10);
             })
             ->get();
     }
@@ -125,7 +125,7 @@ class Product extends Model
         if ($warehouseId) {
             $query->where('warehouse_id', $warehouseId);
         }
-        return $query->where('qty', '<', $this->stock_threshold)->exists();
+        return $query->where('qty_available', '<', $this->stock_threshold)->exists();
     }
 
     public function getStockStatusLabel(?int $qty = null): string

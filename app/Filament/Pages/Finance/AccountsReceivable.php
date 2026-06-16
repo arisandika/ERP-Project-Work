@@ -69,7 +69,7 @@ class AccountsReceivable extends Page
             ->addSelect([
                 'received_amount' => FinancialRecord::query()
                     ->selectRaw('COALESCE(SUM(amount), 0)')
-                    ->whereColumn('reference_number', 'financial_records.reference_number')
+                    ->whereColumn('reference_number', 'nx_financial_records.reference_number')
                     ->where('type', 'pemasukan')
                     ->where('category', 'Accounts Receivable')
             ])

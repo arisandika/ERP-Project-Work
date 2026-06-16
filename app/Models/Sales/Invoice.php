@@ -124,6 +124,33 @@ class Invoice extends Model
         }
     }
 
+    public static function generateInvoiceNumber(): string
+    {
+        $roman = ['I', 'II', 'III', 'IV', 'V', 'VI', 'VII', 'VIII', 'IX', 'X', 'XI', 'XII'][now()->month - 1];
+        $year = now()->year;
+        $company = 'NEX';
+        $code = 'INV';
+
+        $prefixLike = "%/{$code}/{$company}/{$roman}/{$year}";
+
+        $last = self::withTrashed()
+            ->where('invoice_number', 'like', $prefixLike)
+            ->lockForUpdate()
+            ->orderByDesc('id')
+            ->value('invoice_number');
+
+        $seq = 1;
+
+        if ($last) {
+            $parts = explode('/', $last);
+            $seq = ((int) ($parts[0] ?? 0)) + 1;
+        }
+
+        $seqStr = str_pad((string) $seq, 3, '0', STR_PAD_LEFT);
+
+        return "{$seqStr}/{$code}/{$company}/{$roman}/{$year}";
+    }
+
     protected static function booted(): void
     {
         static::creating(function (Invoice $invoice) {
