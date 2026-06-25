@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Facades\Auth;
+use App\Enums\Procurement\PurchaseOrderStatus;
 
 class PurchaseOrder extends Model
 {
@@ -38,7 +39,7 @@ class PurchaseOrder extends Model
         'tax_amount' => 'decimal:2',
         'discount_amount' => 'decimal:2',
         'grand_total' => 'decimal:2',
-        'status' => \App\Enums\Procurement\PurchaseOrderStatus::class,
+        'status' => PurchaseOrderStatus::class,
     ];
 
     public function supplier(): BelongsTo

@@ -2,37 +2,35 @@
 
 namespace App\Filament\Resources\Procurement;
 
+use App\Enums\Procurement\PurchaseOrderStatus;
+use App\Filament\Concerns\BelongsToModule;
 use App\Filament\Resources\Procurement\PurchaseOrderResource\Pages;
+use App\Mail\Procurement\PurchaseOrderMail;
+use App\Models\Finance\FinancialRecord;
 use App\Models\Inventory\Product;
 use App\Models\Procurement\PurchaseOrder;
 use App\Models\Procurement\PurchaseRequisition;
-use App\Models\Finance\FinancialRecord;
 use App\Services\Procurement\PurchaseOrderReceiptService;
 use Filament\Forms;
 use Filament\Forms\Form;
+use Filament\Notifications\Notification;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
-use Filament\Notifications\Notification;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
-use App\Mail\Procurement\PurchaseOrderMail;
-use App\Filament\Concerns\BelongsToModule;
 
 class PurchaseOrderResource extends Resource
 {
     use BelongsToModule;
+
     protected static ?string $module = 'procurement';
     protected static ?string $model = PurchaseOrder::class;
 
     protected static ?string $navigationIcon = 'heroicon-o-shopping-cart';
-
     protected static ?string $navigationGroup = 'Manajemen Procurement';
-
     protected static ?int $navigationSort = 4;
-
     protected static ?string $slug = 'procurement/purchase-orders';
-
     protected static ?string $pluralModelLabel = 'Purchase Orders';
 
     public static function getNavigationBadge(): ?string
@@ -43,7 +41,6 @@ class PurchaseOrderResource extends Resource
     public static function updateTotals(Forms\Get $get, Forms\Set $set): void
     {
         $isInsideRepeater = $get('items') === null;
-
         $prefix = $isInsideRepeater ? '../../' : '';
 
         $items = $get($prefix . 'items') ?? [];
@@ -68,7 +65,7 @@ class PurchaseOrderResource extends Resource
             ->schema([
                 Forms\Components\Group::make()->schema([
                     Forms\Components\Section::make('Informasi Dokumen PO')
-                        ->disabled(fn (?PurchaseOrder $record) => $record !== null && $record->status !== 'draft')
+                        ->disabled(fn (?PurchaseOrder $record) => $record !== null && $record->status !== PurchaseOrderStatus::DRAFT)
                         ->schema([
                             // Baris 1: No PO (1 kolom) dan Judul PO (2 kolom)
                             Forms\Components\TextInput::make('po_number')
@@ -140,14 +137,8 @@ class PurchaseOrderResource extends Resource
 
                             Forms\Components\Select::make('status')
                                 ->label('Status PO')
-                                ->options([
-                                    'draft' => 'Draft',
-                                    'sent' => 'Sent',
-                                    'partial' => 'Partial',
-                                    'completed' => 'Completed',
-                                    'cancelled' => 'Cancelled',
-                                ])
-                                ->default('draft')
+                                ->options(PurchaseOrderStatus::class)
+                                ->default(PurchaseOrderStatus::DRAFT)
                                 ->required()
                                 ->disabled(fn (string $operation): bool => $operation === 'create')
                                 ->columnSpan(1),
@@ -163,10 +154,10 @@ class PurchaseOrderResource extends Resource
                                 ->label('Estimasi Tanggal Tiba')
                                 ->columnSpan(1),
 
-                        ])->columns(3), // <-- Diubah menjadi 3 kolom agar rapi
+                        ])->columns(3),
 
                     Forms\Components\Section::make('Daftar Barang (Order Items)')
-                        ->disabled(fn (?PurchaseOrder $record) => $record !== null && $record->status !== 'draft')
+                        ->disabled(fn (?PurchaseOrder $record) => $record !== null && $record->status !== PurchaseOrderStatus::DRAFT)
                         ->schema([
                             Forms\Components\Repeater::make('items')
                                 ->relationship()
@@ -234,7 +225,7 @@ class PurchaseOrderResource extends Resource
 
                 Forms\Components\Group::make()->schema([
                     Forms\Components\Section::make('Ringkasan Biaya')
-                        ->disabled(fn (?PurchaseOrder $record) => $record !== null && $record->status !== 'draft')
+                        ->disabled(fn (?PurchaseOrder $record) => $record !== null && $record->status !== PurchaseOrderStatus::DRAFT)
                         ->schema([
                             Forms\Components\TextInput::make('subtotal')
                                 ->label('Subtotal')
@@ -285,7 +276,7 @@ class PurchaseOrderResource extends Resource
                         ]),
 
                     Forms\Components\Section::make('Catatan Tambahan')
-                        ->disabled(fn (?PurchaseOrder $record) => $record !== null && $record->status !== 'draft')
+                        ->disabled(fn (?PurchaseOrder $record) => $record !== null && $record->status !== PurchaseOrderStatus::DRAFT)
                         ->schema([
                             Forms\Components\Textarea::make('notes')
                                 ->label('Catatan untuk Supplier')
@@ -324,16 +315,7 @@ class PurchaseOrderResource extends Resource
 
                 Tables\Columns\TextColumn::make('status')
                     ->label('Status')
-                    ->badge()
-                    ->color(fn (string $state): string => match (strtolower($state)) {
-                        'draft' => 'gray',
-                        'sent' => 'info',
-                        'partial' => 'warning',
-                        'completed' => 'success',
-                        'cancelled' => 'danger',
-                        default => 'gray',
-                    })
-                    ->formatStateUsing(fn(string $state) => strtoupper($state)),
+                    ->badge(),
 
                 Tables\Columns\TextColumn::make('grand_total')
                     ->label('Total Nilai')
@@ -343,23 +325,17 @@ class PurchaseOrderResource extends Resource
             ])
             ->filters([
                 Tables\Filters\SelectFilter::make('status')
-                    ->options([
-                        'draft' => 'Draft',
-                        'sent' => 'Sent',
-                        'partial' => 'Partial',
-                        'completed' => 'Completed',
-                        'cancelled' => 'Cancelled',
-                    ]),
+                    ->options(PurchaseOrderStatus::class),
             ])
             ->actions([
                 Tables\Actions\EditAction::make()
-                    ->visible(fn ($record) => $record->status === 'draft'),
+                    ->visible(fn ($record) => $record->status === PurchaseOrderStatus::DRAFT),
 
                 Tables\Actions\Action::make('mark_as_sent')
                     ->label('Kirim ke Supplier')
                     ->icon('heroicon-o-paper-airplane')
                     ->color('info')
-                    ->visible(fn ($record) => $record->status === 'draft')
+                    ->visible(fn ($record) => $record->status === PurchaseOrderStatus::DRAFT)
                     ->requiresConfirmation()
                     ->action(function (PurchaseOrder $record) {
                         $supplierEmail = $record->supplier?->email ?? null;
@@ -377,7 +353,7 @@ class PurchaseOrderResource extends Resource
                         try {
                             Mail::to($supplierEmail)->queue(new PurchaseOrderMail($record));
 
-                            $record->update(['status' => 'sent']);
+                            $record->update(['status' => PurchaseOrderStatus::SENT]);
 
                             Notification::make()
                                 ->title('PO Sedang Diproses')
