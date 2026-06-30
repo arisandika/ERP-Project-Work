@@ -1,8 +1,8 @@
 <?php
 
-namespace App\Filament\Resources\Procurement;
+namespace App\Filament\Resources\Finance;
 
-use App\Filament\Resources\Procurement\PurchaseInvoiceResource\Pages;
+use App\Filament\Resources\Finance\PurchaseInvoiceResource\Pages;
 use App\Models\Procurement\PurchaseInvoice;
 use App\Models\Procurement\PurchaseOrder;
 use Filament\Forms;
@@ -225,7 +225,7 @@ class PurchaseInvoiceResource extends Resource
     public static function getRelations(): array
     {
         return [
-            \App\Filament\Resources\Procurement\PurchaseInvoiceResource\RelationManagers\PaymentsRelationManager::class,
+            \App\Filament\Resources\Finance\PurchaseInvoiceResource\RelationManagers\PaymentsRelationManager::class,
         ];
     }
 }

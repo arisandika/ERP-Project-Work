@@ -79,7 +79,7 @@ class PurchaseOrder extends Model
 
     public static function generatePONumber(): string
     {
-        return self::generateDocNumber('PO-NEX', 'po_number');
+        return self::generateDocNumber('PO', 'po_number');
     }
 
     protected static function booted(): void

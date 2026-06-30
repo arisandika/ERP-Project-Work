@@ -9,27 +9,23 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('nx_product_stock', function (Blueprint $table) {
-            $table->id('id'); // PK: id
+            $table->id();
 
-            // FK ke nx_products
-            $table->foreignId('id')
-                  ->constrained('nx_products', 'id') // Menunjuk ke kolom id di tabel nx_products
+            $table->foreignId('product_id')
+                  ->constrained('nx_products')
                   ->cascadeOnDelete();
 
-            // FK ke nx_warehouses
-            $table->foreignId('id')
-                  ->constrained('nx_warehouses', 'id') // Menunjuk ke kolom id di tabel nx_warehouses
+            $table->foreignId('warehouse_id')
+                  ->constrained('nx_warehouses')
                   ->cascadeOnDelete();
 
             $table->integer('qty')->default(0);
             
-            // Kolom status (sesuai ERD awal)
             $table->enum('status', ['available', 'reserved', 'out_of_stock'])->default('available');
 
             $table->timestamps();
 
-            // Penting: Pastikan kombinasi Product dan Warehouse bersifat unik
-            $table->unique(['id', 'id']);
+            $table->unique(['product_id', 'warehouse_id']);
         });
     }
 
