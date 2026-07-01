@@ -1,6 +1,7 @@
 <?php
 namespace App\Filament\Resources\HR;
 
+use App\Filament\Concerns\BelongsToModule;
 use App\Filament\Resources\HR\EmployeeResource\Pages;
 use App\Filament\Resources\HR\EmployeeResource\RelationManagers\AttendancesRelationManager;
 use App\Filament\Resources\HR\EmployeeResource\RelationManagers\LeaveRequestsRelationManager;
@@ -21,14 +22,12 @@ use Illuminate\Database\Eloquent\SoftDeletingScope;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Blade;
 use Illuminate\Support\HtmlString;
-use App\Filament\Concerns\BelongsToModule;
-use Spatie\Permission\Models\Role;
 
 class EmployeeResource extends Resource
 {
     use BelongsToModule;
     protected static ?string $module = 'hr';
-    protected static ?string $model = Employee::class;
+    protected static ?string $model  = Employee::class;
 
     protected static ?string $navigationIcon = 'heroicon-o-user-group';
 
@@ -72,13 +71,17 @@ class EmployeeResource extends Resource
                         Forms\Components\Select::make('roles')
                             ->label('Role')
                             ->multiple()
-                            ->options(fn() => Role::pluck('name', 'id')->toArray())
+                            ->options(fn() => \Spatie\Permission\Models\Role::pluck('name', 'name')->toArray())
                             ->preload()
                             ->searchable()
                             ->required()
                             ->native(false)
                             ->prefixIcon('heroicon-o-shield-check')
-                            ->dehydrated(false),
+                            ->afterStateHydrated(function (Forms\Components\Select $component, $record) {
+                                if ($record && $record->user) {
+                                    $component->state($record->user->roles->pluck('name')->toArray());
+                                }
+                            }),
 
                         Forms\Components\TextInput::make('email')
                             ->label('Email')
@@ -136,10 +139,10 @@ class EmployeeResource extends Resource
                         Forms\Components\Select::make('marital_status')
                             ->label('Status Perkawinan')
                             ->options([
-                                'Menikah' => 'Menikah',
+                                'Menikah'       => 'Menikah',
                                 'Belum Menikah' => 'Belum Menikah',
-                                'Duda' => 'Duda',
-                                'Janda' => 'Janda',
+                                'Duda'          => 'Duda',
+                                'Janda'         => 'Janda',
                             ])
                             ->native(false)
                             ->prefixIcon('heroicon-o-heart'),
@@ -147,14 +150,14 @@ class EmployeeResource extends Resource
                         Forms\Components\Select::make('education_level')
                             ->label('Pendidikan Terakhir')
                             ->options([
-                                'SD' => 'SD',
-                                'SMP' => 'SMP',
-                                'SMA' => 'SMA',
-                                'Diploma' => 'Diploma (D1/D2/D3)',
-                                'Sarjana' => 'Sarjana (S1)',
+                                'SD'       => 'SD',
+                                'SMP'      => 'SMP',
+                                'SMA'      => 'SMA',
+                                'Diploma'  => 'Diploma (D1/D2/D3)',
+                                'Sarjana'  => 'Sarjana (S1)',
                                 'Magister' => 'Magister (S2)',
-                                'Doktor' => 'Doktor (S3)',
-                                'Lainnya' => 'Lainnya',
+                                'Doktor'   => 'Doktor (S3)',
+                                'Lainnya'  => 'Lainnya',
                             ])
                             ->native(false)
                             ->prefixIcon('heroicon-o-academic-cap'),
@@ -199,11 +202,11 @@ class EmployeeResource extends Resource
                             ->label('Jabatan')
                             ->required()
                             ->options([
-                                'Staf' => 'Staf',
-                                'Junior' => 'Junior',
-                                'Senior' => 'Senior',
-                                'Magang' => 'Magang',
-                                'Pimpinan' => 'Pimpinan',
+                                'Staf'            => 'Staf',
+                                'Junior'          => 'Junior',
+                                'Senior'          => 'Senior',
+                                'Magang'          => 'Magang',
+                                'Pimpinan'        => 'Pimpinan',
                                 'Mantan Karyawan' => 'Mantan Karyawan',
                             ])
                             ->native(false)
@@ -213,8 +216,8 @@ class EmployeeResource extends Resource
                             ->label('Jenis Kontrak')
                             ->options([
                                 'Karyawan Tetap' => 'Karyawan Tetap',
-                                'Kontrak' => 'Kontrak',
-                                'Magang' => 'Magang',
+                                'Kontrak'        => 'Kontrak',
+                                'Magang'         => 'Magang',
                             ])
                             ->native(false)
                             ->prefixIcon('heroicon-o-document-text'),
@@ -251,8 +254,8 @@ class EmployeeResource extends Resource
                         Forms\Components\Select::make('status')
                             ->label('Status Karyawan')
                             ->options([
-                                'active' => 'Active',
-                                'resigned' => 'Resigned',
+                                'active'     => 'Active',
+                                'resigned'   => 'Resigned',
                                 'terminated' => 'Terminated',
                             ])
                             ->native(false)
@@ -290,8 +293,10 @@ class EmployeeResource extends Resource
                     ->icon('heroicon-o-user')
                     ->color(function (Employee $record) {
                         $record->withTrashed()->first();
-                        if ($record && $record->trashed())
+                        if ($record && $record->trashed()) {
                             return 'danger';
+                        }
+
                         return '';
                     })
                     ->placeholder('—'),
@@ -329,13 +334,13 @@ class EmployeeResource extends Resource
                     ->label('Jam Kerja')
                     ->placeholder('—')
                     ->formatStateUsing(function ($record) {
-                        if (!$record->shift) {
+                        if (! $record->shift) {
                             return '—';
                         }
 
                         return $record->shift->name . ' (' .
-                            $record->shift->start_time . ' - ' .
-                            $record->shift->end_time . ')';
+                        $record->shift->start_time . ' - ' .
+                        $record->shift->end_time . ')';
                     })
                     ->toggleable(isToggledHiddenByDefault: true),
 
@@ -343,18 +348,19 @@ class EmployeeResource extends Resource
                     ->sortable()
                     ->colors([
                         'success' => 'active',
-                        'gray' => 'resigned',
-                        'danger' => 'terminated',
+                        'gray'    => 'resigned',
+                        'danger'  => 'terminated',
                     ])
                     ->formatStateUsing(fn(string $state): string => ucwords(str_replace('_', ' ', $state)))
                     ->placeholder('—'),
 
-                Tables\Columns\BadgeColumn::make('roles.name')
+                Tables\Columns\TextColumn::make('user.roles.name') // Tambahkan prefix 'user.'
                     ->label('Role')
-                    ->sortable()
-                    ->colors(['indigo'])
+                    ->badge() // Gunakan ->badge() sebagai pengganti BadgeColumn
+                    ->color('indigo')
                     ->formatStateUsing(fn(string $state): string => ucwords(str_replace('_', ' ', $state)))
-                    ->placeholder('—'),
+                    ->placeholder('—')
+                    ->searchable(), // Bisa ditambah searchable agar bisa dicari di table
 
                 Tables\Columns\ToggleColumn::make('can_wfa')
                     ->label(new HtmlString(Blade::render('<x-heroicon-o-map-pin class="w-6 h-6" />')))
@@ -393,8 +399,8 @@ class EmployeeResource extends Resource
                 Tables\Filters\SelectFilter::make('status')
                     ->label('Status Karyawan')
                     ->options([
-                        'active' => 'active',
-                        'resigned' => 'resigned',
+                        'active'     => 'active',
+                        'resigned'   => 'resigned',
                         'terminated' => 'terminated',
                     ])
                     ->native(false),
@@ -517,17 +523,17 @@ class EmployeeResource extends Resource
                             ->label('Status Karyawan')
                             ->badge()
                             ->color(fn(string $state): string => match ($state) {
-                                'active' => 'success',
-                                'resigned' => 'danger',
+                                'active'     => 'success',
+                                'resigned'   => 'danger',
                                 'terminated' => 'danger',
-                                default => 'danger',
+                                default      => 'danger',
                             })
                             ->formatStateUsing(fn(string $state) => match ($state) {
-                                'active' => 'Active',
-                                'resigned' => 'Resigned',
+                                'active'     => 'Active',
+                                'resigned'   => 'Resigned',
                                 'terminated' => 'Terminated',
 
-                                default => ucwords(
+                                default      => ucwords(
                                     str_replace('_', ' ', $state)
                                 ),
                             })
@@ -546,8 +552,8 @@ class EmployeeResource extends Resource
                             ->label('Jenis Kontrak')
                             ->formatStateUsing(fn(?string $state): string => match ($state) {
                                 'Karyawan Tetap', 'permanent' => 'Karyawan Tetap',
-                                'Kontrak', 'contract' => 'Kontrak',
-                                'Magang', 'intern' => 'Magang',
+                                'Kontrak', 'contract'         => 'Kontrak',
+                                'Magang', 'intern'            => 'Magang',
                                 default => ucwords($state ?? '-'),
                             })
                             ->placeholder('—'),
@@ -560,13 +566,13 @@ class EmployeeResource extends Resource
                             ->label('Jam Kerja')
                             ->placeholder('—')
                             ->formatStateUsing(function ($record) {
-                                if (!$record->shift) {
+                                if (! $record->shift) {
                                     return '—';
                                 }
 
                                 return $record->shift->name . ' (' .
-                                    $record->shift->start_time . ' - ' .
-                                    $record->shift->end_time . ')';
+                                $record->shift->start_time . ' - ' .
+                                $record->shift->end_time . ')';
                             }),
 
                         TextEntry::make('join_date')
@@ -651,10 +657,10 @@ class EmployeeResource extends Resource
     public static function getPages(): array
     {
         return [
-            'index' => Pages\ListEmployees::route('/'),
+            'index'  => Pages\ListEmployees::route('/'),
             'create' => Pages\CreateEmployee::route('/create'),
-            'view' => Pages\ViewEmployee::route('/{record}'),
-            'edit' => Pages\EditEmployee::route('/{record}/edit'),
+            'view'   => Pages\ViewEmployee::route('/{record}'),
+            'edit'   => Pages\EditEmployee::route('/{record}/edit'),
         ];
     }
 
