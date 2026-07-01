@@ -1,6 +1,7 @@
 <?php
 namespace App\Filament\Resources\HR;
 
+use App\Filament\Concerns\BelongsToModule;
 use App\Filament\Resources\HR\DepartmentResource\Pages;
 use App\Models\HR\Department;
 use Filament\Forms;
@@ -14,7 +15,6 @@ use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
 use Illuminate\Support\Carbon;
-use App\Filament\Concerns\BelongsToModule;
 
 class DepartmentResource extends Resource
 {
@@ -46,14 +46,56 @@ class DepartmentResource extends Resource
                                     ->label('Nama Departemen')
                                     ->required()
                                     ->maxLength(25)
-                                    ->prefixIcon('heroicon-o-document-text'),
+                                    ->prefixIcon('heroicon-o-document-text')
+                                // Tambahkan Custom Rule di sini
+                                    ->rules([
+                                        fn(?Department $record) => function (string $attribute, $value, \Closure $fail) use ($record) {
+                                            // Cek database, termasuk yang sudah di-soft delete
+                                            $query = Department::withTrashed()->where('name', $value);
+
+                                            // Abaikan record saat ini jika sedang mode Edit
+                                            if ($record) {
+                                                $query->where('id', '!=', $record->id);
+                                            }
+
+                                            $existing = $query->first();
+
+                                            if ($existing) {
+                                                if ($existing->trashed()) {
+                                                    $fail('Departemen "' . $value . '" sudah ada namun di dalam Trash (Terhapus). Silakan lakukan Restore data tersebut di tab filter "Deleted Status".');
+                                                } else {
+                                                    $fail('Departemen "' . $value . '" sudah digunakan oleh departemen aktif.');
+                                                }
+                                            }
+                                        },
+                                    ]),
 
                                 Forms\Components\TextInput::make('code')
                                     ->label('Kode Departemen')
                                     ->required()
                                     ->maxLength(3)
                                     ->prefixIcon('heroicon-o-viewfinder-circle')
-                                    ->afterStateUpdated(fn($state, callable $set) => $set('code', strtoupper($state))),
+                                    ->afterStateUpdated(fn($state, callable $set) => $set('code', strtoupper($state)))
+                                    // Tambahkan hal yang sama untuk kode jika kode juga harus unik
+                                    ->rules([
+                                        fn(?Department $record) => function (string $attribute, $value, \Closure $fail) use ($record) {
+                                            $query = Department::withTrashed()->where('code', $value);
+
+                                            if ($record) {
+                                                $query->where('id', '!=', $record->id);
+                                            }
+
+                                            $existing = $query->first();
+
+                                            if ($existing) {
+                                                if ($existing->trashed()) {
+                                                    $fail('Kode "' . $value . '" sudah ada namun di dalam Trash (Terhapus). Silakan lakukan Restore data tersebut.');
+                                                } else {
+                                                    $fail('Kode "' . $value . '" sudah digunakan.');
+                                                }
+                                            }
+                                        },
+                                    ]),
                             ]),
                     ]),
             ]);
@@ -214,10 +256,10 @@ class DepartmentResource extends Resource
     public static function getPages(): array
     {
         return [
-            'index' => Pages\ListDepartments::route('/'),
+            'index'  => Pages\ListDepartments::route('/'),
             'create' => Pages\CreateDepartment::route('/create'),
             // 'view' => Pages\ViewDepartment::route('/{record}'),
-            'edit' => Pages\EditDepartment::route('/{record}/edit'),
+            'edit'   => Pages\EditDepartment::route('/{record}/edit'),
         ];
     }
 
