@@ -4,18 +4,23 @@ namespace App\Traits;
 
 trait GeneratesDocumentNumber
 {
-    /**
-     * Generate nomor dokumen dengan format PREFIX-YYMM-SEQ
-     *
-     * @param string $prefix Kode dokumen (contoh: 'GR', 'PO', 'RMA')
-     * @param string $columnName Nama kolom di tabel (default: 'document_number')
-     * @return string
-     */
+    private static function getRomanMonth(): string
+    {
+        $month = (int) now()->format('n');
+        return match ($month) {
+            1 => 'I', 2 => 'II', 3 => 'III', 4 => 'IV',
+            5 => 'V', 6 => 'VI', 7 => 'VII', 8 => 'VIII',
+            9 => 'IX', 10 => 'X', 11 => 'XI', 12 => 'XII',
+            default => 'I',
+        };
+    }
+
     public static function generateDocNumber(string $prefix, string $columnName): string
     {
-        $formatPrefix = $prefix . '-' . date('ym') . '-';
+        $year = now()->format('Y');
+        $romanMonth = self::getRomanMonth();
+        $formatPrefix = "{$prefix}/NEX/{$romanMonth}/{$year}/";
 
-        // Cek apakah model pakai SoftDeletes
         $query = static::query();
         if (in_array(\Illuminate\Database\Eloquent\SoftDeletes::class, class_uses_recursive(static::class))) {
             $query = $query->withTrashed();

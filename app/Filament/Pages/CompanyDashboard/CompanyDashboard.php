@@ -1,5 +1,5 @@
 <?php
-namespace App\Filament\Pages;
+namespace App\Filament\Pages\CompanyDashboard;
 
 use BezhanSalleh\FilamentShield\Traits\HasPageShield;
 use Filament\Pages\Page;
