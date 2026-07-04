@@ -10,22 +10,6 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout Repository
-        uses: actions/checkout@v4
-
-      # Build asset di GitHub Actions
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: 22
-
-      - name: Install NPM dependencies
-        run: npm ci
-
-      - name: Build Filament assets
-        run: npm run build:filament
-
-      # Deploy ke server
       - name: Deploy via SSH
         uses: appleboy/ssh-action@v1.0.3
         with:
@@ -39,23 +23,20 @@ jobs:
 
             cd ~/public_html/domains/erp.toondangan.com
 
-            echo "📦 Pull latest code from GitHub..."
+            echo "📦 Pull latest code..."
             git fetch origin
             git reset --hard origin/main
 
-            echo "🧰 Install Composer dependencies..."
+            echo "🧰 Install Composer..."
             composer install --no-dev --optimize-autoloader
 
-            echo "🧹 Clear Laravel caches..."
+            echo "🧹 Clear cache..."
             php artisan optimize:clear
 
             echo "🗄️ Run migrations..."
             php artisan migrate --force
 
-            echo "🛡️ Generate Shield permissions..."
-            php artisan shield:generate --all || true
-
-            echo "⚡ Optimize Laravel..."
+            echo "⚡ Optimize..."
             php artisan optimize
 
             echo "✅ Deploy finished!"
