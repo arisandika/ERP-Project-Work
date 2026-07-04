@@ -124,8 +124,8 @@
         <div class="flex items-center justify-between w-full max-w-6xl pb-6 mb-4">
             {{-- Logo --}}
             <div class="flex items-center gap-3">
-                <img src="{{ asset('assets/logo-dark.png') }}" alt="Logo" class="h-8 dark:hidden">
-                <img src="{{ asset('assets/logo-light.png') }}" alt="Logo" class="hidden h-8 dark:block">
+                <img src="{{ asset('assets/logo-dark.webp') }}" alt="Logo" class="h-8 dark:hidden">
+                <img src="{{ asset('assets/logo-light.webp') }}" alt="Logo" class="hidden h-8 dark:block">
             </div>
 
             {{-- Jam & Tanggal --}}

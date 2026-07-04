@@ -21,6 +21,17 @@ return [
         'attendance',
         'hr',
     ],
+    'employees' => [
+        'attendance',
+        'inventory',
+        'hr',
+        'finance',
+        'procurement',
+        'crm',
+        'sales',
+        'marketing',
+        'project',
+    ],
     'finance_employees' => [
         'attendance',
         'finance',

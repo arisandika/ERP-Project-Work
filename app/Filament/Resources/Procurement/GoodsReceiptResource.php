@@ -355,7 +355,12 @@ class GoodsReceiptResource extends Resource
                                     ->suffix(' pcs'),
                                 Infolists\Components\TextEntry::make('scanned_sns')
                                     ->label('Serial Number')
-                                    ->placeholder('-'),
+                                    ->placeholder('-')
+                                    ->formatStateUsing(fn($state) =>
+                                        is_array($state)
+                                            ? implode(', ', $state)
+                                            : (is_string($state) ? preg_replace('/\s+/', ', ', trim($state)) : (string)$state)
+                                    ),
                             ])
                             ->columns(3),
                     ]),
