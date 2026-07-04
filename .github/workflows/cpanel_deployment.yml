@@ -13,6 +13,19 @@ jobs:
       - name: Checkout Repository
         uses: actions/checkout@v4
 
+      # Build asset di GitHub Actions
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Install NPM dependencies
+        run: npm ci
+
+      - name: Build Filament assets
+        run: npm run build:filament
+
+      # Deploy ke server
       - name: Deploy via SSH
         uses: appleboy/ssh-action@v1.0.3
         with:
@@ -20,7 +33,10 @@ jobs:
           username: ${{ secrets.SSH_USER }}
           key: ${{ secrets.SSH_KEY }}
           port: ${{ secrets.SSH_PORT }}
+          script_stop: true
           script: |
+            set -e
+
             cd ~/public_html/domains/erp.toondangan.com
 
             echo "📦 Pull latest code from GitHub..."
@@ -28,22 +44,18 @@ jobs:
             git reset --hard origin/main
 
             echo "🧰 Install Composer dependencies..."
-            ~/bin/composer install --no-dev --optimize-autoloader
+            composer install --no-dev --optimize-autoloader
 
-            echo "📦 Install npm dependencies..."
-            ~/.nvm/versions/node/v24.3.0/bin/npm ci
+            echo "🧹 Clear Laravel caches..."
+            php artisan optimize:clear
 
-            echo "🧩 Build Filament assets..."
-            ~/.nvm/versions/node/v24.3.0/bin/npm run build:filament
-
-            echo "🚀 Run Laravel optimizations..."
+            echo "🗄️ Run migrations..."
             php artisan migrate --force
-            php artisan config:cache
-            php artisan route:cache
-            php artisan view:cache
-            php artisan shield:generate --all
+
+            echo "🛡️ Generate Shield permissions..."
+            php artisan shield:generate --all || true
+
+            echo "⚡ Optimize Laravel..."
+            php artisan optimize
 
             echo "✅ Deploy finished!"
-            php artisan config:cache
-            php artisan route:cache
-            php artisan view:cache
