@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Filament\Resources\DealResource\RelationManagers;
+namespace App\Filament\Resources\CRM\DealResource\RelationManagers;
 
 use App\Filament\Resources\Sales\QuotationResource;
 use App\Mail\QuotationSent;

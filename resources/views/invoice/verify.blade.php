@@ -113,8 +113,8 @@
                     <header class="flex flex-col items-center fi-simple-header">
                         <div style="height: 1.5rem;" class="flex mb-8 fi-logo">
                             <div class="flex items-center">
-                                <img src="{{ asset('assets/logo-dark.png') }}" alt="Logo" class="h-8 dark:hidden">
-                                <img src="{{ asset('assets/logo-light.png') }}" alt="Logo"
+                                <img src="{{ asset('assets/logo-dark.webp') }}" alt="Logo" class="h-8 dark:hidden">
+                                <img src="{{ asset('assets/logo-light.webp') }}" alt="Logo"
                                     class="hidden h-8 dark:block">
                             </div>
                         </div>

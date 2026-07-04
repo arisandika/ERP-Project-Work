@@ -4,7 +4,7 @@ namespace App\Filament\Resources\CRM;
 
 use App\Filament\Resources\CRM\DealResource\Pages;
 use App\Filament\Resources\CRM\DealResource\RelationManagers;
-use App\Filament\Resources\DealResource\RelationManagers\QuotationsRelationManager;
+use App\Filament\Resources\CRM\DealResource\RelationManagers\QuotationsRelationManager;
 use App\Filament\Resources\Sales\QuotationResource;
 use App\Models\CRM\Customer;
 use App\Models\CRM\Deal;
