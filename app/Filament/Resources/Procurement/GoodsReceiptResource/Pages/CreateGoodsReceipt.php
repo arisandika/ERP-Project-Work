@@ -31,11 +31,18 @@ class CreateGoodsReceipt extends CreateRecord
                     continue;
                 }
 
+                $purchaseOrderItemId = $item['purchase_order_item_id'] ?? null;
+                $productId = $item['product_id'] ?? null;
+
+                if (blank($purchaseOrderItemId) || blank($productId)) {
+                    continue;
+                }
+
                 $hasValidItem = true;
 
                 $record->items()->create([
-                    'purchase_order_item_id' => $item['purchase_order_item_id'] ?? null,
-                    'product_id' => $item['product_id'] ?? null,
+                    'purchase_order_item_id' => $purchaseOrderItemId,
+                    'product_id' => $productId,
                     'quantity_received' => $qtyReceived,
                     'scanned_sns' => $item['scanned_sns'] ?? null,
                     'notes' => $item['notes'] ?? null,
@@ -43,7 +50,7 @@ class CreateGoodsReceipt extends CreateRecord
             }
 
             if (! $hasValidItem) {
-                throw new \Exception('Minimal harus ada satu item dengan qty diterima lebih dari 0.');
+                throw new \Exception('Minimal harus ada satu item dengan qty diterima lebih dari 0. Pastikan PO sudah dipilih dan item sudah termuat.');
             }
 
             $record->load('items');

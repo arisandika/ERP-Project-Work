@@ -15,11 +15,16 @@ trait GeneratesDocumentNumber
         };
     }
 
+    private static function getNumericMonth(): string
+    {
+        return now()->format('m');
+    }
+
     public static function generateDocNumber(string $prefix, string $columnName): string
     {
         $year = now()->format('Y');
-        $romanMonth = self::getRomanMonth();
-        $formatPrefix = "{$prefix}/NEX/{$romanMonth}/{$year}/";
+        $numericMonth = self::getNumericMonth();
+        $formatPrefix = "{$prefix}/NEX/{$year}/{$numericMonth}/";
 
         $query = static::query();
         if (in_array(\Illuminate\Database\Eloquent\SoftDeletes::class, class_uses_recursive(static::class))) {

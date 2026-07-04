@@ -1,0 +1,550 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kuesioner UAT — Sistem ERP</title>
+    <style>
+        @page {
+            size: A4 landscape;
+            margin: 15mm;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            font-size: 13px;
+            color: #1a1a1a;
+            line-height: 1.5;
+            padding: 20px;
+        }
+
+        @media print {
+            body {
+                padding: 0;
+                font-size: 11.5px;
+            }
+            .no-print {
+                display: none !important;
+            }
+            .page-break {
+                page-break-before: always;
+            }
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 24px;
+            border-bottom: 3px double #333;
+            padding-bottom: 14px;
+        }
+
+        .header h1 {
+            font-size: 20px;
+            font-weight: 700;
+            letter-spacing: 0.5px;
+            margin-bottom: 4px;
+        }
+
+        .header .subtitle {
+            font-size: 13px;
+            color: #555;
+        }
+
+        /* Skala */
+        .skala-section {
+            display: flex;
+            gap: 30px;
+            margin-bottom: 20px;
+            align-items: flex-start;
+        }
+
+        .skala-table {
+            flex-shrink: 0;
+        }
+
+        .skala-table h3 {
+            font-size: 12px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 6px;
+            color: #444;
+        }
+
+        .skala-table table {
+            border-collapse: collapse;
+            width: auto;
+        }
+
+        .skala-table th, .skala-table td {
+            border: 1px solid #999;
+            padding: 4px 14px;
+            text-align: center;
+            font-size: 12px;
+        }
+
+        .skala-table th {
+            background: #f0f0f0;
+            font-weight: 600;
+        }
+
+        .skala-table td:first-child {
+            font-weight: 700;
+            width: 40px;
+        }
+
+        /* Identitas */
+        .identitas {
+            flex-grow: 1;
+        }
+
+        .identitas h3 {
+            font-size: 12px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 6px;
+            color: #444;
+        }
+
+        .identitas table {
+            border-collapse: collapse;
+            width: 100%;
+        }
+
+        .identitas th, .identitas td {
+            border: 1px solid #999;
+            padding: 5px 12px;
+            text-align: left;
+            font-size: 12px;
+        }
+
+        .identitas th {
+            background: #f0f0f0;
+            font-weight: 600;
+            width: 120px;
+        }
+
+        /* Instruksi */
+        .instruksi {
+            background: #f7f7f7;
+            border: 1px solid #ddd;
+            border-left: 4px solid #555;
+            padding: 10px 14px;
+            margin-bottom: 20px;
+            font-size: 12.5px;
+            color: #333;
+        }
+
+        /* Tabel Utama */
+        .main-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 24px;
+        }
+
+        .main-table thead th {
+            background: #2c3e50;
+            color: #fff;
+            font-size: 11px;
+            font-weight: 600;
+            padding: 8px 6px;
+            text-align: center;
+            border: 1px solid #1a252f;
+            white-space: nowrap;
+        }
+
+        .main-table thead th:nth-child(2) {
+            text-align: left;
+            min-width: 220px;
+        }
+
+        .main-table thead th:nth-child(8),
+        .main-table thead th:nth-child(9) {
+            text-align: left;
+        }
+
+        .main-table tbody td {
+            border: 1px solid #bbb;
+            padding: 7px 6px;
+            vertical-align: top;
+            font-size: 12px;
+        }
+
+        .main-table tbody tr:nth-child(even) {
+            background: #fafafa;
+        }
+
+        .main-table tbody tr:hover {
+            background: #f0f6ff;
+        }
+
+        .main-table .col-no {
+            text-align: center;
+            font-weight: 700;
+            width: 32px;
+        }
+
+        .main-table .col-pernyataan {
+            text-align: left;
+            line-height: 1.45;
+        }
+
+        .main-table .col-skala {
+            text-align: center;
+            width: 42px;
+            font-size: 16px;
+            color: #888;
+        }
+
+        .main-table .col-aspek {
+            text-align: left;
+            font-size: 11px;
+            color: #555;
+            width: 130px;
+        }
+
+        .main-table .col-fitur {
+            text-align: left;
+            font-size: 11px;
+            color: #333;
+            width: 220px;
+        }
+
+        .main-table .col-fitur strong {
+            color: #1a5276;
+        }
+
+        /* Ringkasan */
+        .ringkasan {
+            margin-bottom: 24px;
+        }
+
+        .ringkasan h2 {
+            font-size: 15px;
+            margin-bottom: 10px;
+            border-bottom: 2px solid #333;
+            padding-bottom: 4px;
+        }
+
+        .ringkasan table {
+            border-collapse: collapse;
+            width: 50%;
+        }
+
+        .ringkasan th, .ringkasan td {
+            border: 1px solid #999;
+            padding: 6px 14px;
+            text-align: left;
+            font-size: 12px;
+        }
+
+        .ringkasan th {
+            background: #f0f0f0;
+            font-weight: 600;
+        }
+
+        /* Referensi */
+        .referensi {
+            margin-top: 24px;
+            padding-top: 16px;
+            border-top: 1px solid #ccc;
+        }
+
+        .referensi h2 {
+            font-size: 15px;
+            margin-bottom: 10px;
+        }
+
+        .referensi table {
+            border-collapse: collapse;
+            width: 100%;
+        }
+
+        .referensi th, .referensi td {
+            border: 1px solid #999;
+            padding: 6px 10px;
+            text-align: left;
+            font-size: 11px;
+            vertical-align: top;
+        }
+
+        .referensi th {
+            background: #f0f0f0;
+            font-weight: 600;
+            width: 70px;
+            text-align: center;
+        }
+
+        .referensi code {
+            background: #eee;
+            padding: 1px 4px;
+            border-radius: 3px;
+            font-size: 10.5px;
+            font-family: 'Consolas', 'Courier New', monospace;
+        }
+
+        .footer {
+            margin-top: 30px;
+            text-align: center;
+            font-size: 11px;
+            color: #888;
+            font-style: italic;
+        }
+
+        /* Print button */
+        .print-btn {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: #2c3e50;
+            color: #fff;
+            border: none;
+            padding: 12px 24px;
+            font-size: 14px;
+            border-radius: 6px;
+            cursor: pointer;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+            z-index: 999;
+        }
+
+        .print-btn:hover {
+            background: #1a252f;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="no-print">
+        <button class="print-btn" onclick="window.print()">Cetak / Print</button>
+    </div>
+
+    <!-- HEADER -->
+    <div class="header">
+        <h1>Kuesioner User Acceptance Test (UAT) &mdash; Sistem ERP</h1>
+        <div class="subtitle">Skala Pengukuran: Likert 1&ndash;5 &nbsp;|&nbsp; Untuk keperluan Penelitian Skripsi/Jurnal</div>
+    </div>
+
+    <!-- SKALA + IDENTITAS -->
+    <div class="skala-section">
+        <div class="skala-table">
+            <h3>Skala Likert</h3>
+            <table>
+                <thead>
+                    <tr><th>Skala</th><th>Keterangan</th></tr>
+                </thead>
+                <tbody>
+                    <tr><td>1</td><td>Sangat Tidak Setuju</td></tr>
+                    <tr><td>2</td><td>Tidak Setuju</td></tr>
+                    <tr><td>3</td><td>Netral</td></tr>
+                    <tr><td>4</td><td>Setuju</td></tr>
+                    <tr><td>5</td><td>Sangat Setuju</td></tr>
+                </tbody>
+            </table>
+        </div>
+        <div class="identitas">
+            <h3>Identitas Responden (opsional)</h3>
+            <table>
+                <tr><th>Nama</th><td></td></tr>
+                <tr><th>Departemen</th><td></td></tr>
+                <tr><th>Posisi / Jabatan</th><td></td></tr>
+            </table>
+        </div>
+    </div>
+
+    <!-- INSTRUKSI -->
+    <div class="instruksi">
+        <strong>Instruksi:</strong> Silakan beri tanda centang (&#10003;) atau lingkaran pada kolom Skala yang paling sesuai dengan pendapat Anda mengenai setiap pernyataan di bawah ini. Tidak ada jawaban yang benar atau salah &mdash; kami hanya ingin mengetahui pengalaman Anda dalam menggunakan sistem ini.
+    </div>
+
+    <!-- TABEL UTAMA -->
+    <table class="main-table">
+        <thead>
+            <tr>
+                <th>No.</th>
+                <th>Pernyataan</th>
+                <th>1</th>
+                <th>2</th>
+                <th>3</th>
+                <th>4</th>
+                <th>5</th>
+                <th>Aspek yang Diukur</th>
+                <th>Fitur / Modul Terkait</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td class="col-no">1</td>
+                <td class="col-pernyataan">Sistem ini mudah digunakan tanpa memerlukan pelatihan khusus yang panjang.</td>
+                <td class="col-skala">&#9744;</td>
+                <td class="col-skala">&#9744;</td>
+                <td class="col-skala">&#9744;</td>
+                <td class="col-skala">&#9744;</td>
+                <td class="col-skala">&#9744;</td>
+                <td class="col-aspek">Kemudahan Penggunaan (Usability)</td>
+                <td class="col-fitur">Seluruh modul &mdash; navigasi yang konsisten di semua halaman sistem</td>
+            </tr>
+            <tr>
+                <td class="col-no">2</td>
+                <td class="col-pernyataan">Menu dan tampilan antarmuka disusun secara rapi sehingga saya dapat dengan cepat menemukan fitur yang saya butuhkan.</td>
+                <td class="col-skala">&#9744;</td>
+                <td class="col-skala">&#9744;</td>
+                <td class="col-skala">&#9744;</td>
+                <td class="col-skala">&#9744;</td>
+                <td class="col-skala">&#9744;</td>
+                <td class="col-aspek">Kejelasan Antarmuka</td>
+                <td class="col-fitur">Struktur navigasi per modul (HR, CRM, Sales, Inventory, dll.) dengan ikon dan pengelompokan yang teratur</td>
+            </tr>
+            <tr>
+                <td class="col-no">3</td>
+                <td class="col-pernyataan">Fitur-fitur yang tersedia di dalam sistem mencakup kebutuhan pekerjaan saya sehari-hari di departemen.</td>
+                <td class="col-skala">&#9744;</td>
+                <td class="col-skala">&#9744;</td>
+                <td class="col-skala">&#9744;</td>
+                <td class="col-skala">&#9744;</td>
+                <td class="col-skala">&#9744;</td>
+                <td class="col-aspek">Kesesuaian Fitur dengan Kebutuhan Kerja</td>
+                <td class="col-fitur">Seluruh modul &mdash; HR, CRM, Sales, Inventory, Procurement, Project, Finance, Marketing, After-Sales</td>
+            </tr>
+            <tr>
+                <td class="col-no">4</td>
+                <td class="col-pernyataan">Dengan menggunakan sistem ini, pekerjaan saya dapat diselesaikan lebih cepat dan efisien dibandingkan metode sebelumnya.</td>
+                <td class="col-skala">&#9744;</td>
+                <td class="col-skala">&#9744;</td>
+                <td class="col-skala">&#9744;</td>
+                <td class="col-skala">&#9744;</td>
+                <td class="col-skala">&#9744;</td>
+                <td class="col-aspek">Efektivitas &amp; Efisiensi</td>
+                <td class="col-fitur">Otomasi alur kerja: pembuatan Delivery Order otomatis dari Sales Order, pengecekan stok rendah secara berkala, pengarsipan data terpusat</td>
+            </tr>
+            <tr>
+                <td class="col-no">5</td>
+                <td class="col-pernyataan">Sistem menyediakan papan Kanban (kartu yang dapat digeser/di-<em>drag</em>) yang memudahkan saya memantau alur kerja penjualan atau proyek secara visual.</td>
+                <td class="col-skala">&#9744;</td>
+                <td class="col-skala">&#9744;</td>
+                <td class="col-skala">&#9744;</td>
+                <td class="col-skala">&#9744;</td>
+                <td class="col-skala">&#9744;</td>
+                <td class="col-aspek">Kejelasan Antarmuka &amp; Efisiensi</td>
+                <td class="col-fitur"><strong>CRM Deal Pipeline</strong> &mdash; papan Kanban <em>drag-and-drop</em> untuk tahapan prospek/penjualan; <strong>Project Board</strong> &mdash; papan Kanban <em>drag-and-drop</em> untuk tiket proyek</td>
+            </tr>
+            <tr>
+                <td class="col-no">6</td>
+                <td class="col-pernyataan">Fitur pencatatan kehadiran secara otomatis mencatat lokasi saya saat melakukan <em>clock in/out</em>, sehingga proses absensi menjadi lebih mudah dan akurat.</td>
+                <td class="col-skala">&#9744;</td>
+                <td class="col-skala">&#9744;</td>
+                <td class="col-skala">&#9744;</td>
+                <td class="col-skala">&#9744;</td>
+                <td class="col-skala">&#9744;</td>
+                <td class="col-aspek">Kemudahan Penggunaan &amp; Efisiensi</td>
+                <td class="col-fitur"><strong>HR Attendance</strong> &mdash; <em>clock in/out</em> berbasis GPS dengan peta, validasi jarak ke kantor (<em>geofencing</em>), penyimpanan koordinat lokasi saat masuk dan keluar</td>
+            </tr>
+            <tr>
+                <td class="col-no">7</td>
+                <td class="col-pernyataan">Sistem mengirimkan pemberitahuan secara otomatis saat ada pengajuan yang membutuhkan persetujuan saya (seperti cuti atau reimbursement), sehingga saya tidak ketinggalan informasi.</td>
+                <td class="col-skala">&#9744;</td>
+                <td class="col-skala">&#9744;</td>
+                <td class="col-skala">&#9744;</td>
+                <td class="col-skala">&#9744;</td>
+                <td class="col-skala">&#9744;</td>
+                <td class="col-aspek">Efektivitas &amp; Efisiensi</td>
+                <td class="col-fitur"><strong>Notifikasi otomatis</strong> &mdash; pemberitahuan ke admin/manager saat ada pengajuan cuti atau reimbursement baru, serta pemberitahuan ke karyawan saat pengajuan disetujui/ditolak; juga peringatan otomatis saat stok barang menipis</td>
+            </tr>
+            <tr>
+                <td class="col-no">8</td>
+                <td class="col-pernyataan">Laman pelacakan pengiriman dapat diakses oleh pihak pelanggan atau penerima barang tanpa perlu login ke sistem.</td>
+                <td class="col-skala">&#9744;</td>
+                <td class="col-skala">&#9744;</td>
+                <td class="col-skala">&#9744;</td>
+                <td class="col-skala">&#9744;</td>
+                <td class="col-skala">&#9744;</td>
+                <td class="col-aspek">Kesesuaian Fitur</td>
+                <td class="col-fitur"><strong>Pelacakan Delivery Order</strong> &mdash; halaman publik di mana penerima dapat melihat status pengiriman dan menekan tombol &ldquo;Terima&rdquo; tanpa perlu masuk ke sistem</td>
+            </tr>
+            <tr>
+                <td class="col-no">9</td>
+                <td class="col-pernyataan">Saya dapat mengunduh data laporan dalam format Excel atau PDF dari data yang ada di sistem untuk keperluan analisis atau pelaporan kerja.</td>
+                <td class="col-skala">&#9744;</td>
+                <td class="col-skala">&#9744;</td>
+                <td class="col-skala">&#9744;</td>
+                <td class="col-skala">&#9744;</td>
+                <td class="col-skala">&#9744;</td>
+                <td class="col-aspek">Efektivitas &amp; Efisiensi</td>
+                <td class="col-fitur"><strong>Ekspor Laporan</strong> &mdash; ekspor data tiket proyek dan kehadiran karyawan ke Excel; ekspor laporan stok dan transaksi inventori ke PDF</td>
+            </tr>
+            <tr>
+                <td class="col-no">10</td>
+                <td class="col-pernyataan">Sistem berjalan dengan stabil dan jarang mengalami gangguan atau pesan error saat saya menggunakannya dalam aktivitas kerja sehari-hari.</td>
+                <td class="col-skala">&#9744;</td>
+                <td class="col-skala">&#9744;</td>
+                <td class="col-skala">&#9744;</td>
+                <td class="col-skala">&#9744;</td>
+                <td class="col-skala">&#9744;</td>
+                <td class="col-aspek">Stabilitas Sistem</td>
+                <td class="col-fitur">Pengujian keseluruhan modul &mdash; mekanisme pengaman transaksi data, validasi status berlapis pada alur kerja, pemulihan otomatis (kedaluwarsa cuti pending, penyelesaian pengiriman otomatis)</td>
+            </tr>
+        </tbody>
+    </table>
+
+    <!-- RINGKASAN -->
+    <div class="ringkasan">
+        <h2>Ringkasan Aspek yang Diukur</h2>
+        <table>
+            <thead>
+                <tr><th>Aspek</th><th>Nomor Pernyataan</th></tr>
+            </thead>
+            <tbody>
+                <tr><td>Kemudahan Penggunaan (Usability)</td><td>1, 6</td></tr>
+                <tr><td>Kesesuaian Fitur dengan Kebutuhan Kerja</td><td>3, 8</td></tr>
+                <tr><td>Kejelasan Antarmuka</td><td>2, 5</td></tr>
+                <tr><td>Efektivitas &amp; Efisiensi</td><td>4, 7, 9</td></tr>
+                <tr><td>Stabilitas Sistem</td><td>10</td></tr>
+            </tbody>
+        </table>
+    </div>
+
+    <!-- REFERENSI -->
+    <div class="referensi">
+        <h2>Referensi Fitur di Kode Sumber</h2>
+        <p style="font-size: 12px; margin-bottom: 8px; color: #555;">Pernyataan nomor 5&ndash;9 merujuk pada fitur spesifik yang teridentifikasi dari codebase:</p>
+        <table>
+            <thead>
+                <tr><th>No.</th><th>Bukti di Kode</th></tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><strong>5</strong></td>
+                    <td><code>app/Filament/Pages/CRM/DealPipeline.php</code> &mdash; Kanban CRM dengan <em>drag-and-drop</em>, pengurutan per kolom, aturan bisnis tahapan; <code>app/Filament/Pages/Project/ProjectBoard.php</code> &mdash; Kanban tiket proyek dengan filter pengguna</td>
+                </tr>
+                <tr>
+                    <td><strong>6</strong></td>
+                    <td><code>app/Filament/Pages/HR/Attendance.php</code> &mdash; <em>Clock in/out</em> dengan GPS (<em>Leaflet maps</em>), penyimpanan <code>latitude_in</code>, <code>longitude_in</code>, <code>latitude_out</code>, <code>longitude_out</code>; <code>app/Http/Controllers/API/HR/AttendanceController.php</code> &mdash; validasi jarak ke kantor</td>
+                </tr>
+                <tr>
+                    <td><strong>7</strong></td>
+                    <td><code>app/Observers/LeaveRequestObserver.php</code> &mdash; notifikasi ke admin saat cuti diajukan, notifikasi ke karyawan saat disetujui/ditolak; <code>app/Observers/ReimbursementRequestObserver.php</code> &mdash; alur serupa untuk reimbursement; <code>app/Notifications/LowStockNotification.php</code> &mdash; peringatan stok menipis</td>
+                </tr>
+                <tr>
+                    <td><strong>8</strong></td>
+                    <td><code>app/Http/Controllers/Sales/DeliveryOrderTrackingController.php</code> &mdash; halaman publik <code>/tracking/do/{nomor}</code> dengan konfirmasi penerimaan tanpa autentikasi</td>
+                </tr>
+                <tr>
+                    <td><strong>9</strong></td>
+                    <td><code>app/Exports/TicketsExport.php</code> dan <code>app/Exports/AttendancesExport.php</code> &mdash; ekspor Excel via Maatwebsite/Excel; <code>app/Http/Controllers/Inventory/StockReportController.php</code> &mdash; ekspor PDF laporan stok</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <!-- FOOTER -->
+    <div class="footer">
+        Kuesioner ini disusun berdasarkan analisis kode sumber sistem ERP yang diimplementasikan.<br>
+        Semua fitur yang disebutkan dalam pernyataan telah diverifikasi keberadaannya di dalam codebase.
+    </div>
+
+</body>
+</html>

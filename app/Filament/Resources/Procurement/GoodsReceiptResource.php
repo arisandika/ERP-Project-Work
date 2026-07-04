@@ -14,6 +14,8 @@ use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
 use App\Filament\Concerns\BelongsToModule;
+use Filament\Infolists;
+use Filament\Infolists\Infolist;
 
 class GoodsReceiptResource extends Resource
 {
@@ -150,6 +152,7 @@ class GoodsReceiptResource extends Resource
                     Forms\Components\Section::make('Ceklis Barang Fisik & Scan SN')
                         ->schema([
                             Forms\Components\Repeater::make('items')
+                                ->live()
                                 ->schema([
                                     Forms\Components\Hidden::make('purchase_order_item_id'),
                                     Forms\Components\Hidden::make('product_id'),
@@ -296,6 +299,67 @@ class GoodsReceiptResource extends Resource
                 ])
                 ->columnSpanFull(),
         ]);
+    }
+
+    public static function infolist(Infolist $infolist): Infolist
+    {
+        return $infolist
+            ->schema([
+                Infolists\Components\Section::make('Informasi Surat Jalan Penerimaan')
+                    ->schema([
+                        Infolists\Components\TextEntry::make('gr_number')
+                            ->label('No. Penerimaan (GR)')
+                            ->weight('bold'),
+                        Infolists\Components\TextEntry::make('title')
+                            ->label('Nama / Judul Penerimaan'),
+                        Infolists\Components\TextEntry::make('purchaseOrder.po_number')
+                            ->label('Ref. PO')
+                            ->placeholder('-'),
+                        Infolists\Components\TextEntry::make('supplier.name')
+                            ->label('Supplier')
+                            ->placeholder('-'),
+                        Infolists\Components\TextEntry::make('warehouse.warehouse_name')
+                            ->label('Gudang')
+                            ->placeholder('-'),
+                        Infolists\Components\TextEntry::make('receipt_date')
+                            ->label('Tanggal Diterima')
+                            ->date('d M Y'),
+                        Infolists\Components\TextEntry::make('delivery_note_number')
+                            ->label('No. Surat Jalan Supplier')
+                            ->placeholder('-'),
+                        Infolists\Components\TextEntry::make('status')
+                            ->label('Status')
+                            ->badge()
+                            ->color(fn (string $state): string => match (strtolower($state)) {
+                                'draft' => 'gray',
+                                'completed' => 'success',
+                                'cancelled' => 'danger',
+                                default => 'gray',
+                            })
+                            ->formatStateUsing(fn (string $state) => strtoupper($state)),
+                        Infolists\Components\TextEntry::make('receiver.name')
+                            ->label('Penerima (Gudang)')
+                            ->placeholder('-'),
+                    ])
+                    ->columns(3),
+
+                Infolists\Components\Section::make('Detail Barang yang Diterima')
+                    ->schema([
+                        Infolists\Components\RepeatableEntry::make('items')
+                            ->label('')
+                            ->schema([
+                                Infolists\Components\TextEntry::make('product.product_name')
+                                    ->label('Nama Barang'),
+                                Infolists\Components\TextEntry::make('quantity_received')
+                                    ->label('Qty Diterima')
+                                    ->suffix(' pcs'),
+                                Infolists\Components\TextEntry::make('scanned_sns')
+                                    ->label('Serial Number')
+                                    ->placeholder('-'),
+                            ])
+                            ->columns(3),
+                    ]),
+            ]);
     }
 
     public static function table(Table $table): Table
