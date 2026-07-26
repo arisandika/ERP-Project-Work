@@ -27,9 +27,6 @@ use Spatie\Permission\Models\Role;
 use Spatie\Permission\Models\Permission;
 use Spatie\Permission\PermissionRegistrar;
 use Filament\Http\Responses\Auth\Contracts\LoginResponse as LoginResponseContract;
-use Illuminate\Support\Facades\Mail;
-use Symfony\Component\Mailer\Transport\Smtp\EsmtpTransport;
-use Symfony\Component\Mailer\Transport\Smtp\Stream\SocketStream;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -89,39 +86,14 @@ class AppServiceProvider extends ServiceProvider
             }
         });
 
+
         Relation::morphMap([
             'employee' => \App\Models\HR\Employee::class,
             'salesperson' => \App\Models\Sales\SalesPerson::class,
         ]);
 
-        // Bypass SSL verification untuk SMTP — HANYA di local development
-        // (mengatasi masalah certificate revocation check di Windows)
-        // JANGAN AKTIFKAN DI PRODUCTION
-        if (app()->environment('local')) {
-            Mail::extend('smtp', function () {
-                $transport = new EsmtpTransport(
-                    config('mail.mailers.smtp.host'),
-                    (int) config('mail.mailers.smtp.port'),
-                    null,
-                    null
-                );
-
-                $transport->setUsername(config('mail.mailers.smtp.username'));
-                $transport->setPassword(config('mail.mailers.smtp.password'));
-
-                $stream = $transport->getStream();
-                if ($stream instanceof SocketStream) {
-                    $stream->setStreamOptions([
-                        'ssl' => [
-                            'allow_self_signed' => true,
-                            'verify_peer' => false,
-                            'verify_peer_name' => false,
-                        ],
-                    ]);
-                }
-
-                return $transport;
-            });
-        }
+        \Illuminate\Support\Facades\Gate::before(function ($user, $ability) {
+            return $user->hasRole('super_admin') ? true : null;
+        });
     }
 }
