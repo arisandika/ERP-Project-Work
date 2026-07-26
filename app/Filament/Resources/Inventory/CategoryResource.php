@@ -1,6 +1,7 @@
 <?php
 namespace App\Filament\Resources\Inventory;
 
+use App\Filament\Concerns\BelongsToModule;
 use App\Filament\Resources\Inventory\CategoryResource\Pages;
 use App\Models\Inventory\Category;
 use Filament\Forms;
@@ -8,18 +9,18 @@ use Filament\Forms\Form;
 use Filament\Infolists\Components\Section;
 use Filament\Infolists\Components\TextEntry;
 use Filament\Infolists\Infolist;
+use Filament\Notifications\Notification;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Carbon;
-use App\Filament\Concerns\BelongsToModule;
 
 class CategoryResource extends Resource
 {
     use BelongsToModule;
     protected static ?string $module = 'inventory';
-    protected static ?string $model = Category::class;
+    protected static ?string $model  = Category::class;
 
     protected static ?string $navigationIcon = 'heroicon-o-tag';
 
@@ -75,7 +76,7 @@ class CategoryResource extends Resource
                     ->badge()
                     ->color(fn(int $state): string => $state > 0 ? 'info' : 'gray')
                     ->sortable()
-                    ->formatStateUsing(fn($state) => $state . ' Kategori'),
+                    ->formatStateUsing(fn($state) => $state . ' Product'),
 
                 Tables\Columns\TextColumn::make('created_at')
                     ->label('Dibuat Pada')
@@ -134,7 +135,22 @@ class CategoryResource extends Resource
             ->actions([
                 Tables\Actions\ViewAction::make(),
                 Tables\Actions\EditAction::make(),
-                Tables\Actions\DeleteAction::make(),
+                Tables\Actions\DeleteAction::make()
+                    ->before(function (Tables\Actions\DeleteAction $action, Category $record) {
+                        $productsCount = $record->products()->count();
+                        $servicesCount = $record->services()->count();
+
+                        if ($productsCount > 0 || $servicesCount > 0) {
+                            Notification::make()
+                                ->title('Kategori tidak bisa dihapus')
+                                ->body("Kategori ini masih digunakan oleh {$productsCount} produk dan {$servicesCount} layanan. Hapus atau pindahkan data terkait terlebih dahulu.")
+                                ->danger()
+                                ->persistent()
+                                ->send();
+
+                            $action->halt();
+                        }
+                    }),
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([
@@ -186,10 +202,10 @@ class CategoryResource extends Resource
     public static function getPages(): array
     {
         return [
-            'index' => Pages\ListCategories::route('/'),
+            'index'  => Pages\ListCategories::route('/'),
             'create' => Pages\CreateCategory::route('/create'),
-            'view' => Pages\ViewCategory::route('/{record}'),
-            'edit' => Pages\EditCategory::route('/{record}/edit'),
+            'view'   => Pages\ViewCategory::route('/{record}'),
+            'edit'   => Pages\EditCategory::route('/{record}/edit'),
         ];
     }
 }
