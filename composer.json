@@ -17,7 +17,6 @@
         "flowframe/laravel-trend": "^0.4.0",
         "jeffgreco13/filament-breezy": "^2.6",
         "laravel/framework": "^12.0",
-        "laravel/pulse": "*",
         "laravel/sanctum": "^4.2",
         "laravel/tinker": "^2.10.1",
         "leandrocfe/filament-apex-charts": "^3.2",
