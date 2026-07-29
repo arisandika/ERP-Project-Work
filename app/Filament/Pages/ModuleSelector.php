@@ -9,6 +9,7 @@ use App\Support\ModuleAccess;
 use Filament\Pages\Page;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Carbon;
 
 class ModuleSelector extends Page
 {
@@ -62,11 +63,14 @@ class ModuleSelector extends Page
 
         $today = now()->toDateString();
 
+        // UPDATE: Mengecek apakah hari ini masuk di dalam rentang libur (start_date s/d end_date)
         $holiday = Cache::remember(
             "holiday:{$today}",
             now()->endOfDay(),
             fn() =>
-            Holiday::whereDate('date', $today)->first(['id', 'name'])
+            Holiday::whereDate('start_date', '<=', $today)
+                ->whereDate('end_date', '>=', $today)
+                ->first(['id', 'name'])
         );
 
         if ($holiday) {
@@ -136,14 +140,11 @@ class ModuleSelector extends Page
         }
 
         // --- 1. Ambil Departemen & Role ---
-        // Load relasi department
         $employee->loadMissing('department');
         $data['department'] = $employee->department?->name ?? 'Belum ada departemen';
 
-        // Format nama Role (Misal: "hr_employees" -> "HR Employees")
         $roles = $user->roles->pluck('name')->map(function ($role) {
             $formatted = ucwords(str_replace('_', ' ', $role));
-            // Perbaiki beberapa singkatan (Opsional, agar 'Hr' menjadi 'HR')
             $formatted = str_replace(['Hr ', 'Crm ', 'It '], ['HR ', 'CRM ', 'IT '], $formatted);
             return $formatted;
         })->filter()->implode(', ');
@@ -155,8 +156,8 @@ class ModuleSelector extends Page
         if ($employee->shift_id) {
             $employee->loadMissing('shift');
             if ($employee->shift) {
-                $start = \Carbon\Carbon::parse($employee->shift->start_time)->format('H:i');
-                $end = \Carbon\Carbon::parse($employee->shift->end_time)->format('H:i');
+                $start = Carbon::parse($employee->shift->start_time)->format('H:i');
+                $end = Carbon::parse($employee->shift->end_time)->format('H:i');
                 $data['shift'] = "{$employee->shift->name} ({$start} - {$end})";
             }
         }
@@ -176,14 +177,26 @@ class ModuleSelector extends Page
         }
 
         // --- 4. Ambil Libur Nasional 30 Hari Kedepan ---
-        $holiday = \App\Models\HR\Holiday::whereDate('date', '>=', $today)
-            ->whereDate('date', '<=', now()->addDays(30)->toDateString())
-            ->orderBy('date')
-            ->first(['date', 'name']);
+        // UPDATE: Cari jadwal libur dimana tanggal selesai (end_date) masih >= hari ini, 
+        // dan tanggal mulai (start_date) <= 30 hari kedepan.
+        $holiday = Holiday::whereDate('end_date', '>=', $today)
+            ->whereDate('start_date', '<=', now()->addDays(30)->toDateString())
+            ->orderBy('start_date')
+            ->first(['start_date', 'end_date', 'name']);
 
         if ($holiday) {
+            $start = Carbon::parse($holiday->start_date);
+            $end = Carbon::parse($holiday->end_date);
+            
+            // Buat string format tampilan, misal: "17 Agt" atau "14 - 16 Apr"
+            $displayDate = $start->isSameDay($end) 
+                ? $start->translatedFormat('d M') 
+                : $start->translatedFormat('d') . ' - ' . $end->translatedFormat('d M');
+
             $data['upcoming_holiday'] = [
-                'date' => $holiday->date,
+                'date' => $holiday->start_date, // Tetap sedia "date" untuk kompabilitas front-end (Blade)
+                'end_date' => $holiday->end_date,
+                'display' => $displayDate,      // Teks siap pakai
                 'name' => $holiday->name,
             ];
         }

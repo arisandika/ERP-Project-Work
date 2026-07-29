@@ -4,6 +4,7 @@ namespace App\Providers\Filament;
 
 use App\Filament\Pages\Auth\Login;
 use App\Filament\Pages\CompanyDashboard;
+use App\Livewire\Breezy\PersonalInfo;
 use BezhanSalleh\FilamentShield\FilamentShieldPlugin;
 use Filament\Enums\ThemeMode;
 use Filament\Http\Middleware\Authenticate;
@@ -90,6 +91,9 @@ class AdminPanelProvider extends PanelProvider
                         hasAvatars: false,
                         slug: 'my-profile'
                     )
+                    ->myProfileComponents([
+                        'personal_info' => PersonalInfo::class,
+                    ])
             ])
             ->sidebarCollapsibleOnDesktop(false)
             ->databaseNotifications()

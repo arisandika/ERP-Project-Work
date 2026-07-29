@@ -201,7 +201,7 @@
                     @endphp
                     <span
                         class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-full ring-1
-                                                    {{ $isNow ? 'bg-emerald-50 text-emerald-700 ring-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-300 dark:ring-emerald-800' : 'bg-amber-50 text-amber-700 ring-amber-200 dark:bg-amber-950/40 dark:text-amber-300 dark:ring-amber-800' }}">
+                                                                            {{ $isNow ? 'bg-emerald-50 text-emerald-700 ring-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-300 dark:ring-emerald-800' : 'bg-amber-50 text-amber-700 ring-amber-200 dark:bg-amber-950/40 dark:text-amber-300 dark:ring-amber-800' }}">
                         <x-filament::icon icon="heroicon-o-paper-airplane" class="w-3.5 h-3.5" />
                         @if($isNow)
                             Sedang cuti s/d {{ $cEnd->translatedFormat('d M') }}
@@ -219,15 +219,15 @@
                         $selisih = now()->diffInDays($hDate, false);
                     @endphp
                     <span
-                        class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-full ring-1
-                                                    {{ $isToday ? 'bg-emerald-50 text-emerald-700 ring-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-300 dark:ring-emerald-800' : 'bg-gray-100 text-gray-600 ring-gray-200 dark:bg-gray-800 dark:text-gray-400 dark:ring-gray-700' }}">
+                        class="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium rounded-full ring-1
+                                                                            {{ $isToday ? 'bg-emerald-50 text-emerald-700 ring-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-300 dark:ring-emerald-800' : 'bg-gray-100 text-gray-600 ring-gray-200 dark:bg-gray-800 dark:text-gray-400 dark:ring-gray-700' }}">
                         <x-filament::icon icon="heroicon-o-star" class="w-3.5 h-3.5" />
                         @if($isToday)
-                            Libur: {{ $pill['upcoming_holiday']['name'] }}
+                            Libur mendatang: {{ $pill['upcoming_holiday']['name'] }}
                         @elseif($selisih <= 7)
                             {{ $pill['upcoming_holiday']['name'] }} — {{ $selisih }} hari lagi
                         @else
-                            Libur: {{ $hDate->translatedFormat('d M') }} ({{ $pill['upcoming_holiday']['name'] }})
+                            Libur mendatang: {{ $hDate->translatedFormat('d M') }} ({{ $pill['upcoming_holiday']['name'] }})
                         @endif
                     </span>
                 @endif
@@ -252,9 +252,9 @@
                 };
             @endphp
             <div
-                class="flex hover:underline-offset-4 items-center w-full max-w-2xl gap-4 p-4 mb-10 shadow-sm rounded-xl ring-1 {{ $bgBanner }} {{ $ringBanner }} {{ $textBanner }}">
+                class="flex hover:underline-offset-4 items-center w-fit gap-4 p-4 mb-10 shadow-sm rounded-xl ring-1 {{ $bgBanner }} {{ $ringBanner }} {{ $textBanner }}">
                 <x-filament::icon :icon="$icon" class="w-5 h-5 shrink-0" />
-                <p class="flex-1 text-sm leading-relaxed">{!! $infoMessage !!}</p>
+                <p class="text-sm leading-relaxed w-fit">{!! $infoMessage !!}</p>
             </div>
         @endif
 
@@ -281,11 +281,11 @@
                     @php $cfg = $moduleConfig[$module['key']] ?? $moduleConfig['system']; @endphp
 
                     <button type="button" wire:click="selectModule('{{ $module['key'] }}')" class="module-card group relative flex flex-col p-4 sm:p-5 text-left rounded-2xl
-                                                               ring-1 ring-border-light dark:ring-border-dark
-                                                               bg-secondary-light dark:bg-secondary-dark
-                                                               shadow-sm overflow-hidden
-                                                               transition-all duration-200 ease-out
-                                                               hover:-translate-y-0.5 hover:shadow-md"
+                                                                                       ring-1 ring-border-light dark:ring-border-dark
+                                                                                       bg-secondary-light dark:bg-secondary-dark
+                                                                                       shadow-sm overflow-hidden
+                                                                                       transition-all duration-200 ease-out
+                                                                                       hover:-translate-y-0.5 hover:shadow-md"
                         style="--card-accent: {{ $cfg['accent'] }}; --card-glow: {{ $cfg['glow'] }};">
                         {{-- Top row: icon + badge --}}
                         <div class="flex items-start justify-between mb-4">

@@ -21,7 +21,7 @@
             <span class="text-sm text-black dark:text-white">Hari Minggu</span>
         </div>
         <div class="ml-auto font-medium text-gray-500 dark:text-gray-400">
-            Total Libur: <strong class="text-black dark:text-white">{{ count($holidays) }} hari</strong>
+            Total Libur: <strong class="text-black dark:text-white">{{ count($holidayRecords) }} Data</strong>
         </div>
     </div>
 
@@ -139,42 +139,47 @@
             Daftar Hari Libur {{ $year }}
         </div>
 
-        @if (count($holidays) > 0)
+        @if (count($holidayRecords) > 0)
             <div class="w-full overflow-x-auto">
                 <table class="w-full divide-y divide-border-light dark:divide-border-dark">
                     <thead class="bg-secondary-light dark:bg-secondary-dark">
                         <tr>
                             <th scope="col" class="p-4 text-sm font-semibold text-left text-black dark:text-white w-14">#
                             </th>
-                            <th scope="col" class="p-4 text-sm font-semibold text-left text-black dark:text-white">Nama Hari
-                                Libur</th>
-                            <th scope="col" class="p-4 text-sm font-semibold text-left text-black dark:text-white">Tanggal
-                            </th>
+                            <th scope="col" class="p-4 text-sm font-semibold text-left text-black dark:text-white">Nama Hari Libur</th>
+                            <th scope="col" class="p-4 text-sm font-semibold text-left text-black dark:text-white">Tanggal</th>
                             <th scope="col" class="p-4 text-sm font-semibold text-left text-black dark:text-white">Hari</th>
-                            <th scope="col" class="p-4 text-sm font-semibold text-left text-black dark:text-white">
-                                Keterangan</th>
+                            <th scope="col" class="p-4 text-sm font-semibold text-left text-black dark:text-white">Keterangan</th>
                         </tr>
                     </thead>
                     <tbody class="divide-y bg-main-light divide-border-light dark:bg-main-dark dark:divide-border-dark">
                         @php $no = 1; @endphp
-                        @foreach ($holidays as $dateStr => $holiday)
-                            @php $carbon = \Carbon\Carbon::parse($dateStr); @endphp
+                        {{-- LOOPING Menggunakan original records (agar libur 3 hari tidak ter-loop 3x) --}}
+                        @foreach ($holidayRecords as $holiday)
+                            @php 
+                                $start = \Carbon\Carbon::parse($holiday->start_date); 
+                                $end = \Carbon\Carbon::parse($holiday->end_date); 
+                                
+                                // Jika tanggal/hari sama, tampilkan satu saja. Jika beda, beri tanda " - "
+                                $dateDisplay = $start->isSameDay($end) ? $start->translatedFormat('d F Y') : $start->translatedFormat('d M') . ' - ' . $end->translatedFormat('d F Y');
+                                $dayDisplay = $start->isSameDay($end) ? $start->translatedFormat('l') : $start->translatedFormat('l') . ' - ' . $end->translatedFormat('l');
+                            @endphp
                             <tr class="transition-colors cursor-pointer hover:bg-secondary-light dark:hover:bg-secondary-dark"
-                                wire:click="mountAction('viewHoliday', { holiday_id: {{ $holiday['id'] }} })">
+                                wire:click="mountAction('viewHoliday', { holiday_id: {{ $holiday->id }} })">
                                 <td class="p-4 text-sm text-gray-500 whitespace-nowrap dark:text-gray-400">
                                     {{ $no++ }}
                                 </td>
                                 <td class="p-4 text-sm font-medium text-black dark:text-white">
-                                    {{ $holiday['name'] }}
+                                    {{ $holiday->name }}
                                 </td>
                                 <td class="p-4 text-sm text-black dark:text-white whitespace-nowrap">
-                                    {{ $carbon->translatedFormat('d F Y') }}
+                                    {{ $dateDisplay }}
+                                </td>
+                                <td class="p-4 text-sm text-gray-500 dark:text-gray-400 whitespace-nowrap">
+                                    {{ $dayDisplay }}
                                 </td>
                                 <td class="p-4 text-sm text-gray-500 dark:text-gray-400">
-                                    {{ $carbon->translatedFormat('l') }}
-                                </td>
-                                <td class="p-4 text-sm text-gray-500 dark:text-gray-400">
-                                    {{ $holiday['description'] ?? '—' }}
+                                    {{ $holiday->description ?? '—' }}
                                 </td>
                             </tr>
                         @endforeach

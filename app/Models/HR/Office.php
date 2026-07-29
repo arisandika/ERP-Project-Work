@@ -8,8 +8,6 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Office extends Model
 {
-    use SoftDeletes;
-
     protected $table = 'nx_offices';
 
     protected $fillable = [

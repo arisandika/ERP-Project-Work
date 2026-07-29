@@ -1,5 +1,4 @@
 <?php
-
 namespace App\Console\Commands;
 
 use App\Models\HR\Attendance;
@@ -9,7 +8,7 @@ use Illuminate\Support\Carbon;
 
 class AttendanceMarkAbsent extends Command
 {
-    protected $signature = 'attendance:mark-absent';
+    protected $signature   = 'attendance:mark-absent';
     protected $description = 'Menandai karyawan yang belum presensi sebagai Absen (Alpha) di akhir hari.';
 
     public function handle()
@@ -18,7 +17,9 @@ class AttendanceMarkAbsent extends Command
         $this->info("Memulai finalisasi presensi untuk tanggal: " . $today->format('Y-m-d'));
 
         $isWeekend = $today->isWeekend();
-        $holiday = Holiday::whereDate('date', $today)->first();
+        $holiday   = Holiday::whereDate('start_date', '<=', $today)
+            ->whereDate('end_date', '>=', $today)
+            ->first();
 
         // Base query — selalu exclude employee milik super_admin
         $baseQuery = Attendance::whereDate('date', $today)
@@ -37,7 +38,7 @@ class AttendanceMarkAbsent extends Command
                 ->where('status', 'belum_presensi')
                 ->update([
                     'status' => 'libur',
-                    'note' => $note,
+                    'note'   => $note,
                 ]);
 
             $this->info("Hari ini libur. {$updatedCount} data yang menggantung disesuaikan menjadi status 'libur'.");
@@ -45,12 +46,12 @@ class AttendanceMarkAbsent extends Command
         }
 
         $absentees = (clone $baseQuery)->where('status', 'belum_presensi');
-        $count = $absentees->count();
+        $count     = $absentees->count();
 
         if ($count > 0) {
             $absentees->update([
                 'status' => 'absen',
-                'note' => 'Tidak Hadir Tanpa Keterangan',
+                'note'   => 'Tidak Hadir Tanpa Keterangan',
             ]);
         }
 

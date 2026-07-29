@@ -8,6 +8,7 @@ use Filament\Actions\Action;
 use Filament\Infolists\Components\Section;
 use Filament\Infolists\Components\TextEntry;
 use Filament\Pages\Page;
+use Illuminate\Support\Carbon;
 
 class HolidayCalendar extends Page
 {
@@ -35,10 +36,9 @@ class HolidayCalendar extends Page
     {
         return Action::make('viewHoliday')
             ->modalHeading('Detail Hari Libur')
-            ->modalSubmitAction(false) // Sembunyikan tombol submit (karena hanya view)
+            ->modalSubmitAction(false) // Sembunyikan tombol submit
             ->modalCancelActionLabel('Tutup')
             ->record(function (array $arguments) {
-                // Ambil data holiday berdasarkan ID yang dikirim dari view
                 return Holiday::find($arguments['holiday_id']);
             })
             ->infolist([
@@ -47,9 +47,23 @@ class HolidayCalendar extends Page
                         ->label('Nama Hari Libur')
                         ->weight('bold')
                         ->color('danger'),
-                    TextEntry::make('date')
+                        
+                    TextEntry::make('date_range')
                         ->label('Tanggal')
-                        ->date('d F Y'),
+                        ->getStateUsing(function (Holiday $record) {
+                            $start = Carbon::parse($record->start_date)->translatedFormat('d F Y');
+                            $end = Carbon::parse($record->end_date)->translatedFormat('d F Y');
+                            return $start === $end ? $start : "$start - $end";
+                        }),
+                        
+                    TextEntry::make('day_range')
+                        ->label('Hari')
+                        ->getStateUsing(function (Holiday $record) {
+                            $startDay = Carbon::parse($record->start_date)->translatedFormat('l');
+                            $endDay = Carbon::parse($record->end_date)->translatedFormat('l');
+                            return $startDay === $endDay ? $startDay : "$startDay - $endDay";
+                        }),
+
                     TextEntry::make('description')
                         ->label('Keterangan')
                         ->default('Tidak ada keterangan'),
@@ -61,19 +75,30 @@ class HolidayCalendar extends Page
     {
         $year = 2026;
 
-        // Ambil semua holiday tahun 2026, index by date string
-        $holidays = Holiday::whereYear('date', $year)
-            ->get()
-            ->keyBy(fn($h) => $h->date->format('Y-m-d'))
-            ->toArray();
+        // Ambil data holiday yang start_date atau end_date-nya ada di tahun 2026
+        $holidayRecords = Holiday::whereYear('start_date', $year)
+            ->orWhereYear('end_date', $year)
+            ->orderBy('start_date', 'asc')
+            ->get();
+
+        // Bongkar rentang tanggal menjadi per-hari agar kalender bisa menandai semua harinya
+        $holidays = [];
+        foreach ($holidayRecords as $record) {
+            $start = Carbon::parse($record->start_date);
+            $end = Carbon::parse($record->end_date);
+
+            // Looping dari start_date sampai end_date
+            for ($date = $start->copy(); $date->lte($end); $date->addDay()) {
+                $holidays[$date->format('Y-m-d')] = $record->toArray();
+            }
+        }
 
         $months = [];
 
         for ($m = 1; $m <= 12; $m++) {
-            $firstDay = \Carbon\Carbon::create($year, $m, 1);
+            $firstDay = Carbon::create($year, $m, 1);
             $daysInMonth = $firstDay->daysInMonth;
 
-            // 0=Sun,1=Mon,...,6=Sat — geser agar Senin jadi awal minggu
             $startDow = ($firstDay->dayOfWeek + 6) % 7; // 0=Mon, 6=Sun
 
             $months[] = [
@@ -88,7 +113,8 @@ class HolidayCalendar extends Page
         return [
             'year' => $year,
             'months' => $months,
-            'holidays' => $holidays,
+            'holidays' => $holidays, // Array berdasarkan Y-m-d (Untuk Grid kalender)
+            'holidayRecords' => $holidayRecords, // Array original (Untuk tabel list di bawah)
         ];
     }
 }

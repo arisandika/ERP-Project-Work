@@ -612,7 +612,7 @@ class DealsRelationManager extends RelationManager
                 Tables\Actions\ViewAction::make(),
                 Tables\Actions\EditAction::make(),
                 Tables\Actions\DeleteAction::make(),
-                // Tables\Actions\ForceDeleteAction::make(),
+                Tables\Actions\ForceDeleteAction::make(),
                 Tables\Actions\RestoreAction::make()
                     ->before(function (Tables\Actions\RestoreAction $action, Deal $record) {
                         // Ambil parent lead-nya (meskipun lead sedang soft-deleted)
@@ -632,7 +632,7 @@ class DealsRelationManager extends RelationManager
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([
                     Tables\Actions\DeleteBulkAction::make(),
-                    // Tables\Actions\ForceDeleteBulkAction::make(),
+                    Tables\Actions\ForceDeleteBulkAction::make(),
                     Tables\Actions\RestoreBulkAction::make()
                         ->before(function (Tables\Actions\RestoreBulkAction $action, Collection $records) {
                             foreach ($records as $record) {

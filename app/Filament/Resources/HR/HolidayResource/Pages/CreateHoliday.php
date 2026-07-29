@@ -14,4 +14,9 @@ class CreateHoliday extends CreateRecord
     {
         return 'Tambah Hari Libur';
     }
+
+    protected function getRedirectUrl(): string
+    {
+        return static::getResource()::getUrl('index');
+    }
 }

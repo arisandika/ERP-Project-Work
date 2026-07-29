@@ -1,5 +1,4 @@
 <?php
-
 namespace App\Filament\Resources\HR\OfficeResource\Pages;
 
 use App\Filament\Resources\HR\OfficeResource;
@@ -23,5 +22,10 @@ class EditOffice extends EditRecord
     public function getTitle(): string
     {
         return 'Edit Kantor';
+    }
+
+    protected function getRedirectUrl(): string
+    {
+        return static::getResource()::getUrl('index');
     }
 }

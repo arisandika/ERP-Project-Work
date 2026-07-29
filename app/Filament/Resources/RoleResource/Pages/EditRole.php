@@ -1,16 +1,16 @@
 <?php
-
 namespace App\Filament\Resources\RoleResource\Pages;
 
 use App\Filament\Resources\RoleResource;
+use App\Filament\Resources\RoleResource\Concerns\SyncsModulePermissions;
 use BezhanSalleh\FilamentShield\Support\Utils;
 use Filament\Actions;
-use Filament\Resources\Pages\EditRecord;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Collection;
 
-class EditRole extends EditRecord
+class EditRole extends \BezhanSalleh\FilamentShield\Resources\RoleResource\Pages\EditRole
 {
+    use SyncsModulePermissions;
     protected static string $resource = RoleResource::class;
 
     public Collection $permissions;
@@ -26,7 +26,7 @@ class EditRole extends EditRecord
     {
         $this->permissions = collect($data)
             ->filter(function ($permission, $key) {
-                return !in_array($key, ['name', 'guard_name', 'select_all', Utils::getTenantModelForeignKey()]);
+                return ! in_array($key, ['name', 'guard_name', 'select_all', Utils::getTenantModelForeignKey()]);
             })
             ->values()
             ->flatten()
@@ -41,23 +41,8 @@ class EditRole extends EditRecord
 
     protected function afterSave(): void
     {
-        $permissionModels = collect();
-        $this->permissions->each(function ($permission) use ($permissionModels) {
-            $permissionModels->push(Utils::getPermissionModel()::firstOrCreate([
-                'name' => $permission,
-                'guard_name' => $this->data['guard_name'],
-            ]));
-        });
+        parent::afterSave();
 
-        // Ambil module permissions yang sudah dimiliki role sebelumnya
-        // supaya tidak ikut terhapus saat Shield sync
-        $existingModulePermissions = $this->record->permissions
-            ->filter(fn($p) => str_starts_with($p->name, 'module.access.'))
-            ->values();
-
-        // Gabungkan: permission dari form Shield + module permissions yang diprotect
-        $finalPermissions = $permissionModels->merge($existingModulePermissions)->unique('id');
-
-        $this->record->syncPermissions($finalPermissions);
+        $this->syncModulePermissions();
     }
 }

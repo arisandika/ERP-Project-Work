@@ -1,5 +1,4 @@
 <?php
-
 namespace App\Console\Commands;
 
 use App\Models\HR\Attendance;
@@ -10,7 +9,7 @@ use Illuminate\Support\Carbon;
 
 class AttendanceGeneratePlaceholders extends Command
 {
-    protected $signature = 'attendance:generate-placeholders';
+    protected $signature   = 'attendance:generate-placeholders';
     protected $description = 'Membuat data presensi untuk semua karyawan aktif di awal hari.';
 
     public function handle()
@@ -20,35 +19,37 @@ class AttendanceGeneratePlaceholders extends Command
 
         // Cek Kondisi Hari Ini
         $isWeekend = $today->isWeekend();
-        $holiday = Holiday::whereDate('date', $today)->first();
+        $holiday   = Holiday::whereDate('start_date', '<=', $today)
+            ->whereDate('end_date', '>=', $today)
+            ->first();
 
         // Tentukan default status dan catatan
         $defaultStatus = 'belum_presensi';
-        $defaultNote = 'Menunggu presensi...';
+        $defaultNote   = 'Menunggu presensi...';
 
         if ($isWeekend) {
             $defaultStatus = 'libur';
-            $defaultNote = 'Libur Akhir Pekan (Sabtu/Minggu)';
+            $defaultNote   = 'Libur Akhir Pekan (Sabtu/Minggu)';
             $this->info("Hari ini akhir pekan. Menggenerate data dengan status 'libur'.");
         } elseif ($holiday) {
             $defaultStatus = 'libur';
-            $defaultNote = 'Libur Nasional: ' . $holiday->name;
+            $defaultNote   = 'Libur Nasional: ' . $holiday->name;
             $this->info("Hari ini Libur Nasional ({$holiday->name}). Menggenerate data dengan status 'libur'.");
         }
 
-        $employees = Employee::where('status', 'Aktif')->get();
+        $employees      = Employee::where('status', 'Aktif')->get();
         $generatedCount = 0;
 
         foreach ($employees as $employee) {
             Attendance::firstOrCreate(
                 [
                     'employee_id' => $employee->id,
-                    'date' => $today,
+                    'date'        => $today,
                 ],
                 [
                     'shift_id' => $employee->shift_id,
-                    'status' => $defaultStatus,
-                    'note' => $defaultNote
+                    'status'   => $defaultStatus,
+                    'note'     => $defaultNote,
                 ]
             );
             $generatedCount++;
