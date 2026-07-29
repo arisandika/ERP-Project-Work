@@ -28,11 +28,16 @@ class LeaveResource extends Resource
 
     protected static ?string $navigationGroup = 'Manajemen HR';
 
-    protected static ?int $navigationSort = 5;
+    protected static ?int $navigationSort = 4;
 
     protected static ?string $slug = 'hr/leaves';
 
     protected static ?string $pluralModelLabel = 'Cuti';
+
+    public static function getNavigationBadge(): ?string
+    {
+        return static::getModel()::count();
+    }
 
     public static function form(Form $form): Form
     {
@@ -56,7 +61,7 @@ class LeaveResource extends Resource
                         ->default(false)
                         ->inline(false),
 
-                    Forms\Components\Toggle::make('male_only')
+                    Forms\Components\Toggle::make('is_male_only')
                         ->label('Khusus Laki-laki')
                         ->default(false)
                         ->inline(false),
@@ -158,13 +163,13 @@ class LeaveResource extends Resource
                     ->modalHeading('Lihat Cuti'),
                 Tables\Actions\EditAction::make(),
                 Tables\Actions\DeleteAction::make(),
-                // Tables\Actions\ForceDeleteAction::make(),
+                Tables\Actions\ForceDeleteAction::make(),
                 Tables\Actions\RestoreAction::make(),
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([
                     Tables\Actions\DeleteBulkAction::make(),
-                    // Tables\Actions\ForceDeleteBulkAction::make(),
+                    Tables\Actions\ForceDeleteBulkAction::make(),
                     Tables\Actions\RestoreBulkAction::make(),
                 ]),
             ])

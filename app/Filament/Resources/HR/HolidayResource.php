@@ -1,9 +1,8 @@
 <?php
-
 namespace App\Filament\Resources\HR;
 
+use App\Filament\Concerns\BelongsToModule;
 use App\Filament\Resources\HR\HolidayResource\Pages;
-use App\Filament\Resources\HR\HolidayResource\RelationManagers;
 use App\Models\HR\Holiday;
 use Filament\Forms;
 use Filament\Forms\Form;
@@ -11,16 +10,13 @@ use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
-use Illuminate\Database\Eloquent\SoftDeletingScope;
 use Illuminate\Support\Carbon;
-use Illuminate\Support\HtmlString;
-use App\Filament\Concerns\BelongsToModule;
 
 class HolidayResource extends Resource
 {
     use BelongsToModule;
     protected static ?string $module = 'hr';
-    protected static ?string $model = Holiday::class;
+    protected static ?string $model  = Holiday::class;
 
     protected static ?string $navigationIcon = 'heroicon-o-calendar-days';
 
@@ -38,27 +34,43 @@ class HolidayResource extends Resource
             ->schema([
                 Forms\Components\Section::make('Informasi Hari Libur')
                     ->schema([
+                        Forms\Components\TextInput::make('name')
+                            ->label('Nama Hari Libur')
+                            ->required()
+                            ->maxLength(255)
+                            ->columnSpanFull(), // Dibuat penuh 1 baris
+
                         Forms\Components\Grid::make(2)
                             ->schema([
-                                Forms\Components\TextInput::make('name')
-                                    ->label('Nama Hari Libur')
+                                Forms\Components\DatePicker::make('start_date')
+                                    ->label('Dari Tanggal')
                                     ->required()
-                                    ->maxLength(255),
-
-                                Forms\Components\DatePicker::make('date')
-                                    ->label('Tanggal')
-                                    ->required()
-                                    ->unique(ignoreRecord: true)
                                     ->minDate('2026-01-01')
                                     ->maxDate('2026-12-31')
                                     ->displayFormat('d M Y')
-                                    ->native(false),
+                                    ->native(false)
+                                    ->live()
+                                    ->afterStateUpdated(function (\Filament\Forms\Set $set, \Filament\Forms\Get $get, $state) {
+                                        if (! $get('end_date') || $get('end_date') < $state) {
+                                            $set('end_date', $state);
+                                        }
+                                    }),
 
-                                Forms\Components\Textarea::make('description')
-                                    ->label('Keterangan')
-                                    ->nullable()
-                                    ->rows(3),
+                                Forms\Components\DatePicker::make('end_date')
+                                    ->label('Hingga Tanggal')
+                                    ->required()
+                                    ->minDate('2026-01-01')
+                                    ->maxDate('2026-12-31')
+                                    ->displayFormat('d M Y')
+                                    ->afterOrEqual('start_date')
+                                    ->native(false),
                             ]),
+
+                        Forms\Components\Textarea::make('description')
+                            ->label('Keterangan')
+                            ->nullable()
+                            ->rows(3)
+                            ->columnSpanFull(),
                     ]),
             ]);
     }
@@ -72,14 +84,27 @@ class HolidayResource extends Resource
                     ->searchable()
                     ->sortable(),
 
-                Tables\Columns\TextColumn::make('date')
+                Tables\Columns\TextColumn::make('date_range')
                     ->label('Tanggal')
-                    ->date('d F Y')
-                    ->sortable(),
+                    ->getStateUsing(function (Holiday $record) {
+                        $start = Carbon::parse($record->start_date)->translatedFormat('d M Y');
+                        $end   = Carbon::parse($record->end_date)->translatedFormat('d M Y');
 
-                Tables\Columns\TextColumn::make('date')
+                        // Jika libur hanya 1 hari, tampilkan 1 tanggal saja
+                        return $start === $end ? $start : "$start - $end";
+                    })
+                    ->sortable(query: function (Builder $query, string $direction): Builder {
+                        return $query->orderBy('start_date', $direction);
+                    }),
+
+                Tables\Columns\TextColumn::make('day_range')
                     ->label('Hari')
-                    ->formatStateUsing(fn($state) => \Carbon\Carbon::parse($state)->translatedFormat('l'))
+                    ->getStateUsing(function (Holiday $record) {
+                        $startDay = Carbon::parse($record->start_date)->translatedFormat('l');
+                        $endDay   = Carbon::parse($record->end_date)->translatedFormat('l');
+
+                        return $startDay === $endDay ? $startDay : "$startDay - $endDay";
+                    })
                     ->badge()
                     ->color('info'),
 
@@ -88,14 +113,14 @@ class HolidayResource extends Resource
                     ->limit(50)
                     ->placeholder('-'),
 
-                Tables\Columns\TextColumn::make('updated_at')
-                    ->label('Diperbarui Pada')
+                Tables\Columns\TextColumn::make('created_at')
+                    ->label('Dibuat Pada')
                     ->dateTime('d M Y H:i')
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
 
-                Tables\Columns\TextColumn::make('deleted_at')
-                    ->label('Dihapus Pada')
+                Tables\Columns\TextColumn::make('updated_at')
+                    ->label('Diperbarui Pada')
                     ->dateTime('d M Y H:i')
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
@@ -104,22 +129,26 @@ class HolidayResource extends Resource
                 Tables\Filters\SelectFilter::make('month')
                     ->label('Bulan')
                     ->options([
-                        '1' => 'Januari',
-                        '2' => 'Februari',
-                        '3' => 'Maret',
-                        '4' => 'April',
-                        '5' => 'Mei',
-                        '6' => 'Juni',
-                        '7' => 'Juli',
-                        '8' => 'Agustus',
-                        '9' => 'September',
+                        '1'  => 'Januari',
+                        '2'  => 'Februari',
+                        '3'  => 'Maret',
+                        '4'  => 'April',
+                        '5'  => 'Mei',
+                        '6'  => 'Juni',
+                        '7'  => 'Juli',
+                        '8'  => 'Agustus',
+                        '9'  => 'September',
                         '10' => 'Oktober',
                         '11' => 'November',
                         '12' => 'Desember',
                     ])
                     ->query(
+                        // Cek apakah start_date ATAU end_date ada di bulan yang dipilih
                         fn($query, $data) =>
-                        $data['value'] ? $query->whereMonth('date', $data['value']) : $query
+                        $data['value'] ? $query->where(function ($q) use ($data) {
+                            $q->whereMonth('start_date', $data['value'])
+                                ->orWhereMonth('end_date', $data['value']);
+                        }) : $query
                     ),
 
                 Tables\Filters\Filter::make('created_at')
@@ -162,27 +191,21 @@ class HolidayResource extends Resource
 
                         return $indicators;
                     }),
-
-                Tables\Filters\TrashedFilter::make()
-                    ->label('Deleted Status')
-                    ->native(false),
             ])
             ->actions([
                 Tables\Actions\ViewAction::make()
-                    ->modalHeading('Lihat Departemen'),
+                    ->modalHeading('Lihat Hari Libur'),
                 Tables\Actions\EditAction::make(),
                 Tables\Actions\DeleteAction::make(),
-                // Tables\Actions\ForceDeleteAction::make(),
-                Tables\Actions\RestoreAction::make(),
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([
                     Tables\Actions\DeleteBulkAction::make(),
-                    // Tables\Actions\ForceDeleteBulkAction::make(),
-                    Tables\Actions\RestoreBulkAction::make(),
+                    Tables\Actions\ForceDeleteBulkAction::make(),
                 ]),
             ])
-            ->defaultSort('created_at', 'desc');
+            ->defaultSort('start_date', 'desc')
+            ->defaultPaginationPageOption(50);
     }
 
     public static function getRelations(): array
@@ -195,18 +218,10 @@ class HolidayResource extends Resource
     public static function getPages(): array
     {
         return [
-            'index' => Pages\ListHolidays::route('/'),
+            'index'  => Pages\ListHolidays::route('/'),
             'create' => Pages\CreateHoliday::route('/create'),
-            'view' => Pages\ViewHoliday::route('/{record}'),
-            'edit' => Pages\EditHoliday::route('/{record}/edit'),
+            'view'   => Pages\ViewHoliday::route('/{record}'),
+            'edit'   => Pages\EditHoliday::route('/{record}/edit'),
         ];
-    }
-
-    public static function getEloquentQuery(): Builder
-    {
-        return parent::getEloquentQuery()
-            ->withoutGlobalScopes([
-                SoftDeletingScope::class,
-            ]);
     }
 }

@@ -24,4 +24,9 @@ class EditShift extends EditRecord
     {
         return 'Edit Jam Kerja';
     }
+
+    protected function getRedirectUrl(): string
+    {
+        return static::getResource()::getUrl('index');
+    }
 }

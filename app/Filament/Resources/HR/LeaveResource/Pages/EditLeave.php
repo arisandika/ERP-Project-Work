@@ -24,4 +24,9 @@ class EditLeave extends EditRecord
     {
         return 'Edit Jenis Cuti';
     }
+
+    protected function getRedirectUrl(): string
+    {
+        return static::getResource()::getUrl('index');
+    }
 }

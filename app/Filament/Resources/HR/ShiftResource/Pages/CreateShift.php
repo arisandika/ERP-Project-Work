@@ -14,4 +14,9 @@ class CreateShift extends CreateRecord
     {
         return 'Tambah Jam Kerja';
     }
+
+    protected function getRedirectUrl(): string
+    {
+        return static::getResource()::getUrl('index');
+    }
 }

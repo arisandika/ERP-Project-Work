@@ -7,17 +7,17 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Holiday extends Model
 {
-    use SoftDeletes;
-    
     protected $table = 'nx_holidays';
 
     protected $fillable = [
         'name',
-        'date',
+        'start_date', // Ubah dari date
+        'end_date',   // Tambahan baru
         'description',
     ];
 
     protected $casts = [
-        'date' => 'date',
+        'start_date' => 'date',
+        'end_date'   => 'date',
     ];
 }

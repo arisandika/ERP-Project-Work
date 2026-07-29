@@ -64,7 +64,10 @@ class AttendanceController extends Controller
         }
 
         // 3. BLOKIR MUTLAK JIKA HARI LIBUR NASIONAL
-        $holiday = Holiday::whereDate('date', $today)->first();
+        // UPDATE: Mengecek rentang waktu start_date dan end_date
+        $holiday = Holiday::whereDate('start_date', '<=', $today)
+            ->whereDate('end_date', '>=', $today)
+            ->first();
 
         if ($holiday) {
             Notification::make()
@@ -228,7 +231,10 @@ class AttendanceController extends Controller
         }
 
         // 2. BLOKIR JIKA HARI LIBUR (Jika belum pernah clock in)
-        $holiday = Holiday::whereDate('date', $today)->first();
+        // UPDATE: Mengecek rentang waktu start_date dan end_date
+        $holiday = Holiday::whereDate('start_date', '<=', $today)
+            ->whereDate('end_date', '>=', $today)
+            ->first();
 
         if ($holiday && (!$attendance || !$attendance->clock_in)) {
             Notification::make()

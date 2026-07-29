@@ -18,6 +18,11 @@ class CreateEmployee extends CreateRecord
         return 'Tambah Karyawan';
     }
 
+    protected function getRedirectUrl(): string
+    {
+        return static::getResource()::getUrl('index');
+    }
+
     protected function handleRecordCreation(array $data): Model
     {
         return DB::transaction(function () use ($data) {

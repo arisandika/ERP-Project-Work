@@ -24,4 +24,9 @@ class EditDepartment extends EditRecord
     {
         return 'Edit Departemen';
     }
+
+    protected function getRedirectUrl(): string
+    {
+        return static::getResource()::getUrl('index');
+    }
 }

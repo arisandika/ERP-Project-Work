@@ -33,7 +33,7 @@ class EmployeeResource extends Resource
 
     protected static ?string $navigationGroup = 'Manajemen HR';
 
-    protected static ?int $navigationSort = 2;
+    protected static ?int $navigationSort = 5;
 
     protected static ?string $slug = 'hr/employees';
 
@@ -459,13 +459,13 @@ class EmployeeResource extends Resource
                 Tables\Actions\ViewAction::make(),
                 Tables\Actions\EditAction::make(),
                 Tables\Actions\DeleteAction::make(),
-                // Tables\Actions\ForceDeleteAction::make(),
+                Tables\Actions\ForceDeleteAction::make(),
                 Tables\Actions\RestoreAction::make(),
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([
                     Tables\Actions\DeleteBulkAction::make(),
-                    // Tables\Actions\ForceDeleteBulkAction::make(),
+                    Tables\Actions\ForceDeleteBulkAction::make(),
                     Tables\Actions\RestoreBulkAction::make(),
                 ]),
             ])
@@ -666,9 +666,22 @@ class EmployeeResource extends Resource
 
     public static function getEloquentQuery(): Builder
     {
-        return parent::getEloquentQuery()
+        $query = parent::getEloquentQuery()
             ->withoutGlobalScopes([
                 SoftDeletingScope::class,
             ]);
+
+        // Cek apakah user yang login saat ini BUKAN super_admin
+        if (auth()->check() && !auth()->user()->hasRole('super_admin')) {
+            // Sembunyikan karyawan dengan email admin@nexicon.id
+            $query->where('email', '!=', 'admin@nexicon.id');
+            
+            // Opsional: Jika email juga disimpan di tabel users dan direlasikan
+            $query->whereHas('user', function ($q) {
+                $q->where('email', '!=', 'admin@nexicon.id');
+            });
+        }
+
+        return $query;
     }
 }

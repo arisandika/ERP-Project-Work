@@ -14,4 +14,9 @@ class CreateOffice extends CreateRecord
     {
         return 'Tambah Kantor';
     }
+
+    protected function getRedirectUrl(): string
+    {
+        return static::getResource()::getUrl('index');
+    }
 }

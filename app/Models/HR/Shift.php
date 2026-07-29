@@ -8,8 +8,6 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Shift extends Model
 {
-    use SoftDeletes;
-
     protected $table = 'nx_shifts';
 
     protected $fillable = [

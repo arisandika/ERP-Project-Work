@@ -14,4 +14,9 @@ class CreateLeave extends CreateRecord
     {
         return 'Tambah Jenis Cuti';
     }
+
+    protected function getRedirectUrl(): string
+    {
+        return static::getResource()::getUrl('index');
+    }
 }

@@ -1,15 +1,16 @@
 <?php
-
 namespace App\Filament\Resources;
 
 use App\Filament\Concerns\BelongsToModule;
+use App\Filament\Resources\RoleResource\Pages;
 use BezhanSalleh\FilamentShield\Contracts\HasShieldPermissions;
 use BezhanSalleh\FilamentShield\Forms\ShieldSelectAllToggle;
-use App\Filament\Resources\RoleResource\Pages;
 use BezhanSalleh\FilamentShield\Support\Utils;
 use BezhanSalleh\FilamentShield\Traits\HasShieldFormComponents;
 use Filament\Facades\Filament;
 use Filament\Forms;
+use Filament\Forms\Components\CheckboxList;
+use Filament\Forms\Components\Section;
 use Filament\Forms\Form;
 use Filament\Pages\SubNavigationPosition;
 use Filament\Resources\Resource;
@@ -71,8 +72,8 @@ class RoleResource extends Resource implements HasShieldPermissions
                                     /** @phpstan-ignore-next-line */
                                     ->default([Filament::getTenant()?->id])
                                     ->options(fn(): Arrayable => Utils::getTenantModel() ? Utils::getTenantModel()::pluck('name', 'id') : collect())
-                                    ->hidden(fn(): bool => !(static::shield()->isCentralApp() && Utils::isTenancyEnabled()))
-                                    ->dehydrated(fn(): bool => !(static::shield()->isCentralApp() && Utils::isTenancyEnabled())),
+                                    ->hidden(fn(): bool => ! (static::shield()->isCentralApp() && Utils::isTenancyEnabled()))
+                                    ->dehydrated(fn(): bool => ! (static::shield()->isCentralApp() && Utils::isTenancyEnabled())),
                                 ShieldSelectAllToggle::make('select_all')
                                     ->onIcon('heroicon-s-shield-check')
                                     ->offIcon('heroicon-s-shield-exclamation')
@@ -87,6 +88,42 @@ class RoleResource extends Resource implements HasShieldPermissions
                             ]),
                     ]),
                 static::getShieldFormComponents(),
+
+                Section::make('Akses Modul')
+                    ->description('Modul ERP yang bisa dibuka role ini. Daftar ini otomatis ikut config/erp-modules.php — tambah modul baru di config, langsung muncul di sini tanpa perlu seeding atau restart apapun.')
+                    ->collapsible()
+                    ->schema([
+                        CheckboxList::make('module_permissions')
+                            ->label('')
+                            ->options(
+                                collect(config('erp-modules', []))
+                                    ->mapWithKeys(fn(array $m) => [$m['permission'] => $m['label']])
+                                    ->toArray()
+                            )
+                            ->descriptions(
+                                collect(config('erp-modules', []))
+                                    ->mapWithKeys(fn(array $m) => [$m['permission'] => $m['description'] ?? null])
+                                    ->toArray()
+                            )
+                            ->columns(3)
+                            ->bulkToggleable()
+                            ->dehydrated() // ikut $this->data, tapi tidak disimpan sbg kolom model
+                            ->afterStateHydrated(function (CheckboxList $component, $record) {
+                                if (! $record) {
+                                    return;
+                                }
+
+                                $moduleKeys = collect(config('erp-modules', []))->pluck('permission');
+
+                                $component->state(
+                                    $record->permissions()
+                                        ->pluck('name')
+                                        ->intersect($moduleKeys)
+                                        ->values()
+                                        ->all()
+                                );
+                            }),
+                    ]),
             ]);
     }
 
@@ -141,10 +178,10 @@ class RoleResource extends Resource implements HasShieldPermissions
     public static function getPages(): array
     {
         return [
-            'index' => Pages\ListRoles::route('/'),
+            'index'  => Pages\ListRoles::route('/'),
             'create' => Pages\CreateRole::route('/create'),
-            'view' => Pages\ViewRole::route('/{record}'),
-            'edit' => Pages\EditRole::route('/{record}/edit'),
+            'view'   => Pages\ViewRole::route('/{record}'),
+            'edit'   => Pages\EditRole::route('/{record}/edit'),
         ];
     }
 
