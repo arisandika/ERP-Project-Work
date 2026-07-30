@@ -37,7 +37,7 @@ class AttendanceGeneratePlaceholders extends Command
             $this->info("Hari ini Libur Nasional ({$holiday->name}). Menggenerate data dengan status 'libur'.");
         }
 
-        $employees      = Employee::where('status', 'Aktif')->get();
+        $employees      = Employee::where('status', 'active')->get();
         $generatedCount = 0;
 
         foreach ($employees as $employee) {

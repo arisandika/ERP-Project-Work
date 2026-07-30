@@ -25,7 +25,7 @@ class AttendanceSummaryOverview extends BaseWidget
         $today = Carbon::today();
 
         // Total karyawan
-        $totalEmployees = Employee::where('status', 'Aktif')->count();
+        $totalEmployees = Employee::where('status', 'active')->count();
 
         // Hitung semua status presensi langsung di query
         $attendanceStats = Attendance::whereDate('date', $today)
