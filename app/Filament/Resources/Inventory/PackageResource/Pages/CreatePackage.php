@@ -14,4 +14,9 @@ class CreatePackage extends CreateRecord
     {
         return 'Tambah Paket';
     }
+
+    protected function getRedirectUrl(): string
+    {
+        return $this->getResource()::getUrl('index');
+    }
 }

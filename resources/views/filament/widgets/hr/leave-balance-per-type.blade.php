@@ -9,14 +9,24 @@
 
         // Filter leave berdasarkan gender
         $leaves = Leave::query()
-            ->when(
-                $employee->gender !== 'Perempuan',
-                fn($q) => $q->where('is_female_only', false)
-            )
-            ->when(
-                $employee->gender !== 'Laki-laki',
-                fn($q) => $q->where('is_male_only', false)
-            )
+            ->when($employee, function ($query) use ($employee) {
+
+                if ($employee->gender === 'male') {
+                    // Sembunyikan hanya cuti khusus wanita
+                    $query->whereNot(function ($q) {
+                        $q->where('is_female_only', true)
+                            ->where('is_male_only', false);
+                    });
+                }
+
+                if ($employee->gender === 'female') {
+                    // Sembunyikan hanya cuti khusus laki-laki
+                    $query->whereNot(function ($q) {
+                        $q->where('is_female_only', false)
+                            ->where('is_male_only', true);
+                    });
+                }
+            })
             ->get();
 
         foreach ($leaves as $leave) {

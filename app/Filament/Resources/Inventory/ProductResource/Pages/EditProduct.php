@@ -21,4 +21,9 @@ class EditProduct extends EditRecord
     {
         return 'Edit Product';
     }
+
+    protected function getRedirectUrl(): string
+    {
+        return $this->getResource()::getUrl('index');
+    }
 }

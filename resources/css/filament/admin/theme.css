@@ -176,9 +176,9 @@
     @apply bg-secondary-light dark:bg-secondary-dark rounded-full !important;
 }
 
-.fi-wi-stats-overview-stat-description {
+/* .fi-wi-stats-overview-stat-description {
     @apply text-main-dark dark:text-main-light !important;
-}
+} */
 
 .fi-section {
     @apply rounded-2xl bg-secondary-light dark:bg-secondary-dark shadow-none ring-1 ring-border-light dark:ring-border-dark !important;
@@ -345,4 +345,12 @@ select.grow.cursor-pointer {
 
 .fi-dropdown-panel:has(.fi-ta-filters) {
     @apply !max-w-[19rem] !important;
+}
+
+.fi-modal-heading .relative .fi-badge {
+    display: flex;
+    align-items: start;
+    top: 0 !important;
+    font-size: 13px;
+    padding: 2px 4px;
 }

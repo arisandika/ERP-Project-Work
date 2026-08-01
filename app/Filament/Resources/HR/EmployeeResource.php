@@ -59,7 +59,8 @@ class EmployeeResource extends Resource
                             ->label('NIK (KTP)')
                             ->required()
                             ->numeric()
-                            ->maxLength(20)
+                            ->maxLength(16)
+                            ->helperText('Max 16 karakter')
                             ->prefixIcon('heroicon-o-identification'),
 
                         Forms\Components\TextInput::make('full_name')
@@ -113,11 +114,13 @@ class EmployeeResource extends Resource
                             ->required()
                             ->numeric()
                             ->unique(ignoreRecord: true)
+                            ->maxLength(14)
+                            ->helperText('Max 14 karakter')
                             ->prefixIcon('heroicon-o-phone'),
 
                         Forms\Components\TextInput::make('birth_place')
                             ->label('Tempat Lahir')
-                            ->maxLength(100)
+                            ->maxLength(50)
                             ->prefixIcon('heroicon-o-map-pin'),
 
                         Forms\Components\DatePicker::make('birth_date')
@@ -130,8 +133,8 @@ class EmployeeResource extends Resource
                         Forms\Components\Select::make('gender')
                             ->label('Jenis Kelamin')
                             ->options([
-                                'Laki-laki' => 'Laki-laki',
-                                'Perempuan' => 'Perempuan',
+                                'male' => 'Laki-laki',
+                                'female' => 'Perempuan',
                             ])
                             ->native(false)
                             ->prefixIcon('heroicon-o-user-group'),

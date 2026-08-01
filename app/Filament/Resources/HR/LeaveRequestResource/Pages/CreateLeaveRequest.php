@@ -31,6 +31,11 @@ class CreateLeaveRequest extends CreateRecord
         return 'Ajukan Cuti';
     }
 
+    protected function getRedirectUrl(): string
+    {
+        return static::getResource()::getUrl('index');
+    }
+
     protected function mutateFormDataBeforeCreate(array $data): array
     {
         $user = Filament::auth()->user();

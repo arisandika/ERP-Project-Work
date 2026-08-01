@@ -24,4 +24,9 @@ class EditLead extends EditRecord
     {
         return 'Edit Lead';
     }
+
+    protected function getRedirectUrl(): string
+    {
+        return static::getResource()::getUrl('index');
+    }
 }

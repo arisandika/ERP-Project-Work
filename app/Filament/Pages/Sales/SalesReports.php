@@ -1,15 +1,14 @@
 <?php
-
 namespace App\Filament\Pages\Sales;
 
 use App\Filament\Concerns\BelongsToModule;
 use BezhanSalleh\FilamentShield\Traits\HasPageShield;
-use Filament\Pages\Page;
 use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\Section;
-use Filament\Forms\Form;
 use Filament\Forms\Concerns\InteractsWithForms;
 use Filament\Forms\Contracts\HasForms;
+use Filament\Forms\Form;
+use Filament\Pages\Page;
 use Filament\Support\Enums\MaxWidth;
 
 class SalesReports extends Page implements HasForms
@@ -33,11 +32,11 @@ class SalesReports extends Page implements HasForms
 
     protected static ?string $module = 'sales'; // Integrasi ke modul Sales
 
-    protected static ?string $navigationIcon = 'heroicon-o-document-chart-bar';
+    protected static ?string $navigationIcon  = 'heroicon-o-document-chart-bar';
     protected static ?string $navigationGroup = 'Manajemen Sales';
     protected static ?string $navigationLabel = 'Laporan Penjualan';
-    protected static ?string $title = 'Laporan Penjualan';
-    protected static ?int $navigationSort = 1;
+    protected static ?string $title           = 'Laporan Penjualan';
+    protected static ?int $navigationSort     = 7;
 
     protected static string $view = 'filament.pages.sales.sales-reports';
 
@@ -68,7 +67,7 @@ class SalesReports extends Page implements HasForms
     {
         $this->form->fill([
             'start_date' => now()->startOfMonth()->toDateString(),
-            'end_date' => now()->toDateString(),
+            'end_date'   => now()->toDateString(),
         ]);
     }
 
@@ -97,7 +96,7 @@ class SalesReports extends Page implements HasForms
                             ->prefixIcon('heroicon-o-calendar-days')
                             ->live(),
                     ])
-                    ->columns(2)
+                    ->columns(2),
             ])
             ->statePath('data');
     }

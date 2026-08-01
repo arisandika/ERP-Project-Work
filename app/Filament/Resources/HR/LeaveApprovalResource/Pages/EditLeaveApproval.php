@@ -23,6 +23,11 @@ class EditLeaveApproval extends EditRecord
         return 'Review Pengajuan Cuti';
     }
 
+    protected function getRedirectUrl(): string
+    {
+        return static::getResource()::getUrl('index');
+    }
+
     protected function mutateFormDataBeforeSave(array $data): array
     {
         $loggedEmployeeId = auth()->user()->employee->id ?? null;

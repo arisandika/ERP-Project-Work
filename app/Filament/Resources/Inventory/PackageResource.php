@@ -31,6 +31,11 @@ class PackageResource extends Resource
 
     protected static ?string $pluralModelLabel = 'Paket';
 
+    public static function getNavigationBadge(): ?string
+    {
+        return static::getModel()::count();
+    }
+
     public static function form(Form $form): Form
     {
         $recalculateTotal = function (callable $get, callable $set) {

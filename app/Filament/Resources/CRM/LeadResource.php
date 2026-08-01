@@ -76,14 +76,14 @@ class LeadResource extends Resource
                                 Forms\Components\TextInput::make('email')
                                     ->label('Email')
                                     ->email()
-                                    ->maxLength(150)
+                                    ->maxLength(100)
                                     ->required()
                                     ->prefixIcon('heroicon-o-envelope'),
 
                                 Forms\Components\TextInput::make('phone')
                                     ->label('No. WhatsApp')
                                     ->tel()
-                                    ->maxLength(30)
+                                    ->maxLength(14)
                                     ->required()
                                     ->prefixIcon('heroicon-o-device-phone-mobile'),
 

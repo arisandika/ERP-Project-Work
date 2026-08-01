@@ -31,6 +31,11 @@ class UnitResource extends Resource
 
     protected static ?string $pluralModelLabel = 'Satuan';
 
+    public static function getNavigationBadge(): ?string
+    {
+        return static::getModel()::count();
+    }
+
     public static function form(Form $form): Form
     {
         return $form
@@ -78,6 +83,7 @@ class UnitResource extends Resource
 
                 Tables\Columns\BadgeColumn::make('products_count')
                     ->label('Jumlah Product')
+                    ->counts('products')
                     ->badge()
                     ->color(fn(int $state): string => $state > 0 ? 'info' : 'gray')
                     ->sortable()

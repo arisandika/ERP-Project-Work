@@ -10,20 +10,31 @@ class LeaveRequestOverview extends StatsOverviewWidget
 {
     protected function getStats(): array
     {
-        $user = auth()->user();
+        $user     = auth()->user();
         $employee = $user?->employee;
 
-        if (!$employee) {
+        if (! $employee) {
             return [];
         }
 
-        // Query leave, filter untuk gender jika perlu
         $leavesQuery = Leave::query()
-            ->when($employee->gender !== 'Perempuan', function ($q) {
-                $q->where('is_female_only', false);
-            })
-            ->when($employee->gender !== 'Laki-laki', function ($q) {
-                $q->where('is_male_only', false);
+            ->when($employee, function ($query) use ($employee) {
+
+                if ($employee->gender === 'male') {
+                    // Sembunyikan hanya cuti khusus wanita
+                    $query->whereNot(function ($q) {
+                        $q->where('is_female_only', true)
+                            ->where('is_male_only', false);
+                    });
+                }
+
+                if ($employee->gender === 'female') {
+                    // Sembunyikan hanya cuti khusus laki-laki
+                    $query->whereNot(function ($q) {
+                        $q->where('is_female_only', false)
+                            ->where('is_male_only', true);
+                    });
+                }
             });
 
         // Ambil sekaligus quota total dan jumlah jenis cuti
@@ -43,7 +54,7 @@ class LeaveRequestOverview extends StatsOverviewWidget
 
         // Untuk Stat approval, bisa gunakan 0 jika $stats belum ada
         $stats = (object) [
-            'pending_count' => 0,
+            'pending_count'  => 0,
             'approved_count' => 0,
             'rejected_count' => 0,
         ];

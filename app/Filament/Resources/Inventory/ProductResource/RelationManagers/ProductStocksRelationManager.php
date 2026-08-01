@@ -88,11 +88,6 @@ class ProductStocksRelationManager extends RelationManager
                         $state <= 10 => 'warning',
                         default => 'success',
                     })
-                    ->icon(fn ($state) => match (true) {
-                        $state <= 0 => 'heroicon-m-x-circle',
-                        $state <= 10 => 'heroicon-m-exclamation-triangle',
-                        default => 'heroicon-m-check-circle',
-                    })
                     ->suffix(fn ($record) => ' ' . ($record->product->unit->symbol ?? $record->product->unit->unit_name ?? ''))
                     // Memindahkan logika alert ke qty_available
                     ->description(fn ($state) => match (true) {

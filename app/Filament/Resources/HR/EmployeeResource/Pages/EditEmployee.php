@@ -27,13 +27,18 @@ class EditEmployee extends EditRecord
         return 'Edit Karyawan';
     }
 
+    protected function getRedirectUrl(): string
+    {
+        return static::getResource()::getUrl('index');
+    }
+
     protected function handleRecordUpdate(Model $record, array $data): Model
     {
         // Mutasi nama menjadi Title Case
         $data['full_name'] = ucwords(strtolower($data['full_name'] ?? ''));
 
         return DB::transaction(function () use ($record, $data) {
-            
+
             // 1. UPDATE DATA USER & ROLE
             if ($record->user) {
                 $userUpdate = [
@@ -41,7 +46,7 @@ class EditEmployee extends EditRecord
                     'email' => $data['email'] ?? $record->user->email,
                 ];
 
-                if (!empty($data['password'])) {
+                if (! empty($data['password'])) {
                     $userUpdate['password'] = Hash::make($data['password']);
                 }
 
@@ -55,7 +60,7 @@ class EditEmployee extends EditRecord
             }
 
             // 2. BERSIHKAN ARRAY DATA
-            // Hapus password dan roles agar tidak menyebabkan error "Column not found" 
+            // Hapus password dan roles agar tidak menyebabkan error "Column not found"
             // saat query update ke tabel nx_employees
             unset($data['password']);
             unset($data['roles']);

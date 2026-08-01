@@ -1,5 +1,4 @@
 <?php
-
 namespace App\Filament\Widgets;
 
 use App\Models\Inventory\ProductStock;
@@ -9,7 +8,7 @@ use Filament\Widgets\TableWidget as BaseWidget;
 
 class LowStockAlert extends BaseWidget
 {
-    protected static ?int $sort = 1;
+    protected static ?int $sort                = 1;
     protected int|string|array $columnSpan = 'full';
 
     // REVISI: Copywriting disesuaikan
@@ -38,10 +37,17 @@ class LowStockAlert extends BaseWidget
                     ->sortable()
                     ->limit(30),
 
-                Tables\Columns\TextColumn::make('warehouse.warehouse_name')
+                Tables\Columns\TextColumn::make('warehouses')
                     ->label('Gudang')
-                    ->searchable()
-                    ->sortable()
+                    ->getStateUsing(function (ProductStock $record) {
+                        return ProductStock::query()
+                            ->where('product_id', $record->product_id)
+                            ->with('warehouse')
+                            ->get()
+                            ->pluck('warehouse.warehouse_name')
+                            ->unique()
+                            ->implode(', ');
+                    })
                     ->badge()
                     ->color('info')
                     ->icon('heroicon-o-building-office'),
@@ -53,15 +59,10 @@ class LowStockAlert extends BaseWidget
                     ->sortable()
                     ->badge()
                     ->color(fn($state) => match (true) {
-                        $state <= 0 => 'danger',
-                        $state <= 5 => 'danger',
+                        $state <= 0  => 'danger',
+                        $state <= 5  => 'danger',
                         $state <= 10 => 'warning',
-                        default => 'success',
-                    })
-                    ->icon(fn($state) => match (true) {
-                        $state <= 0 => 'heroicon-m-x-circle',
-                        $state <= 10 => 'heroicon-m-exclamation-triangle',
-                        default => 'heroicon-m-check-circle',
+                        default      => 'success',
                     })
                     ->suffix(' Unit'),
 
@@ -83,7 +84,7 @@ class LowStockAlert extends BaseWidget
                     ->url(
                         fn(ProductStock $record): string =>
                         route('filament.admin.resources.inventory.products.view', [
-                            'record' => $record->product->id
+                            'record' => $record->product->id,
                         ])
                     )
                     ->openUrlInNewTab(),

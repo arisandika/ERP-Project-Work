@@ -3,6 +3,7 @@
 namespace App\Models\Sales;
 
 use App\Models\HR\Employee;
+use App\Models\User;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -15,6 +16,7 @@ class SalesPerson extends Model
     protected $table = 'nx_sales_people';
 
     protected $fillable = [
+        'user_id',
         'type',
         'full_name',
         'email',
@@ -26,6 +28,12 @@ class SalesPerson extends Model
         'sales_target' => 'decimal:2',
         'commission_rate' => 'decimal:2',
     ];
+
+    // Relasi ke User (untuk login & role)
+    public function user(): BelongsTo
+    {
+        return $this->belongsTo(User::class);
+    }
 
     public function internalQuotations(): HasMany
     {

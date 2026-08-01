@@ -24,4 +24,9 @@ class EditPackage extends EditRecord
     {
         return 'Edit Paket';
     }
+
+    protected function getRedirectUrl(): string
+    {
+        return $this->getResource()::getUrl('index');
+    }
 }
