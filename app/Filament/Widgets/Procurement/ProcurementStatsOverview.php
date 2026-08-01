@@ -1,5 +1,4 @@
 <?php
-
 namespace App\Filament\Widgets\Procurement;
 
 use App\Enums\Procurement\PurchaseInvoiceStatus;
@@ -11,7 +10,6 @@ use App\Models\Procurement\Supplier;
 use Filament\Widgets\Concerns\InteractsWithPageFilters;
 use Filament\Widgets\StatsOverviewWidget as BaseWidget;
 use Filament\Widgets\StatsOverviewWidget\Stat;
-use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 
 class ProcurementStatsOverview extends BaseWidget
@@ -20,64 +18,43 @@ class ProcurementStatsOverview extends BaseWidget
 
     protected static ?int $sort = 1;
 
-    protected int | string | array $columnSpan = 12;
+    protected int|string|array $columnSpan = 12;
 
     protected function getStats(): array
     {
         $supplierId = $this->filters['supplier_id'] ?? null;
 
-        $cacheSuffix = $supplierId
-            ? "_supplier_{$supplierId}"
-            : '';
+        $pendingPRCount = PurchaseRequisition::query()
+            ->where('status', PurchaseRequisition::STATUS_PENDING)
+            ->count();
 
-        $pendingPRCount = Cache::remember(
-            "dash_pr_pending{$cacheSuffix}",
-            300,
-            fn () => PurchaseRequisition::query()
-                ->where('status', PurchaseRequisition::STATUS_PENDING)
-                ->count()
-        );
+        $pendingDeliveryPOCount = PurchaseOrder::query()
+            ->whereNotIn('status', [
+                PurchaseOrderStatus::COMPLETED,
+                PurchaseOrderStatus::CANCELLED,
+            ])
+            ->when(
+                $supplierId,
+                fn($q) => $q->where('supplier_id', $supplierId)
+            )
+            ->count();
 
-        $pendingDeliveryPOCount = Cache::remember(
-            "dash_po_pending{$cacheSuffix}",
-            300,
-            fn () => PurchaseOrder::query()
-                ->whereNotIn('status', [
-                    PurchaseOrderStatus::COMPLETED,
-                    PurchaseOrderStatus::CANCELLED,
-                ])
-                ->when(
-                    $supplierId,
-                    fn ($q) => $q->where('supplier_id', $supplierId)
-                )
-                ->count()
-        );
+        $outstandingPayable = PurchaseInvoice::query()
+            ->whereIn('status', [
+                PurchaseInvoiceStatus::UNPAID,
+                PurchaseInvoiceStatus::PARTIAL,
+            ])
+            ->when(
+                $supplierId,
+                fn($q) => $q->where('supplier_id', $supplierId)
+            )
+            ->sum(DB::raw('grand_total - total_paid'));
 
-        $outstandingPayable = Cache::remember(
-            "dash_pi_outstanding{$cacheSuffix}",
-            600,
-            fn () => PurchaseInvoice::query()
-                ->whereIn('status', [
-                    PurchaseInvoiceStatus::UNPAID,
-                    PurchaseInvoiceStatus::PARTIAL,
-                ])
-                ->when(
-                    $supplierId,
-                    fn ($q) => $q->where('supplier_id', $supplierId)
-                )
-                ->sum(DB::raw('grand_total - total_paid'))
-        );
-
-        $activeSuppliers = Cache::remember(
-            'dash_suppliers_active',
-            86400,
-            fn () => Supplier::query()
-                ->where('status', 'active')
-                ->count()
-        );
+        $activeSuppliers = Supplier::query()
+            ->where('status', 'active')
+            ->count();
 
         return [
-
             Stat::make('Pending Approval', $pendingPRCount)
                 ->description(
                     $pendingPRCount > 0
@@ -92,8 +69,8 @@ class ProcurementStatsOverview extends BaseWidget
                 ->chart([12, 10, 8, 14, 6, 4, $pendingPRCount])
                 ->color(match (true) {
                     $pendingPRCount > 15 => 'danger',
-                    $pendingPRCount > 5 => 'warning',
-                    default => 'success',
+                    $pendingPRCount > 5  => 'warning',
+                    default              => 'success',
                 }),
 
             Stat::make('Open Purchase Orders', $pendingDeliveryPOCount)

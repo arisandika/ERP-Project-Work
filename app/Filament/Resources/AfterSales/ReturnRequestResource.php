@@ -25,7 +25,7 @@ class ReturnRequestResource extends Resource
     protected static ?string $navigationIcon = 'heroicon-o-document-plus';
     protected static ?string $navigationGroup = 'Manajemen After-Sales';
     protected static ?string $navigationLabel = 'Penerimaan Return';
-    protected static ?int $navigationSort = 1;
+    protected static ?int $navigationSort = 21;
 
     public static function form(Form $form): Form
     {
