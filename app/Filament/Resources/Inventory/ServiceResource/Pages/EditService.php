@@ -24,4 +24,9 @@ class EditService extends EditRecord
     {
         return 'Edit Jasa';
     }
+
+    protected function getRedirectUrl(): string
+    {
+        return $this->getResource()::getUrl('index');
+    }
 }

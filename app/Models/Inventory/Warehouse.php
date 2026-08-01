@@ -1,5 +1,4 @@
 <?php
-
 namespace App\Models\Inventory;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -42,9 +41,8 @@ class Warehouse extends Model
     // Get total products in warehouse
     public function getTotalProductsAttribute(): int
     {
-        // Jika sudah di-load dengan withCount dari Filament, gunakan attribute tersebut
         if (array_key_exists('total_products', $this->attributes)) {
-            return (int) $this->total_products;
+            return (int) $this->attributes['total_products']; // ✅ langsung dari array
         }
         return $this->stocks()->distinct('product_id')->count('product_id');
     }
@@ -55,8 +53,8 @@ class Warehouse extends Model
         // Cek apakah data aggregate dari Filament Table (withSum) sudah ada untuk performa
         if (array_key_exists('sum_qty_available', $this->attributes)) {
             return ($this->sum_qty_available ?? 0) +
-                   ($this->sum_qty_reserved ?? 0) +
-                   ($this->sum_qty_on_delivery ?? 0);
+                ($this->sum_qty_reserved ?? 0) +
+                ($this->sum_qty_on_delivery ?? 0);
         }
 
         // Fallback untuk Infolist / pemanggilan biasa

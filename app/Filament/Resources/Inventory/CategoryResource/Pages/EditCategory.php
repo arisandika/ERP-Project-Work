@@ -21,4 +21,9 @@ class EditCategory extends EditRecord
     {
         return 'Edit Kategori';
     }
+
+    protected function getRedirectUrl(): string
+    {
+        return static::getResource()::getUrl('index');
+    }
 }

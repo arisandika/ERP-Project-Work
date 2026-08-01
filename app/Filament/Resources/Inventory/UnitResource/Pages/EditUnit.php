@@ -21,4 +21,9 @@ class EditUnit extends EditRecord
     {
         return 'Edit Satuan';
     }
+
+    protected function getRedirectUrl(): string
+    {
+        return static::getResource()::getUrl('index');
+    }
 }

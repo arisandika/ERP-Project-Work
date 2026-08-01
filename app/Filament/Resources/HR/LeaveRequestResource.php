@@ -1,7 +1,9 @@
 <?php
 namespace App\Filament\Resources\HR;
 
+use App\Filament\Concerns\BelongsToModule;
 use App\Filament\Resources\HR\LeaveRequestResource\Pages;
+use App\Models\HR\Leave;
 use App\Models\HR\LeaveRequest;
 use Filament\Forms;
 use Filament\Forms\Form;
@@ -16,13 +18,11 @@ use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
 use Illuminate\Support\Carbon;
-use Illuminate\Support\HtmlString;
-use App\Filament\Concerns\BelongsToModule;
 
 class LeaveRequestResource extends Resource
 {
     use BelongsToModule;
-    
+
     protected static ?string $module = 'attendance';
 
     protected static ?string $model = LeaveRequest::class;
@@ -44,7 +44,7 @@ class LeaveRequestResource extends Resource
         $query = static::getModel()::query()
             ->where('status', 'pending');
 
-        if (!$user->hasRole('super_admin')) {
+        if (! $user->hasRole('super_admin')) {
             $employee = $user->employee;
 
             if ($employee) {
@@ -76,29 +76,46 @@ class LeaveRequestResource extends Resource
                     ->schema([
                         Forms\Components\Select::make('leave_id')
                             ->label('Jenis Cuti')
-                            ->relationship(
-                                'leave',
-                                'leave_type',
-                                modifyQueryUsing: function ($query) {
-                                    $employee = auth()->user()?->employee;
+                            ->options(function () {
+                                $employee = auth()->user()?->employee;
 
-                                    // Jika bukan perempuan, sembunyikan cuti khusus wanita
-                                    if ($employee && $employee->gender !== 'Perempuan') {
-                                        $query->where('is_female_only', false);
-                                    }
-
-                                    // Jika bukan laki-laki, sembunyikan cuti khusus laki-laki
-                                    if ($employee && $employee->gender !== 'Laki-laki') {
-                                        $query->where('is_male_only', false);
-                                    }
-
-                                    return $query;
+                                if (! $employee) {
+                                    return [];
                                 }
-                            )
-                            ->required()
+
+                                $leaves = Leave::query()
+                                    ->when($employee->gender === 'male', function ($query) {
+                                        $query->whereNot(function ($q) {
+                                            $q->where('is_female_only', true)
+                                                ->where('is_male_only', false);
+                                        });
+                                    })
+                                    ->when($employee->gender === 'female', function ($query) {
+                                        $query->whereNot(function ($q) {
+                                            $q->where('is_female_only', false)
+                                                ->where('is_male_only', true);
+                                        });
+                                    })
+                                    ->get();
+
+                                return $leaves->mapWithKeys(function ($leave) use ($employee) {
+                                    $used = LeaveRequest::query()
+                                        ->where('employee_id', $employee->id)
+                                        ->where('leave_id', $leave->id)
+                                        ->where('status', 'approved')
+                                        ->sum('total_days');
+
+                                    $remaining = max($leave->days_count - $used, 0);
+
+                                    return [
+                                        $leave->id => "{$leave->leave_type} (Sisa {$remaining} Hari)",
+                                    ];
+                                });
+                            })
                             ->searchable()
                             ->preload()
                             ->native(false)
+                            ->required()
                             ->prefixIcon('heroicon-o-arrow-right-start-on-rectangle'),
 
                         Forms\Components\DatePicker::make('start_date')
@@ -111,11 +128,11 @@ class LeaveRequestResource extends Resource
                             ->reactive()
                             ->afterStateUpdated(function (callable $set, $get) {
                                 $start = $get('start_date');
-                                $end = $get('end_date');
+                                $end   = $get('end_date');
 
                                 if ($start && $end) {
                                     $startDate = Carbon::parse($start);
-                                    $endDate = Carbon::parse($end);
+                                    $endDate   = Carbon::parse($end);
 
                                     if ($startDate->gt($endDate)) {
                                         $set('total_days', null);
@@ -128,7 +145,7 @@ class LeaveRequestResource extends Resource
                                     }
 
                                     $workingDays = $startDate->diffInDaysFiltered(
-                                        fn(Carbon $date) => !$date->isWeekend(),
+                                        fn(Carbon $date) => ! $date->isWeekend(),
                                         $endDate
                                     );
 
@@ -148,11 +165,11 @@ class LeaveRequestResource extends Resource
                             ->reactive()
                             ->afterStateUpdated(function (callable $set, $state, $get) {
                                 $start = $get('start_date');
-                                $end = $state;
+                                $end   = $state;
 
                                 if ($start && $end) {
                                     $startDate = Carbon::parse($start);
-                                    $endDate = Carbon::parse($end);
+                                    $endDate   = Carbon::parse($end);
 
                                     if ($startDate->gt($endDate)) {
                                         $set('total_days', null);
@@ -165,7 +182,7 @@ class LeaveRequestResource extends Resource
                                     }
 
                                     $workingDays = $startDate->diffInDaysFiltered(
-                                        fn(Carbon $date) => !$date->isWeekend(),
+                                        fn(Carbon $date) => ! $date->isWeekend(),
                                         $endDate
                                     );
 
@@ -199,7 +216,7 @@ class LeaveRequestResource extends Resource
                                 'image/jpeg',
                                 'image/png',
                                 'image/jpg',
-                                'image/webp'
+                                'image/webp',
                             ])
                             ->helperText('Upload bukti seperti surat dokter atau dokumen pendukung (opsional)'),
                     ])
@@ -219,8 +236,10 @@ class LeaveRequestResource extends Resource
                     ->icon('heroicon-o-user')
                     ->color(function (LeaveRequest $record) {
                         $record->withTrashed()->first();
-                        if ($record && $record->trashed())
+                        if ($record && $record->trashed()) {
                             return 'danger';
+                        }
+
                         return '';
                     })
                     ->placeholder('—'),
@@ -235,19 +254,19 @@ class LeaveRequestResource extends Resource
                     ->label('Status')
                     ->sortable()
                     ->color(fn(string $state): string => match ($state) {
-                        'pending' => 'warning',
+                        'pending'  => 'warning',
                         'approved' => 'success',
 
-                        default => 'danger',
+                        default    => 'danger',
                     })
                     ->formatStateUsing(fn(string $state) => match ($state) {
-                        'pending' => 'Menunggu',
-                        'approved' => 'Disetujui',
-                        'rejected' => 'Ditolak',
+                        'pending'   => 'Menunggu',
+                        'approved'  => 'Disetujui',
+                        'rejected'  => 'Ditolak',
                         'cancelled' => 'Dibatalkan',
-                        'expired' => 'Kadaluwarsa',
+                        'expired'   => 'Kadaluwarsa',
 
-                        default => ucwords(
+                        default     => ucwords(
                             str_replace('_', ' ', $state)
                         ),
                     })
@@ -279,8 +298,10 @@ class LeaveRequestResource extends Resource
                     ->icon('heroicon-o-user')
                     ->color(function (LeaveRequest $record) {
                         $record->withTrashed()->first();
-                        if ($record && $record->trashed())
+                        if ($record && $record->trashed()) {
                             return 'danger';
+                        }
+
                         return '';
                     })
                     ->placeholder('—'),
@@ -306,11 +327,11 @@ class LeaveRequestResource extends Resource
             ->filters([
                 Tables\Filters\SelectFilter::make('status')
                     ->options([
-                        'pending' => 'Menunggu',
-                        'approved' => 'Disetujui',
-                        'rejected' => 'Ditolak',
+                        'pending'   => 'Menunggu',
+                        'approved'  => 'Disetujui',
+                        'rejected'  => 'Ditolak',
                         'cancelled' => 'Dibatalkan',
-                        'expired' => 'Kadaluwarsa',
+                        'expired'   => 'Kadaluwarsa',
                     ])
                     ->native(false),
 
@@ -370,7 +391,7 @@ class LeaveRequestResource extends Resource
                         $employeeId = auth()->user()?->employee?->id;
 
                         // Employee tidak ditemukan
-                        if (!$employeeId) {
+                        if (! $employeeId) {
                             Notification::make()
                                 ->title('Data karyawan tidak ditemukan')
                                 ->danger()
@@ -390,7 +411,7 @@ class LeaveRequestResource extends Resource
                         }
 
                         // Status tidak valid
-                        if (!in_array($record->status, ['pending', 'approved'])) {
+                        if (! in_array($record->status, ['pending', 'approved'])) {
                             Notification::make()
                                 ->title('Status pengajuan tidak bisa dibatalkan')
                                 ->warning()
@@ -471,7 +492,7 @@ class LeaveRequestResource extends Resource
                             ->placeholder('—')
                             ->extraImgAttributes([
                                 'style' => 'width: 100%; height: auto; object-fit: cover;',
-                                'class' => 'w-full rounded-2xl'
+                                'class' => 'w-full rounded-2xl',
                             ]),
                     ]),
 
@@ -482,20 +503,20 @@ class LeaveRequestResource extends Resource
                             ->label('Status')
                             ->badge()
                             ->color(fn(string $state) => match ($state) {
-                                'pending' => 'warning',
+                                'pending'  => 'warning',
                                 'approved' => 'success',
 
-                                default => 'danger',
+                                default    => 'danger',
                             })
                             ->formatStateUsing(function (string $state): string {
                                 return match ($state) {
-                                    'pending' => 'Menunggu',
-                                    'approved' => 'Disetujui',
-                                    'rejected' => 'Ditolak',
+                                    'pending'   => 'Menunggu',
+                                    'approved'  => 'Disetujui',
+                                    'rejected'  => 'Ditolak',
                                     'cancelled' => 'Dibatalkan',
-                                    'expired' => 'Kadaluwarsa',
+                                    'expired'   => 'Kadaluwarsa',
 
-                                    default => ucwords(
+                                    default     => ucwords(
                                         str_replace('_', ' ', $state)
                                     ),
                                 };
@@ -549,10 +570,10 @@ class LeaveRequestResource extends Resource
     public static function getPages(): array
     {
         return [
-            'index' => Pages\ListLeaveRequests::route('/'),
+            'index'  => Pages\ListLeaveRequests::route('/'),
             'create' => Pages\CreateLeaveRequest::route('/create'),
-            'view' => Pages\ViewLeaveRequest::route('/{record}'),
-            'edit' => Pages\EditLeaveRequest::route('/{record}/edit'),
+            'view'   => Pages\ViewLeaveRequest::route('/{record}'),
+            'edit'   => Pages\EditLeaveRequest::route('/{record}/edit'),
         ];
     }
 
@@ -565,7 +586,7 @@ class LeaveRequestResource extends Resource
         $user = auth()->user();
 
         // Jika bukan super_admin, hanya tampilkan data cutinya sendiri
-        if (!$user->hasRole('super_admin')) {
+        if (! $user->hasRole('super_admin')) {
             $employee = $user->employee;
             if ($employee) {
                 $query->where('employee_id', $employee->id);

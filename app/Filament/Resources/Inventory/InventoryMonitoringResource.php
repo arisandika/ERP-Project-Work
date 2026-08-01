@@ -1,7 +1,7 @@
 <?php
-
 namespace App\Filament\Resources\Inventory;
 
+use App\Filament\Concerns\BelongsToModule;
 use App\Filament\Resources\Inventory\InventoryMonitoringResource\Pages;
 use App\Models\Inventory\ProductStock;
 use Filament\Forms\Form;
@@ -10,13 +10,12 @@ use Filament\Tables;
 use Filament\Tables\Filters\Filter;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
-use App\Filament\Concerns\BelongsToModule;
 
 class InventoryMonitoringResource extends Resource
 {
     use BelongsToModule;
     protected static ?string $module = 'inventory';
-    protected static ?string $model = ProductStock::class;
+    protected static ?string $model  = ProductStock::class;
 
     protected static ?string $navigationIcon = 'heroicon-o-chart-bar';
 
@@ -49,10 +48,17 @@ class InventoryMonitoringResource extends Resource
                     ->sortable()
                     ->limit(30),
 
-                Tables\Columns\TextColumn::make('warehouse.warehouse_name')
+                Tables\Columns\TextColumn::make('warehouses')
                     ->label('Gudang')
-                    ->searchable()
-                    ->sortable()
+                    ->getStateUsing(function (ProductStock $record) {
+                        return ProductStock::query()
+                            ->where('product_id', $record->product_id)
+                            ->with('warehouse')
+                            ->get()
+                            ->pluck('warehouse.warehouse_name')
+                            ->unique()
+                            ->implode(', ');
+                    })
                     ->badge()
                     ->color('info')
                     ->icon('heroicon-o-building-office'),
@@ -62,15 +68,10 @@ class InventoryMonitoringResource extends Resource
                     ->numeric()
                     ->sortable()
                     ->badge()
-                    ->color(fn ($state) => match (true) {
+                    ->color(fn($state) => match (true) {
                         $state <= 0 => 'danger',
                         $state <= 5 => 'warning',
-                        default => 'success',
-                    })
-                    ->icon(fn ($state) => match (true) {
-                        $state <= 0 => 'heroicon-m-x-circle',
-                        $state <= 5 => 'heroicon-m-exclamation-triangle',
-                        default => 'heroicon-m-check-circle',
+                        default     => 'success',
                     })
                     ->suffix(' Unit'),
 
@@ -92,7 +93,7 @@ class InventoryMonitoringResource extends Resource
 
                 Tables\Columns\TextColumn::make('total_fisik')
                     ->label('Total Fisik')
-                    ->getStateUsing(fn ($record) => $record->qty_available + $record->qty_reserved + $record->qty_on_delivery)
+                    ->getStateUsing(fn($record) => $record->qty_available + $record->qty_reserved + $record->qty_on_delivery)
                     ->numeric()
                     ->weight('semibold')
                     ->suffix(' Unit'),
@@ -103,7 +104,7 @@ class InventoryMonitoringResource extends Resource
                     ->icon('heroicon-o-eye')
                     ->color('gray')
                     ->url(
-                        fn (ProductStock $record): string =>
+                        fn(ProductStock $record): string =>
                         route('filament.admin.resources.inventory.products.view', [
                             'record' => $record->product->id,
                         ])
@@ -113,7 +114,7 @@ class InventoryMonitoringResource extends Resource
             ->filters([
                 Filter::make('low_stock')
                     ->label('Stok Siap Jual ≤ 10')
-                    ->query(fn (Builder $query) => $query->where('qty_available', '<=', 10)),
+                    ->query(fn(Builder $query) => $query->where('qty_available', '<=', 10)),
             ])
             ->bulkActions([])
             ->heading('Live Monitoring Stock Gudang')

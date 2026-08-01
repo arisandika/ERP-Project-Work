@@ -14,4 +14,9 @@ class CreateCategory extends CreateRecord
     {
         return 'Tambah Kategori';
     }
+
+    protected function getRedirectUrl(): string
+    {
+        return static::getResource()::getUrl('index');
+    }
 }

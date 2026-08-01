@@ -14,4 +14,9 @@ class CreateService extends CreateRecord
     {
         return 'Tambah Jasa';
     }
+
+    protected function getRedirectUrl(): string
+    {
+        return $this->getResource()::getUrl('index');
+    }
 }

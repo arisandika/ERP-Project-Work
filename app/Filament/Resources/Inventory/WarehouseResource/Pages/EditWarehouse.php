@@ -1,5 +1,4 @@
 <?php
-
 namespace App\Filament\Resources\Inventory\WarehouseResource\Pages;
 
 use App\Filament\Resources\Inventory\WarehouseResource;
@@ -20,5 +19,10 @@ class EditWarehouse extends EditRecord
     public function getTitle(): string
     {
         return 'Edit Gudang';
+    }
+    
+    protected function getRedirectUrl(): string
+    {
+        return static::getResource()::getUrl('index');
     }
 }

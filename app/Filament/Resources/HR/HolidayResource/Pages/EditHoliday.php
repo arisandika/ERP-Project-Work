@@ -24,4 +24,9 @@ class EditHoliday extends EditRecord
     {
         return 'Edit Hari Libur';
     }
+
+    protected function getRedirectUrl(): string
+    {
+        return static::getResource()::getUrl('index');
+    }
 }

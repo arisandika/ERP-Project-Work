@@ -14,4 +14,9 @@ class CreateUnit extends CreateRecord
     {
         return 'Tambah Satuan';
     }
+
+    protected function getRedirectUrl(): string
+    {
+        return static::getResource()::getUrl('index');
+    }
 }

@@ -1,8 +1,8 @@
 <?php
 namespace App\Filament\Resources\Inventory;
 
+use App\Filament\Concerns\BelongsToModule;
 use App\Filament\Resources\Inventory\ServiceResource\Pages;
-use App\Models\Inventory\Category;
 use App\Models\Inventory\Service;
 use Filament\Forms;
 use Filament\Forms\Form;
@@ -14,13 +14,12 @@ use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Carbon;
-use App\Filament\Concerns\BelongsToModule;
 
 class ServiceResource extends Resource
 {
     use BelongsToModule;
     protected static ?string $module = 'inventory';
-    protected static ?string $model = Service::class;
+    protected static ?string $model  = Service::class;
 
     protected static ?string $navigationIcon = 'heroicon-o-percent-badge';
 
@@ -31,6 +30,11 @@ class ServiceResource extends Resource
     protected static ?string $slug = 'inventory/services';
 
     protected static ?string $pluralModelLabel = 'Jasa';
+
+    public static function getNavigationBadge(): ?string
+    {
+        return static::getModel()::count();
+    }
 
     public static function form(Forms\Form $form): Forms\Form
     {
@@ -55,10 +59,22 @@ class ServiceResource extends Resource
 
                                 Forms\Components\Select::make('category_id')
                                     ->label('Kategori')
-                                    ->options(Category::pluck('name', 'id'))
-                                    ->searchable()
+                                    ->relationship('category', 'name')
                                     ->required()
-                                    ->prefixIcon('heroicon-o-tag'),
+                                    ->searchable()
+                                    ->preload()
+                                    ->prefixIcon('heroicon-o-tag')
+                                    ->createOptionForm([
+                                        Forms\Components\TextInput::make('name')
+                                            ->label('Nama Kategori')
+                                            ->required()
+                                            ->maxLength(50)
+                                            ->prefixIcon('heroicon-o-tag'),
+
+                                        Forms\Components\Textarea::make('description')
+                                            ->label('Deskripsi')
+                                            ->rows(3),
+                                    ]),
                             ]),
                     ]),
             ]);
@@ -199,10 +215,10 @@ class ServiceResource extends Resource
     public static function getPages(): array
     {
         return [
-            'index' => Pages\ListServices::route('/'),
+            'index'  => Pages\ListServices::route('/'),
             'create' => Pages\CreateService::route('/create'),
-            'view' => Pages\ViewService::route('/{record}'),
-            'edit' => Pages\EditService::route('/{record}/edit'),
+            'view'   => Pages\ViewService::route('/{record}'),
+            'edit'   => Pages\EditService::route('/{record}/edit'),
         ];
     }
 }

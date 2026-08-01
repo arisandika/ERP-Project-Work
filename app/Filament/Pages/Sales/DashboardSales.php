@@ -1,17 +1,16 @@
 <?php
-
 namespace App\Filament\Pages\Sales;
 
 use App\Filament\Concerns\BelongsToModule;
+use App\Filament\Widgets\Sales\InvoiceReportTable;
 use App\Filament\Widgets\Sales\RevenueChart;
 use App\Filament\Widgets\Sales\SalesSummaryStats;
-use App\Filament\Widgets\Sales\InvoiceReportTable;
 use BezhanSalleh\FilamentShield\Traits\HasPageShield;
 use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\Section;
 use Filament\Forms\Form;
-use Filament\Pages\Dashboard\Concerns\HasFiltersForm;
 use Filament\Pages\Dashboard as BaseDashboard;
+use Filament\Pages\Dashboard\Concerns\HasFiltersForm;
 
 class DashboardSales extends BaseDashboard
 {
@@ -34,11 +33,11 @@ class DashboardSales extends BaseDashboard
 
     protected static ?string $module = 'sales';
 
-    protected static ?string $navigationIcon = 'heroicon-o-presentation-chart-line';
+    protected static ?string $navigationIcon  = 'heroicon-o-presentation-chart-line';
     protected static ?string $navigationGroup = 'Manajemen Sales';
-    protected static ?int $navigationSort = 1;
-    protected static ?string $title = 'Dashboard Penjualan';
-    protected static string $routePath = 'sales-dashboard';
+    protected static ?int $navigationSort     = 6;
+    protected static ?string $title           = 'Dashboard Penjualan';
+    protected static string $routePath        = 'sales-dashboard';
 
     /**
      * Override method canAccess()
@@ -85,7 +84,7 @@ class DashboardSales extends BaseDashboard
         return [
             SalesSummaryStats::class,
             RevenueChart::class,
-            InvoiceReportTable::class
+            InvoiceReportTable::class,
         ];
     }
 }

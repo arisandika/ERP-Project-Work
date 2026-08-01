@@ -1,7 +1,7 @@
 <?php
-
 namespace App\Filament\Resources\Inventory;
 
+use App\Filament\Concerns\BelongsToModule;
 use App\Filament\Resources\Inventory\WarehouseResource\Pages;
 use App\Filament\Resources\Inventory\WarehouseResource\RelationManagers\StocksRelationManager;
 use App\Models\Inventory\Warehouse;
@@ -16,19 +16,23 @@ use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
-use App\Filament\Concerns\BelongsToModule;
 
 class WarehouseResource extends Resource
 {
     use BelongsToModule;
 
-    protected static ?string $module = 'inventory';
-    protected static ?string $model = Warehouse::class;
-    protected static ?string $navigationIcon = 'heroicon-o-home-modern';
-    protected static ?string $navigationGroup = 'Manajemen Inventory';
-    protected static ?int $navigationSort = 3;
-    protected static ?string $slug = 'inventory/warehouses';
+    protected static ?string $module           = 'inventory';
+    protected static ?string $model            = Warehouse::class;
+    protected static ?string $navigationIcon   = 'heroicon-o-home-modern';
+    protected static ?string $navigationGroup  = 'Manajemen Inventory';
+    protected static ?int $navigationSort      = 3;
+    protected static ?string $slug             = 'inventory/warehouses';
     protected static ?string $pluralModelLabel = 'Gudang';
+
+    public static function getNavigationBadge(): ?string
+    {
+        return static::getModel()::count();
+    }
 
     public static function form(Form $form): Form
     {
@@ -96,38 +100,35 @@ class WarehouseResource extends Resource
                     ->label('Nama Gudang')
                     ->searchable()
                     ->sortable()
-                    ->weight('semibold'),
+                    ->weight('semibold')
+                    ->placeholder('—'),
 
                 Tables\Columns\TextColumn::make('location')
                     ->label('Lokasi')
                     ->limit(60)
                     ->wrap()
                     ->tooltip(fn($record) => $record->location)
-                    ->searchable(),
+                    ->searchable()
+                    ->placeholder('—')
+                    ->toggleable(isToggledHiddenByDefault: true),
 
                 Tables\Columns\TextColumn::make('manager_name')
                     ->label('Penanggung Jawab')
-                    ->default('-')
-                    ->sortable()
-                    ->toggleable(isToggledHiddenByDefault: true),
+                    ->placeholder('—')
+                    ->sortable(),
 
                 Tables\Columns\TextColumn::make('phone')
                     ->label('No. Telepon')
                     ->badge()
                     ->color('info')
+                    ->placeholder('—')
                     ->searchable(),
-
-                Tables\Columns\TextColumn::make('maps_url')
-                    ->label('Maps')
-                    ->formatStateUsing(fn($state) => $state ? 'Lihat Maps' : '-')
-                    ->url(fn($state) => $state ?: null, shouldOpenInNewTab: true)
-                    ->badge()
-                    ->color(fn($state) => $state ? 'primary' : 'gray'),
 
                 Tables\Columns\TextColumn::make('total_products')
                     ->label('Jumlah Product')
                     ->badge()
                     ->color('info')
+                    ->placeholder('—')
                     ->suffix(' Items'),
 
                 // Kolom Total Qty sekarang jauh lebih bersih (Menggunakan Model Accessor)
@@ -138,15 +139,10 @@ class WarehouseResource extends Resource
                     ->sortable()
                     ->badge()
                     ->color(fn($state) => match (true) {
-                        $state <= 0 => 'danger',
-                        $state <= 5 => 'danger',
+                        $state <= 0  => 'danger',
+                        $state <= 5  => 'danger',
                         $state <= 10 => 'warning',
-                        default => 'success',
-                    })
-                    ->icon(fn($state) => match (true) {
-                        $state <= 0 => 'heroicon-m-x-circle',
-                        $state <= 10 => 'heroicon-m-exclamation-triangle',
-                        default => 'heroicon-m-check-circle',
+                        default      => 'success',
                     })
                     ->suffix(' Qty'),
 
@@ -219,8 +215,8 @@ class WarehouseResource extends Resource
                 Tables\Actions\DeleteAction::make()
                     ->requiresConfirmation()
                     // Proteksi keamanan sesungguhnya: Tombol ter-disable jika masih ada relasi stok
-                    ->disabled(fn (Warehouse $record): bool => $record->hasStocks())
-                    ->tooltip(fn (Warehouse $record): ?string => $record->hasStocks() ? 'Gudang tidak dapat dihapus karena masih ada stok tersimpan.' : null),
+                    ->disabled(fn(Warehouse $record): bool => $record->hasStocks())
+                    ->tooltip(fn(Warehouse $record): ?string => $record->hasStocks() ? 'Gudang tidak dapat dihapus karena masih ada stok tersimpan.' : null),
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([
@@ -235,9 +231,9 @@ class WarehouseResource extends Resource
                         $q->select(DB::raw('COUNT(DISTINCT product_id)'));
                     },
                 ])
-                ->withSum('stocks as sum_qty_available', 'qty_available')
-                ->withSum('stocks as sum_qty_reserved', 'qty_reserved')
-                ->withSum('stocks as sum_qty_on_delivery', 'qty_on_delivery');
+                    ->withSum('stocks as sum_qty_available', 'qty_available')
+                    ->withSum('stocks as sum_qty_reserved', 'qty_reserved')
+                    ->withSum('stocks as sum_qty_on_delivery', 'qty_on_delivery');
             });
     }
 
@@ -274,7 +270,7 @@ class WarehouseResource extends Resource
                             ->label('Total Stock')
                             ->badge()
                             ->color('success')
-                            // Panggil properti dari model (Sangat rapi & tidak redundant)
+                        // Panggil properti dari model (Sangat rapi & tidak redundant)
                             ->state(fn(Warehouse $record) => $record->total_stock)
                             ->suffix(' unit'),
                     ]),
@@ -309,10 +305,10 @@ class WarehouseResource extends Resource
     public static function getPages(): array
     {
         return [
-            'index' => Pages\ListWarehouses::route('/'),
+            'index'  => Pages\ListWarehouses::route('/'),
             'create' => Pages\CreateWarehouse::route('/create'),
-            'view' => Pages\ViewWarehouse::route('/{record}'),
-            'edit' => Pages\EditWarehouse::route('/{record}/edit'),
+            'view'   => Pages\ViewWarehouse::route('/{record}'),
+            'edit'   => Pages\EditWarehouse::route('/{record}/edit'),
         ];
     }
 }

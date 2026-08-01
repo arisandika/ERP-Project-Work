@@ -183,18 +183,21 @@ class ProductResource extends Resource
                 Tables\Columns\ImageColumn::make('image_path')
                     ->label('Foto')
                     ->getStateUsing(fn($record) => $record->image_url)
-                    ->circular(),
+                    ->circular()
+                    ->placeholder('—'),
 
                 Tables\Columns\TextColumn::make('product_code')
                     ->label('Kode Product')
                     ->searchable()
                     ->sortable()
+                    ->placeholder('—')
                     ->weight('semibold'),
 
                 Tables\Columns\TextColumn::make('product_name')
                     ->label('Nama Product')
                     ->searchable()
                     ->sortable()
+                    ->placeholder('—')
                     ->limit(30),
 
                 Tables\Columns\TextColumn::make('category.name')
@@ -203,6 +206,7 @@ class ProductResource extends Resource
                     ->sortable()
                     ->badge()
                     ->color('indigo')
+                    ->placeholder('—')
                     ->icon('heroicon-o-tag'),
 
                 Tables\Columns\TextColumn::make('warehouses')
@@ -219,6 +223,7 @@ class ProductResource extends Resource
                     ->sortable()
                     ->badge()
                     ->color('info')
+                    ->placeholder('—')
                     ->icon('heroicon-o-building-office'),
 
                 Tables\Columns\TextColumn::make('total_stock')
@@ -237,11 +242,6 @@ class ProductResource extends Resource
                         $state <= 5 => 'danger',
                         $state <= 10 => 'warning',
                         default => 'success',
-                    })
-                    ->icon(fn($state) => match (true) {
-                        $state <= 0 => 'heroicon-m-x-circle',
-                        $state <= 10 => 'heroicon-m-exclamation-triangle',
-                        default => 'heroicon-m-check-circle',
                     })
                     ->suffix(' Qty'),
 

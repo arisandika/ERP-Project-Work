@@ -14,4 +14,9 @@ class CreateWarehouse extends CreateRecord
     {
         return 'Tambah Gudang';
     }
+
+    protected function getRedirectUrl(): string
+    {
+        return static::getResource()::getUrl('index');
+    }
 }
