@@ -24,7 +24,7 @@ class SupplierWarrantyResource extends Resource
     protected static ?string $navigationGroup = 'Manajemen After-Sales';
     protected static ?string $navigationLabel = 'Klaim Vendor';
     protected static ?string $slug = 'after-sales/supplier-warranty';
-    protected static ?int $navigationSort = 2;
+    protected static ?int $navigationSort = 23;
 
     public static function getEloquentQuery(): Builder
     {

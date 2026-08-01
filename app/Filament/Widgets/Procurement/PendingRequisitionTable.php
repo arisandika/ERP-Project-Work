@@ -17,7 +17,7 @@ class PendingRequisitionTable extends BaseWidget
     protected static ?string $pollingInterval = '5s';
 
     protected int | string | array $columnSpan = [
-        'xl' => 7,
+        'xl' => 12,
     ];
 
     public static function canView(): bool

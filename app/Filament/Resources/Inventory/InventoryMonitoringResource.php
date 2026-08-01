@@ -19,9 +19,7 @@ class InventoryMonitoringResource extends Resource
 
     protected static ?string $navigationIcon = 'heroicon-o-chart-bar';
 
-    protected static ?string $navigationGroup = 'Manajemen Inventory';
-
-    protected static ?int $navigationSort = 8;
+    protected static ?int $navigationSort = 3;
 
     protected static ?string $slug = 'inventory/monitoring-transactions';
 

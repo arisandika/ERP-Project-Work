@@ -17,8 +17,6 @@ class GeneralInformation extends Page
 
     protected static ?string $module = 'finance';
 
-    protected static ?string $navigationGroup = 'Manajemen Finance';
-
     protected static ?string $navigationIcon = 'heroicon-o-chart-bar-square';
 
     protected static ?string $navigationLabel = 'Finance Overview';

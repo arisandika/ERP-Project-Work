@@ -33,11 +33,17 @@ class DashboardSales extends BaseDashboard
 
     protected static ?string $module = 'sales';
 
-    protected static ?string $navigationIcon  = 'heroicon-o-presentation-chart-line';
-    protected static ?string $navigationGroup = 'Manajemen Sales';
-    protected static ?int $navigationSort     = 6;
-    protected static ?string $title           = 'Dashboard Penjualan';
-    protected static string $routePath        = 'sales-dashboard';
+    protected static ?string $navigationIcon = 'heroicon-o-chart-bar-square';
+
+    protected static string $view = 'filament.pages.sales.dashboard-sales';
+
+    protected static ?string $slug = 'sales/dashboard';
+
+    protected static string $routePath = 'sales/dashboard';
+
+    protected static ?string $navigationLabel = 'Dashboard Sales';
+
+    protected static ?string $title = 'Dashboard Sales';
 
     /**
      * Override method canAccess()

@@ -30,15 +30,19 @@ class SalesReports extends Page implements HasForms
         BelongsToModule::shouldRegisterNavigation as moduleShouldRegisterNavigation;
     }
 
-    protected static ?string $module = 'sales'; // Integrasi ke modul Sales
+    protected static ?string $module = 'sales';
 
-    protected static ?string $navigationIcon  = 'heroicon-o-document-chart-bar';
-    protected static ?string $navigationGroup = 'Manajemen Sales';
-    protected static ?string $navigationLabel = 'Laporan Penjualan';
-    protected static ?string $title           = 'Laporan Penjualan';
-    protected static ?int $navigationSort     = 7;
+    protected static ?string $navigationIcon = 'heroicon-o-document-chart-bar';
 
     protected static string $view = 'filament.pages.sales.sales-reports';
+
+    protected static ?string $slug = 'sales/reports';
+
+    protected static string $routePath = 'sales/reports';
+
+    protected static ?string $navigationLabel = 'Laporan Sales';
+
+    protected static ?string $title = 'Laporan Sales';
 
     public ?array $data = [];
 

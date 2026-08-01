@@ -24,7 +24,7 @@ class InternalRepairResource extends Resource
     protected static ?string $navigationGroup = 'Manajemen After-Sales';
     protected static ?string $navigationLabel = 'Servis Internal';
     protected static ?string $slug = 'after-sales/internal-repairs';
-    protected static ?int $navigationSort = 3;
+    protected static ?int $navigationSort = 22;
 
     public static function getEloquentQuery(): Builder
     {

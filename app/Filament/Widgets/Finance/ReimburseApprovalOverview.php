@@ -15,7 +15,7 @@ class ReimburseApprovalOverview extends BaseWidget
 
     protected function getColumns(): int
     {
-        return 4;
+        return 3;
     }
 
     protected function getStats(): array

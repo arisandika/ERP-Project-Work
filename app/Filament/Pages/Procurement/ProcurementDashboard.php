@@ -27,15 +27,17 @@ class ProcurementDashboard extends BaseDashboard
 
     protected static ?string $module = 'procurement';
 
-    protected static ?string $navigationIcon = 'heroicon-o-presentation-chart-line';
+    protected static ?string $navigationIcon = 'heroicon-o-chart-bar-square';
 
-    protected static ?string $navigationGroup = 'Manajemen Procurement';
+    protected static string $view = 'filament.pages.procurement.dashboard-procurement';
 
-    protected static ?int $navigationSort = 0;
+    protected static ?string $slug = 'procurement/dashboard';
 
-    protected static string $routePath = 'procurement-dashboard';
+    protected static string $routePath = 'procurement/dashboard';
 
-    protected static ?string $title = 'Dashboard';
+    protected static ?string $navigationLabel = 'Dashboard Procurement';
+
+    protected static ?string $title = 'Dashboard Procurement';
 
     public function getColumns(): int | string | array
     {

@@ -20,9 +20,7 @@ class TransactionReportResource extends Resource
 
     protected static ?string $navigationIcon = 'heroicon-o-document-text';
 
-    protected static ?string $navigationGroup = 'Manajemen Inventory';
-
-    protected static ?int $navigationSort = 10;
+    protected static ?int $navigationSort = 5;
 
     protected static ?string $slug = 'inventory/transaction-reports';
 
