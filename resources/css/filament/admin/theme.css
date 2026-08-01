@@ -157,7 +157,7 @@
 }
 
 .fi-wi-stats-overview-stat {
-    @apply rounded-2xl bg-secondary-light dark:bg-secondary-dark shadow-none ring-1 ring-border-light dark:ring-border-dark !important;
+    @apply rounded-2xl bg-secondary-light dark:bg-secondary-dark shadow-none border-0 ring-1 ring-border-light dark:ring-border-dark !important;
 }
 
 .fi-tabs {

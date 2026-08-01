@@ -1,13 +1,13 @@
 <x-filament-panels::page>
     <div class="space-y-8">
-        <div class="overflow-hidden rounded-3xl border border-gray-200 bg-white shadow-sm ring-1 ring-gray-950/5 dark:border-gray-800 dark:bg-gray-900 dark:ring-white/10">
-            <div class="border-b border-gray-200 bg-gradient-to-r from-white via-gray-50 to-white px-6 py-5 dark:border-gray-800 dark:from-gray-900 dark:via-gray-950 dark:to-gray-900">
+        <div class="overflow-hidden border-0 shadow-sm bg-secondary-light ring-border-light rounded-3xl ring-1 dark:ring-border-dark dark:bg-secondary-dark">
+            <div class="px-6 py-5">
                 <div class="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
                     <div class="flex items-center gap-3">
-                        <div class="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-primary-50 text-primary-600 ring-1 ring-primary-600/10 dark:bg-primary-500/10 dark:text-primary-400 dark:ring-primary-500/20">
+                        <div class="flex items-center justify-center w-12 h-12 shrink-0 rounded-2xl bg-primary-50 text-primary-600 ring-1 ring-primary-600/10 dark:bg-primary-500/10 dark:text-primary-400 dark:ring-primary-500/20">
                             <x-filament::icon
                                 icon="heroicon-o-chart-bar-square"
-                                class="h-6 w-6"
+                                class="w-6 h-6"
                             />
                         </div>
 
@@ -23,10 +23,10 @@
                     </div>
 
                     <div class="flex flex-col gap-3 sm:flex-row sm:items-center">
-                        <div class="flex items-center gap-2 rounded-2xl border border-gray-200 bg-white px-3 py-2 shadow-sm dark:border-gray-700 dark:bg-gray-800">
+                        <div class="flex items-center gap-2 px-3 py-2 shadow-sm ring-1 bg-secondary-light ring-border-light rounded-2xl dark:ring-border-dark dark:bg-secondary-dark">
                             <x-filament::icon
                                 icon="heroicon-o-calendar-days"
-                                class="h-5 w-5 text-gray-400"
+                                class="w-5 h-5 text-gray-400"
                             />
 
                             <select
@@ -41,19 +41,19 @@
                             </select>
                         </div>
 
-                        <div class="inline-flex rounded-2xl border border-gray-200 bg-gray-100 p-1 dark:border-gray-700 dark:bg-gray-800">
+                        <div class="inline-flex p-1 ring-1 bg-main-light dark:bg-main-dark ring-border-light rounded-2xl dark:ring-border-dark">
                             <button
                                 type="button"
                                 wire:click="setSummaryMode('monthly')"
                                 @class([
                                     'inline-flex items-center gap-2 rounded-xl px-4 py-2 text-sm font-semibold transition',
-                                    'bg-white text-primary-600 shadow-sm ring-1 ring-gray-950/5 dark:bg-gray-900 dark:text-primary-400 dark:ring-white/10' => $summaryMode === 'monthly',
+                                    'bg-secondary-light text-primary-600 shadow-sm ring-1 ring-border-light dark:ring-border-dark dark:bg-secondary-dark' => $summaryMode === 'monthly',
                                     'text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white' => $summaryMode !== 'monthly',
                                 ])
                             >
                                 <x-filament::icon
                                     icon="heroicon-o-calendar"
-                                    class="h-5 w-5"
+                                    class="w-5 h-5"
                                 />
                                 Bulanan
                             </button>
@@ -63,13 +63,13 @@
                                 wire:click="setSummaryMode('yearly')"
                                 @class([
                                     'inline-flex items-center gap-2 rounded-xl px-4 py-2 text-sm font-semibold transition',
-                                    'bg-white text-primary-600 shadow-sm ring-1 ring-gray-950/5 dark:bg-gray-900 dark:text-primary-400 dark:ring-white/10' => $summaryMode === 'yearly',
+                                    'bg-secondary-light text-primary-600 shadow-sm ring-1 ring-border-light dark:ring-border-dark dark:bg-secondary-dark' => $summaryMode === 'yearly',
                                     'text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white' => $summaryMode !== 'yearly',
                                 ])
                             >
                                 <x-filament::icon
                                     icon="heroicon-o-presentation-chart-line"
-                                    class="h-5 w-5"
+                                    class="w-5 h-5"
                                 />
                                 Tahunan
                             </button>
@@ -79,14 +79,14 @@
             </div>
 
             <div class="grid gap-5 p-6 md:grid-cols-2 xl:grid-cols-4">
-                <div class="rounded-3xl border border-gray-200 bg-gradient-to-br from-white to-gray-50 p-6 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md dark:border-gray-800 dark:from-gray-900 dark:to-gray-950">
+                <div class="rounded-3xl ring-1 ring-border-light dark:ring-border-dark p-6 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md bg-main-light dark:bg-main-dark">
                     <div class="flex items-start justify-between gap-5">
                         <div class="min-w-0">
                             <p class="text-sm font-semibold text-gray-500 dark:text-gray-400">
                                 Pemasukan Tahun Ini
                             </p>
 
-                            <h3 class="mt-4 truncate text-2xl font-bold tracking-tight text-gray-950 dark:text-white">
+                            <h3 class="mt-4 text-2xl font-bold tracking-tight truncate text-gray-950 dark:text-white">
                                 {{ $this->formatMoney($this->selectedYearSummary['income']) }}
                             </h3>
 
@@ -95,23 +95,23 @@
                             </p>
                         </div>
 
-                        <div class="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-success-50 text-success-600 dark:bg-success-500/10 dark:text-success-400">
+                        <div class="flex items-center justify-center w-12 h-12 shrink-0 rounded-2xl bg-success-50 text-success-600 dark:bg-success-500/10 dark:text-success-400">
                             <x-filament::icon
                                 icon="heroicon-o-arrow-trending-up"
-                                class="h-6 w-6"
+                                class="w-6 h-6"
                             />
                         </div>
                     </div>
                 </div>
 
-                <div class="rounded-3xl border border-gray-200 bg-gradient-to-br from-white to-gray-50 p-6 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md dark:border-gray-800 dark:from-gray-900 dark:to-gray-950">
+                <div class="rounded-3xl ring-1 ring-border-light dark:ring-border-dark p-6 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md bg-main-light dark:bg-main-dark">
                     <div class="flex items-start justify-between gap-5">
                         <div class="min-w-0">
                             <p class="text-sm font-semibold text-gray-500 dark:text-gray-400">
                                 Pengeluaran Tahun Ini
                             </p>
 
-                            <h3 class="mt-4 truncate text-2xl font-bold tracking-tight text-gray-950 dark:text-white">
+                            <h3 class="mt-4 text-2xl font-bold tracking-tight truncate text-gray-950 dark:text-white">
                                 {{ $this->formatMoney($this->selectedYearSummary['expense']) }}
                             </h3>
 
@@ -120,16 +120,16 @@
                             </p>
                         </div>
 
-                        <div class="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-danger-50 text-danger-600 dark:bg-danger-500/10 dark:text-danger-400">
+                        <div class="flex items-center justify-center w-12 h-12 shrink-0 rounded-2xl bg-danger-50 text-danger-600 dark:bg-danger-500/10 dark:text-danger-400">
                             <x-filament::icon
                                 icon="heroicon-o-arrow-trending-down"
-                                class="h-6 w-6"
+                                class="w-6 h-6"
                             />
                         </div>
                     </div>
                 </div>
 
-                <div class="rounded-3xl border border-gray-200 bg-gradient-to-br from-white to-gray-50 p-6 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md dark:border-gray-800 dark:from-gray-900 dark:to-gray-950">
+                <div class="rounded-3xl ring-1 ring-border-light dark:ring-border-dark p-6 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md bg-main-light dark:bg-main-dark">
                     <div class="flex items-start justify-between gap-5">
                         <div class="min-w-0">
                             <p class="text-sm font-semibold text-gray-500 dark:text-gray-400">
@@ -156,13 +156,13 @@
                         ])>
                             <x-filament::icon
                                 :icon="$this->selectedYearSummary['net_profit'] >= 0 ? 'heroicon-o-check-badge' : 'heroicon-o-exclamation-triangle'"
-                                class="h-6 w-6"
+                                class="w-6 h-6"
                             />
                         </div>
                     </div>
                 </div>
 
-                <div class="rounded-3xl border border-gray-200 bg-gradient-to-br from-white to-gray-50 p-6 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md dark:border-gray-800 dark:from-gray-900 dark:to-gray-950">
+                <div class="rounded-3xl ring-1 ring-border-light dark:ring-border-dark p-6 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md bg-main-light dark:bg-main-dark">
                     <div class="flex items-start justify-between gap-5">
                         <div class="min-w-0">
                             <p class="text-sm font-semibold text-gray-500 dark:text-gray-400">
@@ -182,17 +182,17 @@
                             </p>
                         </div>
 
-                        <div class="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-primary-50 text-primary-600 dark:bg-primary-500/10 dark:text-primary-400">
+                        <div class="flex items-center justify-center w-12 h-12 shrink-0 rounded-2xl bg-primary-50 text-primary-600 dark:bg-primary-500/10 dark:text-primary-400">
                             <x-filament::icon
                                 icon="heroicon-o-wallet"
-                                class="h-6 w-6"
+                                class="w-6 h-6"
                             />
                         </div>
                     </div>
                 </div>
             </div>
 
-            <div class="border-t border-gray-200 px-6 py-4 dark:border-gray-800">
+            <div class="px-6 py-4 ring-1 ring-border-light dark:ring-border-dark">
                 <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                     <div>
                         <h3 class="text-base font-bold text-gray-950 dark:text-white">
@@ -206,10 +206,10 @@
                         </p>
                     </div>
 
-                    <div class="inline-flex w-fit items-center gap-2 rounded-full bg-gray-100 px-3 py-1.5 text-xs font-semibold text-gray-600 dark:bg-gray-800 dark:text-gray-300">
+                    <div class="inline-flex w-fit items-center gap-2 rounded-full bg-main-light px-3 py-1.5 text-xs font-semibold text-gray-600 dark:bg-secondary-dark dark:text-gray-300">
                         <x-filament::icon
                             icon="heroicon-o-funnel"
-                            class="h-4 w-4"
+                            class="w-4 h-4"
                         />
 
                         Tahun {{ $selectedYear }}
@@ -218,44 +218,44 @@
             </div>
 
             <div class="overflow-x-auto">
-                <table class="w-full min-w-[1100px] divide-y divide-gray-200 text-sm dark:divide-gray-800">
+                <table class="w-full min-w-[1100px] divide-y divide-border-light text-sm dark:divide-border-dark">
                     <thead>
-                        <tr class="bg-gray-50 dark:bg-gray-950/60">
-                            <th class="px-6 py-4 text-left font-bold text-gray-700 dark:text-gray-200">
+                        <tr class="bg-main-light dark:bg-main-dark">
+                            <th class="px-6 py-4 font-bold text-left text-gray-700 dark:text-gray-200">
                                 Periode
                             </th>
 
-                            <th class="px-6 py-4 text-right font-bold text-gray-700 dark:text-gray-200">
+                            <th class="px-6 py-4 font-bold text-right text-gray-700 dark:text-gray-200">
                                 Pemasukan
                             </th>
 
-                            <th class="px-6 py-4 text-right font-bold text-gray-700 dark:text-gray-200">
+                            <th class="px-6 py-4 font-bold text-right text-gray-700 dark:text-gray-200">
                                 Pengeluaran
                             </th>
 
-                            <th class="px-6 py-4 text-right font-bold text-gray-700 dark:text-gray-200">
+                            <th class="px-6 py-4 font-bold text-right text-gray-700 dark:text-gray-200">
                                 Laba / Rugi
                             </th>
 
-                            <th class="px-6 py-4 text-right font-bold text-gray-700 dark:text-gray-200">
+                            <th class="px-6 py-4 font-bold text-right text-gray-700 dark:text-gray-200">
                                 Sisa Piutang
                             </th>
 
-                            <th class="px-6 py-4 text-right font-bold text-gray-700 dark:text-gray-200">
+                            <th class="px-6 py-4 font-bold text-right text-gray-700 dark:text-gray-200">
                                 Sisa Hutang
                             </th>
 
-                            <th class="px-6 py-4 text-right font-bold text-gray-700 dark:text-gray-200">
+                            <th class="px-6 py-4 font-bold text-right text-gray-700 dark:text-gray-200">
                                 Saldo Akhir
                             </th>
 
-                            <th class="px-6 py-4 text-center font-bold text-gray-700 dark:text-gray-200">
+                            <th class="px-6 py-4 font-bold text-center text-gray-700 dark:text-gray-200">
                                 Status
                             </th>
                         </tr>
                     </thead>
 
-                    <tbody class="divide-y divide-gray-100 dark:divide-gray-800">
+                    <tbody class="divide-y divide-border-light dark:divide-border-dark">
                         @php
                             $rows = $summaryMode === 'monthly'
                                 ? $this->monthlySummaries
@@ -263,13 +263,13 @@
                         @endphp
 
                         @forelse ($rows as $row)
-                            <tr class="transition hover:bg-gray-50 dark:hover:bg-gray-800/50">
-                                <td class="whitespace-nowrap px-6 py-4">
+                            <tr class="transition hover:bg-main-light dark:hover:bg-main-dark">
+                                <td class="px-6 py-4 whitespace-nowrap">
                                     <div class="flex items-center gap-3">
-                                        <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-gray-100 text-gray-500 dark:bg-gray-800 dark:text-gray-400">
+                                        <div class="flex items-center justify-center w-10 h-10 text-gray-500 bg-main-light shrink-0 rounded-2xl dark:bg-secondary-dark dark:text-gray-400">
                                             <x-filament::icon
                                                 :icon="$summaryMode === 'monthly' ? 'heroicon-o-calendar' : 'heroicon-o-calendar-days'"
-                                                class="h-5 w-5"
+                                                class="w-5 h-5"
                                             />
                                         </div>
 
@@ -285,11 +285,11 @@
                                     </div>
                                 </td>
 
-                                <td class="whitespace-nowrap px-6 py-4 text-right font-semibold text-success-600 dark:text-success-400">
+                                <td class="px-6 py-4 font-semibold text-right whitespace-nowrap text-success-600 dark:text-success-400">
                                     {{ $this->formatMoney($row['income']) }}
                                 </td>
 
-                                <td class="whitespace-nowrap px-6 py-4 text-right font-semibold text-danger-600 dark:text-danger-400">
+                                <td class="px-6 py-4 font-semibold text-right whitespace-nowrap text-danger-600 dark:text-danger-400">
                                     {{ $this->formatMoney($row['expense']) }}
                                 </td>
 
@@ -301,11 +301,11 @@
                                     {{ $this->formatMoney($row['net_profit']) }}
                                 </td>
 
-                                <td class="whitespace-nowrap px-6 py-4 text-right font-semibold text-warning-600 dark:text-warning-400">
+                                <td class="px-6 py-4 font-semibold text-right whitespace-nowrap text-warning-600 dark:text-warning-400">
                                     {{ $this->formatMoney($row['receivable_remaining']) }}
                                 </td>
 
-                                <td class="whitespace-nowrap px-6 py-4 text-right font-semibold text-orange-600 dark:text-orange-400">
+                                <td class="px-6 py-4 font-semibold text-right text-orange-600 whitespace-nowrap dark:text-orange-400">
                                     {{ $this->formatMoney($row['payable_remaining']) }}
                                 </td>
 
@@ -317,12 +317,12 @@
                                     {{ $this->formatMoney($row['ending_balance']) }}
                                 </td>
 
-                                <td class="whitespace-nowrap px-6 py-4 text-center">
+                                <td class="px-6 py-4 text-center whitespace-nowrap">
                                     @if ($row['net_profit'] >= 0)
                                         <span class="inline-flex items-center gap-1.5 rounded-full bg-success-50 px-3 py-1 text-xs font-bold text-success-700 ring-1 ring-success-600/20 dark:bg-success-500/10 dark:text-success-400 dark:ring-success-500/20">
                                             <x-filament::icon
                                                 icon="heroicon-o-check-circle"
-                                                class="h-4 w-4"
+                                                class="w-4 h-4"
                                             />
                                             Profit
                                         </span>
@@ -330,7 +330,7 @@
                                         <span class="inline-flex items-center gap-1.5 rounded-full bg-danger-50 px-3 py-1 text-xs font-bold text-danger-700 ring-1 ring-danger-600/20 dark:bg-danger-500/10 dark:text-danger-400 dark:ring-danger-500/20">
                                             <x-filament::icon
                                                 icon="heroicon-o-exclamation-circle"
-                                                class="h-4 w-4"
+                                                class="w-4 h-4"
                                             />
                                             Rugi
                                         </span>
@@ -340,8 +340,8 @@
                         @empty
                             <tr>
                                 <td colspan="8" class="px-6 py-12 text-center">
-                                    <div class="mx-auto flex max-w-sm flex-col items-center">
-                                        <div class="flex h-14 w-14 items-center justify-center rounded-3xl bg-gray-100 text-gray-400 dark:bg-gray-800">
+                                    <div class="flex flex-col items-center max-w-sm mx-auto">
+                                        <div class="flex items-center justify-center text-gray-400 bg-main-light h-14 w-14 rounded-3xl dark:bg-secondary-dark">
                                             <x-filament::icon
                                                 icon="heroicon-o-folder-open"
                                                 class="h-7 w-7"

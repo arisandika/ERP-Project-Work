@@ -252,7 +252,9 @@
     @endpush
 
     @push('scripts')
-        <script src="https://cdn.dhtmlx.com/gantt/edge/dhtmlxgantt.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/dhtmlx-gantt/codebase/dhtmlxgantt.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/dhtmlx-gantt/codebase/ext/dhtmlxgantt_marker.js"></script>
+        <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/dhtmlx-gantt/codebase/dhtmlxgantt.css">
         <script>
             window.ganttState = window.ganttState || {
                 initialized: false,

@@ -18,7 +18,7 @@
 
     <div id="print-area" class="bg-white p-8 md:p-12 rounded-xl shadow-sm ring-1 ring-gray-950/5 dark:bg-gray-900 dark:ring-white/10 print:shadow-none print:ring-0 print:p-0">
 
-        <div class="text-center mb-10 pb-6 border-b-2 border-gray-200 dark:border-gray-800">
+        <div class="text-center mb-10 pb-6 border-b-2 ring-border-light dark:ring-border-dark">
             <h2 class="text-xl font-bold text-gray-800 dark:text-gray-200 mb-1">
                 PT. Next Generation Solutions
             </h2>
@@ -41,7 +41,7 @@
 
                 {{-- ASET --}}
                 <div>
-                    <h3 class="font-bold text-gray-900 dark:text-white uppercase mb-3 border-b-2 border-gray-800 dark:border-gray-200 pb-2">
+                    <h3 class="font-bold text-gray-900 dark:text-white uppercase mb-3 border-b-2 ring-border-dark dark:ring-border-light pb-2">
                         Aset
                     </h3>
 
@@ -96,7 +96,7 @@
                 <div>
                     {{-- LIABILITAS --}}
                     <div class="mb-8">
-                        <h3 class="font-bold text-gray-900 dark:text-white uppercase mb-3 border-b-2 border-gray-800 dark:border-gray-200 pb-2">
+                        <h3 class="font-bold text-gray-900 dark:text-white uppercase mb-3 border-b-2 ring-border-dark dark:ring-border-light pb-2">
                             Liabilitas
                         </h3>
 
@@ -135,7 +135,7 @@
 
                     {{-- EKUITAS --}}
                     <div>
-                        <h3 class="font-bold text-gray-900 dark:text-white uppercase mb-3 border-b-2 border-gray-800 dark:border-gray-200 pb-2">
+                        <h3 class="font-bold text-gray-900 dark:text-white uppercase mb-3 border-b-2 ring-border-dark dark:ring-border-light pb-2">
                             Ekuitas
                         </h3>
 

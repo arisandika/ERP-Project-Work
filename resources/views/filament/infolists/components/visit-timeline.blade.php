@@ -60,7 +60,7 @@
                                             'interested', 'deal_progressed' => 'text-emerald-600 bg-emerald-50 border-emerald-200 dark:bg-emerald-900/20 dark:text-emerald-400 dark:border-emerald-800',
                                             'not_interested', 'failed' => 'text-red-600 bg-red-50 border-red-200 dark:bg-red-900/20 dark:text-red-400 dark:border-red-800',
                                             'need_followup' => 'text-amber-600 bg-amber-50 border-amber-200 dark:bg-amber-900/20 dark:text-amber-400 dark:border-amber-800',
-                                            default => 'text-gray-600 bg-gray-50 border-gray-200 dark:bg-gray-800 dark:text-gray-400 dark:border-gray-700'
+                                            default => 'text-gray-600 bg-gray-50 ring-border-light dark:bg-gray-800 dark:text-gray-400 dark:border-gray-700'
                                         } }}">
                                         {{ \App\Models\SalesActivity\VisitRecord::resultOptions()[$record->visit_result] ?? $record->visit_result }}
                                     </span>

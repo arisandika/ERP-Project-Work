@@ -1,5 +1,4 @@
 <?php
-
 namespace App\Filament\Resources\Finance\FinancialRecordResource\Widgets;
 
 use App\Models\Finance\FinancialRecord;
@@ -15,14 +14,17 @@ class FinanceOverview extends BaseWidget
 
     protected static ?string $pollingInterval = '60s';
 
-    protected int|string|array $columnSpan = 'full';
+    protected int|string|array $columnSpan = [
+        'default' => 1,
+        'xl'      => 12,
+    ];
 
     protected function getColumns(): int
     {
         return 4;
     }
 
-    protected function formatRupiah(float|int|null $amount): string
+    protected function formatRupiah(float | int | null $amount): string
     {
         return 'Rp ' . number_format((float) $amount, 0, ',', '.');
     }
@@ -30,7 +32,7 @@ class FinanceOverview extends BaseWidget
     protected function getStats(): array
     {
         $startOfMonth = Carbon::now()->startOfMonth();
-        $endOfMonth = Carbon::now()->endOfMonth();
+        $endOfMonth   = Carbon::now()->endOfMonth();
 
         $totalPemasukanKeseluruhan = (float) FinancialRecord::query()
             ->where('type', 'pemasukan')
@@ -72,7 +74,7 @@ class FinanceOverview extends BaseWidget
             'min-h-[132px]',
             'rounded-2xl',
             'border',
-            'border-gray-200',
+            'ring-border-light',
             'bg-white',
             'shadow-sm',
             'ring-1',
@@ -80,7 +82,7 @@ class FinanceOverview extends BaseWidget
             'transition',
             'hover:-translate-y-0.5',
             'hover:shadow-md',
-            'dark:border-gray-800',
+            'dark:ring-border-dark',
             'dark:bg-gray-900',
             'dark:ring-white/10',
         ]);

@@ -1,5 +1,4 @@
 <?php
-
 namespace App\Filament\Resources\Marketing\PopupBannerResource\Pages;
 
 use App\Filament\Resources\Marketing\PopupBannerResource;
@@ -21,5 +20,10 @@ class EditPopupBanner extends EditRecord
     public function getTitle(): string
     {
         return 'Edit Popup & Banner';
+    }
+    
+    protected function getRedirectUrl(): string
+    {
+        return static::getResource()::getUrl('index');
     }
 }

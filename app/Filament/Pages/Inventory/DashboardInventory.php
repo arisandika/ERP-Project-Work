@@ -16,17 +16,19 @@ class DashboardInventory extends Dashboard
 {
     use BelongsToModule;
 
-    protected static string $routePath = 'dashboard-inventory';
-
     protected static ?string $module = 'inventory';
-    protected static ?string $navigationIcon = 'heroicon-o-presentation-chart-line';
-    // protected static ?string $navigationGroup = 'Manajemen Inventory';
-    protected static ?string $title = 'Dashboard';
 
-    public static function canAccess(): bool
-    {
-        return auth()->user()->hasAnyRole(['super_admin', 'manager', 'inventory_employees']);
-    }
+    protected static ?string $navigationIcon = 'heroicon-o-chart-bar-square';
+
+    protected static string $view = 'filament.pages.inventory.dashboard-inventory';
+
+    protected static ?string $slug = 'inventory/dashboard';
+
+    protected static string $routePath = 'inventory/dashboard';
+
+    protected static ?string $navigationLabel = 'Dashboard Inventory';
+
+    protected static ?string $title = 'Dashboard Inventory';
 
     protected function getHeaderActions(): array
     {

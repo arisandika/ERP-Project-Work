@@ -46,7 +46,7 @@
             <x-slot name="heading">Detail Transaksi</x-slot>
 
             <div x-data="{ activeTab: 'quotations' }" class="mt-4">
-                <div class="mb-6 border-b border-gray-200 dark:border-gray-700">
+                <div class="mb-6 border-b ring-border-light dark:border-gray-700">
                     <nav class="flex gap-6 -mb-px overflow-x-auto no-scrollbar">
                         @foreach(['quotations', 'sales_orders', 'delivery_orders', 'invoices'] as $tab)
                             <button

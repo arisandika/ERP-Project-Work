@@ -59,6 +59,7 @@ class TicketsRelationManager extends RelationManager
                                     ->pluck('name', 'id')
                                     ->toArray();
                             })
+                            ->native(false)
                             ->nullable(),
 
                         Forms\Components\Select::make('ticket_status_id')

@@ -7,7 +7,6 @@ use App\Filament\Widgets\Finance\FinanceStatsOverview;
 use App\Filament\Widgets\Finance\LatestUnpaidInvoices;
 use App\Filament\Widgets\Finance\LatestUnpaidPurchaseOrders;
 use App\Filament\Widgets\Finance\ReimburseApprovalOverview;
-use App\Filament\Widgets\Finance\ReimburseRequestOverview;
 use App\Services\Finance\FinancialService;
 use BezhanSalleh\FilamentShield\Traits\HasPageShield;
 use Filament\Forms\Components\Select;
@@ -18,30 +17,23 @@ use Filament\Pages\Dashboard\Concerns\HasFiltersForm;
 
 class DashboardFinance extends BaseDashboard
 {
-    use HasPageShield, BelongsToModule, HasFiltersForm {
-        HasPageShield::canAccess insteadof BelongsToModule;
-        HasPageShield::shouldRegisterNavigation insteadof BelongsToModule;
-        HasPageShield::canAccess as shieldCanAccess;
-        HasPageShield::shouldRegisterNavigation as shieldShouldRegisterNavigation;
-        BelongsToModule::canAccess as moduleCanAccess;
-        BelongsToModule::shouldRegisterNavigation as moduleShouldRegisterNavigation;
-    }
+    use BelongsToModule;
 
     protected static ?string $module = 'finance';
-    protected static ?string $navigationIcon = 'heroicon-o-presentation-chart-line';
-    protected static ?string $navigationLabel = 'Dashboard';
-    protected static ?string $title = 'Finance Dashboard';
+
+    protected static ?string $navigationIcon = 'heroicon-o-chart-bar-square';
+
+    protected static string $view = 'filament.pages.finance.dashboard-finance';
+
+    protected static ?string $slug = 'finance/dashboard';
+
+    protected static string $routePath = 'finance/dashboard';
+
+    protected static ?string $navigationLabel = 'Dashboard Finance';
+
+    protected static ?string $title = 'Dashboard Finance';
+    
     protected static ?int $navigationSort = 1;
-
-    public static function canAccess(): bool
-    {
-        return static::shieldCanAccess() && static::moduleCanAccess();
-    }
-
-    public static function shouldRegisterNavigation(): bool
-    {
-        return static::shieldShouldRegisterNavigation() && static::moduleShouldRegisterNavigation();
-    }
 
     public function getSubheading(): ?string
     {
@@ -75,7 +67,6 @@ class DashboardFinance extends BaseDashboard
         return [
             FinanceStatsOverview::class,
             ReimburseApprovalOverview::class,
-            ReimburseRequestOverview::class,
             LatestUnpaidInvoices::class,
             LatestUnpaidPurchaseOrders::class,
         ];

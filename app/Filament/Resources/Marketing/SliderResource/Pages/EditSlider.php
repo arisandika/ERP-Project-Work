@@ -1,5 +1,4 @@
 <?php
-
 namespace App\Filament\Resources\Marketing\SliderResource\Pages;
 
 use App\Filament\Resources\Marketing\SliderResource;
@@ -21,5 +20,10 @@ class EditSlider extends EditRecord
     public function getTitle(): string
     {
         return 'Edit Slider';
+    }
+
+    protected function getRedirectUrl(): string
+    {
+        return static::getResource()::getUrl('index');
     }
 }

@@ -1,9 +1,7 @@
 <?php
-
 namespace App\Filament\Resources\Marketing\PromoCodeResource\Pages;
 
 use App\Filament\Resources\Marketing\PromoCodeResource;
-use Filament\Actions;
 use Filament\Resources\Pages\CreateRecord;
 
 class CreatePromoCode extends CreateRecord
@@ -13,5 +11,10 @@ class CreatePromoCode extends CreateRecord
     public function getTitle(): string
     {
         return 'Tambah Kode Promo';
+    }
+
+    protected function getRedirectUrl(): string
+    {
+        return static::getResource()::getUrl('index');
     }
 }

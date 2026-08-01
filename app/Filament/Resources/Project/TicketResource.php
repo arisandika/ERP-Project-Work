@@ -104,6 +104,7 @@ class TicketResource extends Resource
                             ->required()
                             ->searchable()
                             ->preload()
+                            ->native(false)
                             ->hidden(fn(Forms\Get $get): bool => !$get('project_id')),
 
                         Forms\Components\Select::make('ticket_status_id')

@@ -525,7 +525,7 @@
                                                                                                                         <span class="text-xs text-gray-500">Titik Presensi ${type}</span>
                                                                                                                     </div>
                                                                                                                 </div>
-                                                                                                                <hr class="my-1 border-gray-200" />
+                                                                                                                <hr class="my-1 ring-border-light" />
                                                                                                                 <div class="mt-2">
                                                                                                                     <span class="block mb-1"><b>Waktu:</b> ${data.time}</span>
                                                                                                                     <b>Foto:</b><br>

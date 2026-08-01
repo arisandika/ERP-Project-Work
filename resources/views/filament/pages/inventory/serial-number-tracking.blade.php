@@ -82,7 +82,7 @@
                             <p class="text-sm font-medium text-gray-900 dark:text-gray-100">{{ data_get($trackingResult, 'warehouse_name', '-') }}</p>
                         </div>
 
-                        <div class="col-span-1 sm:col-span-2 pt-2 mt-2 border-t border-gray-200 dark:border-gray-700">
+                        <div class="col-span-1 sm:col-span-2 pt-2 mt-2 border-t ring-border-light dark:border-gray-700">
                             <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                 <div>
                                     <p class="text-xs font-medium text-gray-500 uppercase">Suplier (Asal)</p>
@@ -120,7 +120,7 @@
                             </x-filament::badge>
                         </div>
 
-                        <div class="relative pl-4 border-l-2 border-gray-200 dark:border-gray-700">
+                        <div class="relative pl-4 border-l-2 ring-border-light dark:border-gray-700">
                             <div class="mb-4">
                                 <div class="absolute w-3 h-3 bg-gray-300 rounded-full -left-[7px] top-1 dark:bg-gray-600"></div>
                                 <p class="text-xs text-gray-500">Tanggal Masuk (Inbound)</p>
