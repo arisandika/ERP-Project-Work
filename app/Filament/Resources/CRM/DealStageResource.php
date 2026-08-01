@@ -16,7 +16,6 @@ use Illuminate\Support\Carbon;
 use Illuminate\Support\HtmlString;
 use App\Filament\Concerns\BelongsToModule;
 
-
 class DealStageResource extends Resource
 {
     use BelongsToModule;

@@ -15,7 +15,7 @@
                 </label>
                 <div
                     class="flex bg-white rounded-lg shadow-sm fi-input-wrp ring-1 ring-gray-950/10 dark:ring-white/20 dark:bg-white/5 focus-within:ring-2 focus-within:ring-primary-600 dark:focus-within:ring-primary-500">
-                    <div class="flex items-center border-gray-200 ps-3 pe-3 border-e dark:border-white/10">
+                    <div class="flex items-center ring-border-light ps-3 pe-3 border-e dark:border-white/10">
                         <x-heroicon-o-calendar class="w-5 h-5 text-gray-400 dark:text-gray-500" />
                     </div>
                     <input id="filter-date" type="date" value="{{ request('date', now()->toDateString()) }}"
@@ -29,7 +29,7 @@
                 </label>
                 <div
                     class="flex bg-white rounded-lg shadow-sm fi-input-wrp ring-1 ring-gray-950/10 dark:ring-white/20 dark:bg-white/5 focus-within:ring-2 focus-within:ring-primary-600 dark:focus-within:ring-primary-500">
-                    <div class="flex items-center border-gray-200 ps-3 pe-3 border-e dark:border-white/10">
+                    <div class="flex items-center ring-border-light ps-3 pe-3 border-e dark:border-white/10">
                         <x-heroicon-o-building-office class="w-5 h-5 text-gray-400 dark:text-gray-500" />
                     </div>
                     <select id="filter-office"
@@ -151,7 +151,7 @@
                                             <span class="text-xs text-gray-500">${emp.department}</span>
                                         </div>
                                     </div>
-                                    <hr class="my-1 border-gray-200" />
+                                    <hr class="my-1 ring-border-light" />
                                     <div class="grid grid-cols-2 gap-4 mt-3">
                                         <span class="capitalize"><b>Status:</b> ${emp.status}</span>
                                         <span><b>Masuk:</b> ${emp.clock_in}</span>

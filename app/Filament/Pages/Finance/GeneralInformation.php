@@ -27,7 +27,7 @@ class GeneralInformation extends Page
 
     protected static ?int $navigationSort = 1;
 
-    protected static ?string $slug = 'finance/dashboard';
+    protected static ?string $slug = 'finance/overview';
 
     protected static string $view = 'filament.pages.finance.general-information';
 

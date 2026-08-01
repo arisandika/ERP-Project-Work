@@ -24,7 +24,7 @@
     @endphp
 
     @if(empty($mapPoints))
-        <div class="flex flex-col items-center justify-center h-48 border border-dashed rounded-2xl border-slate-200 bg-slate-50 dark:bg-gray-900 dark:border-gray-800">
+        <div class="flex flex-col items-center justify-center h-48 border border-dashed rounded-2xl border-slate-200 bg-slate-50 dark:bg-gray-900 dark:ring-border-dark">
             <svg xmlns="http://www.w3.org/2000/svg" class="w-10 h-10 mb-2 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
                 <path stroke-linecap="round" stroke-linejoin="round" d="M15 10.5a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z" />
                 <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 10.5c0 7.142-7.5 11.25-7.5 11.25S4.5 17.642 4.5 10.5a7.5 7.5 0 1 1 15 0Z" />

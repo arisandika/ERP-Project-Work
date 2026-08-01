@@ -1,5 +1,4 @@
 <?php
-
 namespace App\Filament\Resources\Marketing\PromoCodeResource\Pages;
 
 use App\Filament\Resources\Marketing\PromoCodeResource;
@@ -21,5 +20,10 @@ class EditPromoCode extends EditRecord
     public function getTitle(): string
     {
         return 'Edit Kode Promo';
+    }
+
+    protected function getRedirectUrl(): string
+    {
+        return static::getResource()::getUrl('index');
     }
 }

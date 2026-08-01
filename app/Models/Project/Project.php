@@ -1,9 +1,7 @@
 <?php
-
 namespace App\Models\Project;
 
 use App\Models\HR\Employee;
-use App\Models\Sales\Invoice;
 use App\Models\Sales\SalesOrder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -35,15 +33,15 @@ class Project extends Model
     ];
 
     protected $casts = [
-        'start_date' => 'date',
-        'end_date' => 'date',
+        'start_date'  => 'date',
+        'end_date'    => 'date',
         'pinned_date' => 'datetime',
     ];
 
     // Get if the project is pinned
     public function getIsPinnedAttribute(): bool
     {
-        return !is_null($this->pinned_date);
+        return ! is_null($this->pinned_date);
     }
 
     // Pin the project
@@ -96,11 +94,11 @@ class Project extends Model
 
     public function getRemainingDaysAttribute()
     {
-        if (!$this->end_date) {
+        if (! $this->end_date) {
             return null;
         }
 
-        $today = Carbon::today();
+        $today   = Carbon::today();
         $endDate = Carbon::parse($this->end_date);
 
         if ($today->gt($endDate)) {
@@ -147,5 +145,10 @@ class Project extends Model
     public function documents()
     {
         return $this->hasMany(ProjectDocument::class, 'nx_project_id');
+    }
+
+    public function projectManager()
+    {
+        return $this->belongsTo(Employee::class, 'project_manager_id');
     }
 }

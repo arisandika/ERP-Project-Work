@@ -1,5 +1,5 @@
 <div class="mb-8">
-    <h3 class="font-bold text-gray-900 dark:text-white uppercase mb-3 border-b-2 border-gray-800 dark:border-gray-200 pb-2">
+    <h3 class="font-bold text-gray-900 dark:text-white uppercase mb-3 border-b-2 ring-border-dark dark:ring-border-light pb-2">
         {{ $title }}
     </h3>
 

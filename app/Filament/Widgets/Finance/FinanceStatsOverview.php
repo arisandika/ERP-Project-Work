@@ -9,10 +9,19 @@ use Filament\Widgets\StatsOverviewWidget\Stat;
 
 class FinanceStatsOverview extends BaseWidget
 {
-
     use InteractsWithPageFilters;
 
     protected static ?int $sort = 1;
+
+    protected int|string|array $columnSpan = [
+        'default' => 1,
+        'xl'      => 12,
+    ];
+
+    protected function getColumns(): int
+    {
+        return 3;
+    }
 
     protected function getStats(): array
     {

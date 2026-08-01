@@ -1,16 +1,14 @@
 <?php
-
 namespace App\Filament\Resources\Project;
 
+use App\Filament\Concerns\BelongsToModule;
 use App\Filament\Resources\Project\ProjectResource\Pages;
-use App\Filament\Resources\Project\ProjectResource\Pages\CreateProject;
 use App\Filament\Resources\Project\ProjectResource\RelationManagers\EpicsRelationManager;
 use App\Filament\Resources\Project\ProjectResource\RelationManagers\MembersRelationManager;
 use App\Filament\Resources\Project\ProjectResource\RelationManagers\NotesRelationManager;
 use App\Filament\Resources\Project\ProjectResource\RelationManagers\TicketsRelationManager;
 use App\Filament\Resources\Project\ProjectResource\RelationManagers\TicketStatusesRelationManager;
 use App\Models\Project\Project;
-use App\Models\Sales\Invoice;
 use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Resources\Resource;
@@ -19,13 +17,12 @@ use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
 use Illuminate\Support\Carbon;
-use App\Filament\Concerns\BelongsToModule;
 
 class ProjectResource extends Resource
 {
     use BelongsToModule;
     protected static ?string $module = 'project';
-    protected static ?string $model = Project::class;
+    protected static ?string $model  = Project::class;
 
     protected static ?string $navigationIcon = 'heroicon-o-square-3-stack-3d';
 
@@ -59,6 +56,17 @@ class ProjectResource extends Resource
                             ->required()
                             ->helperText('Nama prefix untuk Ticket, maksimal 3 karakter. Contoh: BUG, ISS')
                             ->maxLength(3),
+
+                        Forms\Components\Select::make('project_manager_id')
+                            ->label('Project Manager')
+                            ->relationship(
+                                name: 'projectManager',
+                                titleAttribute: 'full_name' // sesuaikan kolom nama di tabel employee
+                            )
+                            ->searchable()
+                            ->preload()
+                            ->prefixIcon('heroicon-o-user-circle')
+                            ->helperText('Pilih penanggung jawab utama project ini'),
 
                         Forms\Components\DatePicker::make('start_date')
                             ->label('Tanggal Mulai')
@@ -101,7 +109,7 @@ class ProjectResource extends Resource
                             })
                             ->dehydrated(false)
                             ->afterStateHydrated(function ($component, $state, $get) {
-                                $component->state(!is_null($get('pinned_date')));
+                                $component->state(! is_null($get('pinned_date')));
                             }),
 
                         Forms\Components\DateTimePicker::make('pinned_date')
@@ -155,7 +163,7 @@ class ProjectResource extends Resource
                             ->afterStateUpdated(function ($state, callable $set) {
                                 $salesOrder = \App\Models\Sales\SalesOrder::find($state);
 
-                                if (!$salesOrder) {
+                                if (! $salesOrder) {
                                     $set('customer_name', null);
                                     $set('sales_pic_name', null);
                                     $set('contract_value', null);
@@ -185,11 +193,11 @@ class ProjectResource extends Resource
                             ->label('Nilai Kontrak')
                             ->numeric()
                             ->prefix('IDR')
-                            ->required()
                             ->minValue(0)
                             ->disabled()
                             ->dehydrated(false)
-                            ->formatStateUsing(fn($record) => $record?->salesOrder?->grand_total),
+                            ->formatStateUsing(fn($record) => $record?->salesOrder?->grand_total)
+                            ->placeholder('Belum ada Sales Order'),
                     ])
                     ->columns(2),
 
@@ -199,8 +207,8 @@ class ProjectResource extends Resource
                             ->label('Estimasi Biaya Project')
                             ->numeric()
                             ->prefix('IDR')
-                            ->required()
                             ->minValue(0)
+                            ->default(0)
                             ->helperText('Estimasi biaya operasional project'),
 
                         Forms\Components\TextInput::make('actual_cost')
@@ -221,31 +229,28 @@ class ProjectResource extends Resource
                             ->schema([
                                 Forms\Components\TextInput::make('document_name')
                                     ->label('Nama Dokumen')
-                                    ->required()
                                     ->placeholder('Contoh: BAST Termin 1'),
 
                                 Forms\Components\Select::make('document_type')
                                     ->label('Jenis Dokumen')
                                     ->options([
-                                        'contract' => 'Kontrak',
-                                        'bast' => 'BAST',
+                                        'contract'  => 'Kontrak',
+                                        'bast'      => 'BAST',
                                         'technical' => 'Teknis',
-                                        'invoice' => 'Invoice',
-                                        'other' => 'Lainnya',
+                                        'invoice'   => 'Invoice',
+                                        'other'     => 'Lainnya',
                                     ])
-                                    ->native(false)
-                                    ->required(),
+                                    ->native(false),
 
                                 Forms\Components\FileUpload::make('file_path')
                                     ->label('File')
                                     ->disk('public')
-                                    ->directory('project-documents')
-                                    ->required(),
+                                    ->directory('project-documents'),
                             ])
                             ->columns(2)
                             ->addActionLabel('Tambah Dokumen')
                             ->columnSpanFull(),
-                    ])
+                    ]),
             ]);
     }
 
@@ -261,11 +266,14 @@ class ProjectResource extends Resource
                 Tables\Columns\TextColumn::make('name')
                     ->label('Nama Project')
                     ->weight('semibold')
-                    ->searchable(),
+                    ->description(fn(Project $record): string => $record->ticket_prefix ? 'Prefix Ticket: ' . $record->ticket_prefix : '')
+                    ->searchable(['name', 'ticket_prefix']),
 
-                Tables\Columns\TextColumn::make('ticket_prefix')
-                    ->label('Prefix Ticket')
-                    ->searchable(),
+                Tables\Columns\TextColumn::make('projectManager.full_name')
+                    ->label('Project Manager')
+                    ->searchable()
+                    ->sortable()
+                    ->placeholder('—'),
 
                 Tables\Columns\TextColumn::make('progress_percentage')
                     ->label('Progress')
@@ -295,7 +303,7 @@ class ProjectResource extends Resource
                 Tables\Columns\TextColumn::make('remaining_days')
                     ->label('Sisa Hari')
                     ->getStateUsing(function (Project $record): ?string {
-                        if (!$record->end_date) {
+                        if (! $record->end_date) {
                             return '—';
                         }
 
@@ -310,7 +318,7 @@ class ProjectResource extends Resource
                         return $record->remaining_days . ' Hari';
                     })
                     ->color(function (Project $record): string {
-                        if (!$record->end_date) {
+                        if (! $record->end_date) {
                             return 'gray';
                         }
 
@@ -441,10 +449,10 @@ class ProjectResource extends Resource
     public static function getPages(): array
     {
         return [
-            'index' => Pages\ListProjects::route('/'),
+            'index'  => Pages\ListProjects::route('/'),
             'create' => Pages\CreateProject::route('/create'),
-            'view' => Pages\ViewProject::route('/{record}'),
-            'edit' => Pages\EditProject::route('/{record}/edit'),
+            'view'   => Pages\ViewProject::route('/{record}'),
+            'edit'   => Pages\EditProject::route('/{record}/edit'),
         ];
     }
 

@@ -17,7 +17,7 @@
     </div>
 
     <div id="print-area" class="bg-white p-8 md:p-12 rounded-xl shadow-sm ring-1 ring-gray-950/5 dark:bg-gray-900 dark:ring-white/10 print:shadow-none print:ring-0 print:p-0">
-        <div class="text-center mb-10 pb-6 border-b-2 border-gray-200 dark:border-gray-800">
+        <div class="text-center mb-10 pb-6 border-b-2 ring-border-light dark:ring-border-dark">
             <h2 class="text-xl font-bold text-gray-800 dark:text-gray-200 mb-1">
                 PT. Next Generation Solutions
             </h2>
@@ -38,7 +38,7 @@
 
             {{-- PENDAPATAN --}}
             <div class="mb-8">
-                <h3 class="font-bold text-gray-900 dark:text-white uppercase mb-3 border-b-2 border-gray-800 dark:border-gray-200 pb-2">
+                <h3 class="font-bold text-gray-900 dark:text-white uppercase mb-3 border-b-2 ring-border-dark dark:ring-border-light pb-2">
                     Pendapatan Usaha
                 </h3>
 
@@ -73,7 +73,7 @@
 
             {{-- HPP --}}
             <div class="mb-8">
-                <h3 class="font-bold text-gray-900 dark:text-white uppercase mb-3 border-b-2 border-gray-800 dark:border-gray-200 pb-2">
+                <h3 class="font-bold text-gray-900 dark:text-white uppercase mb-3 border-b-2 ring-border-dark dark:ring-border-light pb-2">
                     Harga Pokok Penjualan / Beban Pokok
                 </h3>
 
@@ -122,7 +122,7 @@
 
             {{-- OPEX --}}
             <div class="mb-8">
-                <h3 class="font-bold text-gray-900 dark:text-white uppercase mb-3 border-b-2 border-gray-800 dark:border-gray-200 pb-2">
+                <h3 class="font-bold text-gray-900 dark:text-white uppercase mb-3 border-b-2 ring-border-dark dark:ring-border-light pb-2">
                     Biaya Operasional
                 </h3>
 
@@ -171,7 +171,7 @@
 
             {{-- OTHER INCOME --}}
             <div class="mb-8">
-                <h3 class="font-bold text-gray-900 dark:text-white uppercase mb-3 border-b-2 border-gray-800 dark:border-gray-200 pb-2">
+                <h3 class="font-bold text-gray-900 dark:text-white uppercase mb-3 border-b-2 ring-border-dark dark:ring-border-light pb-2">
                     Pendapatan Lain-lain
                 </h3>
 
@@ -206,7 +206,7 @@
 
             {{-- OTHER EXPENSE --}}
             <div class="mb-8">
-                <h3 class="font-bold text-gray-900 dark:text-white uppercase mb-3 border-b-2 border-gray-800 dark:border-gray-200 pb-2">
+                <h3 class="font-bold text-gray-900 dark:text-white uppercase mb-3 border-b-2 ring-border-dark dark:ring-border-light pb-2">
                     Beban Lain-lain
                 </h3>
 
@@ -240,7 +240,7 @@
             </div>
 
             {{-- PROFIT BEFORE TAX --}}
-            <div class="flex justify-between items-center py-3 px-4 mb-4 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 font-bold text-lg rounded-lg">
+            <div class="flex justify-between items-center py-3 px-4 mb-4 bg-gray-50 dark:bg-gray-900 border ring-border-light dark:border-gray-700 font-bold text-lg rounded-lg">
                 <span class="text-gray-700 dark:text-gray-300 uppercase tracking-wide">
                     Laba Sebelum Pajak
                 </span>

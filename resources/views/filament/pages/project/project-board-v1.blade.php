@@ -58,7 +58,7 @@
                         @foreach($this->filteredProjects as $project)
                             <button
                                 wire:click="selectProject({{ $project->id }})"
-                                class="relative p-4 overflow-hidden text-left transition-all bg-white border border-gray-200 rounded-lg dark:bg-gray-800 dark:border-gray-700 hover:shadow-md"
+                                class="relative p-4 overflow-hidden text-left transition-all bg-white border ring-border-light rounded-lg dark:bg-gray-800 dark:border-gray-700 hover:shadow-md"
                                 style="border-left: 4px solid {{ $project->color ?? '#6B7280' }};"
                             >
                                 {{-- Pin Icon Badge --}}
@@ -533,11 +533,11 @@
                 @foreach ($this->ticketStatuses as $status)
                     <div
                         wire:key="status-column-{{ $status->id }}"
-                        class="status-column rounded-xl border border-gray-200 dark:border-gray-700 flex flex-col bg-main-light dark:bg-gray-900 w-[calc(85vw-2rem)] min-w-[280px] max-w-[350px] h-[700px] sm:w-[calc((100vw-6rem)/2)] sm:h-[750px] lg:w-[calc((100vw-8rem)/3)] lg:h-[800px] xl:w-[calc((100vw-10rem)/4)] xl:h-[850px]"
+                        class="status-column rounded-xl border ring-border-light dark:border-gray-700 flex flex-col bg-main-light dark:bg-gray-900 w-[calc(85vw-2rem)] min-w-[280px] max-w-[350px] h-[700px] sm:w-[calc((100vw-6rem)/2)] sm:h-[750px] lg:w-[calc((100vw-8rem)/3)] lg:h-[800px] xl:w-[calc((100vw-10rem)/4)] xl:h-[850px]"
                         data-status-id="{{ $status->id }}"
                     >
                         <div
-                            class="flex-shrink-0 px-4 py-3 border-b border-gray-200 rounded-t-xl dark:border-gray-700"
+                            class="flex-shrink-0 px-4 py-3 border-b ring-border-light rounded-t-xl dark:border-gray-700"
                             style="background-color: {{ $status->color ?? '#f3f4f6' }};"
                         >
                             <div class="flex items-center justify-between">
@@ -574,11 +574,11 @@
                                         x-transition:leave="transition ease-in duration-75"
                                         x-transition:leave-start="transform opacity-100 scale-100"
                                         x-transition:leave-end="transform opacity-0 scale-95"
-                                        class="absolute left-0 z-50 bg-white border border-gray-200 rounded-lg shadow-lg top-8 w-52 dark:bg-gray-800 dark:border-gray-700"
+                                        class="absolute left-0 z-50 bg-white border ring-border-light rounded-lg shadow-lg top-8 w-52 dark:bg-gray-800 dark:border-gray-700"
                                         style="display: none; transform: translateX(-100%);"
                                     >
                                         <div class="p-2">
-                                            <div class="flex items-center justify-between px-3 py-2 border-b border-gray-200 dark:border-gray-700">
+                                            <div class="flex items-center justify-between px-3 py-2 border-b ring-border-light dark:border-gray-700">
                                                 <span class="text-sm font-medium text-black dark:text-white">Sort list</span>
                                                 <button @click="open = false" class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300">
                                                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -634,7 +634,7 @@
                             @foreach ($status->tickets as $index => $ticket)
                                 <div
                                     wire:key="ticket-{{ $status->id }}-{{ $ticket->id }}"
-                                    class="p-3 bg-white border border-gray-200 rounded-lg shadow-sm cursor-move ticket-card dark:bg-gray-800 dark:border-gray-700"
+                                    class="p-3 bg-white border ring-border-light rounded-lg shadow-sm cursor-move ticket-card dark:bg-gray-800 dark:border-gray-700"
                                     data-ticket-id="{{ $ticket->id }}"
                                     x-show="{{ $index }} < visibleTickets"
                                     x-transition:enter="transition ease-out duration-200"
@@ -707,7 +707,7 @@
                                                 }, 0);
                                                 return false;
                                             "
-                                            class="inline-flex items-center justify-center flex-shrink-0 w-8 h-8 text-sm font-medium border border-gray-200 rounded-lg dark:border-gray-700 text-primary-600 hover:text-primary-500 dark:text-primary-500 dark:hover:text-primary-400"
+                                            class="inline-flex items-center justify-center flex-shrink-0 w-8 h-8 text-sm font-medium border ring-border-light rounded-lg dark:border-gray-700 text-primary-600 hover:text-primary-500 dark:text-primary-500 dark:hover:text-primary-400"
                                         >
                                             <x-heroicon-m-eye class="w-4 h-4" />
                                         </a>

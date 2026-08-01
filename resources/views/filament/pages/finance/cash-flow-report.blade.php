@@ -18,7 +18,7 @@
 
     <div id="print-area" class="bg-white p-8 md:p-12 rounded-xl shadow-sm ring-1 ring-gray-950/5 dark:bg-gray-900 dark:ring-white/10 print:shadow-none print:ring-0 print:p-0">
 
-        <div class="text-center mb-10 pb-6 border-b-2 border-gray-200 dark:border-gray-800">
+        <div class="text-center mb-10 pb-6 border-b-2 ring-border-light dark:ring-border-dark">
             <h2 class="text-xl font-bold text-gray-800 dark:text-gray-200 mb-1">
                 PT. Next Generation Solutions
             </h2>
@@ -73,7 +73,7 @@
             ])
 
             {{-- NET CASH FLOW --}}
-            <div class="flex justify-between items-center py-3 px-4 mt-8 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 font-bold text-lg rounded-lg">
+            <div class="flex justify-between items-center py-3 px-4 mt-8 bg-gray-50 dark:bg-gray-900 border ring-border-light dark:border-gray-700 font-bold text-lg rounded-lg">
                 <span class="text-gray-700 dark:text-gray-300 uppercase tracking-wide">
                     Kenaikan / (Penurunan) Kas Bersih
                 </span>

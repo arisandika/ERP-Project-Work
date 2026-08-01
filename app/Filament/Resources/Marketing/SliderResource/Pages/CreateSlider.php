@@ -14,4 +14,9 @@ class CreateSlider extends CreateRecord
     {
         return 'Tambah Slider';
     }
+
+    protected function getRedirectUrl(): string
+    {
+        return static::getResource()::getUrl('index');
+    }
 }

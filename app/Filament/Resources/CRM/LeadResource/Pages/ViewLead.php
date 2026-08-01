@@ -189,7 +189,7 @@ class ViewLead extends ViewRecord
                                 TextEntry::make('converted_at')
                                     ->label('Waktu Konversi')
                                     ->dateTime('d M Y H:i'),
-                            ])->extraAttributes(['class' => 'mt-4 pt-4 border-t border-gray-200 dark:border-white/10']),
+                            ])->extraAttributes(['class' => 'mt-4 pt-4 border-t ring-border-light dark:border-white/10']),
                     ]),
 
                 // Section::make('Daftar Deal Terkait')

@@ -8,8 +8,8 @@ use App\Models\Finance\ReimbursementRequest;
 use App\Models\Project\Notification;
 use App\Models\Project\Project;
 use App\Models\Project\Ticket;
-use App\Models\Sales\Quotation;
 use App\Models\SalesActivity\VisitAssignment;
+use App\Models\Sales\Quotation;
 use App\Models\User;
 use Filament\Panel;
 use Illuminate\Database\Eloquent\Model;
@@ -183,5 +183,15 @@ class Employee extends Model
     public function financialRecords(): HasMany
     {
         return $this->hasMany(FinancialRecord::class, 'created_by', 'id');
+    }
+
+    public function createdLeads()
+    {
+        return $this->hasMany(Lead::class, 'created_by');
+    }
+
+    public function createdDeals()
+    {
+        return $this->hasMany(Deal::class, 'created_by');
     }
 }

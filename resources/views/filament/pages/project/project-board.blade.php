@@ -546,7 +546,7 @@
                             data-status-id="{{ $status->id }}"
                         >
                             <div
-                                class="flex-shrink-0 px-4 py-3 border-b border-gray-200 rounded-t-xl dark:border-gray-700"
+                                class="flex-shrink-0 px-4 py-3 border-b ring-border-light rounded-t-xl dark:border-gray-700"
                                 style="background-color: {{ $status->color ?? '#f3f4f6' }};"
                             >
                                 <div class="flex items-center justify-between">

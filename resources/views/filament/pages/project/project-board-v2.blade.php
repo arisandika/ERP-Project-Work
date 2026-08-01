@@ -59,7 +59,7 @@
                         @foreach($this->filteredProjects as $project)
                             <button
                                 wire:click="selectProject({{ $project->id }})"
-                                class="relative p-4 overflow-hidden text-left transition-all bg-white border border-gray-200 rounded-lg dark:bg-gray-800 dark:border-gray-700 hover:shadow-md"
+                                class="relative p-4 overflow-hidden text-left transition-all bg-white border ring-border-light rounded-lg dark:bg-gray-800 dark:border-gray-700 hover:shadow-md"
                                 style="border-left: 4px solid {{ $project->color ?? '#6B7280' }};"
                             >
                                 {{-- Pin Icon Badge --}}
@@ -224,11 +224,11 @@
                 @foreach ($this->ticketStatuses as $status)
                     <div
                         wire:key="status-{{ $status->id }}"
-                        class="status-column rounded-xl border border-gray-200 dark:border-gray-700 flex flex-col bg-main-light dark:bg-gray-900 w-[calc(85vw-2rem)] min-w-[280px] max-w-[350px] h-[700px] sm:w-[calc((100vw-6rem)/2)] sm:h-[750px] lg:w-[calc((100vw-8rem)/3)] lg:h-[800px] xl:w-[calc((100vw-10rem)/4)] xl:h-[850px]"
+                        class="status-column rounded-xl border ring-border-light dark:border-gray-700 flex flex-col bg-main-light dark:bg-gray-900 w-[calc(85vw-2rem)] min-w-[280px] max-w-[350px] h-[700px] sm:w-[calc((100vw-6rem)/2)] sm:h-[750px] lg:w-[calc((100vw-8rem)/3)] lg:h-[800px] xl:w-[calc((100vw-10rem)/4)] xl:h-[850px]"
                         data-status-id="{{ $status->id }}"
                     >
                         <div
-                            class="flex-shrink-0 px-4 py-3 border-b border-gray-200 rounded-t-xl dark:border-gray-700"
+                            class="flex-shrink-0 px-4 py-3 border-b ring-border-light rounded-t-xl dark:border-gray-700"
                             style="background-color: {{ $status->color ?? '#f3f4f6' }};"
                         >
                             <div class="flex items-center justify-between">
@@ -265,11 +265,11 @@
                                         x-transition:leave="transition ease-in duration-75"
                                         x-transition:leave-start="transform opacity-100 scale-100"
                                         x-transition:leave-end="transform opacity-0 scale-95"
-                                        class="absolute left-0 z-50 bg-white border border-gray-200 rounded-lg shadow-lg top-8 w-52 dark:bg-gray-800 dark:border-gray-700"
+                                        class="absolute left-0 z-50 bg-white border ring-border-light rounded-lg shadow-lg top-8 w-52 dark:bg-gray-800 dark:border-gray-700"
                                         style="display: none; transform: translateX(-100%);"
                                     >
                                         <div class="p-2">
-                                            <div class="flex items-center justify-between px-3 py-2 border-b border-gray-200 dark:border-gray-700">
+                                            <div class="flex items-center justify-between px-3 py-2 border-b ring-border-light dark:border-gray-700">
                                                 <span class="text-sm font-medium text-black dark:text-white">Sort list</span>
                                                 <button @click="open = false" class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300">
                                                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -325,7 +325,7 @@
                             @foreach ($status->tickets as $index => $ticket)
                                 <div
                                     wire:key="ticket-{{ $ticket->id }}-status-{{ $status->id }}"
-                                    class="relative p-3 bg-white border border-gray-200 rounded-lg shadow-sm ticket-card dark:bg-gray-800 dark:border-gray-700"
+                                    class="relative p-3 bg-white border ring-border-light rounded-lg shadow-sm ticket-card dark:bg-gray-800 dark:border-gray-700"
                                     x-show="{{ $index }} < visibleTickets"
                                     style="border-left: 4px solid {{ $ticket->priority->color }};"
                                     x-transition:enter="transition ease-out duration-200"
@@ -373,7 +373,7 @@
                                                     @click="open = !open"
                                                     @click.away="open = false"
                                                     type="button"
-                                                    class="flex items-center justify-between w-full px-2.5 py-1.5 text-xs font-medium text-gray-700 transition-all bg-white border border-gray-200 rounded-lg shadow-sm hover:bg-main-light hover:border-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:text-gray-200 dark:hover:bg-gray-600"
+                                                    class="flex items-center justify-between w-full px-2.5 py-1.5 text-xs font-medium text-gray-700 transition-all bg-white border ring-border-light rounded-lg shadow-sm hover:bg-main-light hover:border-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:text-gray-200 dark:hover:bg-gray-600"
                                                 >
                                                     <div class="flex items-center gap-2 overflow-hidden">
                                                         <div class="flex-shrink-0 w-2 h-2 rounded-full shadow-sm" style="background-color: {{ $status->color ?? '#9CA3AF' }};"></div>
@@ -390,7 +390,7 @@
                                                     x-transition:enter="transition ease-out duration-100"
                                                     x-transition:enter-start="opacity-0 scale-95 -translate-y-2"
                                                     x-transition:enter-end="opacity-100 scale-100 translate-y-0"
-                                                    class="absolute left-0 z-30 w-full min-w-[150px] mt-1 overflow-y-auto origin-top bg-white border border-gray-200 rounded-lg shadow-xl dark:bg-gray-800 dark:border-gray-700 max-h-48"
+                                                    class="absolute left-0 z-30 w-full min-w-[150px] mt-1 overflow-y-auto origin-top bg-white border ring-border-light rounded-lg shadow-xl dark:bg-gray-800 dark:border-gray-700 max-h-48"
                                                     style="display: none;"
                                                 >
                                                     <div class="p-1">
@@ -427,7 +427,7 @@
                                                     <button
                                                         @click="open = !open"
                                                         @click.away="open = false"
-                                                        class="flex items-center justify-center w-8 h-8 transition-colors bg-white border border-gray-200 rounded-full shadow-sm hover:bg-main-light dark:bg-gray-800 dark:border-gray-700 dark:hover:bg-gray-700 text-primary-600 dark:text-primary-500"
+                                                        class="flex items-center justify-center w-8 h-8 transition-colors bg-white border ring-border-light rounded-full shadow-sm hover:bg-main-light dark:bg-gray-800 dark:border-gray-700 dark:hover:bg-gray-700 text-primary-600 dark:text-primary-500"
                                                         title="View all {{ $ticket->assignees->count() }} assignees"
                                                     >
                                                         <x-heroicon-o-user class="w-4 h-4" />
@@ -438,7 +438,7 @@
                                                         x-transition:enter="transition ease-out duration-100"
                                                         x-transition:enter-start="opacity-0 scale-95"
                                                         x-transition:enter-end="opacity-100 scale-100"
-                                                        class="absolute right-0 z-40 w-56 p-2 mt-2 origin-top-right bg-white border border-gray-200 rounded-lg shadow-xl dark:bg-gray-800 dark:border-gray-700"
+                                                        class="absolute right-0 z-40 w-56 p-2 mt-2 origin-top-right bg-white border ring-border-light rounded-lg shadow-xl dark:bg-gray-800 dark:border-gray-700"
                                                         style="display: none;"
                                                     >
                                                         <div class="px-2 py-1.5 mb-2 text-xs font-semibold tracking-wider text-gray-500 uppercase border-b dark:text-gray-400 dark:border-gray-700">
@@ -459,7 +459,7 @@
                                                         </div>
 
                                                         @if($ticket->creator) 
-                                                            <div class="my-2 border-t border-gray-200 dark:border-gray-700"></div>
+                                                            <div class="my-2 border-t ring-border-light dark:border-gray-700"></div>
 
                                                             <div class="px-2 py-1 text-xs font-semibold tracking-wider text-gray-500 uppercase dark:text-gray-400">
                                                                 Created By
@@ -498,7 +498,7 @@
                                                     }, 0);
                                                     return false;
                                                 "
-                                                class="flex items-center justify-center w-8 h-8 transition-colors bg-white border border-gray-200 rounded-full shadow-sm hover:bg-main-light dark:bg-gray-800 dark:border-gray-700 dark:hover:bg-gray-700 text-primary-600 dark:text-primary-500"
+                                                class="flex items-center justify-center w-8 h-8 transition-colors bg-white border ring-border-light rounded-full shadow-sm hover:bg-main-light dark:bg-gray-800 dark:border-gray-700 dark:hover:bg-gray-700 text-primary-600 dark:text-primary-500"
                                                 title="Edit Ticket"
                                             >
                                                 <x-heroicon-o-pencil class="w-4 h-4" />

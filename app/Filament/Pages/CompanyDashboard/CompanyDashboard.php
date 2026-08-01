@@ -14,7 +14,7 @@ class CompanyDashboard extends Page
 
     protected static ?string $navigationLabel = 'Company Dashboard';
 
-    protected static ?int $navigationSort = -1;
+    protected static ?int $navigationSort = -10;
 
     protected static ?string $title = 'Dashboard';
 
