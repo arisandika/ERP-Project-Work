@@ -42,7 +42,6 @@ class SupplierResource extends Resource
 
                                 Forms\Components\Grid::make(3)
                                     ->schema([
-                                        // FIELD YANG SUDAH DIREVISI AGAR LANGSUNG MUNCUL DI UI
                                         Forms\Components\TextInput::make('supplier_code')
                                             ->label('Kode Supplier')
                                             ->required()
@@ -68,6 +67,7 @@ class SupplierResource extends Resource
                                             ])
                                             ->required()
                                             ->default('company')
+                                            ->live()
                                             ->native(false),
 
                                         Forms\Components\Select::make('status')
@@ -85,6 +85,20 @@ class SupplierResource extends Resource
                                     ->label('Alamat Lengkap')
                                     ->rows(3)
                                     ->columnSpanFull(),
+
+                                // Kontak utama selalu tampil (untuk individu maupun perusahaan)
+                                Forms\Components\Grid::make(2)
+                                    ->schema([
+                                        Forms\Components\TextInput::make('phone')
+                                            ->label('No. Telepon / WhatsApp')
+                                            ->tel()
+                                            ->regex('/^([0-9\s\-\+\(\)]*)$/')
+                                            ->required(),
+
+                                        Forms\Components\TextInput::make('email')
+                                            ->label('Email')
+                                            ->email(),
+                                    ]),
                             ]),
 
                         // SECTION 2: KEUANGAN
@@ -122,10 +136,11 @@ class SupplierResource extends Resource
                             ]),
                     ])->columnSpan(['lg' => 2]),
 
-                // SIDEBAR: PIC & KONTAK TAMBAHAN
+                // SIDEBAR: PIC (hanya untuk perusahaan/marketplace)
                 Forms\Components\Group::make()
                     ->schema([
-                        Forms\Components\Section::make('Primary PIC (Penanggung Jawab)')
+                        // PIC selalu tampil (untuk individu juga, sebagai nama kontak utama)
+                        Forms\Components\Section::make('PIC (Penanggung Jawab)')
                             ->schema([
                                 Forms\Components\TextInput::make('contact_person')
                                     ->label('Nama PIC')
@@ -134,26 +149,19 @@ class SupplierResource extends Resource
                                 Forms\Components\TextInput::make('pic_position')
                                     ->label('Jabatan PIC')
                                     ->placeholder('Contoh: Sales Manager / Owner'),
-
-                                Forms\Components\TextInput::make('phone')
-                                    ->label('No. Telepon / WhatsApp')
-                                    ->tel()
-                                    ->regex('/^([0-9\s\-\+\(\)]*)$/')
-                                    ->required(),
-
-                                Forms\Components\TextInput::make('email')
-                                    ->label('Email PIC')
-                                    ->email(),
                             ]),
 
                         // REPEATER UNTUK KONTAK TAMBAHAN
-                        Forms\Components\Section::make('Kontak Tambahan (Opsional)')
-                            ->description('Kontak gudang, finance, logistik, dll.')
+                        Forms\Components\Section::make('Kontak Tambahan')
+                            ->description('Tambah kontak finance, gudang, logistik, dll. jika diperlukan.')
                             ->collapsed()
                             ->schema([
                                 Forms\Components\Repeater::make('contacts')
                                     ->relationship()
                                     ->schema([
+                                        Forms\Components\TextInput::make('name')
+                                            ->label('Nama'),
+
                                         Forms\Components\Select::make('type')
                                             ->label('Tipe Kontak')
                                             ->options([
@@ -161,15 +169,21 @@ class SupplierResource extends Resource
                                                 'delivery' => 'Pengiriman / Logistik',
                                                 'other' => 'Lainnya'
                                             ])
-                                            ->native(false)
-                                            ->required(),
-                                        Forms\Components\TextInput::make('name')->label('Nama')->required(),
-                                        Forms\Components\TextInput::make('phone')->label('Telepon')->tel(),
+                                            ->default('other')
+                                            ->native(false),
+
+                                        Forms\Components\TextInput::make('phone')
+                                            ->label('Telepon')
+                                            ->tel(),
+
+                                        Forms\Components\TextInput::make('email')
+                                            ->label('Email')
+                                            ->email(),
                                     ])
                                     ->itemLabel(fn (array $state): ?string => $state['name'] ?? null)
                                     ->addActionLabel('Tambah Kontak')
                                     ->columns(1),
-                            ])
+                            ]),
                     ])->columnSpan(['lg' => 1]),
             ])->columns(3);
     }
@@ -203,8 +217,12 @@ class SupplierResource extends Resource
 
                 Tables\Columns\TextColumn::make('contact_person')
                     ->label('PIC Utama')
-                    ->description(fn (Supplier $record): string => $record->pic_position ?? 'Tidak ada jabatan')
-                    ->searchable(),
+                    ->description(fn (Supplier $record): string => match ($record->category) {
+                        'individual' => $record->phone ?? '-',
+                        default => $record->pic_position ?? 'Tidak ada jabatan',
+                    })
+                    ->searchable()
+                    ->placeholder('-'),
 
                 Tables\Columns\TextColumn::make('phone')
                     ->label('Kontak')

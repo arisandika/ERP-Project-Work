@@ -16,4 +16,14 @@ class EditSupplier extends EditRecord
             Actions\DeleteAction::make(),
         ];
     }
+
+    protected function mutateFormDataBeforeSave(array $data): array
+    {
+        // Filter out empty contact entries
+        if (!empty($data['contacts'])) {
+            $data['contacts'] = array_values(array_filter($data['contacts'], fn ($c) => !empty($c['name']) || !empty($c['phone']) || !empty($c['email'])));
+        }
+
+        return $data;
+    }
 }
