@@ -18,7 +18,7 @@ class DashboardHR extends Page
 
     protected static ?string $module = 'hr';
 
-    protected static ?string $navigationIcon = 'heroicon-o-chart-bar-square';
+    protected static ?string $navigationIcon = 'heroicon-o-presentation-chart-line';
 
     protected static string $view = 'filament.pages.hr.dashboard-hr';
 

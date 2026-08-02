@@ -22,7 +22,7 @@ class DashboardProject extends Dashboard
 
     protected static ?string $module = 'project';
 
-    protected static ?string $navigationIcon = 'heroicon-o-clipboard-document-list';
+    protected static ?string $navigationIcon = 'heroicon-o-presentation-chart-line';
 
     protected static ?string $navigationLabel = 'Dashboard';
 

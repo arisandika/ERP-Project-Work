@@ -22,7 +22,7 @@ class DashboardCRM extends Dashboard
 
     protected static ?string $module = 'crm';
 
-    protected static ?string $navigationIcon = 'heroicon-o-chart-bar-square';
+    protected static ?string $navigationIcon = 'heroicon-o-presentation-chart-line';
 
     protected static ?string $navigationLabel = 'Dashboard';
 

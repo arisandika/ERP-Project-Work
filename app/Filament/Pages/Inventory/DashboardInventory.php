@@ -18,7 +18,7 @@ class DashboardInventory extends Dashboard
 
     protected static ?string $module = 'inventory';
 
-    protected static ?string $navigationIcon = 'heroicon-o-chart-bar-square';
+    protected static ?string $navigationIcon = 'heroicon-o-presentation-chart-line';
 
     protected static string $view = 'filament.pages.inventory.dashboard-inventory';
 
