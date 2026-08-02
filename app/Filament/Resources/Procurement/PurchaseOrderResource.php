@@ -168,6 +168,7 @@ class PurchaseOrderResource extends Resource
                                         ->searchable()
                                         ->preload()
                                         ->required()
+                                        ->columnSpanFull()
                                         ->disableOptionsWhenSelectedInSiblingRepeaterItems()
                                         ->live(debounce: 500)
                                         ->afterStateUpdated(function ($state, Forms\Set $set, Forms\Get $get) {
