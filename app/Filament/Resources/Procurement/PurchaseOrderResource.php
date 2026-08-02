@@ -371,6 +371,47 @@ class PurchaseOrderResource extends Resource
                                 ->send();
                         }
                     }),
+
+                Tables\Actions\Action::make('resendEmail')
+                    ->label('Resend Email')
+                    ->icon('heroicon-o-arrow-path')
+                    ->color('warning')
+                    ->visible(fn ($record) => $record->status !== PurchaseOrderStatus::DRAFT)
+                    ->requiresConfirmation()
+                    ->modalHeading('Kirim Ulang Email')
+                    ->modalDescription('Email PO akan dikirim ulang ke supplier.')
+                    ->action(function (PurchaseOrder $record) {
+                        $supplierEmail = $record->supplier?->email ?? null;
+
+                        if (!$supplierEmail) {
+                            Notification::make()
+                                ->title('Email Tidak Dapat Dikirim')
+                                ->body('Supplier tidak memiliki alamat email yang terdaftar.')
+                                ->warning()
+                                ->send();
+
+                            return;
+                        }
+
+                        try {
+                            Mail::to($supplierEmail)->queue(new PurchaseOrderMail($record));
+
+                            Notification::make()
+                                ->title('Email Terkirim Ulang')
+                                ->body('PO berhasil dikirim ulang ke supplier.')
+                                ->success()
+                                ->send();
+
+                        } catch (\Exception $e) {
+                            Log::error('Gagal resend email PO: ' . $e->getMessage());
+
+                            Notification::make()
+                                ->title('Gagal Mengirim Email')
+                                ->body('Terjadi kesalahan. Silakan coba lagi.')
+                                ->danger()
+                                ->send();
+                        }
+                    }),
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([
