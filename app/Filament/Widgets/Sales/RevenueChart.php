@@ -12,8 +12,12 @@ class RevenueChart extends ChartWidget
 {
     use InteractsWithPageFilters;
 
-    protected static ?string $heading = 'Tren Pendapatan (Revenue)';
-    protected static ?int $sort = 2; // Tampil setelah StatsOverview
+    protected static ?string $heading = 'Tren Pendapatan';
+    protected static ?int $sort = 2;
+    protected static ?string $maxHeight = '300px';
+    protected static bool $isLazy = true;
+
+    protected int|string|array $columnSpan = 'full';
 
     protected function getData(): array
     {
@@ -23,13 +27,11 @@ class RevenueChart extends ChartWidget
         $start = $startDate ? Carbon::parse($startDate) : now()->startOfMonth();
         $end = $endDate ? Carbon::parse($endDate) : now();
 
-        // LOGIKA ARSITEKTUR: Eager calculation on database level
-        // Gunakan fungsi agregat DB, jangan loop data Eloquent Collection di memory (Bisa OOM)
         $revenues = Invoice::select(
             DB::raw('DATE(invoice_date) as date'),
             DB::raw('SUM(grand_total) as total')
         )
-            ->where('status', 'paid') // Hanya hitung invoice lunas
+            ->where('status', 'paid')
             ->whereBetween('invoice_date', [$start, $end])
             ->groupBy('date')
             ->orderBy('date')
@@ -46,11 +48,18 @@ class RevenueChart extends ChartWidget
         return [
             'datasets' => [
                 [
-                    'label' => 'Total Pendapatan (IDR)',
+                    'label' => 'Total Pendapatan',
                     'data' => $data,
-                    'borderColor' => '#10b981', // Tailwind Emerald 500
-                    'fill' => 'start',
-                    'backgroundColor' => 'rgba(16, 185, 129, 0.2)',
+                    'borderColor' => '#10b981',
+                    'backgroundColor' => 'rgba(16, 185, 129, 0.1)',
+                    'fill' => true,
+                    'tension' => 0.4,
+                    'borderWidth' => 3,
+                    'pointRadius' => 4,
+                    'pointHoverRadius' => 7,
+                    'pointBackgroundColor' => '#10b981',
+                    'pointBorderColor' => '#fff',
+                    'pointBorderWidth' => 2,
                 ],
             ],
             'labels' => $labels,
@@ -60,5 +69,43 @@ class RevenueChart extends ChartWidget
     protected function getType(): string
     {
         return 'line';
+    }
+
+    protected function getOptions(): array
+    {
+        return [
+            'plugins' => [
+                'legend' => [
+                    'display' => false,
+                ],
+                'tooltip' => [
+                    'mode' => 'index',
+                    'intersect' => false,
+                    'callbacks' => [
+                        'label' => 'function(ctx) { return "Rp " + ctx.raw.toLocaleString("id-ID"); }',
+                    ],
+                ],
+            ],
+            'scales' => [
+                'x' => [
+                    'grid' => [
+                        'display' => false,
+                    ],
+                ],
+                'y' => [
+                    'beginAtZero' => true,
+                    'grid' => [
+                        'color' => 'rgba(0,0,0,0.05)',
+                    ],
+                    'ticks' => [
+                        'callback' => 'function(value) { return "Rp " + (value/1000000).toFixed(0) + "M"; }',
+                    ],
+                ],
+            ],
+            'interaction' => [
+                'mode' => 'index',
+                'intersect' => false,
+            ],
+        ];
     }
 }

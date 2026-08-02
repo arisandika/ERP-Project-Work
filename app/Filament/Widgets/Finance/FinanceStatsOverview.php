@@ -12,15 +12,7 @@ class FinanceStatsOverview extends BaseWidget
 
     protected static ?int $sort = 1;
 
-    protected int|string|array $columnSpan = [
-        'default' => 1,
-        'xl'      => 12,
-    ];
-
-    protected function getColumns(): int
-    {
-        return 3;
-    }
+    protected int|string|array $columnSpan = 'full';
 
     protected function getStats(): array
     {
@@ -28,42 +20,40 @@ class FinanceStatsOverview extends BaseWidget
 
         $summary = app(FinancialService::class)->getSummaryForYear($year);
 
-        // Label periode konsisten dipakai di semua deskripsi,
-        // otomatis mengikuti tahun yang dipilih di filter (bukan hardcode "tahun ini").
         $isCurrentYear = $year === now()->year;
         $periodLabel   = $isCurrentYear ? "tahun berjalan ({$year})" : "sepanjang tahun {$year}";
 
         return [
             Stat::make("Pemasukan ({$year})", 'Rp ' . number_format($summary['income'], 0, ',', '.'))
-                ->description("Total pemasukan {$periodLabel}")
-                ->color('success'),
+                ->description('Total pendapatan kotor')
+                ->descriptionIcon('heroicon-m-arrow-up-right')
+                ->color('success')
+                ->chart([10, 15, 12, 18, 14, 20, round($summary['income'] / 12000000)]),
 
             Stat::make("Pengeluaran ({$year})", 'Rp ' . number_format($summary['expense'], 0, ',', '.'))
-                ->description("Total pengeluaran {$periodLabel}")
-                ->color('danger'),
+                ->description('Total biaya operasional')
+                ->descriptionIcon('heroicon-m-arrow-down-left')
+                ->color('danger')
+                ->chart([8, 10, 7, 12, 9, 11, round($summary['expense'] / 12000000)]),
 
             Stat::make("Net Profit ({$year})", 'Rp ' . number_format($summary['net_profit'], 0, ',', '.'))
-                ->description(
-                    $summary['net_profit'] >= 0
-                        ? "Laba bersih {$periodLabel}"
-                        : "Rugi bersih {$periodLabel}"
-                )
+                ->description('Laba bersih periode')
+                ->descriptionIcon('heroicon-m-banknotes')
                 ->color($summary['net_profit'] >= 0 ? 'success' : 'danger'),
 
-            Stat::make('Sisa Piutang (Receivables)', 'Rp ' . number_format($summary['receivable_remaining'], 0, ',', '.'))
-                ->description("Belum tertagih hingga akhir {$year}")
+            Stat::make('Sisa Piutang', 'Rp ' . number_format($summary['receivable_remaining'], 0, ',', '.'))
+                ->description('Invoice belum diterima')
+                ->descriptionIcon('heroicon-m-clock')
                 ->color('warning'),
 
-            Stat::make('Sisa Utang (Payables)', 'Rp ' . number_format($summary['payable_remaining'], 0, ',', '.'))
-                ->description("Belum dibayar hingga akhir {$year}")
+            Stat::make('Sisa Utang', 'Rp ' . number_format($summary['payable_remaining'], 0, ',', '.'))
+                ->description('PO belum dibayar')
+                ->descriptionIcon('heroicon-m-exclamation-circle')
                 ->color('warning'),
 
-            Stat::make('Saldo Akhir Kas', 'Rp ' . number_format($summary['ending_balance'], 0, ',', '.'))
-                ->description(
-                    $isCurrentYear
-                        ? 'Posisi kas sampai hari ini'
-                        : "Posisi kas kumulatif s.d. 31 Des {$year}"
-                )
+            Stat::make('Saldo Kas', 'Rp ' . number_format($summary['ending_balance'], 0, ',', '.'))
+                ->description('Saldo akhir kas')
+                ->descriptionIcon('heroicon-m-wallet')
                 ->color('primary'),
         ];
     }

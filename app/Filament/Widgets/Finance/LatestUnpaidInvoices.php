@@ -11,10 +11,9 @@ use Illuminate\Support\Carbon;
 class LatestUnpaidInvoices extends BaseWidget
 {
     protected static ?string $heading = 'Outstanding Receivables';
+    protected static ?int $sort = 3;
 
-    protected static ?int $sort = 2;
-
-    protected int | string | array $columnSpan = [
+    protected int|string|array $columnSpan = [
         'xl' => 6,
     ];
 
@@ -23,41 +22,35 @@ class LatestUnpaidInvoices extends BaseWidget
         return $table
             ->query(
                 Invoice::query()
+                    ->with('customer')
                     ->whereIn('status', ['sent', 'partial'])
                     ->orderBy('due_date')
                     ->limit(5)
             )
-
             ->striped()
-
             ->columns([
-
                 Tables\Columns\TextColumn::make('invoice_number')
                     ->label('Invoice')
                     ->weight('semibold')
                     ->color('primary')
-                    ->searchable(),
+                    ->searchable()
+                    ->copyable(),
 
                 Tables\Columns\TextColumn::make('customer.name')
                     ->label('Client')
-                    ->limit(20),
+                    ->limit(20)
+                    ->icon('heroicon-m-building-office'),
 
                 Tables\Columns\TextColumn::make('due_date')
-                    ->label('Due Date')
+                    ->label('Jatuh Tempo')
                     ->date('d M Y')
                     ->badge()
-                    ->icon(
-                        fn ($state) =>
-                        Carbon::parse($state)->isPast()
-                            ? 'heroicon-m-exclamation-triangle'
-                            : 'heroicon-m-clock'
-                    )
-                    ->color(
-                        fn ($state) =>
-                        Carbon::parse($state)->isPast()
-                            ? 'danger'
-                            : 'warning'
-                    ),
+                    ->icon(fn ($state) => Carbon::parse($state)->isPast()
+                        ? 'heroicon-m-exclamation-triangle'
+                        : 'heroicon-m-clock')
+                    ->color(fn ($state) => Carbon::parse($state)->isPast()
+                        ? 'danger'
+                        : 'warning'),
 
                 Tables\Columns\TextColumn::make('remaining_balance')
                     ->label('Outstanding')
@@ -66,7 +59,15 @@ class LatestUnpaidInvoices extends BaseWidget
                     ->weight('bold')
                     ->color('danger'),
             ])
-
+            ->actions([
+                Tables\Actions\Action::make('view')
+                    ->label('Lihat')
+                    ->icon('heroicon-m-eye')
+                    ->url(fn ($record) => route('filament.admin.resources.invoices.view', $record)),
+            ])
+            ->emptyStateHeading('Tidak Ada Tagihan')
+            ->emptyStateDescription('Semua invoice sudah lunas.')
+            ->emptyStateIcon('heroicon-o-check-badge')
             ->paginated(false);
     }
 }

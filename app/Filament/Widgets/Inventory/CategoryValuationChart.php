@@ -8,8 +8,14 @@ use Illuminate\Support\Facades\DB;
 
 class CategoryValuationChart extends ChartWidget
 {
-    protected static ?string $heading = 'Valuasi Inventaris per Kategori (IDR)';
+    protected static ?string $heading = 'Valuasi per Kategori';
     protected static ?string $maxHeight = '300px';
+    protected static bool $isLazy = true;
+
+    protected int|string|array $columnSpan = [
+        'md' => 12,
+        'xl' => 6,
+    ];
 
     protected function getData(): array
     {
@@ -39,6 +45,33 @@ class CategoryValuationChart extends ChartWidget
 
     protected function getType(): string
     {
-        return 'polarArea'; // Memberikan kesan data analis yang modern
+        return 'polarArea';
+    }
+
+    protected function getOptions(): array
+    {
+        return [
+            'plugins' => [
+                'legend' => [
+                    'position' => 'bottom',
+                    'labels' => [
+                        'usePointStyle' => true,
+                        'padding' => 15,
+                    ],
+                ],
+                'tooltip' => [
+                    'callbacks' => [
+                        'label' => 'function(ctx) { return "Rp " + ctx.raw.toLocaleString("id-ID"); }',
+                    ],
+                ],
+            ],
+            'scales' => [
+                'r' => [
+                    'grid' => [
+                        'color' => 'rgba(0,0,0,0.05)',
+                    ],
+                ],
+            ],
+        ];
     }
 }
