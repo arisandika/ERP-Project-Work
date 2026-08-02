@@ -3,9 +3,11 @@ namespace App\Filament\Widgets\Marketing;
 
 use App\Models\Marketing\PopupBanner;
 use App\Models\Marketing\Slider;
+use Carbon\Carbon;
 use Filament\Tables;
 use Filament\Tables\Table;
 use Filament\Widgets\TableWidget as BaseWidget;
+use Illuminate\Database\Eloquent\Collection;
 
 class ContentOverviewTable extends BaseWidget
 {
@@ -18,23 +20,25 @@ class ContentOverviewTable extends BaseWidget
         return 'Konten Terbaru (Slider & Banner)';
     }
 
+    public function getTableRecords(): Collection
+    {
+        $sliders = Slider::withTrashed()->withoutGlobalScope('ordered')
+            ->selectRaw("'Slider' as type, id, title, is_active, start_date, end_date, created_at")
+            ->get();
+
+        $banners = PopupBanner::withTrashed()
+            ->selectRaw("'Banner' as type, id, title, is_active, start_date, end_date, created_at")
+            ->get();
+
+        return $sliders->concat($banners)->sortByDesc('created_at')->values();
+    }
+
     public function table(Table $table): Table
     {
         return $table
-            ->query(
-                Slider::withTrashed()->withoutGlobalScope('ordered')
-                    ->selectRaw("id, 'Slider' as type, title, is_active, start_date, end_date, created_at")
-                    ->union(
-                        PopupBanner::withTrashed()
-                            ->selectRaw("id, 'Banner' as type, title, is_active, start_date, end_date, created_at")
-                    )
-            )
-            ->defaultPaginationPageOption(5)
-            ->defaultSort('created_at', 'desc')
+            ->query(Slider::withTrashed()->withoutGlobalScope('ordered'))
+            ->paginated(false)
             ->columns([
-                Tables\Columns\TextColumn::make('id')
-                    ->hidden(),
-
                 Tables\Columns\TextColumn::make('type')
                     ->label('Tipe')
                     ->badge()
@@ -51,17 +55,18 @@ class ContentOverviewTable extends BaseWidget
 
                 Tables\Columns\TextColumn::make('title')
                     ->label('Judul')
-                    ->searchable()
                     ->limit(40)
                     ->weight('bold'),
 
                 Tables\Columns\TextColumn::make('status')
                     ->label('Status')
-                    ->getStateUsing(function ($state, $record): string {
-                        $now = now();
+                    ->getStateUsing(function ($record): string {
+                        $now = Carbon::now();
                         if (! $record->is_active) return 'Nonaktif';
-                        if ($record->start_date && $record->start_date->greaterThan($now)) return 'Terjadwal';
-                        if ($record->end_date && $record->end_date->lessThan($now)) return 'Expired';
+                        $start = $record->start_date ? Carbon::parse($record->start_date) : null;
+                        $end = $record->end_date ? Carbon::parse($record->end_date) : null;
+                        if ($start && $start->greaterThan($now)) return 'Terjadwal';
+                        if ($end && $end->lessThan($now)) return 'Expired';
                         return 'Aktif';
                     })
                     ->badge()
@@ -81,7 +86,8 @@ class ContentOverviewTable extends BaseWidget
                     ->label('Selesai')
                     ->date('d M Y H:i')
                     ->color(function ($record): ?string {
-                        if ($record->end_date && $record->end_date->diffInDays(now()) <= 3 && $record->is_active) {
+                        $end = $record->end_date ? Carbon::parse($record->end_date) : null;
+                        if ($end && $end->diffInDays(now()) <= 3 && $record->is_active) {
                             return 'danger';
                         }
                         return null;
@@ -89,8 +95,7 @@ class ContentOverviewTable extends BaseWidget
 
                 Tables\Columns\TextColumn::make('created_at')
                     ->label('Dibuat')
-                    ->date('d M Y')
-                    ->sortable(),
+                    ->date('d M Y'),
             ]);
     }
 }
