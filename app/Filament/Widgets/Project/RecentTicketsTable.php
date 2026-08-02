@@ -18,7 +18,7 @@ class RecentTicketsTable extends BaseWidget
         return $table
             ->query(
                 Ticket::query()
-                    ->with(['project', 'ticketStatus', 'priority'])
+                    ->with(['project', 'status', 'priority'])
                     ->latest()
                     ->limit(10)
             )
@@ -38,10 +38,10 @@ class RecentTicketsTable extends BaseWidget
                     ->label('Project')
                     ->limit(15),
 
-                Tables\Columns\TextColumn::make('ticketStatus.name')
+                Tables\Columns\TextColumn::make('status.name')
                     ->label('Status')
                     ->badge()
-                    ->color(fn ($record) => $record->ticketStatus?->color ?? 'gray'),
+                    ->color(fn ($record) => $record->status?->color ?? 'gray'),
 
                 Tables\Columns\TextColumn::make('priority.name')
                     ->label('Priority')

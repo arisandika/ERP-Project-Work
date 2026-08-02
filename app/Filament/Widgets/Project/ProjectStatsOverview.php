@@ -17,9 +17,9 @@ class ProjectStatsOverview extends BaseWidget
     {
         $stats = Cache::remember('project_stats_overview', now()->addMinutes(15), function () {
             $totalTickets = Ticket::count();
-            $completedTickets = Ticket::whereHas('ticketStatus', fn ($q) => $q->where('is_completed', true))->count();
+            $completedTickets = Ticket::whereHas('status', fn ($q) => $q->where('is_completed', true))->count();
             $overdueTickets = Ticket::where('due_date', '<', now())
-                ->whereDoesntHave('ticketStatus', fn ($q) => $q->where('is_completed', true))
+                ->whereDoesntHave('status', fn ($q) => $q->where('is_completed', true))
                 ->count();
 
             return [
