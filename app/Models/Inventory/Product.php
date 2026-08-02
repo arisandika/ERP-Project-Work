@@ -20,6 +20,7 @@ class Product extends Model
         'label',
         'unit_id',
         'min_stock',
+        'max_stock',
         'price',
         'purchase_price',
         'selling_price',
@@ -94,6 +95,11 @@ class Product extends Model
     public function getIsLowStockAttribute(): bool
     {
         return $this->total_stock < 10;
+    }
+
+    public function getIsOverStockAttribute(): bool
+    {
+        return $this->max_stock > 0 && $this->total_stock > $this->max_stock;
     }
 
     public function getStockThresholdAttribute(): int
