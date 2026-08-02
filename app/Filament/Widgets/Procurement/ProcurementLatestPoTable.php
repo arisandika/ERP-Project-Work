@@ -53,6 +53,9 @@ class ProcurementLatestPoTable extends BaseWidget
                         PurchaseOrderStatus::CANCELLED => 'danger',
                     }),
             ])
-            ->paginated(false);
+            ->paginated(false)
+            ->emptyStateHeading('Belum Ada PO')
+            ->emptyStateDescription('Belum ada purchase order yang dibuat.')
+            ->emptyStateIcon('heroicon-o-document-text');
     }
 }

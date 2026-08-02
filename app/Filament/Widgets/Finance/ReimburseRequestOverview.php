@@ -7,7 +7,7 @@ use Filament\Widgets\StatsOverviewWidget\Stat;
 
 class ReimburseRequestOverview extends BaseWidget
 {
-    protected static ?int $sort = 2;
+    protected static ?int $sort = 4;
 
     protected int|string|array $columnSpan = [
         'default' => 1,
@@ -47,10 +47,26 @@ class ReimburseRequestOverview extends BaseWidget
             ->first();
 
         return [
-            Stat::make('Pengajuan Pending Saya', $stats->pending_count)->color('warning'),
-            Stat::make('Disetujui Bulan Ini', $stats->approved_month_count)->color('success'),
-            Stat::make('Nominal Pending Saya', 'IDR ' . number_format($stats->pending_total))->color('warning'),
-            Stat::make('Total Cair Bulan Ini', 'IDR ' . number_format($stats->monthly_total))->color('success'),
+            Stat::make('Menunggu', $stats->pending_count)
+                ->description('Pengajuan diproses')
+                ->descriptionIcon('heroicon-m-clock')
+                ->color('warning')
+                ->chart([1, 0, 2, 1, 0, 3, $stats->pending_count]),
+
+            Stat::make('Disetujui Bulan Ini', $stats->approved_month_count)
+                ->description('Reimburse cair')
+                ->descriptionIcon('heroicon-m-check-circle')
+                ->color('success'),
+
+            Stat::make('Nominal Pending', 'Rp ' . number_format($stats->pending_total, 0, ',', '.'))
+                ->description('Menunggu persetujuan')
+                ->descriptionIcon('heroicon-m-banknotes')
+                ->color('warning'),
+
+            Stat::make('Cair Bulan Ini', 'Rp ' . number_format($stats->monthly_total, 0, ',', '.'))
+                ->description('Total diterima')
+                ->descriptionIcon('heroicon-m-currency-dollar')
+                ->color('success'),
         ];
     }
 }

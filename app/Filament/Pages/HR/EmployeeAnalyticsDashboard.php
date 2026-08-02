@@ -42,6 +42,8 @@ class EmployeeAnalyticsDashboard extends Page
 
     protected static ?string $navigationIcon = 'heroicon-o-chart-bar-square';
 
+    protected static ?string $navigationLabel = 'Dashboard';
+
     protected static ?string $title = 'Employee Analytics';
 
     protected static ?int $navigationSort = 1;
@@ -87,47 +89,47 @@ class EmployeeAnalyticsDashboard extends Page
     protected function getHeaderWidgets(): array
     {
         return [
-            // EmployeeOverviewStats::class,
+            EmployeeOverviewStats::class,
         ];
     }
 
     public function getVisibleWidgets(): array
     {
         return [
-            // Attendance
+            // ── Attendance Section ──
             AnalyticsSectionHeaderWidget::make([
                 'title' => 'Attendance Analytics',
                 'description' => 'Monitor aktivitas kehadiran, keterlambatan, dan jam kerja.',
                 'icon' => 'heroicon-o-calendar-days',
             ]),
 
-            // AttendanceTrendChart::class,
-            // AttendanceStatusDonutChart::class,
-            // WorkHoursChart::class,
-            // AttendanceHeatmapChart::class,
-            // ClockInOutAverageWidget::class,
+            AttendanceTrendChart::class,
+            AttendanceStatusDonutChart::class,
+            WorkHoursChart::class,
+            AttendanceHeatmapChart::class,
+            ClockInOutAverageWidget::class,
 
-            // // Leave
-            // AnalyticsSectionHeaderWidget::make([
-            //     'title' => 'Leave Analytics',
-            //     'description' => 'Pantau penggunaan cuti dan riwayat pengajuan.',
-            //     'icon' => 'heroicon-o-clock',
-            // ]),
+            // ── Leave Section ──
+            AnalyticsSectionHeaderWidget::make([
+                'title' => 'Leave Analytics',
+                'description' => 'Pantau penggunaan cuti dan riwayat pengajuan.',
+                'icon' => 'heroicon-o-clock',
+            ]),
 
-            // LeaveBalanceRadialChart::class,
-            // LeaveTrendChart::class,
-            // LeaveHistoryTable::class,
+            LeaveBalanceRadialChart::class,
+            LeaveTrendChart::class,
+            LeaveHistoryTable::class,
 
-            // // Reimbursement
-            // AnalyticsSectionHeaderWidget::make([
-            //     'title' => 'Reimbursement Analytics',
-            //     'description' => 'Monitor pengajuan reimburse dan status approval.',
-            //     'icon' => 'heroicon-o-banknotes',
-            // ]),
+            // ── Reimbursement Section ──
+            AnalyticsSectionHeaderWidget::make([
+                'title' => 'Reimbursement Analytics',
+                'description' => 'Monitor pengajuan reimburse dan status approval.',
+                'icon' => 'heroicon-o-banknotes',
+            ]),
 
-            // ReimbursementStatusChart::class,
-            // MonthlyReimbursementChart::class,
-            // RecentReimbursementTable::class,
+            ReimbursementStatusChart::class,
+            MonthlyReimbursementChart::class,
+            RecentReimbursementTable::class,
         ];
     }
 }

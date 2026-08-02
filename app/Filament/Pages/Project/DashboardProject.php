@@ -2,54 +2,55 @@
 namespace App\Filament\Pages\Project;
 
 use App\Filament\Concerns\BelongsToModule;
-use App\Filament\Widgets\Project\MyTasksTableWidget;
-use App\Filament\Widgets\Project\OverdueTicketsTableWidget;
-use App\Filament\Widgets\Project\ProjectOverviewWidget;
-use App\Filament\Widgets\Project\ProjectProgressChartWidget;
-use App\Filament\Widgets\Project\TicketPriorityChartWidget;
-use App\Filament\Widgets\Project\TicketStatusChartWidget;
-use App\Filament\Widgets\Project\UpcomingDeadlinesWidget;
-use Filament\Pages\Page;
+use App\Filament\Widgets\Project\ProjectStatsOverview;
+use App\Filament\Widgets\Project\TicketStatusChart;
+use App\Filament\Widgets\Project\RecentTicketsTable;
+use BezhanSalleh\FilamentShield\Traits\HasPageShield;
+use Filament\Pages\Dashboard;
+use Filament\Pages\Dashboard\Concerns\HasFiltersForm;
 
-class DashboardProject extends Page
+class DashboardProject extends Dashboard
 {
-    use BelongsToModule;
+    use BelongsToModule, HasFiltersForm, HasPageShield {
+        HasPageShield::canAccess insteadof BelongsToModule;
+        HasPageShield::shouldRegisterNavigation insteadof BelongsToModule;
+        HasPageShield::canAccess as shieldCanAccess;
+        HasPageShield::shouldRegisterNavigation as shieldShouldRegisterNavigation;
+        BelongsToModule::canAccess as moduleCanAccess;
+        BelongsToModule::shouldRegisterNavigation as moduleShouldRegisterNavigation;
+    }
 
     protected static ?string $module = 'project';
 
-    protected static ?string $navigationIcon = 'heroicon-o-chart-bar-square';
+    protected static ?string $navigationIcon = 'heroicon-o-clipboard-document-list';
 
-    protected static string $view = 'filament.pages.project.dashboard-project';
-
-    protected static ?string $slug = 'pm/dashboard';
-
-    protected static string $routePath = 'pm/dashboard';
-
-    protected static ?string $navigationLabel = 'Dashboard Project';
+    protected static ?string $navigationLabel = 'Dashboard';
 
     protected static ?string $title = 'Dashboard Project';
 
-    protected function getHeaderWidgets(): array
+    protected static string $routePath = 'project-dashboard';
+
+    public static function canAccess(): bool
     {
-        return [
-            ProjectOverviewWidget::class,
-        ];
+        return static::shieldCanAccess() && static::moduleCanAccess();
+    }
+
+    public static function shouldRegisterNavigation(): bool
+    {
+        return static::shieldShouldRegisterNavigation() && static::moduleShouldRegisterNavigation();
+    }
+
+    public function getSubheading(): ?string
+    {
+        return 'Pantau progres project dan tiket tim Anda.';
     }
 
     public function getWidgets(): array
     {
         return [
-            TicketStatusChartWidget::class,
-            ProjectProgressChartWidget::class,
-            TicketPriorityChartWidget::class,
-            MyTasksTableWidget::class,
-            OverdueTicketsTableWidget::class,
-            UpcomingDeadlinesWidget::class,
+            ProjectStatsOverview::class,
+            TicketStatusChart::class,
+            RecentTicketsTable::class,
         ];
-    }
-
-    protected function getColumns(): int | array
-    {
-        return 4;
     }
 }
