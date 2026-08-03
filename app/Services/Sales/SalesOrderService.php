@@ -77,6 +77,11 @@ class SalesOrderService
         return DB::transaction(function () use ($data) {
             $data = $this->recalculateFormData($data);
 
+            // Validasi stok kalau status langsung confirmed
+            if (($data['status'] ?? 'draft') === 'confirmed') {
+                $this->validateStock($data['items'] ?? []);
+            }
+
             $items = $data['items'] ?? [];
             $orderData = Arr::except($data, ['items', 'promo_code_input', 'temp_discount_type', 'temp_discount_value']);
 
@@ -98,6 +103,11 @@ class SalesOrderService
         return DB::transaction(function () use ($order, $data) {
             $data = $this->recalculateFormData($data);
 
+            // Validasi stok kalau status berubah ke confirmed
+            if (($data['status'] ?? 'draft') === 'confirmed' && $order->status !== 'confirmed') {
+                $this->validateStock($data['items'] ?? []);
+            }
+
             $items = $data['items'] ?? [];
             $orderData = Arr::except($data, ['items', 'promo_code_input', 'temp_discount_type', 'temp_discount_value']);
 
@@ -110,6 +120,33 @@ class SalesOrderService
 
             return $order;
         });
+    }
+
+    /**
+     * Validasi stok tersedia untuk semua item product
+     */
+    private function validateStock(array $items): void
+    {
+        $warehouseUtamaId = Warehouse::where('warehouse_name', 'Gudang Utama')->value('id') ?? 1;
+
+        foreach ($items as $item) {
+            if (($item['item_type'] ?? 'product') !== 'product') {
+                continue;
+            }
+
+            $stock = ProductStock::where('product_id', $item['item_id'])
+                ->where('warehouse_id', $warehouseUtamaId)
+                ->first();
+
+            $avail = $stock ? (float) $stock->qty_available : 0;
+            $qty = (float) ($item['qty'] ?? 0);
+
+            if ($avail < $qty) {
+                throw new \Exception(
+                    "Stok '{$item['item_name']}' tidak mencukupi! Tersedia: {$avail}, diminta: {$qty}"
+                );
+            }
+        }
     }
 
     /**
