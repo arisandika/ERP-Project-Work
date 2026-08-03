@@ -33,7 +33,7 @@ class DashboardSales extends BaseDashboard
 
     protected static ?string $module = 'sales';
 
-    protected static ?string $navigationIcon = 'heroicon-o-chart-bar-square';
+    protected static ?string $navigationIcon = 'heroicon-o-presentation-chart-line';
 
     protected static string $view = 'filament.pages.sales.dashboard-sales';
 

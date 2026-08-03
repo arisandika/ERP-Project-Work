@@ -27,7 +27,7 @@ class ProcurementDashboard extends BaseDashboard
 
     protected static ?string $module = 'procurement';
 
-    protected static ?string $navigationIcon = 'heroicon-o-chart-bar-square';
+    protected static ?string $navigationIcon = 'heroicon-o-presentation-chart-line';
 
     protected static string $view = 'filament.pages.procurement.dashboard-procurement';
 

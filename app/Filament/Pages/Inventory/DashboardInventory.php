@@ -3,14 +3,10 @@
 namespace App\Filament\Pages\Inventory;
 
 use App\Filament\Concerns\BelongsToModule;
-use App\Filament\Resources\Inventory\ProductResource;
-use App\Filament\Widgets\Inventory\CategoryValuationChart;
 use App\Filament\Widgets\Inventory\InventoryStatsOverview;
 use App\Filament\Widgets\Inventory\MovementAnalysisChart;
 use App\Filament\Widgets\Inventory\StockWarehouseChart;
-use App\Filament\Resources\Inventory\InventoryMonitoringResource;
 use Filament\Pages\Dashboard;
-use Filament\Actions\Action;
 
 class DashboardInventory extends Dashboard
 {
@@ -18,7 +14,7 @@ class DashboardInventory extends Dashboard
 
     protected static ?string $module = 'inventory';
 
-    protected static ?string $navigationIcon = 'heroicon-o-chart-bar-square';
+    protected static ?string $navigationIcon = 'heroicon-o-presentation-chart-line';
 
     protected static string $view = 'filament.pages.inventory.dashboard-inventory';
 
@@ -30,34 +26,19 @@ class DashboardInventory extends Dashboard
 
     protected static ?string $title = 'Dashboard Inventory';
 
-    protected function getHeaderActions(): array
-    {
-        return [
-            // Action::make('createProduct')
-            //     ->label('Produk Baru')
-            //     ->icon('heroicon-m-plus')
-            //     ->url(ProductResource::getUrl('create')),
+    protected static ?int $navigationSort = 1;
 
-            // Action::make('stockReport')
-            //     ->label('Laporan Stok')
-            //     ->icon('heroicon-m-document-text')
-            //     ->color('gray')
-            //     ->url('/admin/inventory/stock-reports'),
-
-            Action::make('liveMonitor')
-                ->label('Live Monitor')
-                ->icon('heroicon-m-chart-bar')
-                ->color('gray')
-                ->url(InventoryMonitoringResource::getUrl('index')),
-        ];
-    }
-
+    /**
+     * Dashboard widgets — keep minimal:
+     * 1. KPI cards (top row)
+     * 2. Stock movement trend (line)
+     * 3. Stock distribution by warehouse (doughnut)
+     */
     public function getWidgets(): array
     {
         return [
             InventoryStatsOverview::class,
             MovementAnalysisChart::class,
-            CategoryValuationChart::class,
             StockWarehouseChart::class,
         ];
     }

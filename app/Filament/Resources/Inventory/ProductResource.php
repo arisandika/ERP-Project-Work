@@ -93,6 +93,22 @@ class ProductResource extends Resource
                             ->required()
                             ->minValue(0),
 
+                        Forms\Components\TextInput::make('min_stock')
+                            ->label('Minimum Stock')
+                            ->numeric()
+                            ->default(10)
+                            ->minValue(0)
+                            ->helperText('Batas minimum sebelum alert low stock')
+                            ->prefixIcon('heroicon-o-arrow-down-circle'),
+
+                        Forms\Components\TextInput::make('max_stock')
+                            ->label('Maximum Stock')
+                            ->numeric()
+                            ->default(0)
+                            ->minValue(0)
+                            ->helperText('Batas maksimum (0 = tanpa batas)')
+                            ->prefixIcon('heroicon-o-arrow-up-circle'),
+
                         Forms\Components\Section::make('Pengaturan Lanjutan')
                             ->description('Atur identitas unit dan visibilitas katalog')
                             ->schema([

@@ -22,9 +22,9 @@ class DashboardMarketing extends Dashboard
 
     protected static ?string $module = 'marketing';
 
-    protected static ?string $navigationIcon = 'heroicon-o-megaphone';
+    protected static ?string $navigationIcon = 'heroicon-o-presentation-chart-line';
 
-    protected static ?string $navigationLabel = 'Dashboard';
+    protected static ?string $navigationLabel = 'Dashboard Marketing';
 
     protected static ?string $title = 'Dashboard Marketing';
 

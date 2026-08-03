@@ -42,7 +42,7 @@ class EmployeeAnalyticsDashboard extends Page
 
     protected static ?string $navigationIcon = 'heroicon-o-chart-bar-square';
 
-    protected static ?string $navigationLabel = 'Dashboard';
+    protected static ?string $navigationLabel = 'Employee Analytics Dashboard';
 
     protected static ?string $title = 'Employee Analytics';
 

@@ -16,6 +16,10 @@
         </div>
     </div>
 
+    @php
+        $hasComparison = !empty($compareData);
+    @endphp
+
     <div id="print-area" class="bg-white p-8 md:p-12 rounded-xl shadow-sm ring-1 ring-gray-950/5 dark:bg-gray-900 dark:ring-white/10 print:shadow-none print:ring-0 print:p-0">
 
         <div class="text-center mb-10 pb-6 border-b-2 ring-border-light dark:ring-border-dark">
@@ -32,23 +36,45 @@
                 <span class="text-gray-800 dark:text-gray-200">
                     {{ $period }}
                 </span>
+                @if($hasComparison)
+                    <span class="text-gray-400 mx-1">|</span>
+                    Bandingkan: <span class="text-gray-800 dark:text-gray-200">{{ $compareData['period'] }}</span>
+                @endif
             </p>
         </div>
 
         <div class="max-w-4xl mx-auto text-sm md:text-base tabular-nums">
 
+            {{-- Header kolom perbandingan --}}
+            @if($hasComparison)
+                <div class="grid grid-cols-3 gap-4 mb-2 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide px-4">
+                    <div>Item</div>
+                    <div class="text-right">{{ $period }}</div>
+                    <div class="text-right">{{ $compareData['period'] }}</div>
+                </div>
+            @endif
+
             {{-- SALDO AWAL --}}
-            <div class="flex justify-between items-center py-3 px-4 mb-8 bg-gray-100 dark:bg-gray-800 border-l-4 border-gray-400 font-bold text-lg rounded-r-lg">
+            <div class="flex justify-between items-center py-3 px-4 mb-8 bg-gray-100 dark:bg-gray-800 border-l-4 border-gray-400 font-bold text-lg rounded-r-lg {{ $hasComparison ? 'grid grid-cols-3 gap-4' : '' }}">
                 <span class="text-gray-700 dark:text-gray-300 uppercase">
                     Saldo Kas Awal
                 </span>
 
-                <div class="w-56 flex justify-between text-gray-900 dark:text-white">
-                    <span class="opacity-60">Rp</span>
-                    <span>
+                @if($hasComparison)
+                    <div class="text-right text-gray-900 dark:text-white">
                         {{ $openingBalance < 0 ? '(' : '' }}{{ number_format(abs($openingBalance), 0, ',', '.') }}{{ $openingBalance < 0 ? ')' : '' }}
-                    </span>
-                </div>
+                    </div>
+                    <div class="text-right text-gray-500 dark:text-gray-400">
+                        {{ ($compareData['openingBalance'] ?? 0) < 0 ? '(' : '' }}{{ number_format(abs($compareData['openingBalance'] ?? 0), 0, ',', '.') }}{{ ($compareData['openingBalance'] ?? 0) < 0 ? ')' : '' }}
+                    </div>
+                @else
+                    <div class="w-56 flex justify-between text-gray-900 dark:text-white">
+                        <span class="opacity-60">Rp</span>
+                        <span>
+                            {{ $openingBalance < 0 ? '(' : '' }}{{ number_format(abs($openingBalance), 0, ',', '.') }}{{ $openingBalance < 0 ? ')' : '' }}
+                        </span>
+                    </div>
+                @endif
             </div>
 
             {{-- OPERATING --}}
@@ -56,6 +82,8 @@
                 'title' => 'Arus Kas dari Aktivitas Operasional',
                 'details' => $operatingDetails,
                 'total' => $totalOperatingCashFlow,
+                'compareTotal' => $compareData['totalOperatingCashFlow'] ?? null,
+                'hasComparison' => $hasComparison,
             ])
 
             {{-- INVESTING --}}
@@ -63,6 +91,8 @@
                 'title' => 'Arus Kas dari Aktivitas Investasi',
                 'details' => $investingDetails,
                 'total' => $totalInvestingCashFlow,
+                'compareTotal' => $compareData['totalInvestingCashFlow'] ?? null,
+                'hasComparison' => $hasComparison,
             ])
 
             {{-- FINANCING --}}
@@ -70,20 +100,31 @@
                 'title' => 'Arus Kas dari Aktivitas Pendanaan',
                 'details' => $financingDetails,
                 'total' => $totalFinancingCashFlow,
+                'compareTotal' => $compareData['totalFinancingCashFlow'] ?? null,
+                'hasComparison' => $hasComparison,
             ])
 
             {{-- NET CASH FLOW --}}
-            <div class="flex justify-between items-center py-3 px-4 mt-8 bg-gray-50 dark:bg-gray-900 border ring-border-light dark:border-gray-700 font-bold text-lg rounded-lg">
+            <div class="flex justify-between items-center py-3 px-4 mt-8 bg-gray-50 dark:bg-gray-900 border ring-border-light dark:border-gray-700 font-bold text-lg rounded-lg {{ $hasComparison ? 'grid grid-cols-3 gap-4' : '' }}">
                 <span class="text-gray-700 dark:text-gray-300 uppercase tracking-wide">
                     Kenaikan / (Penurunan) Kas Bersih
                 </span>
 
-                <div class="w-56 flex justify-between {{ $netCashFlow >= 0 ? 'text-success-600 dark:text-success-400' : 'text-danger-600 dark:text-danger-400' }}">
-                    <span class="opacity-60">Rp</span>
-                    <span>
+                @if($hasComparison)
+                    <div class="text-right {{ $netCashFlow >= 0 ? 'text-success-600 dark:text-success-400' : 'text-danger-600 dark:text-danger-400' }}">
                         {{ $netCashFlow < 0 ? '(' : '' }}{{ number_format(abs($netCashFlow), 0, ',', '.') }}{{ $netCashFlow < 0 ? ')' : '' }}
-                    </span>
-                </div>
+                    </div>
+                    <div class="text-right {{ ($compareData['netCashFlow'] ?? 0) >= 0 ? 'text-gray-500 dark:text-gray-400' : 'text-danger-400 dark:text-danger-500' }}">
+                        {{ ($compareData['netCashFlow'] ?? 0) < 0 ? '(' : '' }}{{ number_format(abs($compareData['netCashFlow'] ?? 0), 0, ',', '.') }}{{ ($compareData['netCashFlow'] ?? 0) < 0 ? ')' : '' }}
+                    </div>
+                @else
+                    <div class="w-56 flex justify-between {{ $netCashFlow >= 0 ? 'text-success-600 dark:text-success-400' : 'text-danger-600 dark:text-danger-400' }}">
+                        <span class="opacity-60">Rp</span>
+                        <span>
+                            {{ $netCashFlow < 0 ? '(' : '' }}{{ number_format(abs($netCashFlow), 0, ',', '.') }}{{ $netCashFlow < 0 ? ')' : '' }}
+                        </span>
+                    </div>
+                @endif
             </div>
 
             {{-- ENDING BALANCE --}}

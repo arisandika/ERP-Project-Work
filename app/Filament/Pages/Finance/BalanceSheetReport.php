@@ -6,20 +6,17 @@ use App\Filament\Concerns\BelongsToModule;
 use App\Models\Finance\FinancialRecord;
 use BezhanSalleh\FilamentShield\Traits\HasPageShield;
 use Filament\Forms\Components\DatePicker;
+use Filament\Forms\Components\Select;
 use Filament\Forms\Concerns\InteractsWithForms;
 use Filament\Forms\Contracts\HasForms;
 use Filament\Forms\Form;
 use Filament\Pages\Page;
 use Illuminate\Support\Carbon;
-use Illuminate\Support\Facades\DB;
 
 class BalanceSheetReport extends Page implements HasForms
 {
     use InteractsWithForms;
 
-    /**
-     * Resolusi Konflik Trait untuk Keamanan & Multi-Tenant
-     */
     use HasPageShield, BelongsToModule {
         HasPageShield::canAccess insteadof BelongsToModule;
         HasPageShield::shouldRegisterNavigation insteadof BelongsToModule;
@@ -56,6 +53,7 @@ class BalanceSheetReport extends Page implements HasForms
     public function mount(): void
     {
         $this->form->fill([
+            'period_type' => 'this_month',
             'as_of_date' => Carbon::now()->endOfMonth()->format('Y-m-d'),
         ]);
     }
@@ -64,40 +62,53 @@ class BalanceSheetReport extends Page implements HasForms
     {
         return $form
             ->schema([
+                Select::make('period_type')
+                    ->label('Periode')
+                    ->options([
+                        'custom'         => 'Custom',
+                        'this_month'     => 'Akhir Bulan Ini',
+                        'last_month'     => 'Akhir Bulan Lalu',
+                        'this_quarter'   => 'Akhir Kuartal Ini',
+                        'last_quarter'   => 'Akhir Kuartal Lalu',
+                        'this_year'      => 'Akhir Tahun Ini',
+                        'last_year'      => 'Akhir Tahun Lalu',
+                    ])
+                    ->default('this_month')
+                    ->live()
+                    ->afterStateUpdated(function ($state, Forms\Set $set) {
+                        if ($state === 'custom') return;
+
+                        $date = $this->resolveDateForType($state);
+                        $set('as_of_date', $date->format('Y-m-d'));
+                    })
+                    ->native(false),
+
                 DatePicker::make('as_of_date')
-                    ->label('Per Tanggal')
+                    ->label('Tanggal')
                     ->native(false)
                     ->displayFormat('d M Y')
                     ->live()
                     ->required(),
             ])
             ->statePath('data')
-            ->columns(1);
+            ->columns(2);
     }
 
     protected function getViewData(): array
     {
-        $asOfDateStr = $this->data['as_of_date'] ?? Carbon::now()->endOfMonth()->format('Y-m-d');
-        $asOfDate = Carbon::parse($asOfDateStr)->endOfDay();
+        $asOfDate = $this->resolveDate();
 
-        // REFAKTORISASI: Tidak ada lagi penarikan seluruh data ke memori PHP.
-        // Semua dihitung langsung oleh Database.
         $cashBalance = $this->calculateCashBalance($asOfDate);
-
         $assets = $this->getGroupedAccounts('asset', $asOfDate);
         $liabilities = $this->getGroupedAccounts('liability', $asOfDate);
         $equities = $this->getGroupedAccounts('equity', $asOfDate);
-
         $totalAssetsFromRecords = $this->getTotalByAccountType('asset', $asOfDate);
         $totalLiabilities = $this->getTotalByAccountType('liability', $asOfDate);
         $totalEquityFromRecords = $this->getTotalByAccountType('equity', $asOfDate);
-
         $currentYearStart = $asOfDate->copy()->startOfYear();
         $currentYearProfit = $this->calculateProfit($currentYearStart, $asOfDate);
-
         $totalAssets = $cashBalance + $totalAssetsFromRecords;
         $totalEquity = $totalEquityFromRecords + $currentYearProfit;
-
         $totalLiabilitiesAndEquity = $totalLiabilities + $totalEquity;
         $difference = $totalAssets - $totalLiabilitiesAndEquity;
 
@@ -118,9 +129,26 @@ class BalanceSheetReport extends Page implements HasForms
         ];
     }
 
-    /**
-     * Hitung saldo kas langsung menggunakan Query Builder
-     */
+    private function resolveDate(): Carbon
+    {
+        return Carbon::parse($this->data['as_of_date'] ?? Carbon::now()->endOfMonth())->endOfDay();
+    }
+
+    private function resolveDateForType(string $type): Carbon
+    {
+        $now = Carbon::now();
+
+        return match ($type) {
+            'this_month'   => $now->copy()->endOfMonth(),
+            'last_month'   => $now->copy()->subMonth()->endOfMonth(),
+            'this_quarter' => $now->copy()->endOfQuarter(),
+            'last_quarter' => $now->copy()->subQuarter()->endOfQuarter(),
+            'this_year'    => $now->copy()->endOfYear(),
+            'last_year'    => $now->copy()->subYear()->endOfYear(),
+            default        => Carbon::parse($this->data['as_of_date'] ?? $now->endOfMonth())->endOfDay(),
+        };
+    }
+
     private function calculateCashBalance(Carbon $asOfDate): float
     {
         $cashIn = (float) FinancialRecord::query()
@@ -136,9 +164,6 @@ class BalanceSheetReport extends Page implements HasForms
         return $cashIn - $cashOut;
     }
 
-    /**
-     * Grouping kategori akun menggunakan SQL GROUP BY
-     */
     private function getGroupedAccounts(string $accountType, Carbon $asOfDate): array
     {
         return FinancialRecord::query()
@@ -147,16 +172,13 @@ class BalanceSheetReport extends Page implements HasForms
             ->where('account_type', $accountType)
             ->groupBy('category_name')
             ->get()
-            ->map(fn($item) => [
+            ->map(fn ($item) => [
                 'category' => $item->category_name,
-                'amount' => (float) $item->total_amount,
+                'amount'   => (float) $item->total_amount,
             ])
             ->toArray();
     }
 
-    /**
-     * Hitung total per tipe akun dengan satu query SUM
-     */
     private function getTotalByAccountType(string $accountType, Carbon $asOfDate): float
     {
         return (float) FinancialRecord::query()
@@ -165,12 +187,8 @@ class BalanceSheetReport extends Page implements HasForms
             ->sum('amount');
     }
 
-    /**
-     * Hitung profit menggunakan agregasi SQL terpadu
-     */
     private function calculateProfit(Carbon $startDate, Carbon $endDate): float
     {
-        // Tarik rekap total berdasarkan account_type dalam satu query
         $totals = FinancialRecord::query()
             ->selectRaw('account_type, SUM(amount) as total_amount')
             ->whereBetween('transaction_date', [$startDate, $endDate])

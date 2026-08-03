@@ -47,7 +47,7 @@ class LatestUnpaidPurchaseOrders extends BaseWidget
                 Tables\Columns\TextColumn::make('status')
                     ->label('Status')
                     ->badge()
-                    ->formatStateUsing(fn ($state) => str($state)->title()->toString()),
+                    ->formatStateUsing(fn ($state) => str($state->value ?? $state)->title()->toString()),
 
                 Tables\Columns\TextColumn::make('grand_total')
                     ->label('Outstanding')
@@ -60,7 +60,7 @@ class LatestUnpaidPurchaseOrders extends BaseWidget
                 Tables\Actions\Action::make('view')
                     ->label('Lihat')
                     ->icon('heroicon-m-eye')
-                    ->url(fn ($record) => route('filament.admin.resources.purchase-orders.view', $record)),
+                    ->url(fn ($record) => route('filament.admin.resources.procurement.purchase-orders.edit', $record)),
             ])
             ->emptyStateHeading('Tidak Ada Hutang')
             ->emptyStateDescription('Semua PO sudah lunas.')

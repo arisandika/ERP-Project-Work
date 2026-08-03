@@ -40,10 +40,6 @@ class InventoryStatsOverview extends BaseWidget
             return StockTransaction::whereMonth('transaction_date', now()->month)->count();
         });
 
-        $lowStockCount = Cache::remember('inventory_low_stock_count', now()->addMinutes(15), function () {
-            return ProductStock::where('qty_available', '<=', 10)->count();
-        });
-
         return [
             Stat::make('Capital Investment', 'Rp ' . number_format($stockData->total_valuation / 1000000, 2) . 'M')
                 ->description('Total valuasi aset inventaris')
@@ -69,10 +65,6 @@ class InventoryStatsOverview extends BaseWidget
                 ->color('primary')
                 ->chart([5, 8, 6, 10, 7, 9, $movementsCount]),
 
-            Stat::make('Low Stock Alert', $lowStockCount . ' item')
-                ->description('Stok di bawah batas minimum')
-                ->descriptionIcon('heroicon-m-exclamation-triangle')
-                ->color($lowStockCount > 0 ? 'danger' : 'success'),
         ];
     }
 }

@@ -8,7 +8,7 @@ use Illuminate\Support\Facades\DB;
 
 class CategoryValuationChart extends ChartWidget
 {
-    protected static ?string $heading = 'Valuasi per Kategori';
+    protected static ?string $heading = 'Inventory Valuation by Category';
     protected static ?string $maxHeight = '300px';
     protected static bool $isLazy = true;
 
@@ -29,14 +29,15 @@ class CategoryValuationChart extends ChartWidget
                     'label' => $category->name,
                     'value' => $valuation,
                 ];
-            })->sortByDesc('value')->take(5);
+            })->sortByDesc('value')->take(8);
 
         return [
             'datasets' => [
                 [
                     'label' => 'Valuasi',
                     'data' => $data->pluck('value')->toArray(),
-                    'backgroundColor' => ['#4f46e5', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6'],
+                    'backgroundColor' => ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899', '#06b6d4', '#84cc16'],
+                    'borderWidth' => 0,
                 ],
             ],
             'labels' => $data->pluck('label')->toArray(),
@@ -45,20 +46,14 @@ class CategoryValuationChart extends ChartWidget
 
     protected function getType(): string
     {
-        return 'polarArea';
+        return 'bar';
     }
 
     protected function getOptions(): array
     {
         return [
             'plugins' => [
-                'legend' => [
-                    'position' => 'bottom',
-                    'labels' => [
-                        'usePointStyle' => true,
-                        'padding' => 15,
-                    ],
-                ],
+                'legend' => ['display' => false],
                 'tooltip' => [
                     'callbacks' => [
                         'label' => 'function(ctx) { return "Rp " + ctx.raw.toLocaleString("id-ID"); }',
@@ -66,9 +61,12 @@ class CategoryValuationChart extends ChartWidget
                 ],
             ],
             'scales' => [
-                'r' => [
-                    'grid' => [
-                        'color' => 'rgba(0,0,0,0.05)',
+                'x' => ['grid' => ['display' => false]],
+                'y' => [
+                    'beginAtZero' => true,
+                    'grid' => ['color' => 'rgba(0,0,0,0.05)'],
+                    'ticks' => [
+                        'callback' => 'function(value) { return "Rp " + (value / 1000000).toFixed(0) + "M"; }',
                     ],
                 ],
             ],

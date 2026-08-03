@@ -75,7 +75,7 @@ class PendingRequisitionTable extends BaseWidget
                     ->url(
                         fn (PurchaseRequisition $record)
                             => route(
-                                'filament.admin.resources.purchase-requisitions.view',
+                                'filament.admin.resources.procurement.purchase-requisitions.edit',
                                 $record
                             )
                     )

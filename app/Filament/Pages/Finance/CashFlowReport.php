@@ -6,20 +6,17 @@ use App\Filament\Concerns\BelongsToModule;
 use App\Models\Finance\FinancialRecord;
 use BezhanSalleh\FilamentShield\Traits\HasPageShield;
 use Filament\Forms\Components\DatePicker;
+use Filament\Forms\Components\Select;
 use Filament\Forms\Concerns\InteractsWithForms;
 use Filament\Forms\Contracts\HasForms;
 use Filament\Forms\Form;
 use Filament\Pages\Page;
 use Illuminate\Support\Carbon;
-use Illuminate\Support\Facades\DB;
 
 class CashFlowReport extends Page implements HasForms
 {
     use InteractsWithForms;
 
-    /**
-     * Resolusi Konflik Trait untuk Keamanan & Multi-Tenant
-     */
     use HasPageShield, BelongsToModule {
         HasPageShield::canAccess insteadof BelongsToModule;
         HasPageShield::shouldRegisterNavigation insteadof BelongsToModule;
@@ -55,9 +52,12 @@ class CashFlowReport extends Page implements HasForms
 
     public function mount(): void
     {
+        $now = Carbon::now();
         $this->form->fill([
-            'start_date' => Carbon::now()->startOfMonth()->format('Y-m-d'),
-            'end_date' => Carbon::now()->endOfMonth()->format('Y-m-d'),
+            'period_type' => 'this_month',
+            'start_date' => $now->startOfMonth()->format('Y-m-d'),
+            'end_date' => $now->endOfMonth()->format('Y-m-d'),
+            'compare_mode' => 'none',
         ]);
     }
 
@@ -65,8 +65,30 @@ class CashFlowReport extends Page implements HasForms
     {
         return $form
             ->schema([
+                Select::make('period_type')
+                    ->label('Periode')
+                    ->options([
+                        'custom'       => 'Custom',
+                        'this_month'   => 'Bulan Ini',
+                        'last_month'   => 'Bulan Lalu',
+                        'this_quarter' => 'Kuartal Ini',
+                        'last_quarter' => 'Kuartal Lalu',
+                        'this_year'    => 'Tahun Ini',
+                        'last_year'    => 'Tahun Lalu',
+                    ])
+                    ->default('this_month')
+                    ->live()
+                    ->afterStateUpdated(function ($state, Forms\Set $set) {
+                        if ($state === 'custom') return;
+
+                        $dates = $this->resolveDatesForType($state);
+                        $set('start_date', $dates[0]->format('Y-m-d'));
+                        $set('end_date', $dates[1]->format('Y-m-d'));
+                    })
+                    ->native(false),
+
                 DatePicker::make('start_date')
-                    ->label('Periode Dari')
+                    ->label('Dari Tanggal')
                     ->native(false)
                     ->displayFormat('d M Y')
                     ->live()
@@ -78,54 +100,113 @@ class CashFlowReport extends Page implements HasForms
                     ->displayFormat('d M Y')
                     ->live()
                     ->required(),
+
+                Select::make('compare_mode')
+                    ->label('Bandingkan Dengan')
+                    ->options([
+                        'none'             => 'Tidak Ada Perbandingan',
+                        'previous_period'  => 'Periode Sebelumnya',
+                        'last_year'        => 'Tahun Lalu',
+                    ])
+                    ->default('none')
+                    ->live()
+                    ->native(false),
             ])
             ->statePath('data')
-            ->columns(2);
+            ->columns(4);
     }
 
     protected function getViewData(): array
     {
-        $startDateStr = $this->data['start_date'] ?? Carbon::now()->startOfMonth()->format('Y-m-d');
-        $endDateStr = $this->data['end_date'] ?? Carbon::now()->endOfMonth()->format('Y-m-d');
+        [$startDate, $endDate] = $this->resolveDates();
 
-        $startDate = Carbon::parse($startDateStr)->startOfDay();
-        $endDate = Carbon::parse($endDateStr)->endOfDay();
-
-        // REFAKTORISASI: Perhitungan langsung dilakukan oleh SQL, memori PHP aman.
         $openingBalance = $this->calculateOpeningBalance($startDate);
-
         $operatingDetails = $this->buildCashFlowDetails('operating', $startDate, $endDate);
         $investingDetails = $this->buildCashFlowDetails('investing', $startDate, $endDate);
         $financingDetails = $this->buildCashFlowDetails('financing', $startDate, $endDate);
-
         $totalOperatingCashFlow = $this->calculateNetCashByActivity('operating', $startDate, $endDate);
         $totalInvestingCashFlow = $this->calculateNetCashByActivity('investing', $startDate, $endDate);
         $totalFinancingCashFlow = $this->calculateNetCashByActivity('financing', $startDate, $endDate);
-
         $netCashFlow = $totalOperatingCashFlow + $totalInvestingCashFlow + $totalFinancingCashFlow;
         $endingBalance = $openingBalance + $netCashFlow;
 
+        // Comparison period
+        $compareData = null;
+        $compareMode = $this->data['compare_mode'] ?? 'none';
+        if ($compareMode !== 'none') {
+            [$compStart, $compEnd] = $this->resolveComparisonDates($startDate, $endDate, $compareMode);
+            $compOpeningBalance = $this->calculateOpeningBalance($compStart);
+            $compTotalOperating = $this->calculateNetCashByActivity('operating', $compStart, $compEnd);
+            $compTotalInvesting = $this->calculateNetCashByActivity('investing', $compStart, $compEnd);
+            $compTotalFinancing = $this->calculateNetCashByActivity('financing', $compStart, $compEnd);
+            $compNetCashFlow = $compTotalOperating + $compTotalInvesting + $compTotalFinancing;
+
+            $compareData = [
+                'period'                => $compStart->format('d M Y') . ' - ' . $compEnd->format('d M Y'),
+                'openingBalance'        => $compOpeningBalance,
+                'totalOperatingCashFlow'=> $compTotalOperating,
+                'totalInvestingCashFlow'=> $compTotalInvesting,
+                'totalFinancingCashFlow'=> $compTotalFinancing,
+                'netCashFlow'           => $compNetCashFlow,
+                'endingBalance'         => $compOpeningBalance + $compNetCashFlow,
+            ];
+        }
+
         return [
             'period' => $startDate->format('d M Y') . ' - ' . $endDate->format('d M Y'),
+            'compareData' => $compareData,
 
             'openingBalance' => $openingBalance,
-
             'operatingDetails' => $operatingDetails,
             'investingDetails' => $investingDetails,
             'financingDetails' => $financingDetails,
-
             'totalOperatingCashFlow' => $totalOperatingCashFlow,
             'totalInvestingCashFlow' => $totalInvestingCashFlow,
             'totalFinancingCashFlow' => $totalFinancingCashFlow,
-
             'netCashFlow' => $netCashFlow,
             'endingBalance' => $endingBalance,
         ];
     }
 
-    /**
-     * Menghitung saldo awal kas dengan query builder tunggal
-     */
+    private function resolveDates(): array
+    {
+        return [
+            Carbon::parse($this->data['start_date'] ?? Carbon::now()->startOfMonth())->startOfDay(),
+            Carbon::parse($this->data['end_date'] ?? Carbon::now()->endOfMonth())->endOfDay(),
+        ];
+    }
+
+    private function resolveDatesForType(string $type): array
+    {
+        $now = Carbon::now();
+
+        return match ($type) {
+            'this_month'   => [$now->copy()->startOfMonth(), $now->copy()->endOfMonth()],
+            'last_month'   => [$now->copy()->subMonth()->startOfMonth(), $now->copy()->subMonth()->endOfMonth()],
+            'this_quarter' => [$now->copy()->startOfQuarter(), $now->copy()->endOfQuarter()],
+            'last_quarter' => [$now->copy()->subQuarter()->startOfQuarter(), $now->copy()->subQuarter()->endOfQuarter()],
+            'this_year'    => [$now->copy()->startOfYear(), $now->copy()->endOfYear()],
+            'last_year'    => [$now->copy()->subYear()->startOfYear(), $now->copy()->subYear()->endOfYear()],
+            default        => [
+                Carbon::parse($this->data['start_date'] ?? $now->startOfMonth())->startOfDay(),
+                Carbon::parse($this->data['end_date'] ?? $now->endOfMonth())->endOfDay(),
+            ],
+        };
+    }
+
+    private function resolveComparisonDates(Carbon $start, Carbon $end, string $mode): array
+    {
+        if ($mode === 'last_year') {
+            return [$start->copy()->subYear(), $end->copy()->subYear()];
+        }
+
+        $duration = $start->diffInDays($end);
+        return [
+            $start->copy()->subDays($duration + 1),
+            $end->copy()->subDays($duration + 1),
+        ];
+    }
+
     private function calculateOpeningBalance(Carbon $startDate): float
     {
         $cashIn = (float) FinancialRecord::query()
@@ -141,9 +222,6 @@ class CashFlowReport extends Page implements HasForms
         return $cashIn - $cashOut;
     }
 
-    /**
-     * Membangun detail arus kas menggunakan metode Agregasi Bersyarat (Conditional Aggregation) SQL
-     */
     private function buildCashFlowDetails(string $activityType, Carbon $startDate, Carbon $endDate): array
     {
         return FinancialRecord::query()
@@ -162,17 +240,14 @@ class CashFlowReport extends Page implements HasForms
 
                 return [
                     'category' => $item->category_name,
-                    'cash_in' => $in,
+                    'cash_in'  => $in,
                     'cash_out' => $out,
-                    'net' => $in - $out,
+                    'net'      => $in - $out,
                 ];
             })
             ->toArray();
     }
 
-    /**
-     * Menghitung net kas per aktivitas secara efisien
-     */
     private function calculateNetCashByActivity(string $activityType, Carbon $startDate, Carbon $endDate): float
     {
         $cashIn = (float) FinancialRecord::query()

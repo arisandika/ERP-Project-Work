@@ -21,7 +21,7 @@ class DashboardFinance extends BaseDashboard
 
     protected static ?string $module = 'finance';
 
-    protected static ?string $navigationIcon = 'heroicon-o-chart-bar-square';
+    protected static ?string $navigationIcon = 'heroicon-o-presentation-chart-line';
 
     protected static string $view = 'filament.pages.finance.dashboard-finance';
 
