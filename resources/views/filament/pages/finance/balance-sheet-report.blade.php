@@ -3,7 +3,7 @@
         <div class="w-full md:w-2/3">
             <h2 class="text-lg font-semibold mb-4 flex items-center gap-2 text-gray-800 dark:text-gray-200">
                 <x-heroicon-o-funnel class="w-5 h-5 text-primary-500" />
-                Filter Tanggal Laporan
+                Filter Periode Laporan
             </h2>
 
             {{ $this->form }}

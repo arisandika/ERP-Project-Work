@@ -16,6 +16,10 @@
         </div>
     </div>
 
+    @php
+        $hasComparison = !empty($compareData);
+    @endphp
+
     <div id="print-area" class="bg-white p-8 md:p-12 rounded-xl shadow-sm ring-1 ring-gray-950/5 dark:bg-gray-900 dark:ring-white/10 print:shadow-none print:ring-0 print:p-0">
         <div class="text-center mb-10 pb-6 border-b-2 ring-border-light dark:ring-border-dark">
             <h2 class="text-xl font-bold text-gray-800 dark:text-gray-200 mb-1">
@@ -31,10 +35,23 @@
                 <span class="text-gray-800 dark:text-gray-200">
                     {{ $period }}
                 </span>
+                @if($hasComparison)
+                    <span class="text-gray-400 mx-1">|</span>
+                    Bandingkan: <span class="text-gray-800 dark:text-gray-200">{{ $compareData['period'] }}</span>
+                @endif
             </p>
         </div>
 
         <div class="max-w-4xl mx-auto text-sm md:text-base tabular-nums">
+
+            {{-- Header kolom perbandingan --}}
+            @if($hasComparison)
+                <div class="grid grid-cols-3 gap-4 mb-2 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide">
+                    <div>Kategori</div>
+                    <div class="text-right">{{ $period }}</div>
+                    <div class="text-right">{{ $compareData['period'] }}</div>
+                </div>
+            @endif
 
             {{-- PENDAPATAN --}}
             <div class="mb-8">
@@ -44,15 +61,24 @@
 
                 <div class="space-y-1">
                     @forelse ($revenueDetails as $category => $items)
-                        <div class="flex justify-between py-1.5 px-2 rounded">
+                        <div class="flex justify-between py-1.5 px-2 rounded {{ $hasComparison ? 'grid grid-cols-3 gap-4' : '' }}">
                             <span class="text-gray-700 dark:text-gray-300 pl-4">
                                 {{ $category ?: 'Pendapatan Lain-lain' }}
                             </span>
 
-                            <div class="w-48 flex justify-between font-medium text-gray-900 dark:text-gray-100">
-                                <span class="text-gray-400">Rp</span>
-                                <span>{{ number_format($items->sum('amount'), 0, ',', '.') }}</span>
-                            </div>
+                            @if($hasComparison)
+                                <div class="text-right font-medium text-gray-900 dark:text-gray-100">
+                                    {{ number_format($items->sum('amount'), 0, ',', '.') }}
+                                </div>
+                                <div class="text-right font-medium text-gray-500 dark:text-gray-400">
+                                    {{ number_format($compareData['totalRevenue'] ?? 0, 0, ',', '.') }}
+                                </div>
+                            @else
+                                <div class="w-48 flex justify-between font-medium text-gray-900 dark:text-gray-100">
+                                    <span class="text-gray-400">Rp</span>
+                                    <span>{{ number_format($items->sum('amount'), 0, ',', '.') }}</span>
+                                </div>
+                            @endif
                         </div>
                     @empty
                         <div class="text-gray-400 pl-4 py-1.5 italic">
@@ -61,13 +87,22 @@
                     @endforelse
                 </div>
 
-                <div class="flex justify-between py-2 px-2 mt-3 border-t border-gray-300 dark:border-gray-700 font-bold text-gray-900 dark:text-white bg-gray-50 dark:bg-gray-800/50 rounded-sm">
+                <div class="flex justify-between py-2 px-2 mt-3 border-t border-gray-300 dark:border-gray-700 font-bold text-gray-900 dark:text-white bg-gray-50 dark:bg-gray-800/50 rounded-sm {{ $hasComparison ? 'grid grid-cols-3 gap-4' : '' }}">
                     <span class="uppercase text-xs md:text-sm">Total Pendapatan</span>
 
-                    <div class="w-48 flex justify-between">
-                        <span class="text-gray-400">Rp</span>
-                        <span>{{ number_format($totalRevenue, 0, ',', '.') }}</span>
-                    </div>
+                    @if($hasComparison)
+                        <div class="text-right">
+                            <span class="opacity-60">Rp </span>{{ number_format($totalRevenue, 0, ',', '.') }}
+                        </div>
+                        <div class="text-right text-gray-500">
+                            <span class="opacity-60">Rp </span>{{ number_format($compareData['totalRevenue'] ?? 0, 0, ',', '.') }}
+                        </div>
+                    @else
+                        <div class="w-48 flex justify-between">
+                            <span class="text-gray-400">Rp</span>
+                            <span>{{ number_format($totalRevenue, 0, ',', '.') }}</span>
+                        </div>
+                    @endif
                 </div>
             </div>
 
