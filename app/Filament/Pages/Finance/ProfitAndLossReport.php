@@ -107,16 +107,16 @@ class ProfitAndLossReport extends Page implements HasForms
         $otherIncomeDetails = $this->extractDetails($aggregates, 'other_income');
         $otherExpenseDetails = $this->extractDetails($aggregates, 'other_expense');
 
-        // Menghitung subtotal menggunakan array_sum langsung dari PHP (sangat ringan karena data sudah matang)
-        $totalRevenue = array_sum(array_column($revenueDetails, 'amount'));
-        $totalCogs = array_sum(array_column($cogsDetails, 'amount'));
+        // Menghitung subtotal
+        $totalRevenue = $revenueDetails->flatten(1)->sum('amount');
+        $totalCogs = $cogsDetails->flatten(1)->sum('amount');
         $grossProfit = $totalRevenue - $totalCogs;
 
-        $totalOpex = array_sum(array_column($opexDetails, 'amount'));
+        $totalOpex = $opexDetails->flatten(1)->sum('amount');
         $operatingProfit = $grossProfit - $totalOpex;
 
-        $totalOtherIncome = array_sum(array_column($otherIncomeDetails, 'amount'));
-        $totalOtherExpense = array_sum(array_column($otherExpenseDetails, 'amount'));
+        $totalOtherIncome = $otherIncomeDetails->flatten(1)->sum('amount');
+        $totalOtherExpense = $otherExpenseDetails->flatten(1)->sum('amount');
 
         $profitBeforeTax = $operatingProfit + $totalOtherIncome - $totalOtherExpense;
 
@@ -152,7 +152,7 @@ class ProfitAndLossReport extends Page implements HasForms
     /**
      * Helper untuk memfilter koleksi agregat berdasarkan tipe akun
      */
-    private function extractDetails(Collection $aggregates, string $accountType): array
+    private function extractDetails(Collection $aggregates, string $accountType): Collection
     {
         return $aggregates
             ->where('account_type', $accountType)
@@ -162,7 +162,6 @@ class ProfitAndLossReport extends Page implements HasForms
                     'amount' => (float) $item->total_amount,
                 ];
             })
-            ->values()
-            ->toArray();
+            ->groupBy('category');
     }
 }
