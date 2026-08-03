@@ -277,6 +277,32 @@ class SalesOrderResource extends Resource
                     ->minValue(1)
                     ->live(onBlur: true)
                     ->readOnly(fn(Get $get) => filled($get('../../nx_quotation_id')))
+                    ->helperText(function (Get $get) {
+                        $type = $get('item_type');
+                        $itemId = $get('item_id');
+                        if ($type !== 'product' || !$itemId) return null;
+
+                        $warehouseId = \App\Models\Inventory\Warehouse::where('warehouse_name', 'Gudang Utama')->value('id') ?? 1;
+                        $stock = \App\Models\Inventory\ProductStock::where('product_id', $itemId)
+                            ->where('warehouse_id', $warehouseId)
+                            ->first();
+
+                        if (!$stock) return '⚠️ Stok tidak ditemukan';
+                        $avail = (float) $stock->qty_available;
+                        return "Stok tersedia: {$avail}";
+                    })
+                    ->maxValue(function (Get $get) {
+                        $type = $get('item_type');
+                        $itemId = $get('item_id');
+                        if ($type !== 'product' || !$itemId) return null;
+
+                        $warehouseId = \App\Models\Inventory\Warehouse::where('warehouse_name', 'Gudang Utama')->value('id') ?? 1;
+                        $stock = \App\Models\Inventory\ProductStock::where('product_id', $itemId)
+                            ->where('warehouse_id', $warehouseId)
+                            ->value('qty_available');
+
+                        return $stock ? (int) $stock : null;
+                    })
                     ->afterStateUpdated(function ($state, Set $set, Get $get) {
                         if ($state < 1) $set('qty', 1);
                         self::updateItemTotal($get, $set);

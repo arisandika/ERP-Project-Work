@@ -38,8 +38,18 @@ class EditSalesOrder extends EditRecord
 
         $service = app(SalesOrderService::class);
 
-        // Gunakan Service untuk update order dan items
-        $record = $service->updateOrder($record, $data);
+        try {
+            // Gunakan Service untuk update order dan items
+            $record = $service->updateOrder($record, $data);
+        } catch (\Exception $e) {
+            Notification::make()
+                ->title('Gagal Update Pesanan')
+                ->body($e->getMessage())
+                ->danger()
+                ->persistent()
+                ->send();
+            $this->halt();
+        }
 
         // LOGIKA KETIKA SO DI-CONFIRM
         if ($newStatus === 'confirmed' && $oldStatus !== 'confirmed') {
