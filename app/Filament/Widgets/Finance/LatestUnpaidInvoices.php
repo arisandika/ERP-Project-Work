@@ -1,5 +1,4 @@
 <?php
-
 namespace App\Filament\Widgets\Finance;
 
 use App\Models\Sales\Invoice;
@@ -11,7 +10,7 @@ use Illuminate\Support\Carbon;
 class LatestUnpaidInvoices extends BaseWidget
 {
     protected static ?string $heading = 'Outstanding Receivables';
-    protected static ?int $sort = 3;
+    protected static ?int $sort       = 3;
 
     protected int|string|array $columnSpan = [
         'xl' => 6,
@@ -45,12 +44,12 @@ class LatestUnpaidInvoices extends BaseWidget
                     ->label('Jatuh Tempo')
                     ->date('d M Y')
                     ->badge()
-                    ->icon(fn ($state) => Carbon::parse($state)->isPast()
-                        ? 'heroicon-m-exclamation-triangle'
-                        : 'heroicon-m-clock')
-                    ->color(fn ($state) => Carbon::parse($state)->isPast()
-                        ? 'danger'
-                        : 'warning'),
+                    ->icon(fn($state) => Carbon::parse($state)->isPast()
+                            ? 'heroicon-m-exclamation-triangle'
+                            : 'heroicon-m-clock')
+                    ->color(fn($state) => Carbon::parse($state)->isPast()
+                            ? 'danger'
+                            : 'warning'),
 
                 Tables\Columns\TextColumn::make('remaining_balance')
                     ->label('Outstanding')
@@ -63,7 +62,7 @@ class LatestUnpaidInvoices extends BaseWidget
                 Tables\Actions\Action::make('view')
                     ->label('Lihat')
                     ->icon('heroicon-m-eye')
-                    ->url(fn ($record) => route('filament.admin.resources.invoices.view', $record)),
+                    ->url(fn($record) => route('filament.admin.resources.sales.invoices.view', $record)),
             ])
             ->emptyStateHeading('Tidak Ada Tagihan')
             ->emptyStateDescription('Semua invoice sudah lunas.')

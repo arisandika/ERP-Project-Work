@@ -1,24 +1,22 @@
 <?php
-
 namespace App\Filament\Widgets\Sales;
 
 use App\Models\Sales\Invoice;
 use Filament\Tables;
-use Filament\Tables\Table;
 use Filament\Widgets\TableWidget as BaseWidget;
 use Illuminate\Database\Eloquent\Builder;
 
 class InvoiceReportTable extends BaseWidget
 {
     protected static ?string $heading = 'Invoice Terbaru';
-    protected static ?int $sort = 3;
+    protected static ?int $sort       = 3;
 
     public $filters = [];
 
     protected function getTableQuery(): Builder
     {
         $startDate = $this->filters['start_date'] ?? now()->startOfMonth();
-        $endDate = $this->filters['end_date'] ?? now();
+        $endDate   = $this->filters['end_date'] ?? now();
 
         return Invoice::query()
             ->with('customer')
@@ -50,37 +48,37 @@ class InvoiceReportTable extends BaseWidget
                 ->money('IDR', locale: 'id')
                 ->alignRight()
                 ->weight('bold')
-                ->color(fn ($state) => $state > 0 ? 'success' : 'danger'),
+                ->color(fn($state) => $state > 0 ? 'success' : 'danger'),
 
             Tables\Columns\TextColumn::make('remaining_balance')
                 ->label('Sisa Bayar')
                 ->money('IDR', locale: 'id')
                 ->alignRight()
-                ->color(fn ($state) => $state > 0 ? 'danger' : 'success'),
+                ->color(fn($state) => $state > 0 ? 'danger' : 'success'),
 
             Tables\Columns\TextColumn::make('due_date')
                 ->label('Jatuh Tempo')
                 ->date('d M Y')
                 ->badge()
-                ->icon(fn ($record) => $record->due_date < now() && $record->status !== 'paid'
-                    ? 'heroicon-m-exclamation-triangle'
-                    : 'heroicon-m-clock')
-                ->color(fn ($record) => $record->due_date < now() && $record->status !== 'paid'
-                    ? 'danger'
-                    : 'warning'),
+                ->icon(fn($record) => $record->due_date < now() && $record->status !== 'paid'
+                        ? 'heroicon-m-exclamation-triangle'
+                        : 'heroicon-m-clock')
+                ->color(fn($record) => $record->due_date < now() && $record->status !== 'paid'
+                        ? 'danger'
+                        : 'warning'),
 
             Tables\Columns\TextColumn::make('status')
                 ->label('Status')
                 ->badge()
-                ->color(fn (string $state): string => match ($state) {
-                    'draft' => 'gray',
-                    'sent' => 'info',
-                    'unpaid' => 'danger',
+                ->color(fn(string $state): string => match ($state) {
+                    'draft'   => 'gray',
+                    'sent'    => 'info',
+                    'unpaid'  => 'danger',
                     'partial' => 'warning',
-                    'paid' => 'success',
-                    default => 'gray',
+                    'paid'    => 'success',
+                    default   => 'gray',
                 })
-                ->formatStateUsing(fn (string $state): string => ucwords(str_replace('_', ' ', $state))),
+                ->formatStateUsing(fn(string $state): string => ucwords(str_replace('_', ' ', $state))),
         ];
     }
 
@@ -90,7 +88,7 @@ class InvoiceReportTable extends BaseWidget
             Tables\Actions\Action::make('view')
                 ->label('Lihat')
                 ->icon('heroicon-m-eye')
-                ->url(fn ($record) => route('filament.admin.resources.invoices.view', $record)),
+                ->url(fn($record) => route('filament.admin.resources.sales.invoices.view', $record)),
         ];
     }
 }
