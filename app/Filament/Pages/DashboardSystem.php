@@ -26,9 +26,9 @@ class DashboardSystem extends Dashboard
 
     protected static ?int $navigationSort = -10;
 
-    protected static ?string $navigationLabel = 'Dashboard';
+    protected static ?string $navigationLabel = 'Dashboard System';
 
-    protected static ?string $title = 'System Dashboard';
+    protected static ?string $title = 'Dashboard System';
 
     public static function canAccess(): bool
     {

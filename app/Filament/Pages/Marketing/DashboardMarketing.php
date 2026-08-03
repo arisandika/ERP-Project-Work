@@ -24,7 +24,7 @@ class DashboardMarketing extends Dashboard
 
     protected static ?string $navigationIcon = 'heroicon-o-presentation-chart-line';
 
-    protected static ?string $navigationLabel = 'Dashboard';
+    protected static ?string $navigationLabel = 'Dashboard Marketing';
 
     protected static ?string $title = 'Dashboard Marketing';
 
