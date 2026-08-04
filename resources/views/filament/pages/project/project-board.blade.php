@@ -538,7 +538,7 @@
                     </div>
                 @endif
 
-                <div class="inline-flex min-w-full gap-4 pb-2">
+                <div class="inline-flex min-w-full gap-4 pt-8 pb-2">
                     @foreach ($this->ticketStatuses as $status)
                         <div
                             wire:key="status-column-{{ $status->id }}"

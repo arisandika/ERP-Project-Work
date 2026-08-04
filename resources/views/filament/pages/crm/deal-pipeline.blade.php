@@ -236,7 +236,7 @@
                 </div>
             @endif
 
-            <div class="inline-flex min-w-full gap-4 pb-2">
+            <div class="inline-flex min-w-full gap-4 pt-8 pb-2">
                 @foreach ($this->dealStages as $stage)
                     {{--
                         OPTIMASI: Semua nilai agregat ($stage->deals_count, $stage->deals_total_value)
