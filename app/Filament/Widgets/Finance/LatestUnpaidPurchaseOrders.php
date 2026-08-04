@@ -14,7 +14,7 @@ class LatestUnpaidPurchaseOrders extends BaseWidget
     protected static ?int $sort = 5;
 
     protected int|string|array $columnSpan = [
-        'xl' => 6,
+        'xl' => 12,
     ];
 
     public function table(Table $table): Table

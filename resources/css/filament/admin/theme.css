@@ -354,3 +354,7 @@ select.grow.cursor-pointer {
     font-size: 13px;
     padding: 2px 4px;
 }
+
+.grid.flex-1.auto-cols-fr.gap-y-8 {
+    gap: 0rem !important;
+}

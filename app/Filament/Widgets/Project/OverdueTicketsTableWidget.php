@@ -8,11 +8,14 @@ use Filament\Widgets\TableWidget as BaseWidget;
 
 class OverdueTicketsTableWidget extends BaseWidget
 {
-    protected static ?string $heading = 'Ticket Terlambat — Perlu Tindak Lanjut';
+    protected static ?string $heading = 'Ticket Terlambat';
 
-    protected static ?int $sort = 5;
+    protected static ?int $sort = 6;
 
-    protected int|string|array $columnSpan = 'full';
+    protected int|string|array $columnSpan = [
+        'default' => 1,
+        'xl'      => 12,
+    ];
 
     public function table(Table $table): Table
     {
@@ -20,8 +23,9 @@ class OverdueTicketsTableWidget extends BaseWidget
             ->query(
                 Ticket::query()
                     ->whereDate('due_date', '<', now())
-                    ->whereHas('status', fn($q) => $q->where('is_completed', false))
+                    ->whereHas('status', fn($q) => $q->where('name', '!=', 'Done'))
                     ->orderBy('due_date')
+                    ->limit(10)
             )
             ->columns([
                 Tables\Columns\TextColumn::make('uuid')
@@ -42,39 +46,27 @@ class OverdueTicketsTableWidget extends BaseWidget
                     ->badge()
                     ->color('warning'),
 
-                Tables\Columns\TextColumn::make('priority.name')
-                    ->label('Prioritas')
+                Tables\Columns\TextColumn::make('assignees.full_name')
+                    ->label('Ditugaskan')
                     ->badge()
-                    ->color(fn($state) => match ($state) {
-                        'High'   => 'danger',
-                        'Medium' => 'warning',
-                        default  => 'gray',
-                    }),
+                    ->color('danger')
+                    ->listWithLineBreaks()
+                    ->placeholder('Belum ditugaskan'),
 
                 Tables\Columns\TextColumn::make('due_date')
-                    ->label('Jatuh Tempo')
+                    ->label('Tenggat')
                     ->dateTime('d M Y')
+                    ->badge()
                     ->color('danger'),
 
                 Tables\Columns\TextColumn::make('remaining_days')
                     ->label('Keterlambatan')
-                    ->getStateUsing(fn(Ticket $record) => abs($record->remaining_days) . ' Hari')
+                    ->getStateUsing(fn(Ticket $record) => abs($record->remaining_days) . ' hari')
                     ->badge()
                     ->color('danger'),
-
-                Tables\Columns\TextColumn::make('assignees.full_name')
-                    ->label('Ditugaskan')
-                    ->badge()
-                    ->listWithLineBreaks()
-                    ->placeholder('Belum Ditugaskan'),
             ])
-            ->actions([
-                Tables\Actions\Action::make('view')
-                    ->label('Lihat')
-                    ->icon('heroicon-o-eye')
-                    ->url(fn(Ticket $record) => route('filament.admin.resources.project.tickets.view', $record)),
-            ])
-            ->paginated([5, 10, 25])
-            ->defaultPaginationPageOption(5);
+            ->paginated(false)
+            ->emptyStateHeading('Tidak ada ticket terlambat')
+            ->emptyStateIcon('heroicon-o-check-circle');
     }
 }

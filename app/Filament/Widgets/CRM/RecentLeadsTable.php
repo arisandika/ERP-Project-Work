@@ -12,8 +12,8 @@ class RecentLeadsTable extends BaseWidget
     protected static ?string $heading = 'Leads Terbaru';
     protected static ?int $sort = 3;
     protected int|string|array $columnSpan = [
-        'md' => 12,
-        'xl' => 6,
+        'md' => 1,
+        'xl' => 12,
     ];
 
     public function table(Table $table): Table

@@ -10,7 +10,10 @@ class ReimburseApprovalOverview extends BaseWidget
 {
     protected static ?int $sort = 2;
 
-    protected int|string|array $columnSpan = 'full';
+    protected int|string|array $columnSpan = [
+        'default' => 1,
+        'xl'      => 12,
+    ];
 
     protected function getStats(): array
     {
