@@ -1,5 +1,4 @@
 <?php
-
 namespace App\Filament\Widgets\Inventory;
 
 use App\Models\Inventory\Product;
@@ -7,31 +6,34 @@ use App\Models\Inventory\ProductStock;
 use App\Models\Inventory\StockTransaction;
 use Filament\Widgets\StatsOverviewWidget as BaseWidget;
 use Filament\Widgets\StatsOverviewWidget\Stat;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\DB;
 
 class InventoryStatsOverview extends BaseWidget
 {
     protected static ?int $sort = 1;
 
-    protected int|string|array $columnSpan = 'full';
+    protected int|string|array $columnSpan = [
+        'default' => 1,
+        'xl'      => 12,
+    ];
 
     protected function getStats(): array
     {
         $productTable = (new Product())->getTable();
-        $stockTable = (new ProductStock())->getTable();
+        $stockTable   = (new ProductStock())->getTable();
 
         $stockData = Cache::remember('inventory_stats_overview', now()->addMinutes(15), function () use ($productTable, $stockTable) {
             return ProductStock::select(
                 DB::raw("COALESCE(SUM({$stockTable}.qty_available), 0) as total_available"),
                 DB::raw("COALESCE(SUM({$stockTable}.qty_available * {$productTable}.selling_price), 0) as total_valuation")
             )
-            ->join($productTable, "{$stockTable}.product_id", "=", "{$productTable}.id")
-            ->first();
+                ->join($productTable, "{$stockTable}.product_id", "=", "{$productTable}.id")
+                ->first();
         });
 
         $healthPercentage = Cache::remember('inventory_health_score', now()->addMinutes(15), function () {
-            $totalItems = ProductStock::count();
+            $totalItems    = ProductStock::count();
             $lowStockItems = ProductStock::where('qty_available', '<=', 10)->count();
             return $totalItems > 0 ? round((($totalItems - $lowStockItems) / $totalItems) * 100) : 0;
         });
@@ -41,7 +43,7 @@ class InventoryStatsOverview extends BaseWidget
         });
 
         return [
-            Stat::make('Capital Investment', 'Rp ' . number_format($stockData->total_valuation / 1000000, 2) . 'M')
+            Stat::make('Capital Investment', 'Rp ' . number_format($stockData->total_valuation / 1000000, 2) . 'Juta')
                 ->description('Total valuasi aset inventaris')
                 ->descriptionIcon('heroicon-o-banknotes')
                 ->color('success')

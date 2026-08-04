@@ -8,26 +8,30 @@ class ProjectProgressChartWidget extends ChartWidget
 {
     protected static ?string $heading = 'Progress per Project';
 
-    protected static ?int $sort = 3;
+    protected static ?int $sort = 4;
 
-    protected int|string|array $columnSpan = 2;
+    protected int|string|array $columnSpan = 3;
 
     protected function getData(): array
     {
-        $projects = Project::whereDate('end_date', '>=', now()->subDays(90))
-            ->orWhereNull('end_date')
-            ->limit(10)
+        $projects = Project::query()
+            ->orderByDesc('pinned_date')
+            ->orderByDesc('created_at')
+            ->limit(8)
             ->get();
 
         return [
             'datasets' => [
                 [
                     'label'           => 'Progress (%)',
-                    'data'            => $projects->pluck('progress_percentage')->toArray(),
-                    'backgroundColor' => $projects->map(fn($p) => $p->color ?? '#6B7280')->toArray(),
+                    'data'            => $projects->map(fn($p) => $p->progress_percentage)->toArray(),
+                    'backgroundColor' => $projects->map(
+                        fn($p) => $p->progress_percentage >= 100 ? '#22C55E'
+                            : ($p->progress_percentage >= 50 ? '#3B82F6' : '#F59E0B')
+                    )->toArray(),
                 ],
             ],
-            'labels'   => $projects->pluck('name')->toArray(),
+            'labels'   => $projects->map(fn($p) => $p->name)->toArray(),
         ];
     }
 
@@ -39,11 +43,12 @@ class ProjectProgressChartWidget extends ChartWidget
     protected function getOptions(): array
     {
         return [
-            'scales' => [
-                'y' => [
-                    'min' => 0,
-                    'max' => 100,
-                ],
+            'indexAxis' => 'y',
+            'plugins'   => [
+                'legend' => ['display' => false],
+            ],
+            'scales'    => [
+                'x' => ['beginAtZero' => true, 'max' => 100],
             ],
         ];
     }

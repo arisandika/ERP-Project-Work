@@ -89,7 +89,7 @@ class DashboardSales extends BaseDashboard
     {
         return [
             SalesSummaryStats::class,
-            RevenueChart::class,
+            // RevenueChart::class,
             InvoiceReportTable::class,
         ];
     }

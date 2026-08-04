@@ -13,8 +13,8 @@ class DealPipelineChart extends ChartWidget
     protected static bool $isLazy = true;
 
     protected int|string|array $columnSpan = [
-        'md' => 12,
-        'xl' => 6,
+        'md' => 1,
+        'xl' => 12,
     ];
 
     protected function getData(): array

@@ -11,6 +11,11 @@ class InvoiceReportTable extends BaseWidget
     protected static ?string $heading = 'Invoice Terbaru';
     protected static ?int $sort       = 3;
 
+    protected int|string|array $columnSpan = [
+        'default' => 1,
+        'xl'      => 12,
+    ];
+
     public $filters = [];
 
     protected function getTableQuery(): Builder

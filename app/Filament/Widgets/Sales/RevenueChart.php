@@ -17,7 +17,10 @@ class RevenueChart extends ChartWidget
     protected static ?string $maxHeight = '300px';
     protected static bool $isLazy = true;
 
-    protected int|string|array $columnSpan = 'full';
+    protected int|string|array $columnSpan = [
+        'default' => 1,
+        'xl'      => 12,
+    ];
 
     protected function getData(): array
     {
