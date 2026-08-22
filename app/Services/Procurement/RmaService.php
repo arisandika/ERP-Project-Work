@@ -1,8 +1,7 @@
 <?php
 
-namespace App\Services;
+namespace App\Services\Procurement;
 
-use App\Models\Procurement\RmaRequest;
 use App\Models\Inventory\SerialNumber;
 use App\Models\Inventory\StockTransaction;
 use Illuminate\Support\Facades\DB;

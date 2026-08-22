@@ -6,7 +6,7 @@ use App\Models\User;
 use App\Models\Marketing\PopupBanner;
 use Illuminate\Auth\Access\HandlesAuthorization;
 
-class PopupBannerPolicy
+class WebContentPolicy
 {
     use HandlesAuthorization;
 
