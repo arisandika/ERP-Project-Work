@@ -3,12 +3,15 @@
 use App\Http\Controllers\API\HR\AttendanceController;
 use App\Http\Controllers\Inventory\StockReportController;
 use App\Http\Controllers\Inventory\TransactionReportController;
+use App\Http\Controllers\Sales\DeliveryOrderPdfController;
+use App\Http\Controllers\Sales\DeliveryOrderTrackingController;
+use App\Http\Controllers\Sales\InvoiceVerificationController;
+use App\Livewire\CustomerPortal;
+use App\Livewire\CustomerPortalDashboard;
+use App\Livewire\CustomerPortalReturnCreate;
 use App\Livewire\ExternalDashboard;
 use App\Livewire\ExternalLogin;
 use Illuminate\Support\Facades\Route;
-use App\Http\Controllers\Sales\InvoiceVerificationController;
-use App\Http\Controllers\Sales\DeliveryOrderTrackingController;
-use App\Http\Controllers\Sales\DeliveryOrderPdfController;
 
 // Auth
 Route::middleware(['auth'])->group(function () {
@@ -26,7 +29,6 @@ Route::middleware(['auth'])->group(function () {
     // Delivery Order PDF Print - SALES MODULE
     Route::get('/print/delivery-order/{record}', [DeliveryOrderPdfController::class, 'print'])->name('print.delivery-order');
 });
-
 
 // Invoice Verification Routes - SALES MODULE
 Route::get('/invoice/verify/{number}', [InvoiceVerificationController::class, 'showVerifyForm'])
@@ -46,8 +48,7 @@ Route::get('/invoice/view/{number}', [InvoiceVerificationController::class, 'sho
 Route::get('/invoice/download/{record}', [InvoiceVerificationController::class, 'download'])
     ->name('invoice.download');
 
-
-    // Tracking URL untuk Delivery Order - SALES MODULE
+// Tracking URL untuk Delivery Order - SALES MODULE
 Route::get('/tracking/do/{do_number}', [DeliveryOrderTrackingController::class, 'show'])
     ->where('do_number', '.*')
     ->name('tracking.delivery-order');
@@ -62,3 +63,12 @@ Route::get('external/{token}', ExternalLogin::class)
 
 Route::get('external/{token}/dashboard', ExternalDashboard::class)
     ->name('external.dashboard');
+
+Route::middleware('web')->prefix('customer-portal')->group(function () {
+    Route::get('/', CustomerPortal::class)->name('customer-portal.login');
+
+    Route::middleware('customer.portal')->group(function () {
+        Route::get('/dashboard', CustomerPortalDashboard::class)->name('customer-portal.dashboard');
+        Route::get('/return/create', CustomerPortalReturnCreate::class)->name('customer-portal.return.create');
+    });
+});
