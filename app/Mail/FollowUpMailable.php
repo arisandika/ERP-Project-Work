@@ -1,7 +1,7 @@
 <?php
 // app/Mail/CRM/FollowUpMailable.php
 
-namespace App\Mail\CRM;
+namespace App\Mail;
 
 use App\Models\CRM\Deal;
 use Illuminate\Bus\Queueable;
