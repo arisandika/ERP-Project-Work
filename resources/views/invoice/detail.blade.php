@@ -7,11 +7,11 @@
     <meta name="robots" content="noindex, nofollow">
     <title>Validasi Invoice {{ $invoice->invoice_number }} - {{ config('app.name') }}</title>
 
-    <link rel="icon" type="image/x-icon" href="https://www.nexicon.id/favicon.ico">
+    <link rel="icon" type="image/x-icon" href="{{ asset('favicon.ico') }}">
 
     <!-- Fonts -->
     <link rel="preconnect" href="https://fonts.bunny.net">
-    <link href="https://fonts.bunny.net/css?family=poppins:400,500,600,700&display=swap" rel="stylesheet">
+    <link href="https://fonts.bunny.net/css?family=Plus Jakarta Sans:400,500,600,700&display=swap" rel="stylesheet">
 
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -28,7 +28,7 @@
             theme: {
                 extend: {
                     fontFamily: {
-                        sans: ['Poppins', 'sans-serif'],
+                        sans: ['Plus Jakarta Sans', 'sans-serif'],
                     },
                     colors: {
                         "main-primary": "#1c9cf0",
@@ -56,7 +56,7 @@
 
     <style>
         body {
-            font-family: 'Poppins', sans-serif;
+            font-family: 'Plus Jakarta Sans', sans-serif;
         }
     </style>
 </head>

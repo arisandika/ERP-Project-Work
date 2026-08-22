@@ -1,7 +1,7 @@
 <?php
-
 namespace App\Models\CRM;
 
+use App\Models\AfterSales\ReturnRequest;
 use App\Models\Sales\Quotation;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -26,7 +26,7 @@ class Customer extends Model
         'pic_position',
         'pic_phone',
         'source',
-        'status'
+        'status',
     ];
 
     public function deals(): HasMany
@@ -37,12 +37,17 @@ class Customer extends Model
     public function quotations(): HasManyThrough
     {
         return $this->hasManyThrough(
-            Quotation::class,    // Model tujuan
-            Deal::class,         // Model perantara
-            'nx_customer_id',    // Foreign key di tabel perantara (nx_deals)
-            'nx_deal_id',        // Foreign key di tabel tujuan (nx_quotations)
-            'id',                // Local key di tabel ini (nx_customers)
-            'id'                 // Local key di tabel perantara (nx_deals)
+            Quotation::class, // Model tujuan
+            Deal::class,      // Model perantara
+            'nx_customer_id', // Foreign key di tabel perantara (nx_deals)
+            'nx_deal_id',     // Foreign key di tabel tujuan (nx_quotations)
+            'id',             // Local key di tabel ini (nx_customers)
+            'id'              // Local key di tabel perantara (nx_deals)
         );
+    }
+
+    public function returns(): HasMany
+    {
+        return $this->hasMany(ReturnRequest::class, 'nx_customer_id');
     }
 }

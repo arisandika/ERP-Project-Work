@@ -1,10 +1,9 @@
 <?php
-
 namespace App\Models\AfterSales;
 
-use Illuminate\Database\Eloquent\Model;
-use App\Models\Inventory\SerialNumber;
 use App\Models\Crm\Customer;
+use App\Models\Inventory\SerialNumber;
+use Illuminate\Database\Eloquent\Model;
 
 class ReturnRequest extends Model
 {
@@ -15,10 +14,15 @@ class ReturnRequest extends Model
     protected $fillable = [
         'rma_number',
         'customer_id',
+        'invoice_id',
+        'invoice_item_id',
         'serial_number_id',
+        'product_id',
+        'qty',
         'warranty_type',
         'status',
         'issue_description',
+        'evidence_files',
         'vendor_notes',
         'internal_notes',
         'resolution_type',
@@ -28,29 +32,34 @@ class ReturnRequest extends Model
         'back_from_vendor_date',
         'returned_to_client_date',
         'created_by',
+        'source',
     ];
 
     protected $casts = [
-        'sent_to_vendor_date' => 'datetime',
-        'back_from_vendor_date' => 'datetime',
+        'sent_to_vendor_date'     => 'datetime',
+        'back_from_vendor_date'   => 'datetime',
         'returned_to_client_date' => 'datetime',
+        'evidence_files'          => 'array',
     ];
 
+    public const SOURCE_INTERNAL        = 'internal';
+    public const SOURCE_CUSTOMER_PORTAL = 'customer_portal';
+
     // Ganti Enum dengan Class Constants
-    public const STATUS_RECEIVED = 'received';
-    public const STATUS_SENT_TO_VENDOR = 'sent_to_vendor';
-    public const STATUS_INTERNAL_REPAIR = 'internal_repair';
-    public const STATUS_READY_FOR_RETURN = 'ready_for_return';
+    public const STATUS_RECEIVED           = 'received';
+    public const STATUS_SENT_TO_VENDOR     = 'sent_to_vendor';
+    public const STATUS_INTERNAL_REPAIR    = 'internal_repair';
+    public const STATUS_READY_FOR_RETURN   = 'ready_for_return';
     public const STATUS_RETURNED_TO_CLIENT = 'returned_to_client';
 
     // Helper untuk label status di Filament
     public static function getStatusLabels(): array
     {
         return [
-            self::STATUS_RECEIVED => 'Di Gudang',
-            self::STATUS_SENT_TO_VENDOR => 'Di Vendor',
-            self::STATUS_INTERNAL_REPAIR => 'Proses Internal',
-            self::STATUS_READY_FOR_RETURN => 'Siap Diambil Klien',
+            self::STATUS_RECEIVED           => 'Di Gudang',
+            self::STATUS_SENT_TO_VENDOR     => 'Di Vendor',
+            self::STATUS_INTERNAL_REPAIR    => 'Proses Internal',
+            self::STATUS_READY_FOR_RETURN   => 'Siap Diambil Klien',
             self::STATUS_RETURNED_TO_CLIENT => 'Selesai',
         ];
     }
@@ -65,7 +74,21 @@ class ReturnRequest extends Model
         return $this->belongsTo(Customer::class, 'customer_id');
     }
 
-    // 3. TAMBAHKAN RELASI BARU
+    public function invoice()
+    {
+        return $this->belongsTo(\App\Models\Sales\Invoice::class, 'invoice_id');
+    }
+
+    public function invoiceItem()
+    {
+        return $this->belongsTo(\App\Models\Sales\InvoiceItem::class, 'invoice_item_id');
+    }
+
+    public function product()
+    {
+        return $this->belongsTo(\App\Models\Inventory\Product::class, 'product_id');
+    }
+
     public function newSerialNumber()
     {
         return $this->belongsTo(SerialNumber::class, 'new_serial_number_id');
