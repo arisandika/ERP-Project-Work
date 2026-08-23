@@ -16,6 +16,9 @@ class VisitRecord extends Model
     protected $fillable = [
         'nx_visit_assignment_id',
         'visited_at',
+        'check_in_at',
+        'check_out_at',
+        'duration_minutes',
         'latitude',
         'longitude',
         'location_address',
@@ -28,6 +31,9 @@ class VisitRecord extends Model
 
     protected $casts = [
         'visited_at' => 'datetime',
+        'check_in_at' => 'datetime',
+        'check_out_at' => 'datetime',
+        'duration_minutes' => 'integer',
         'latitude' => 'decimal:7',
         'longitude' => 'decimal:7',
         'next_followup_date' => 'date',
@@ -142,6 +148,37 @@ class VisitRecord extends Model
     }
 
     //----------------------------------------------------------------------
+    // Check-in / Checkout Helpers
+    //----------------------------------------------------------------------
+
+    /**
+     * Apakah record ini sedang dalam status check-in (belum checkout).
+     */
+    public function isCheckedIn(): bool
+    {
+        return !is_null($this->check_in_at) && is_null($this->check_out_at);
+    }
+
+    /**
+     * Apakah record ini sudah selesai (check-out dilakukan).
+     */
+    public function isCheckedOut(): bool
+    {
+        return !is_null($this->check_out_at);
+    }
+
+    /**
+     * Durasi Kunjungan dalam menit (check-in -> check-out).
+     */
+    public function durationMinutes(): ?int
+    {
+        if (!$this->check_in_at || !$this->check_out_at)
+            return null;
+
+        return (int) $this->check_in_at->diffInMinutes($this->check_out_at);
+    }
+
+    //----------------------------------------------------------------------
     // Lifecycle Hooks
     //----------------------------------------------------------------------
 
@@ -166,6 +203,17 @@ class VisitRecord extends Model
 
             if ($assignment && $assignment->status === VisitAssignment::STATUS_PENDING) {
                 $assignment->update(['status' => VisitAssignment::STATUS_IN_PROGRESS]);
+            }
+        });
+
+        // Auto-compute duration_minutes + auto-complete assignment ketika checkout
+        static::updated(function (VisitRecord $record) {
+            if ($record->isCheckedOut() && is_null($record->getOriginal('check_out_at'))) {
+                // Hitung duration jika belum diisi
+                if (is_null($record->duration_minutes)) {
+                    $record->duration_minutes = $record->durationMinutes();
+                    $record->saveQuietly();
+                }
             }
         });
 

@@ -115,6 +115,26 @@ class MyVisitTaskDetailPage extends Page
         return $this->visitAssignment?->visitRecords ?? collect();
     }
 
+    /**
+     * Record kunjungan yang sedang aktif (check-in tapi belum check-out).
+     */
+    public function getActiveVisitRecordProperty(): ?VisitRecord
+    {
+        return $this->visitRecords
+            ->where('check_in_at', '!=', null)
+            ->where('check_out_at', null)
+            ->sortByDesc('check_in_at')
+            ->first();
+    }
+
+    /**
+     * True jika sales sedang dalam check-in (belum check-out) untuk assignment ini.
+     */
+    public function getIsCheckedInProperty(): bool
+    {
+        return $this->activeVisitRecord !== null;
+    }
+
     public function getStatusColorProperty(): string
     {
         return match ($this->visitAssignment?->status) {
