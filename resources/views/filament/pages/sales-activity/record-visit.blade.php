@@ -418,14 +418,18 @@
                     }
                 };
 
-                document.getElementById('openCameraBtn')?.addEventListener('click', openCameraHandler);
+                const openCameraBtn = document.getElementById('openCameraBtn');
+                if (openCameraBtn && !openCameraBtn.dataset.listenerAttached) {
+                    openCameraBtn.dataset.listenerAttached = 'true';
+                    openCameraBtn.addEventListener('click', openCameraHandler);
+                }
 
                 // Auto-open camera in checkout mode so sales can immediately capture photo
                 if (isCheckOutMode) {
                     openCameraHandler();
                 }
 
-                document.getElementById('captureBtn')?.addEventListener('click', () => {
+                const captureHandler = () => {
                     if (!stream) return;
                     canvas.width = video.videoWidth;
                     canvas.height = video.videoHeight;
@@ -441,7 +445,14 @@
                             caption: ''
                         }
                     });
-                });
+                };
+
+                // Prevent duplicate listeners on Livewire re-initialization
+                const captureBtn = document.getElementById('captureBtn');
+                if (captureBtn && !captureBtn.dataset.listenerAttached) {
+                    captureBtn.dataset.listenerAttached = 'true';
+                    captureBtn.addEventListener('click', captureHandler);
+                }
 
                 document.addEventListener('livewire:navigating', () => {
                     if (stream) {
