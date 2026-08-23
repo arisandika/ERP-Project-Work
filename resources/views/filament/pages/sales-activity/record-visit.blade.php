@@ -259,8 +259,8 @@
 
                                 <div class="mt-2">
                                     {{-- BUGFIX: gunakan :disabled (bound attribute) — blade 12 bug {{ }} di attribut komponen --}}
-                                    <x-filament::button type="button" id="fetchLocationBtn" color="primary" class="w-full" :disabled="$this->isCheckOutMode()">
-                                        {{ $this->isCheckInMode() ? 'Kunci Titik Lokasi GPS' : 'Lokasi Terkunci' }}
+                                    <x-filament::button type="button" id="fetchLocationBtn" color="primary" class="w-full">
+                                        {{ $this->isCheckInMode() ? 'Kunci Titik Lokasi GPS' : 'Update Titik Lokasi' }}
                                     </x-filament::button>
                                 </div>
                             </div>
@@ -367,7 +367,7 @@
                     if (accuracyBadge) accuracyBadge.innerText = 'GPS Terkunci';
                 }
 
-                if (fetchLocationBtn && !isCheckOutMode) {
+                if (fetchLocationBtn) {
                     fetchLocationBtn.onclick = () => {
                         if (fetchLocationBtn.disabled) return;
                         setButtonState(fetchLocationBtn, 'Mencari...', true);
