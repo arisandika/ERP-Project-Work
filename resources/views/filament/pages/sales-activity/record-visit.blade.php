@@ -79,7 +79,7 @@
                                 <div class="p-4 text-center border rounded-2xl border-border-light bg-main-light dark:bg-accent-dark dark:border-border-dark" id="camera-box">
 
                                     <!-- INITIAL / EMPTY STATE -->
-                                    <div id="camera-placeholder" class="flex flex-col items-center justify-center h-[280px] gap-2 py-4 {{ $this->isCheckOutMode() ? 'hidden' : '' }}">
+                                    <div id="camera-placeholder" class="flex flex-col items-center justify-center h-[280px] gap-2 py-4">
                                         <button type="button" id="openCameraBtn">
                                             <div class="flex items-center justify-center rounded-full bg-secondary-light hover:bg-accent-light dark:bg-secondary-dark w-14 h-14 dark:hover:bg-main-dark ring-1 ring-border-light dark:ring-border-dark">
                                                 <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="size-6">
@@ -407,7 +407,7 @@
                 const canvas = document.getElementById('camera-canvas');
                 let stream = null;
 
-                document.getElementById('openCameraBtn')?.addEventListener('click', async () => {
+                const openCameraHandler = async () => {
                     try {
                         stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
                         video.srcObject = stream;
@@ -416,7 +416,14 @@
                     } catch (err) {
                         alert('Gagal buka kamera: ' + err.message);
                     }
-                });
+                };
+
+                document.getElementById('openCameraBtn')?.addEventListener('click', openCameraHandler);
+
+                // Auto-open camera in checkout mode so sales can immediately capture photo
+                if (isCheckOutMode) {
+                    openCameraHandler();
+                }
 
                 document.getElementById('captureBtn')?.addEventListener('click', () => {
                     if (!stream) return;
