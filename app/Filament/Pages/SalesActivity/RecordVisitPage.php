@@ -10,7 +10,6 @@ use App\Models\SalesActivity\VisitRecord;
 use Filament\Actions\Action;
 use Filament\Notifications\Notification;
 use Filament\Pages\Page;
-use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Livewire\Attributes\On;
 
@@ -171,7 +170,7 @@ class RecordVisitPage extends Page
      */
     public function reloadAfterCheckIn(): void
     {
-        $this->redirect(Request::fullUrl());
+        $this->redirect(request()->fullUrl());
     }
 
     /**
