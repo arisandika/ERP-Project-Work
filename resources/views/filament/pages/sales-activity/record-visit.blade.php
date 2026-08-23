@@ -49,6 +49,28 @@
                     {{-- KOLOM KIRI (7 Kolom): KAMERA & FORM INPUT --}}
                     <div class="space-y-6 md:col-span-7">
 
+                        {{-- 0. TUJUAN KUNJUNGAN (check-in mode) --}}
+                        @if($this->isCheckInMode())
+                            <div class="p-6 fi-section rounded-2xl ring-1">
+                                <h2 class="mb-4 text-base font-medium">Tujuan Kunjungan</h2>
+
+                                <div class="space-y-5">
+                                    <div class="flex flex-col gap-2">
+                                        <label class="text-sm font-semibold">Pilih Tujuan<span class="text-red-500">*</span></label>
+                                        <select wire:model="visit_purpose" class="w-full px-3 py-3 text-sm border rounded-2xl border-border-light bg-main-light dark:bg-accent-dark dark:border-border-dark focus:border-blue-600 focus:ring-1 focus:ring-blue-600">
+                                            <option value="">— Pilih tujuan kunjungan —</option>
+                                            @foreach($this->getPurposeOptions() as $key => $label)
+                                                <option value="{{ $key }}" {{ ($this->visit_purpose == $key) ? 'selected' : '' }}>{{ $label }}</option>
+                                            @endforeach
+                                        </select>
+                                        @error('visit_purpose')
+                                            <p class="text-xs text-red-500 mt-1">{{ $message }}</p>
+                                        @enderror
+                                    </div>
+                                </div>
+                            </div>
+                        @endif
+
                         {{-- 1. BAGIAN KAMERA --}}
                         <div class="p-6 fi-section rounded-2xl ring-1">
                             <h2 class="mb-4 text-base font-medium">Pengambilan Bukti Foto <span class="text-xs text-gray-500">(Min. 1)</span></h2>
@@ -140,6 +162,12 @@
                                         <label class="text-sm font-semibold">Catatan Follow Up</label>
                                         <input type="text" wire:model="followup_notes" placeholder="Contoh: Bawa brosur..." class="w-full px-3 py-3 text-sm border rounded-2xl border-border-light bg-main-light dark:bg-accent-dark dark:border-border-dark focus:border-blue-600 focus:ring-1 focus:ring-blue-600" {{ $this->isCheckInMode() ? 'disabled' : '' }}>
                                     </div>
+                                </div>
+
+                                {{-- Internal Note (catatan khusus untuk manajemen) --}}
+                                <div class="flex flex-col gap-2">
+                                    <label class="text-sm font-semibold">Internal Note</label>
+                                    <textarea wire:model="internal_note" rows="3" class="w-full px-3 py-3 text-sm border rounded-2xl border-border-light bg-main-light dark:bg-accent-dark dark:border-border-dark focus:border-blue-600 focus:ring-1 focus:ring-blue-600" placeholder="Catatan khusus untuk manajemen..." {{ $this->isCheckInMode() ? 'disabled' : '' }}></textarea>
                                 </div>
                             </div>
                         </div>

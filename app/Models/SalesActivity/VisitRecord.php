@@ -2,6 +2,7 @@
 
 namespace App\Models\SalesActivity;
 
+use App\Models\Project\Project;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -22,10 +23,13 @@ class VisitRecord extends Model
         'latitude',
         'longitude',
         'location_address',
+        'visit_purpose',
+        'nx_project_id',
         'description',
         'visit_result',
         'next_followup_date',
         'followup_notes',
+        'internal_note',
         'visit_order',
     ];
 
@@ -85,6 +89,11 @@ class VisitRecord extends Model
     public function assignment(): BelongsTo
     {
         return $this->belongsTo(VisitAssignment::class, 'nx_visit_assignment_id');
+    }
+
+    public function project(): BelongsTo
+    {
+        return $this->belongsTo(Project::class, 'nx_project_id');
     }
 
     public function photos(): HasMany

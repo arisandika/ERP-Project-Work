@@ -178,6 +178,28 @@
                             </span>
                         </div>
 
+                        @if($this->is_checked_in && $this->active_visit_record)
+                            @php
+                                $durationMin = $this->active_visit_record->durationMinutes();
+                            @endphp
+                            <div class="p-4 border border-orange-200 bg-orange-50 dark:bg-orange-900/20 dark:border-orange-800/50 rounded-xl">
+                                <div class="flex items-center justify-between">
+                                    <div class="flex items-center gap-2">
+                                        <x-heroicon-o-clock-progress class="w-5 h-5 text-orange-600 dark:text-orange-400 animate-pulse" />
+                                        <span class="font-semibold text-orange-800 dark:text-orange-200">Sedang dalam kunjungan</span>
+                                    </div>
+                                    @if($durationMin)
+                                        <span class="text-xs font-medium text-orange-700 dark:text-orange-300">
+                                            {{ floor($durationMin / 60) }}j {{ $durationMin % 60 }}m
+                                        </span>
+                                    @endif
+                                </div>
+                                <p class="mt-1 text-xs text-orange-700 dark:text-orange-300">
+                                    Check-in: {{ \Carbon\Carbon::parse($this->active_visit_record->check_in_at)->format('H:i') }}
+                                </p>
+                            </div>
+                        @endif
+
                         <div class="mt-4 space-y-4">
                             <div class="p-4 border border-border-light bg-main-light dark:bg-accent-dark dark:border-border-dark rounded-xl">
                                 <span class="block mb-1 text-xs text-gray-500 dark:text-gray-400">Tujuan Kunjungan</span>

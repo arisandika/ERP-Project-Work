@@ -3,6 +3,7 @@
 namespace App\Filament\Pages\SalesActivity;
 
 use App\Models\HR\Employee;
+use App\Models\Project\Project;
 use App\Models\SalesActivity\VisitAssignment;
 use App\Models\SalesActivity\VisitPhoto;
 use App\Models\SalesActivity\VisitRecord;
@@ -27,6 +28,9 @@ class RecordVisitPage extends Page
 
     // Form fields
     public string $description = '';
+    public string $visit_purpose = '';
+    public ?int $nx_project_id = null;
+    public string $internal_note = '';
     public string $visit_result = 'pending';
     public ?string $next_followup_date = null;
     public string $followup_notes = '';
@@ -69,6 +73,9 @@ class RecordVisitPage extends Page
 
         if ($this->visitRecord) {
             $this->description = $this->visitRecord->description ?? '';
+            $this->visit_purpose = $this->visitRecord->visit_purpose ?? '';
+            $this->nx_project_id = $this->visitRecord->nx_project_id;
+            $this->internal_note = $this->visitRecord->internal_note ?? '';
             $this->visit_result = $this->visitRecord->visit_result ?? 'pending';
             $this->next_followup_date = $this->visitRecord->next_followup_date ?? null;
             $this->followup_notes = $this->visitRecord->followup_notes ?? '';
@@ -146,6 +153,8 @@ class RecordVisitPage extends Page
             'latitude' => $this->latitude,
             'longitude' => $this->longitude,
             'location_address' => $this->location_address ?: null,
+            'visit_purpose' => $this->visit_purpose ?: null,
+            'nx_project_id' => $this->nx_project_id,
             'description' => null,
             'visit_result' => 'pending',
             'visit_order' => $nextOrder,
@@ -194,6 +203,9 @@ class RecordVisitPage extends Page
                 'latitude' => $this->latitude,
                 'longitude' => $this->longitude,
                 'location_address' => $this->location_address ?: null,
+                'visit_purpose' => $this->visit_purpose ?: null,
+                'nx_project_id' => $this->nx_project_id,
+                'internal_note' => $this->internal_note ?: null,
                 'description' => $this->description,
                 'visit_result' => $this->visit_result,
                 'next_followup_date' => $this->next_followup_date ?: null,
@@ -350,6 +362,9 @@ class RecordVisitPage extends Page
                 'latitude' => $this->latitude,
                 'longitude' => $this->longitude,
                 'location_address' => $this->location_address ?: null,
+                'visit_purpose' => $this->visit_purpose ?: null,
+                'nx_project_id' => $this->nx_project_id,
+                'internal_note' => $this->internal_note ?: null,
                 'description' => $this->description,
                 'visit_result' => $this->visit_result,
                 'next_followup_date' => $this->next_followup_date ?: null,
@@ -421,6 +436,33 @@ class RecordVisitPage extends Page
     public function getPhotoTypeOptions(): array
     {
         return VisitPhoto::typeOptions();
+    }
+
+    /**
+     * Contextual visit-purpose dropdown.
+     * Statik: "Menawarkan Produk/Prospek Baru"
+     * Dinamis: aktif project yang login user jadi member — "Sedang menangani Project X"
+     */
+    public function getPurposeOptions(): array
+    {
+        $employeeId = Employee::where('user_id', auth()->id())->value('id');
+
+        $projects = Project::whereHas('members', function ($q) use ($employeeId) {
+            $q->where('employee_id', $employeeId);
+        })
+            ->whereNull('end_date')
+            ->orWhere('end_date', '>=', now()->toDateString())
+            ->get();
+
+        $options = [
+            'new_prospect' => 'Menawarkan Produk/Prospek Baru',
+        ];
+
+        foreach ($projects as $project) {
+            $options['project_' . $project->id] = 'Sedang menangani ' . $project->name;
+        }
+
+        return $options;
     }
 
     public function getClientName(): string

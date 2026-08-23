@@ -54,8 +54,8 @@
                                 @endif
 
                                 <div class="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300">
-                                    Hasil Kunjungan: 
-                                    <span class="px-2 py-0.5 text-sm font-medium rounded-md border 
+                                    Hasil Kunjungan:
+                                    <span class="px-2 py-0.5 text-sm font-medium rounded-md border
                                         {{ match($record->visit_result) {
                                             'interested', 'deal_progressed' => 'text-emerald-600 bg-emerald-50 border-emerald-200 dark:bg-emerald-900/20 dark:text-emerald-400 dark:border-emerald-800',
                                             'not_interested', 'failed' => 'text-red-600 bg-red-50 border-red-200 dark:bg-red-900/20 dark:text-red-400 dark:border-red-800',
@@ -65,6 +65,61 @@
                                         {{ \App\Models\SalesActivity\VisitRecord::resultOptions()[$record->visit_result] ?? $record->visit_result }}
                                     </span>
                                 </div>
+
+                                {{-- Check-in / Check-out / Duration --}}
+                                @if($record->check_in_at || $record->check_out_at)
+                                    <div class="flex flex-wrap gap-4 mt-2 text-xs">
+                                        @if($record->check_in_at)
+                                            <div class="flex items-center gap-1 text-gray-600 dark:text-gray-400">
+                                                <x-heroicon-o-clock class="w-3.5 h-3.5" />
+                                                <span>Check-in:</span>
+                                                <span class="font-medium text-gray-800 dark:text-gray-300">{{ \Carbon\Carbon::parse($record->check_in_at)->format('H:i') }}</span>
+                                            </div>
+                                        @endif
+                                        @if($record->check_out_at)
+                                            <div class="flex items-center gap-1 text-gray-600 dark:text-gray-400">
+                                                <x-heroicon-o-clock class="w-3.5 h-3.5" />
+                                                <span>Check-out:</span>
+                                                <span class="font-medium text-gray-800 dark:text-gray-300">{{ \Carbon\Carbon::parse($record->check_out_at)->format('H:i') }}</span>
+                                            </div>
+                                        @endif
+                                        @if($record->duration_minutes)
+                                            <div class="flex items-center gap-1 text-gray-600 dark:text-gray-400">
+                                                <x-heroicon-o-stopwatch class="w-3.5 h-3.5" />
+                                                <span>Durasi:</span>
+                                                <span class="font-medium text-gray-800 dark:text-gray-300">{{ $record->duration_minutes }} menit</span>
+                                            </div>
+                                        @endif
+                                    </div>
+                                @endif
+
+                                {{-- Visit purpose (contextual) --}}
+                                @if($record->visit_purpose && $record->visit_purpose !== 'new_prospect')
+                                    <div class="flex items-center gap-1 mt-1 text-xs">
+                                        <x-heroicon-o-flag class="w-3.5 h-3.5 text-blue-500" />
+                                        <span class="text-gray-600 dark:text-gray-400">
+                                            Tujuan:
+                                            @if($record->project)
+                                                Sedang menangani {{ $record->project->name }}
+                                            @else
+                                                {{ $record->visit_purpose }}
+                                            @endif
+                                        </span>
+                                    </div>
+                                @elseif($record->visit_purpose === 'new_prospect')
+                                    <div class="flex items-center gap-1 mt-1 text-xs text-gray-600 dark:text-gray-400">
+                                        <x-heroicon-o-flag class="w-3.5 h-3.5 text-blue-500" />
+                                        <span>Tujuan: Menawarkan Produk/Prospek Baru</span>
+                                    </div>
+                                @endif
+
+                                {{-- Internal note --}}
+                                @if($record->internal_note)
+                                    <div class="p-2 mt-2 text-xs border-l-2 border-purple-500 bg-purple-50 dark:bg-purple-900/20 text-purple-800 dark:text-purple-300">
+                                        <span class="font-semibold">Internal Note:</span>
+                                        {{ $record->internal_note }}
+                                    </div>
+                                @endif
                             </div>
 
                             @if($record->description)
