@@ -13,10 +13,6 @@ return new class extends Migration {
             $table->integer('duration_minutes')->nullable()->after('check_out_at');
             // Make description nullable so check-in can be saved with an empty description
             $table->text('description')->nullable()->change();
-            // Contextual tracking fields
-            $table->string('visit_purpose', 100)->nullable()->after('location_address');
-            $table->unsignedBigInteger('nx_project_id')->nullable()->after('visit_purpose');
-            $table->text('internal_note')->nullable()->after('followup_notes');
         });
     }
 
