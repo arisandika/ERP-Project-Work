@@ -83,7 +83,7 @@
                                                 <span class="font-medium text-gray-800 dark:text-gray-300">{{ \Carbon\Carbon::parse($record->check_out_at)->format('H:i') }}</span>
                                             </div>
                                         @endif
-                                        @if($record->duration_minutes)
+                                        @if(!is_null($record->duration_minutes))
                                             <div class="flex items-center gap-1 text-gray-600 dark:text-gray-400">
                                                 <x-heroicon-o-clock class="w-3.5 h-3.5" />
                                                 <span>Durasi:</span>
