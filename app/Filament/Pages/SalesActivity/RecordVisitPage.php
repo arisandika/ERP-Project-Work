@@ -29,7 +29,6 @@ class RecordVisitPage extends Page
     public string $description = '';
     public string $visit_purpose = '';
     public ?int $nx_project_id = null;
-    public string $internal_note = '';
     public string $visit_result = 'pending';
     public ?string $next_followup_date = null;
     public string $followup_notes = '';
@@ -74,7 +73,6 @@ class RecordVisitPage extends Page
             $this->description = $this->visitRecord->description ?? '';
             $this->visit_purpose = $this->visitRecord->visit_purpose ?? '';
             $this->nx_project_id = $this->visitRecord->nx_project_id;
-            $this->internal_note = $this->visitRecord->internal_note ?? '';
             $this->visit_result = $this->visitRecord->visit_result ?? 'pending';
             $this->next_followup_date = $this->visitRecord->next_followup_date ?? null;
             $this->followup_notes = $this->visitRecord->followup_notes ?? '';
@@ -204,7 +202,6 @@ class RecordVisitPage extends Page
                 'location_address' => $this->location_address ?: null,
                 'visit_purpose' => $this->visit_purpose ?: null,
                 'nx_project_id' => $this->nx_project_id,
-                'internal_note' => $this->internal_note ?: null,
                 'description' => $this->description,
                 'visit_result' => $this->visit_result,
                 'next_followup_date' => $this->next_followup_date ?: null,
@@ -363,7 +360,6 @@ class RecordVisitPage extends Page
                 'location_address' => $this->location_address ?: null,
                 'visit_purpose' => $this->visit_purpose ?: null,
                 'nx_project_id' => $this->nx_project_id,
-                'internal_note' => $this->internal_note ?: null,
                 'description' => $this->description,
                 'visit_result' => $this->visit_result,
                 'next_followup_date' => $this->next_followup_date ?: null,

@@ -113,13 +113,6 @@
                                     </div>
                                 @endif
 
-                                {{-- Internal note --}}
-                                @if($record->internal_note)
-                                    <div class="p-2 mt-2 text-xs border-l-2 border-purple-500 bg-purple-50 dark:bg-purple-900/20 text-purple-800 dark:text-purple-300">
-                                        <span class="font-semibold">Internal Note:</span>
-                                        {{ $record->internal_note }}
-                                    </div>
-                                @endif
                             </div>
 
                             @if($record->description)

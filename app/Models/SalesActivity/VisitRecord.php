@@ -29,7 +29,6 @@ class VisitRecord extends Model
         'visit_result',
         'next_followup_date',
         'followup_notes',
-        'internal_note',
         'visit_order',
     ];
 

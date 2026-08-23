@@ -164,11 +164,6 @@
                                     </div>
                                 </div>
 
-                                {{-- Internal Note (catatan khusus untuk manajemen) --}}
-                                <div class="flex flex-col gap-2">
-                                    <label class="text-sm font-semibold">Internal Note</label>
-                                    <textarea wire:model="internal_note" rows="3" class="w-full px-3 py-3 text-sm border rounded-2xl border-border-light bg-main-light dark:bg-accent-dark dark:border-border-dark focus:border-blue-600 focus:ring-1 focus:ring-blue-600" placeholder="Catatan khusus untuk manajemen..." {{ $this->isCheckInMode() ? 'disabled' : '' }}></textarea>
-                                </div>
                             </div>
                         </div>
 
