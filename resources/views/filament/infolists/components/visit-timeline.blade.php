@@ -85,7 +85,7 @@
                                         @endif
                                         @if($record->duration_minutes)
                                             <div class="flex items-center gap-1 text-gray-600 dark:text-gray-400">
-                                                <x-heroicon-o-stopwatch class="w-3.5 h-3.5" />
+                                                <x-heroicon-o-clock class="w-3.5 h-3.5" />
                                                 <span>Durasi:</span>
                                                 <span class="font-medium text-gray-800 dark:text-gray-300">{{ $record->duration_minutes }} menit</span>
                                             </div>

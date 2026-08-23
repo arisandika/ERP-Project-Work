@@ -185,7 +185,7 @@
                             <div class="p-4 border border-orange-200 bg-orange-50 dark:bg-orange-900/20 dark:border-orange-800/50 rounded-xl">
                                 <div class="flex items-center justify-between">
                                     <div class="flex items-center gap-2">
-                                        <x-heroicon-o-clock-progress class="w-5 h-5 text-orange-600 dark:text-orange-400 animate-pulse" />
+                                        <x-heroicon-o-clock class="w-5 h-5 text-orange-600 dark:text-orange-400" />
                                         <span class="font-semibold text-orange-800 dark:text-orange-200">Sedang dalam kunjungan</span>
                                     </div>
                                     @if($durationMin)
