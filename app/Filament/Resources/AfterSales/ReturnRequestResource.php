@@ -98,7 +98,7 @@ class ReturnRequestResource extends Resource
                             ->label('Detail Kerusakan (Keluhan)')
                             ->required()
                             ->columnSpanFull(),
-                    ])->columns(2),
+                    ])->columns(['default' => 1, 'md' => 2]),
             ]);
     }
 

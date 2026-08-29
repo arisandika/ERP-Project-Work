@@ -154,7 +154,7 @@ class PurchaseOrderResource extends Resource
                                 ->label('Estimasi Tanggal Tiba')
                                 ->columnSpan(1),
 
-                        ])->columns(3),
+                        ])->columns(['default' => 1, 'md' => 3]),
 
                     Forms\Components\Section::make('Daftar Barang (Order Items)')
                         ->disabled(fn (?PurchaseOrder $record) => $record !== null && $record->status !== PurchaseOrderStatus::DRAFT)
@@ -215,7 +215,7 @@ class PurchaseOrderResource extends Resource
                                         ->disabled()
                                         ->dehydrated(),
                                 ])
-                                ->columns(4)
+                                ->columns(['default' => 1, 'md' => 4])
                                 ->addActionLabel('Tambah Barang')
                                 ->live(debounce: 500)
                                 ->afterStateUpdated(function (Forms\Get $get, Forms\Set $set) {
@@ -285,7 +285,7 @@ class PurchaseOrderResource extends Resource
                         ])
                 ])->columnSpan(['lg' => 1]),
             ])
-            ->columns(3);
+            ->columns(['default' => 1, 'md' => 3]);
     }
 
     public static function table(Table $table): Table

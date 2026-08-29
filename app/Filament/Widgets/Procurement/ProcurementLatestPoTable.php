@@ -11,7 +11,10 @@ use Filament\Widgets\TableWidget as BaseWidget;
 class ProcurementLatestPoTable extends BaseWidget
 {
     protected static ?int $sort = 5;
-    protected int|string|array $columnSpan = 12;
+    protected int|string|array $columnSpan = [
+        'default' => 'full',
+        'md' => 12,
+    ];
     protected static ?string $heading = 'Purchase Order Terbaru';
 
     public function table(Table $table): Table

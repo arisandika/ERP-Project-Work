@@ -18,7 +18,10 @@ class ProcurementStatsOverview extends BaseWidget
 
     protected static ?int $sort = 1;
 
-    protected int|string|array $columnSpan = 12;
+    protected int|string|array $columnSpan = [
+        'default' => 'full',
+        'md' => 12,
+    ];
 
     protected function getStats(): array
     {

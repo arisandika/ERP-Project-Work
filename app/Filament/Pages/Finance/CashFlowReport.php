@@ -113,7 +113,7 @@ class CashFlowReport extends Page implements HasForms
                     ->native(false),
             ])
             ->statePath('data')
-            ->columns(4);
+            ->columns(['default' => 1, 'md' => 4]);
     }
 
     protected function getViewData(): array

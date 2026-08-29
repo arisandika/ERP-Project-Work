@@ -12,6 +12,7 @@ class SlowMovingProducts extends BaseWidget
     protected static ?string $heading = 'Top 10 Slow-Moving / Idle Products';
 
     protected int|string|array $columnSpan = [
+        'default' => 'full',
         'md' => 12,
         'xl' => 6,
     ];

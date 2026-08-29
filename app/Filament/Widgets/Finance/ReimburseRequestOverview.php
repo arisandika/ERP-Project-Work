@@ -16,7 +16,10 @@ class ReimburseRequestOverview extends BaseWidget
 
     protected function getColumns(): int
     {
-        return 4;
+        return [
+            'default' => 1,
+            'md' => 4,
+        ];
     }
 
     public static function canView(): bool

@@ -100,7 +100,7 @@ class SalesReports extends Page implements HasForms
                             ->prefixIcon('heroicon-o-calendar-days')
                             ->live(),
                     ])
-                    ->columns(2),
+                    ->columns(['default' => 1, 'md' => 2]),
             ])
             ->statePath('data');
     }

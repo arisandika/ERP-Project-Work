@@ -161,7 +161,7 @@ class UnitResource extends Resource
         return $infolist
             ->schema([
                 Section::make('Informasi Satuan')
-                    ->columns(2)
+                    ->columns(['default' => 1, 'md' => 2])
                     ->schema([
                         TextEntry::make('name')
                             ->label('Nama Satuan'),
@@ -181,7 +181,7 @@ class UnitResource extends Resource
                             ->state(fn(Unit $unit) => $unit->products()->count()),
                     ]),
                 Section::make('Pengelolaan Data')
-                    ->columns(2)
+                    ->columns(['default' => 1, 'md' => 2])
                     ->schema([
                         TextEntry::make('created_at')
                             ->label('Dibuat Pada')

@@ -38,7 +38,7 @@ class ShiftResource extends Resource
         return $form
             ->schema([
                 Forms\Components\Section::make('Informasi Jam Kerja')
-                    ->columns(2)
+                    ->columns(['default' => 1, 'md' => 2])
                     ->schema([
                         Forms\Components\TextInput::make('name')
                             ->label('Nama Jam Kerja')
@@ -168,7 +168,7 @@ class ShiftResource extends Resource
         return $infolist
             ->schema([
                 Section::make('Informasi Jam Kerja')
-                    ->columns(2)
+                    ->columns(['default' => 1, 'md' => 2])
                     ->schema([
                         TextEntry::make('name')
                             ->label('Nama Jam Kerja')
@@ -191,7 +191,7 @@ class ShiftResource extends Resource
                     ]),
 
                 Section::make('Pengelolaan Data')
-                    ->columns(2)
+                    ->columns(['default' => 1, 'md' => 2])
                     ->schema([
                         TextEntry::make('created_at')
                             ->label('Dibuat Pada')

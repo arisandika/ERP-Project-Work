@@ -105,7 +105,7 @@ class RoleResource extends Resource implements HasShieldPermissions
                                     ->mapWithKeys(fn(array $m) => [$m['permission'] => $m['description'] ?? null])
                                     ->toArray()
                             )
-                            ->columns(3)
+                            ->columns(['default' => 1, 'md' => 3])
                             ->bulkToggleable()
                             ->dehydrated() // ikut $this->data, tapi tidak disimpan sbg kolom model
                             ->afterStateHydrated(function (CheckboxList $component, $record) {

@@ -102,7 +102,7 @@ class CustomerResource extends Resource
                             ->label('NPWP Perusahaan')
                             ->prefixIcon('heroicon-o-document-text')
                             ->visible(fn(Forms\Get $get) => $get('customer_type') === 'company'),
-                    ])->columns(2),
+                    ])->columns(['default' => 1, 'md' => 2]),
 
                 Forms\Components\Section::make('Informasi PIC (Person In Charge)')
                     ->description('Data narahubung dari pihak Customer/Perusahaan')

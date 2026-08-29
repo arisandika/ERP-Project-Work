@@ -13,7 +13,10 @@ class AttendanceHeatmapChart extends ApexChartWidget
 
     protected static ?string $chartId = 'attendanceHeatmap';
     protected static ?string $heading = 'Attendance Heatmap';
-    protected int|string|array $columnSpan = 6;
+    protected int|string|array $columnSpan = [
+        'default' => 'full',
+        'md' => 6,
+    ];
 
     protected function getOptions(): array
     {

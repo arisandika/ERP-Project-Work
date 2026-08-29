@@ -17,7 +17,10 @@ class ExceptionKpiCards extends BaseWidget
 
     protected function getColumns(): int
     {
-        return 4;
+        return [
+            'default' => 1,
+            'md' => 4,
+        ];
     }
 
     protected function getStats(): array

@@ -13,7 +13,10 @@ class WorkHoursChart extends ApexChartWidget
 
     protected static ?string $chartId = 'workHoursChart';
     protected static ?string $heading = 'Work Hours Trend';
-    protected int|string|array $columnSpan = 6;
+    protected int|string|array $columnSpan = [
+        'default' => 'full',
+        'md' => 6,
+    ];
 
     protected function getOptions(): array
     {

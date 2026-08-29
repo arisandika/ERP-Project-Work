@@ -242,7 +242,7 @@ class WarehouseResource extends Resource
         return $infolist
             ->schema([
                 Section::make('Informasi Gudang')
-                    ->columns(2)
+                    ->columns(['default' => 1, 'md' => 2])
                     ->schema([
                         TextEntry::make('warehouse_name')->label('Nama Gudang'),
                         TextEntry::make('manager_name')->label('Penanggung Jawab'),
@@ -257,7 +257,7 @@ class WarehouseResource extends Resource
                     ]),
 
                 Section::make('Statistik Gudang')
-                    ->columns(2)
+                    ->columns(['default' => 1, 'md' => 2])
                     ->schema([
                         TextEntry::make('total_products')
                             ->label('Jumlah Product')
@@ -276,7 +276,7 @@ class WarehouseResource extends Resource
                     ]),
 
                 Section::make('Status & Aktivitas')
-                    ->columns(2)
+                    ->columns(['default' => 1, 'md' => 2])
                     ->schema([
                         TextEntry::make('is_active')
                             ->label('Status Aktif')

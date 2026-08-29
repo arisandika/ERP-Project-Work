@@ -47,7 +47,7 @@ class PopupBannerResource extends Resource
             ->schema([
                 Forms\Components\Section::make('Informasi Banner Popup')
                     ->description('Atur jenis konten popup dan judul campaign.')
-                    ->columns(2)
+                    ->columns(['default' => 1, 'md' => 2])
                     ->schema([
                         Forms\Components\TextInput::make('title')
                             ->label('Judul Campaign')
@@ -105,7 +105,7 @@ class PopupBannerResource extends Resource
 
                 Forms\Components\Section::make('Call To Action')
                     ->description('Arahkan pelanggan ke halaman tertentu.')
-                    ->columns(2)
+                    ->columns(['default' => 1, 'md' => 2])
                     ->schema([
                         Forms\Components\TextInput::make('cta_text')
                             ->label('Label Button')
@@ -128,7 +128,7 @@ class PopupBannerResource extends Resource
 
                 Forms\Components\Section::make('Pengaturan Tayang')
                     ->description('Atur jadwal dan urutan tampilan popup.')
-                    ->columns(2)
+                    ->columns(['default' => 1, 'md' => 2])
                     ->schema([
                         Forms\Components\DateTimePicker::make('start_date')
                             ->label('Mulai Tayang')
@@ -368,7 +368,7 @@ class PopupBannerResource extends Resource
         return $infolist
             ->schema([
                 Section::make('Informasi Banner Popup')
-                    ->columns(2)
+                    ->columns(['default' => 1, 'md' => 2])
                     ->schema([
                         TextEntry::make('title')
                             ->label('Judul Campaign')
@@ -400,7 +400,7 @@ class PopupBannerResource extends Resource
                                 'style' => 'width: 100%; height: auto; object-fit: cover;',
                                 'class' => 'w-full rounded-2xl'
                             ])
-                            ->columns(2),
+                            ->columns(['default' => 1, 'md' => 2]),
 
                         TextEntry::make('content_text')
                             ->label('Isi Pengumuman')
@@ -411,7 +411,7 @@ class PopupBannerResource extends Resource
                     ]),
 
                 Section::make('Call To Action')
-                    ->columns(2)
+                    ->columns(['default' => 1, 'md' => 2])
                     ->visible(fn($record) => filled($record->cta_text) || filled($record->cta_url))
                     ->schema([
                         TextEntry::make('cta_text')
@@ -436,7 +436,7 @@ class PopupBannerResource extends Resource
                     ]),
 
                 Section::make('Pengaturan Tayang')
-                    ->columns(3)
+                    ->columns(['default' => 1, 'md' => 3])
                     ->schema([
                         TextEntry::make('sort_order')
                             ->label('Urutan Tampil')
@@ -486,7 +486,7 @@ class PopupBannerResource extends Resource
                     ]),
 
                 Section::make('Pengelolaan Data')
-                    ->columns(2)
+                    ->columns(['default' => 1, 'md' => 2])
                     ->schema([
                         TextEntry::make('created_at')
                             ->label('Dibuat Pada')

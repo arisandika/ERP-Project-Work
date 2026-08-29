@@ -71,7 +71,7 @@ class NotesRelationManager extends RelationManager
                         Forms\Components\Hidden::make('created_by')
                             ->default(auth()->user()->employee->id),
                     ])
-                    ->columns(2)
+                    ->columns(['default' => 1, 'md' => 2])
             ]);
     }
 
@@ -198,7 +198,7 @@ class NotesRelationManager extends RelationManager
                             ->dateTime('d M Y H:i'),
                     ])
                     ->columnSpanFull()
-                    ->columns(2),
+                    ->columns(['default' => 1, 'md' => 2]),
 
                 Section::make('Isi Catatan')
                     ->schema([

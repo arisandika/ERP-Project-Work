@@ -12,7 +12,10 @@ class ReimbursementStatusChart extends ApexChartWidget
 
     protected static ?string $heading = 'Reimbursement Status';
 
-    protected int|string|array $columnSpan = 4;
+    protected int|string|array $columnSpan = [
+        'default' => 'full',
+        'md' => 4,
+    ];
 
     protected function getOptions(): array
     {

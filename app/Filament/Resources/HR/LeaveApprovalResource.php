@@ -101,7 +101,7 @@ class LeaveApprovalResource extends Resource
                             : 'Tidak menyertakan bukti cuti'
                         )
                 ])
-                ->columns(2),
+                ->columns(['default' => 1, 'md' => 2]),
 
             Forms\Components\Section::make('Persetujuan')
                 ->schema([
@@ -126,7 +126,7 @@ class LeaveApprovalResource extends Resource
                         ->label('Catatan Admin')
                         ->nullable(),
                 ])
-                ->columns(2),
+                ->columns(['default' => 1, 'md' => 2]),
         ]);
     }
 
@@ -311,7 +311,7 @@ class LeaveApprovalResource extends Resource
         return $infolist
             ->schema([
                 Section::make('Informasi Pengajuan Cuti')
-                    ->columns(2)
+                    ->columns(['default' => 1, 'md' => 2])
                     ->schema([
                         TextEntry::make('employee.full_name')
                             ->label('Nama Karyawan')
@@ -353,7 +353,7 @@ class LeaveApprovalResource extends Resource
                     ]),
 
                 Section::make('Status Persetujuan')
-                    ->columns(2)
+                    ->columns(['default' => 1, 'md' => 2])
                     ->schema([
                         TextEntry::make('status')
                             ->label('Status')
@@ -398,7 +398,7 @@ class LeaveApprovalResource extends Resource
                     ]),
 
                 Section::make('Pengelolaan Data')
-                    ->columns(2)
+                    ->columns(['default' => 1, 'md' => 2])
                     ->schema([
                         TextEntry::make('created_at')
                             ->label('Dibuat Pada')

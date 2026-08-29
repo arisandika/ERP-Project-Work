@@ -211,7 +211,7 @@ class AttendanceResource extends Resource
         return $infolist
             ->schema([
                 Section::make('Informasi Presensi')
-                    ->columns(2)
+                    ->columns(['default' => 1, 'md' => 2])
                     ->schema([
                         TextEntry::make('employee.full_name')
                             ->label('Nama Karyawan')
@@ -264,7 +264,7 @@ class AttendanceResource extends Resource
                     ]),
 
                 Section::make('Pengelolaan Data')
-                    ->columns(2)
+                    ->columns(['default' => 1, 'md' => 2])
                     ->schema([
                         TextEntry::make('created_at')
                             ->label('Dibuat Pada')

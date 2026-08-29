@@ -100,7 +100,7 @@ class SalesPersonResource extends Resource
                             ->default('active')
                             ->native(false)
                             ->prefixIcon('heroicon-o-check-circle'),
-                    ])->columns(2),
+                    ])->columns(['default' => 1, 'md' => 2]),
             ]);
     }
 
@@ -191,7 +191,7 @@ class SalesPersonResource extends Resource
         return $infolist
             ->schema([
                 Section::make('Informasi Sales Person')
-                    ->columns(2)
+                    ->columns(['default' => 1, 'md' => 2])
                     ->schema([
                         TextEntry::make('full_name')->label('Nama Lengkap'),
                         TextEntry::make('type')->label('Tipe'),

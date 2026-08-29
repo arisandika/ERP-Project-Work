@@ -12,7 +12,10 @@ class ClockInOutAverageWidget extends BaseWidget
     use HasEmployeeFilter;
 
     protected static bool $isLazy = false;
-    protected int|string|array $columnSpan = 12;
+    protected int|string|array $columnSpan = [
+        'default' => 'full',
+        'md' => 12,
+    ];
 
     protected function getStats(): array
     {

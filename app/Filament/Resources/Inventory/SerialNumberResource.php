@@ -354,7 +354,7 @@ class SerialNumberResource extends Resource
 
                 Section::make('Audit Trail Sistem')
                     ->collapsed()
-                    ->columns(2)
+                    ->columns(['default' => 1, 'md' => 2])
                     ->schema([
                         TextEntry::make('created_at')
                             ->label('Data Dibuat')

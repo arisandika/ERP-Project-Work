@@ -47,7 +47,7 @@ class SliderResource extends Resource
             ->schema([
                 Forms\Components\Section::make('Informasi Slider')
                     ->description('Informasi teks yang akan tampil pada banner.')
-                    ->columns(2)
+                    ->columns(['default' => 1, 'md' => 2])
                     ->schema([
                         Forms\Components\TextInput::make('title')
                             ->label('Judul (Heading)')
@@ -65,7 +65,7 @@ class SliderResource extends Resource
 
                 Forms\Components\Section::make('Konten Visual')
                     ->description('Upload gambar banner untuk desktop dan mobile.')
-                    ->columns(2)
+                    ->columns(['default' => 1, 'md' => 2])
                     ->schema([
                         Forms\Components\FileUpload::make('image_desktop')
                             ->label('Banner Desktop')
@@ -85,7 +85,7 @@ class SliderResource extends Resource
 
                 Forms\Components\Section::make('Call To Action')
                     ->description('Arahkan pelanggan ke halaman tertentu.')
-                    ->columns(2)
+                    ->columns(['default' => 1, 'md' => 2])
                     ->schema([
                         Forms\Components\TextInput::make('cta_text')
                             ->label('Label Button')
@@ -108,7 +108,7 @@ class SliderResource extends Resource
 
                 Forms\Components\Section::make('Pengaturan Tayang')
                     ->description('Atur jadwal dan urutan tampilan slider.')
-                    ->columns(2)
+                    ->columns(['default' => 1, 'md' => 2])
                     ->schema([
                         Forms\Components\DateTimePicker::make('start_date')
                             ->label('Mulai Tayang')
@@ -347,7 +347,7 @@ class SliderResource extends Resource
         return $infolist
             ->schema([
                 Section::make('Informasi Slider')
-                    ->columns(2)
+                    ->columns(['default' => 1, 'md' => 2])
                     ->schema([
                         TextEntry::make('title')
                             ->label('Judul (Heading)')
@@ -362,7 +362,7 @@ class SliderResource extends Resource
                     ]),
 
                 Section::make('Konten Visual')
-                    ->columns(2)
+                    ->columns(['default' => 1, 'md' => 2])
                     ->schema([
                         ImageEntry::make('image_desktop')
                             ->label('Versi Desktop')
@@ -382,7 +382,7 @@ class SliderResource extends Resource
                     ]),
 
                 Section::make('Call To Action')
-                    ->columns(2)
+                    ->columns(['default' => 1, 'md' => 2])
                     ->schema([
                         TextEntry::make('cta_text')
                             ->label('Label Button')
@@ -406,7 +406,7 @@ class SliderResource extends Resource
                     ]),
 
                 Section::make('Pengaturan Tayang')
-                    ->columns(3)
+                    ->columns(['default' => 1, 'md' => 3])
                     ->schema([
                         TextEntry::make('sort_order')
                             ->label('Urutan Tampil')
@@ -457,7 +457,7 @@ class SliderResource extends Resource
                     ]),
 
                 Section::make('Pengelolaan Data')
-                    ->columns(2)
+                    ->columns(['default' => 1, 'md' => 2])
                     ->schema([
                         TextEntry::make('created_at')
                             ->label('Dibuat Pada')

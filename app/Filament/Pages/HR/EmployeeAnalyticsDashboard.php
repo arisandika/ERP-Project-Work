@@ -82,7 +82,7 @@ class EmployeeAnalyticsDashboard extends Page
                             ->native(false)
                             ->live(),
                     ])
-                    ->columns(2),
+                    ->columns(['default' => 1, 'md' => 2]),
             ]);
     }
 
@@ -105,7 +105,7 @@ class EmployeeAnalyticsDashboard extends Page
 
             AttendanceTrendChart::class,
             AttendanceStatusDonutChart::class,
-            WorkHoursChart::class,
+            // WorkHoursChart::class,
             AttendanceHeatmapChart::class,
             ClockInOutAverageWidget::class,
 

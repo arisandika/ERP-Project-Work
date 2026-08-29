@@ -117,7 +117,7 @@ class PurchaseRequisitionResource extends Resource
                     ->rows(3)
                     ->columnSpanFull(),
             ])
-            ->columns(3);
+            ->columns(['default' => 1, 'md' => 3]);
     }
 
     protected static function itemsSection(): Forms\Components\Section
@@ -153,7 +153,7 @@ class PurchaseRequisitionResource extends Resource
                             ->required()
                             ->columnSpan(1),
                     ])
-                    ->columns(4)
+                    ->columns(['default' => 1, 'md' => 4])
                     ->columnSpanFull()
                     ->addActionLabel('Tambah Item')
                     ->defaultItems(1),

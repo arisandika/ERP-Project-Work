@@ -16,6 +16,7 @@ class StockAgeingChart extends ChartWidget
     protected static bool $isLazy = true;
 
     protected int|string|array $columnSpan = [
+        'default' => 'full',
         'md' => 12,
         'xl' => 6,
     ];

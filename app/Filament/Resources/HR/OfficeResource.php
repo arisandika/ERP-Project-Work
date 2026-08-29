@@ -42,7 +42,7 @@ class OfficeResource extends Resource
         return $form
             ->schema([
                 Forms\Components\Section::make('Informasi Kantor')
-                    ->columns(2)
+                    ->columns(['default' => 1, 'md' => 2])
                     ->schema([
                         Forms\Components\TextInput::make('name')
                             ->label('Nama Kantor')
@@ -99,7 +99,7 @@ class OfficeResource extends Resource
                             }),
 
                         Forms\Components\Section::make()
-                            ->columns(2)
+                            ->columns(['default' => 1, 'md' => 2])
                             ->schema([
                                 Forms\Components\TextInput::make('latitude')
                                     ->readOnly(),

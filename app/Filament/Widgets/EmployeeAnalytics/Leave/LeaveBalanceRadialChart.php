@@ -13,7 +13,10 @@ class LeaveBalanceRadialChart extends ApexChartWidget
 
     protected static ?string $heading = 'Leave Balance';
 
-    protected int|string|array $columnSpan = 4;
+    protected int|string|array $columnSpan = [
+        'default' => 'full',
+        'md' => 4,
+    ];
 
     protected function getOptions(): array
     {

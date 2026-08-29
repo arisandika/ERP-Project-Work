@@ -15,7 +15,7 @@ class AttendanceStatusChart extends ApexChartWidget
     protected static ?string $heading = 'Status Presensi Hari Ini';
 
     protected int|string|array $columnSpan = [
-        'default' => 2,
+        'default' => 'full',
         'md' => 1,
     ];
 

@@ -13,11 +13,17 @@ class AttendanceSummaryOverview extends BaseWidget
 
     protected static ?string $maxHeight = '150px';
 
-    protected int|string|array $columnSpan = '2';
+    protected int|string|array $columnSpan = [
+        'default' => 'full',
+        'md' => '2',
+    ];
 
     public function getColumns(): int
     {
-        return 4;
+        return [
+            'default' => 1,
+            'md' => 4,
+        ];
     }
 
     protected function getStats(): array

@@ -182,7 +182,7 @@ class PackageResource extends Resource
                                     ->disabled()
                                     ->dehydrated(),
                             ])
-                            ->columns(3)
+                            ->columns(['default' => 1, 'md' => 3])
                             ->createItemButtonLabel('Tambah Item')
                             ->reactive()
                             ->afterStateUpdated(function ($state, callable $set) {

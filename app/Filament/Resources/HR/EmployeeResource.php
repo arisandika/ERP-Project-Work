@@ -176,7 +176,7 @@ class EmployeeResource extends Resource
                             ->label('Alamat')
                             ->maxLength(500),
 
-                    ])->columns(2),
+                    ])->columns(['default' => 1, 'md' => 2]),
 
                 Forms\Components\Section::make('Informasi Pekerjaan')
                     ->schema([
@@ -275,7 +275,7 @@ class EmployeeResource extends Resource
                             ->default(false)
                             ->inline(false),
 
-                    ])->columns(2),
+                    ])->columns(['default' => 1, 'md' => 2]),
             ]);
     }
 
@@ -481,7 +481,7 @@ class EmployeeResource extends Resource
         return $infolist
             ->schema([
                 Section::make('Informasi Pribadi')
-                    ->columns(2)
+                    ->columns(['default' => 1, 'md' => 2])
                     ->schema([
                         ImageEntry::make('photo')
                             ->label('Foto Profil')
@@ -521,7 +521,7 @@ class EmployeeResource extends Resource
                     ->persistCollapsed(),
 
                 Section::make('Informasi Pekerjaan')
-                    ->columns(2)
+                    ->columns(['default' => 1, 'md' => 2])
                     ->schema([
                         TextEntry::make('status')
                             ->label('Status Karyawan')
@@ -600,7 +600,7 @@ class EmployeeResource extends Resource
                     ->persistCollapsed(),
 
                 Section::make('Informasi Tambahan Pribadi')
-                    ->columns(2)
+                    ->columns(['default' => 1, 'md' => 2])
                     ->schema([
                         TextEntry::make('identity_number')
                             ->label('NIK (KTP)')
@@ -631,7 +631,7 @@ class EmployeeResource extends Resource
                     ->persistCollapsed(),
 
                 Section::make('Pengelolaan Data')
-                    ->columns(2)
+                    ->columns(['default' => 1, 'md' => 2])
                     ->schema([
                         TextEntry::make('created_at')
                             ->label('Dibuat Pada')

@@ -81,7 +81,7 @@ class DashboardSales extends BaseDashboard
                             ->displayFormat('d M Y')
                             ->live(),
                     ])
-                    ->columns(2),
+                    ->columns(['default' => 1, 'md' => 2]),
             ]);
     }
 

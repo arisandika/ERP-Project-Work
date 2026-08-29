@@ -13,7 +13,10 @@ class LeaveHistoryTable extends TableWidget
 {
     protected static ?string $heading = 'Leave History';
 
-    protected int|string|array $columnSpan = 12;
+    protected int|string|array $columnSpan = [
+        'default' => 'full',
+        'md' => 12,
+    ];
 
     public function table(Table $table): Table
     {

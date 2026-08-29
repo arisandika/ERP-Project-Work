@@ -91,7 +91,7 @@ class BalanceSheetReport extends Page implements HasForms
                     ->required(),
             ])
             ->statePath('data')
-            ->columns(2);
+            ->columns(['default' => 1, 'md' => 2]);
     }
 
     protected function getViewData(): array

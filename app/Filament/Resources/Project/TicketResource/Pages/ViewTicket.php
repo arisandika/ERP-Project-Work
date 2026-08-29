@@ -44,7 +44,7 @@ class ViewTicket extends ViewRecord
             ->schema([
                 Section::make('Informasi Ticket')
                     ->description('Detail project, epic, status dan informasi ticket.')
-                    ->columns(2)
+                    ->columns(['default' => 1, 'md' => 2])
                     ->schema([
                         TextEntry::make('name')
                             ->label('Nama Ticket')
@@ -91,7 +91,7 @@ class ViewTicket extends ViewRecord
 
                 Section::make('Jadwal Pengerjaan')
                     ->description('Timeline target penyelesaian ticket.')
-                    ->columns(3)
+                    ->columns(['default' => 1, 'md' => 3])
                     ->schema([
                         TextEntry::make('start_date')
                             ->label('Tanggal Mulai')
@@ -114,7 +114,7 @@ class ViewTicket extends ViewRecord
                     ]),
 
                 Section::make('Member Ticket')
-                    ->columns(2)
+                    ->columns(['default' => 1, 'md' => 2])
                     ->schema([
                         TextEntry::make('assignees.full_name')
                             ->label('Ditugaskan Kepada')
@@ -174,7 +174,7 @@ class ViewTicket extends ViewRecord
                     ]),
 
                 Section::make('Pengelolaan Data')
-                    ->columns(2)
+                    ->columns(['default' => 1, 'md' => 2])
                     ->schema([
                         TextEntry::make('created_at')
                             ->label('Dibuat Pada')

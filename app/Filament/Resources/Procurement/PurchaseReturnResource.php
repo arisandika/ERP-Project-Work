@@ -86,7 +86,7 @@ class PurchaseReturnResource extends Resource
                     Forms\Components\Textarea::make('notes')
                         ->label('Catatan Tambahan')
                         ->columnSpanFull(),
-                ])->columns(3), // <-- Diubah menjadi 3 kolom agar rapi
+                ])->columns(['default' => 1, 'md' => 3]), // <-- Diubah menjadi 3 kolom agar rapi
 
             // 2. DETAIL SECTION (ITEMS)
             Forms\Components\Section::make('Item yang Diretur')
@@ -128,7 +128,7 @@ class PurchaseReturnResource extends Resource
                                 ->prefixIcon('heroicon-o-chat-bubble-bottom-center-text')
                                 ->columnSpan(3),
                         ])
-                        ->columns(8)
+                        ->columns(['default' => 1, 'md' => 8])
                         ->defaultItems(1)
                         ->mutateRelationshipDataBeforeCreateUsing(function (array $data): array {
                             return $data;

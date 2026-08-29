@@ -170,7 +170,7 @@ class CategoryResource extends Resource
         return $infolist
             ->schema([
                 Section::make('Informasi Kategori')
-                    ->columns(2)
+                    ->columns(['default' => 1, 'md' => 2])
                     ->schema([
                         TextEntry::make('name')
                             ->label('Nama Kategori'),
@@ -185,7 +185,7 @@ class CategoryResource extends Resource
                             ->state(fn(Category $category) => $category->products()->count()),
                     ]),
                 Section::make('Pengelolaan Data')
-                    ->columns(2)
+                    ->columns(['default' => 1, 'md' => 2])
                     ->schema([
                         TextEntry::make('created_at')
                             ->label('Dibuat Pada')

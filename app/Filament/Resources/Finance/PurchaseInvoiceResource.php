@@ -114,7 +114,7 @@ class PurchaseInvoiceResource extends Resource
                                 ->label('Jatuh Tempo')
                                 ->default(now()->addDays(14))
                                 ->required(),
-                        ])->columns(2),
+                        ])->columns(['default' => 1, 'md' => 2]),
 
                     Forms\Components\Section::make('Rincian Tagihan')
                         ->schema([
@@ -166,7 +166,7 @@ class PurchaseInvoiceResource extends Resource
                                         ->disabled()
                                         ->dehydrated(),
                                 ])
-                                ->columns(3)
+                                ->columns(['default' => 1, 'md' => 3])
                                 ->addable(false)
                                 ->deletable(false),
                         ]),
@@ -185,7 +185,7 @@ class PurchaseInvoiceResource extends Resource
                                 ->extraInputAttributes(['style' => 'font-size: 1.5rem; font-weight: bold; color: #dc2626;']), // Merah karena ini hutang
                         ]),
                 ])->columnSpan(['lg' => 1]),
-            ])->columns(3);
+            ])->columns(['default' => 1, 'md' => 3]);
     }
 
     public static function table(Table $table): Table

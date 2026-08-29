@@ -91,7 +91,7 @@ class ProcurementDashboard extends BaseDashboard
                                 fn ($value): ?string => Supplier::find($value)?->name
                             ),
                     ])
-                    ->columns(3)
+                    ->columns(['default' => 1, 'md' => 3])
                     ->collapsible()
                     ->persistCollapsed(),
             ]);

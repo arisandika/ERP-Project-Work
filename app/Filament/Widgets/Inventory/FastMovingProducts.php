@@ -12,6 +12,7 @@ class FastMovingProducts extends BaseWidget
     protected static ?string $heading = 'Top 10 Fast-Moving Products (30 Hari)';
 
     protected int|string|array $columnSpan = [
+        'default' => 'full',
         'md' => 12,
         'xl' => 6,
     ];

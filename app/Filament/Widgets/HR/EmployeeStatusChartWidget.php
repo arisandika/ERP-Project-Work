@@ -10,7 +10,10 @@ class EmployeeStatusChartWidget extends ChartWidget
 
     protected static ?int $sort = 5;
 
-    protected int|string|array $columnSpan = 1;
+    protected int|string|array $columnSpan = [
+        'default' => 'full',
+        'md' => 1,
+    ];
 
     protected function getData(): array
     {

@@ -14,6 +14,7 @@ class LatestUnpaidPurchaseOrders extends BaseWidget
     protected static ?int $sort = 5;
 
     protected int|string|array $columnSpan = [
+        'default' => 'full',
         'xl' => 12,
     ];
 

@@ -116,7 +116,7 @@ class TicketStatusesRelationManager extends RelationManager
                                 }
                             }),
                     ])
-                    ->columns(2)
+                    ->columns(['default' => 1, 'md' => 2])
             ]);
     }
 

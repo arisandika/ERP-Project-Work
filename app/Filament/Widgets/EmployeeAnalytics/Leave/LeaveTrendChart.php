@@ -13,7 +13,10 @@ class LeaveTrendChart extends ApexChartWidget
 
     protected static ?string $heading = 'Leave Usage Trend';
 
-    protected int|string|array $columnSpan = 8;
+    protected int|string|array $columnSpan = [
+        'default' => 'full',
+        'md' => 8,
+    ];
 
     protected function getOptions(): array
     {

@@ -10,7 +10,10 @@ class TicketPriorityChartWidget extends ChartWidget
 
     protected static ?int $sort = 3;
 
-    protected int|string|array $columnSpan = 3;
+    protected int|string|array $columnSpan = [
+        'default' => 'full',
+        'md' => 3,
+    ];
 
     protected function getData(): array
     {

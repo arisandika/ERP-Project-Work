@@ -188,7 +188,7 @@ class SalesOrderResource extends Resource
                         Textarea::make('notes')->label('Catatan Pesanan')->rows(3),
                     ]),
             ])->columnSpan(['lg' => 1]),
-        ])->columns(3);
+        ])->columns(['default' => 1, 'md' => 3]);
     }
 
     // === LOGIC FUNCTIONS ===

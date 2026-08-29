@@ -127,7 +127,7 @@ class ProductResource extends Resource
                                     ->onColor('info')
                                     ->offColor('gray'),
                             ])
-                            ->columns(2),
+                            ->columns(['default' => 1, 'md' => 2]),
 
                         Forms\Components\FileUpload::make('image_path')
                             ->label('Foto Product')
@@ -141,7 +141,7 @@ class ProductResource extends Resource
                             ->downloadable()
                             ->preserveFilenames(),
                     ])
-                    ->columns(2),
+                    ->columns(['default' => 1, 'md' => 2]),
 
                 Forms\Components\Section::make('Stock per Gudang')
                     ->icon('heroicon-o-building-storefront')
@@ -182,7 +182,7 @@ class ProductResource extends Resource
                                     ->disabled()
                                     ->dehydrated(true),
                             ])
-                            ->columns(4)
+                            ->columns(['default' => 1, 'md' => 4])
                             ->defaultItems(1)
                             ->addActionLabel('Tambah Akses Gudang')
                             ->reorderable(false)

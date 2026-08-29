@@ -66,7 +66,7 @@ class LeaveResource extends Resource
                         ->default(false)
                         ->inline(false),
                 ])
-                ->columns(2),
+                ->columns(['default' => 1, 'md' => 2]),
         ]);
 
     }
@@ -181,7 +181,7 @@ class LeaveResource extends Resource
         return $infolist
             ->schema([
                 Section::make('Informasi Cutii')
-                    ->columns(2)
+                    ->columns(['default' => 1, 'md' => 2])
                     ->schema([
                         TextEntry::make('leave_type')
                             ->label('Nama Cuti')
@@ -206,7 +206,7 @@ class LeaveResource extends Resource
                     ]),
 
                 Section::make('Pengelolaan Data')
-                    ->columns(2)
+                    ->columns(['default' => 1, 'md' => 2])
                     ->schema([
                         TextEntry::make('created_at')
                             ->label('Dibuat Pada')

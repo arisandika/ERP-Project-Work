@@ -13,6 +13,7 @@ class LatestUnpaidInvoices extends BaseWidget
     protected static ?int $sort       = 3;
 
     protected int|string|array $columnSpan = [
+        'default' => 'full',
         'xl' => 12,
     ];
 
