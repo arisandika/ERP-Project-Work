@@ -13,8 +13,9 @@ class AttendanceTrendChart extends ApexChartWidget
 
     protected static ?string $chartId = 'attendanceTrendChart';
     protected static ?string $heading = 'Attendance Trend';
+
     protected int|string|array $columnSpan = [
-        'default' => 'full',
+        'default' => 12,
         'md' => 8,
     ];
 

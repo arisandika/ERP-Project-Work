@@ -12,8 +12,9 @@ class AttendanceStatusDonutChart extends ApexChartWidget
 
     protected static ?string $chartId = 'attendanceStatusDonut';
     protected static ?string $heading = 'Attendance Status';
+
     protected int|string|array $columnSpan = [
-        'default' => 'full',
+        'default' => 12,
         'md' => 4,
     ];
 

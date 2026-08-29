@@ -2,14 +2,18 @@
 namespace App\Filament\Widgets;
 
 use App\Models\Inventory\ProductStock;
-use Filament\Tables;
 use Filament\Tables\Table;
 use Filament\Widgets\TableWidget as BaseWidget;
+use Filament\Tables;
 
 class LowStockAlert extends BaseWidget
 {
-    protected static ?int $sort                = 1;
-    protected int|string|array $columnSpan = 'full';
+    protected static ?int $sort = 1;
+
+    protected int|string|array $columnSpan = [
+        'default' => 12,
+        'md' => 12,
+    ];
 
     // REVISI: Copywriting disesuaikan
     protected static ?string $heading = 'Peringatan: Product dengan Stock Tersedia Rendah';
@@ -30,13 +34,11 @@ class LowStockAlert extends BaseWidget
                     ->searchable()
                     ->sortable()
                     ->weight('semibold'),
-
                 Tables\Columns\TextColumn::make('product.product_name')
                     ->label('Product')
                     ->searchable()
                     ->sortable()
                     ->limit(30),
-
                 Tables\Columns\TextColumn::make('warehouses')
                     ->label('Gudang')
                     ->getStateUsing(function (ProductStock $record) {
@@ -51,7 +53,6 @@ class LowStockAlert extends BaseWidget
                     ->badge()
                     ->color('info')
                     ->icon('heroicon-o-building-office'),
-
                 // REVISI: Ganti qty menjadi qty_available
                 Tables\Columns\TextColumn::make('qty_available')
                     ->label('Stock Siap Jual')
@@ -59,13 +60,12 @@ class LowStockAlert extends BaseWidget
                     ->sortable()
                     ->badge()
                     ->color(fn($state) => match (true) {
-                        $state <= 0  => 'danger',
-                        $state <= 5  => 'danger',
+                        $state <= 0 => 'danger',
+                        $state <= 5 => 'danger',
                         $state <= 10 => 'warning',
-                        default      => 'success',
+                        default => 'success',
                     })
                     ->suffix(' Unit'),
-
                 // TAMBAHAN: Menampilkan stok yang tertahan/dipesan
                 Tables\Columns\TextColumn::make('qty_reserved')
                     ->label('Dipesan (Reserved)')
@@ -73,7 +73,6 @@ class LowStockAlert extends BaseWidget
                     ->badge()
                     ->color('warning')
                     ->suffix(' Unit'),
-
                 // REVISI: Menghapus kolom 'status' (enum) yang sudah tidak ada
             ])
             ->actions([
@@ -83,9 +82,9 @@ class LowStockAlert extends BaseWidget
                     ->color('gray')
                     ->url(
                         fn(ProductStock $record): string =>
-                        route('filament.admin.resources.inventory.products.view', [
-                            'record' => $record->product->id,
-                        ])
+                            route('filament.admin.resources.inventory.products.view', [
+                                'record' => $record->product->id,
+                            ])
                     )
                     ->openUrlInNewTab(),
             ])

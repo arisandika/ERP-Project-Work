@@ -8,7 +8,7 @@ class AttendanceMapOverview extends Widget
     protected static string $view = 'filament.widgets.hr.attendance-map-overview';
 
     protected int|string|array $columnSpan = [
-        'default' => 'full',
+        'default' => 12,
         'md' => 2,
     ];
 

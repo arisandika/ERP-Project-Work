@@ -2,14 +2,14 @@
 
 namespace App\Filament\Widgets\Inventory;
 
+use App\Models\Inventory\Category;
 use App\Models\Inventory\Product;
 use App\Models\Inventory\ProductStock;
 use App\Models\Inventory\StockTransaction;
 use App\Models\Inventory\Warehouse;
-use App\Models\Inventory\Category;
-use Filament\Tables;
 use Filament\Tables\Table;
 use Filament\Widgets\TableWidget as BaseWidget;
+use Filament\Tables;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\DB;
 
@@ -17,7 +17,10 @@ class StockAlertsTable extends BaseWidget
 {
     protected static ?string $heading = 'Stock Alerts';
 
-    protected int|string|array $columnSpan = 'full';
+    protected int|string|array $columnSpan = [
+        'default' => 12,
+        'md' => 12,
+    ];
 
     protected static ?int $sort = 2;
 
@@ -43,48 +46,38 @@ class StockAlertsTable extends BaseWidget
                     ->sortable()
                     ->weight('bold')
                     ->copyable(),
-
                 Tables\Columns\TextColumn::make('product_name')
                     ->label('Produk')
                     ->searchable()
                     ->sortable()
                     ->limit(35),
-
                 Tables\Columns\TextColumn::make('category.name')
                     ->label('Kategori')
                     ->sortable(),
-
                 Tables\Columns\TextColumn::make('productStocks')
                     ->label('Gudang')
-                    ->getStateUsing(fn (Product $record) =>
-                        $record->productStocks->pluck('warehouse.warehouse_name')->filter()->unique()->implode(', ')
-                    )
+                    ->getStateUsing(fn(Product $record) =>
+                        $record->productStocks->pluck('warehouse.warehouse_name')->filter()->unique()->implode(', '))
                     ->badge()
                     ->color('info'),
-
                 Tables\Columns\TextColumn::make('productStocksSum')
                     ->label('Total Stok')
-                    ->getStateUsing(fn (Product $record) => $record->productStocks->sum('qty_available'))
+                    ->getStateUsing(fn(Product $record) => $record->productStocks->sum('qty_available'))
                     ->numeric()
                     ->sortable()
                     ->weight('bold'),
-
                 Tables\Columns\TextColumn::make('min_stock')
                     ->label('Min Stock')
                     ->numeric()
                     ->sortable(),
-
                 Tables\Columns\TextColumn::make('stock_status')
                     ->label('Status')
-                    ->getStateUsing(fn (Product $record) =>
-                        $record->getStockStatusLabel($record->productStocks->sum('qty_available'))
-                    )
+                    ->getStateUsing(fn(Product $record) =>
+                        $record->getStockStatusLabel($record->productStocks->sum('qty_available')))
                     ->badge()
-                    ->color(fn (Product $record) =>
-                        $record->getStockStatusColor($record->productStocks->sum('qty_available'))
-                    )
+                    ->color(fn(Product $record) =>
+                        $record->getStockStatusColor($record->productStocks->sum('qty_available')))
                     ->sortable(),
-
                 Tables\Columns\TextColumn::make('lastMovement')
                     ->label('Transaksi Terakhir')
                     ->getStateUsing(function (Product $record) {
@@ -98,24 +91,20 @@ class StockAlertsTable extends BaseWidget
             ->filters([
                 Tables\Filters\SelectFilter::make('warehouse')
                     ->label('Gudang')
-                    ->options(fn () => Warehouse::pluck('warehouse_name', 'id'))
-                    ->query(fn (Builder $query, array $data): Builder =>
-                        ! empty($data['value'])
-                            ? $query->whereHas('productStocks', fn ($q) => $q->where('warehouse_id', $data['value']))
-                            : $query
-                    )
+                    ->options(fn() => Warehouse::pluck('warehouse_name', 'id'))
+                    ->query(fn(Builder $query, array $data): Builder =>
+                        !empty($data['value'])
+                            ? $query->whereHas('productStocks', fn($q) => $q->where('warehouse_id', $data['value']))
+                            : $query)
                     ->multiple(),
-
                 Tables\Filters\SelectFilter::make('category')
                     ->label('Kategori')
-                    ->options(fn () => Category::pluck('name', 'id'))
-                    ->query(fn (Builder $query, array $data): Builder =>
-                        ! empty($data['value'])
+                    ->options(fn() => Category::pluck('name', 'id'))
+                    ->query(fn(Builder $query, array $data): Builder =>
+                        !empty($data['value'])
                             ? $query->where('category_id', $data['value'])
-                            : $query
-                    )
+                            : $query)
                     ->multiple(),
-
                 Tables\Filters\SelectFilter::make('stock_status')
                     ->label('Status Stok')
                     ->options([
@@ -124,13 +113,13 @@ class StockAlertsTable extends BaseWidget
                         'low' => 'Low (≤ Min Stock)',
                     ])
                     ->query(function (Builder $query, array $data): Builder {
-                        if (empty($data['value'])) return $query;
+                        if (empty($data['value']))
+                            return $query;
                         return match ($data['value']) {
-                            'out_of_stock' => $query->whereHas('productStocks', fn ($q) => $q->where('qty_available', '<=', 0)),
-                            'critical' => $query->whereHas('productStocks', fn ($q) => $q->where('qty_available', '>', 0)->where('qty_available', '<=', 5)),
-                            'low' => $query->whereHas('productStocks', fn ($q) =>
-                                $q->whereColumn('qty_available', '<=', 'nx_products.min_stock')->where('qty_available', '>', 0)
-                            ),
+                            'out_of_stock' => $query->whereHas('productStocks', fn($q) => $q->where('qty_available', '<=', 0)),
+                            'critical' => $query->whereHas('productStocks', fn($q) => $q->where('qty_available', '>', 0)->where('qty_available', '<=', 5)),
+                            'low' => $query->whereHas('productStocks', fn($q) =>
+                                $q->whereColumn('qty_available', '<=', 'nx_products.min_stock')->where('qty_available', '>', 0)),
                             default => $query,
                         };
                     }),
@@ -140,18 +129,15 @@ class StockAlertsTable extends BaseWidget
                     ->label('Lihat Produk')
                     ->icon('heroicon-o-eye')
                     ->color('primary')
-                    ->url(fn (Product $record): string =>
-                        route('filament.admin.resources.inventory.products.view', $record->id)
-                    )
+                    ->url(fn(Product $record): string =>
+                        route('filament.admin.resources.inventory.products.view', $record->id))
                     ->openUrlInNewTab(),
-
                 Tables\Actions\Action::make('viewTransactions')
                     ->label('Mutasi')
                     ->icon('heroicon-o-arrow-path')
                     ->color('gray')
-                    ->url(fn (Product $record): string =>
-                        route('filament.admin.resources.inventory.transactions.index') . '?tableProductFilter=' . $record->id
-                    )
+                    ->url(fn(Product $record): string =>
+                        route('filament.admin.resources.inventory.transactions.index') . '?tableProductFilter=' . $record->id)
                     ->openUrlInNewTab(),
             ])
             ->bulkActions([])

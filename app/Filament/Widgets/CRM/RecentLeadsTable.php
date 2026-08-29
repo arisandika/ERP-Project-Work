@@ -3,16 +3,17 @@
 namespace App\Filament\Widgets\CRM;
 
 use App\Models\CRM\Lead;
-use Filament\Tables;
 use Filament\Tables\Table;
 use Filament\Widgets\TableWidget as BaseWidget;
+use Filament\Tables;
 
 class RecentLeadsTable extends BaseWidget
 {
     protected static ?string $heading = 'Leads Terbaru';
     protected static ?int $sort = 3;
+
     protected int|string|array $columnSpan = [
-        'default' => 'full',
+        'default' => 12,
         'md' => 1,
         'xl' => 12,
     ];
@@ -30,18 +31,15 @@ class RecentLeadsTable extends BaseWidget
                     ->label('Nama')
                     ->searchable()
                     ->weight('bold'),
-
                 Tables\Columns\TextColumn::make('email')
                     ->label('Email')
                     ->limit(20),
-
                 Tables\Columns\TextColumn::make('phone')
                     ->label('Telepon'),
-
                 Tables\Columns\TextColumn::make('status')
                     ->label('Status')
                     ->badge()
-                    ->color(fn (string $state): string => match ($state) {
+                    ->color(fn(string $state): string => match ($state) {
                         'new' => 'info',
                         'contacted' => 'primary',
                         'qualified' => 'success',
@@ -50,13 +48,11 @@ class RecentLeadsTable extends BaseWidget
                         'dead' => 'danger',
                         default => 'gray',
                     })
-                    ->formatStateUsing(fn (string $state): string => ucwords($state)),
-
+                    ->formatStateUsing(fn(string $state): string => ucwords($state)),
                 Tables\Columns\TextColumn::make('source')
                     ->label('Sumber')
                     ->badge()
                     ->color('gray'),
-
                 Tables\Columns\TextColumn::make('created_at')
                     ->label('Dibuat')
                     ->since()

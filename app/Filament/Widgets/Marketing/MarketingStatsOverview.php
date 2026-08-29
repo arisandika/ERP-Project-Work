@@ -4,14 +4,17 @@ namespace App\Filament\Widgets\Marketing;
 use App\Models\Marketing\PopupBanner;
 use App\Models\Marketing\PromoCode;
 use App\Models\Marketing\Slider;
-use Filament\Widgets\StatsOverviewWidget as BaseWidget;
 use Filament\Widgets\StatsOverviewWidget\Stat;
+use Filament\Widgets\StatsOverviewWidget as BaseWidget;
 
 class MarketingStatsOverview extends BaseWidget
 {
     protected static ?int $sort = 1;
 
-    protected int|string|array $columnSpan = 'full';
+    protected int|string|array $columnSpan = [
+        'default' => 12,
+        'md' => 12,
+    ];
 
     protected function getStats(): array
     {
@@ -27,7 +30,7 @@ class MarketingStatsOverview extends BaseWidget
         $totalUsage = PromoCode::sum('times_used');
 
         // Generate wavy chart data — 7 points trending toward current value
-        $wavy = fn (int $end, int $max = 0): array => [
+        $wavy = fn(int $end, int $max = 0): array => [
             (int) ($end * 0.3),
             (int) ($end * 0.5),
             (int) ($end * 0.4),
@@ -39,23 +42,20 @@ class MarketingStatsOverview extends BaseWidget
 
         return [
             Stat::make('Total Slider', $totalSliders)
-                ->description("{$activeSliders} aktif / " . ($totalSliders - $activeSliders) . " nonaktif")
+                ->description("{$activeSliders} aktif / " . ($totalSliders - $activeSliders) . ' nonaktif')
                 ->descriptionIcon('heroicon-m-photo')
                 ->color('info')
                 ->chart($wavy($totalSliders)),
-
             Stat::make('Total Banner', $totalBanners)
-                ->description("{$activeBanners} aktif / " . ($totalBanners - $activeBanners) . " nonaktif")
+                ->description("{$activeBanners} aktif / " . ($totalBanners - $activeBanners) . ' nonaktif')
                 ->descriptionIcon('heroicon-m-megaphone')
                 ->color('success')
                 ->chart($wavy($totalBanners)),
-
             Stat::make('Promo Code', $totalPromos)
                 ->description("{$activePromos} tersedia dari {$totalPromos} total")
                 ->descriptionIcon('heroicon-m-ticket')
                 ->color('primary')
                 ->chart($wavy($totalPromos)),
-
             Stat::make('Total Penggunaan Promo', number_format($totalUsage))
                 ->description('Seluruh kode promo terpakai')
                 ->descriptionIcon('heroicon-m-arrow-trending-up')

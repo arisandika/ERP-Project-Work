@@ -3,13 +3,17 @@
 namespace App\Filament\Widgets;
 
 use App\Models\Inventory\ProductStock;
-use Filament\Widgets\StatsOverviewWidget as BaseWidget;
 use Filament\Widgets\StatsOverviewWidget\Stat;
+use Filament\Widgets\StatsOverviewWidget as BaseWidget;
 
 class LowStockStatsOverview extends BaseWidget
 {
     protected static ?int $sort = 0;
-    protected int | string | array $columnSpan = 'full';
+
+    protected int|string|array $columnSpan = [
+        'default' => 12,
+        'md' => 12,
+    ];
 
     protected function getStats(): array
     {
@@ -28,13 +32,11 @@ class LowStockStatsOverview extends BaseWidget
                 ->descriptionIcon('heroicon-m-exclamation-triangle')
                 ->color('danger')
                 ->chart([7, 8, 6, 9, 10, 12, $lowStockProducts]),
-
             Stat::make('Total Akses Gudang Stock Rendah', $lowStockCount)
                 ->description('Tersebar di berbagai warehouse')
                 ->descriptionIcon('heroicon-m-arrow-trending-down')
                 ->color('warning')
                 ->chart([5, 7, 6, 8, 9, 10, $lowStockCount]),
-
             Stat::make('Stock Tersedia Habis', $outOfStockCount)
                 ->description('Item dengan qty siap jual = 0')
                 ->descriptionIcon('heroicon-m-x-circle')

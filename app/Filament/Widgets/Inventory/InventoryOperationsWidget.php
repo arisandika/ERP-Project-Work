@@ -9,7 +9,11 @@ use Filament\Widgets\Widget;
 class InventoryOperationsWidget extends Widget
 {
     protected static string $view = 'filament.widgets.inventory.inventory-operations-widget';
-    protected int | string | array $columnSpan = 'full';
+
+    protected int|string|array $columnSpan = [
+        'default' => 12,
+        'md' => 12,
+    ];
 
     public function getData(): array
     {

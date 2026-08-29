@@ -4,8 +4,8 @@ namespace App\Filament\Widgets\HR;
 use App\Models\HR\Employee;
 use App\Models\HR\LeaveRequest;
 use Filament\Widgets\Widget;
-use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Carbon;
 
 class AttendanceLeaveListWidget extends Widget
 {
@@ -14,7 +14,7 @@ class AttendanceLeaveListWidget extends Widget
     protected static ?string $pollingInterval = '30s';
 
     protected int|string|array $columnSpan = [
-        'default' => 2,
+        'default' => 12,
         'md' => 1,
     ];
 
@@ -82,7 +82,8 @@ class AttendanceLeaveListWidget extends Widget
 
         // Hitung cuti yang sedang berlaku hari ini
         $today = Carbon::today();
-        $currentLeaves = $employee->leaveRequests()
+        $currentLeaves = $employee
+            ->leaveRequests()
             ->where('status', 'approved')
             ->whereDate('start_date', '<=', $today)
             ->whereDate('end_date', '>=', $today)

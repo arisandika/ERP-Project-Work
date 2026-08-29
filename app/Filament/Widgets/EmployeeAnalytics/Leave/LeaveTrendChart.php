@@ -14,7 +14,7 @@ class LeaveTrendChart extends ApexChartWidget
     protected static ?string $heading = 'Leave Usage Trend';
 
     protected int|string|array $columnSpan = [
-        'default' => 'full',
+        'default' => 12,
         'md' => 8,
     ];
 
@@ -31,7 +31,6 @@ class LeaveTrendChart extends ApexChartWidget
         $data = [];
 
         foreach ($period as $date) {
-
             $weekEnd = $date->copy()->endOfWeek();
 
             $categories[] = $date->format('d M');
@@ -53,27 +52,22 @@ class LeaveTrendChart extends ApexChartWidget
                     'show' => false,
                 ],
             ],
-
             'series' => [
                 [
                     'name' => 'Leave Days',
                     'data' => $data,
                 ],
             ],
-
             'xaxis' => [
                 'categories' => $categories,
             ],
-
             'stroke' => [
                 'curve' => 'smooth',
                 'width' => 3,
             ],
-
             'markers' => [
                 'size' => 5,
             ],
-
             'dataLabels' => [
                 'enabled' => false,
             ],

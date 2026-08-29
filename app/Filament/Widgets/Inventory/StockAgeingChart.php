@@ -16,7 +16,7 @@ class StockAgeingChart extends ChartWidget
     protected static bool $isLazy = true;
 
     protected int|string|array $columnSpan = [
-        'default' => 'full',
+        'default' => 12,
         'md' => 12,
         'xl' => 6,
     ];
@@ -38,7 +38,7 @@ class StockAgeingChart extends ChartWidget
                     ->latest('transaction_date')
                     ->value('transaction_date');
 
-                if (! $lastMovement) {
+                if (!$lastMovement) {
                     $ageing['90+ hari'] += $product->total_stock;
                     continue;
                 }

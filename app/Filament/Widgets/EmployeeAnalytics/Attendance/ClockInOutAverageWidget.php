@@ -4,16 +4,17 @@ namespace App\Filament\Widgets\EmployeeAnalytics\Attendance;
 
 use App\Filament\Widgets\EmployeeAnalytics\Concerns\HasEmployeeFilter;
 use App\Models\HR\Attendance;
-use Filament\Widgets\StatsOverviewWidget as BaseWidget;
 use Filament\Widgets\StatsOverviewWidget\Stat;
+use Filament\Widgets\StatsOverviewWidget as BaseWidget;
 
 class ClockInOutAverageWidget extends BaseWidget
 {
     use HasEmployeeFilter;
 
     protected static bool $isLazy = false;
+
     protected int|string|array $columnSpan = [
-        'default' => 'full',
+        'default' => 12,
         'md' => 12,
     ];
 
@@ -57,12 +58,10 @@ class ClockInOutAverageWidget extends BaseWidget
                 ->description('Waktu masuk rata-rata')
                 ->descriptionIcon('heroicon-m-arrow-right-on-rectangle')
                 ->color('info'),
-
             Stat::make('Rata-rata Clock Out', $avgClockOut)
                 ->description('Waktu pulang rata-rata')
                 ->descriptionIcon('heroicon-m-arrow-left-on-rectangle')
                 ->color('primary'),
-
             Stat::make('Rata-rata Jam Kerja', $avgWorkHours . ' jam')
                 ->description('Per hari dalam periode')
                 ->descriptionIcon('heroicon-m-clock')

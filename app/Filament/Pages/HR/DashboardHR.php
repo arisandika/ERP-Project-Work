@@ -50,11 +50,10 @@ class DashboardHR extends Page
         ];
     }
 
-    protected function getColumns(): int | array
-    
+    protected function getColumns(): int|array
     {
         return [
-            'default' => 1,
+            'default' => 12,
             'md' => 4,
         ];
     }

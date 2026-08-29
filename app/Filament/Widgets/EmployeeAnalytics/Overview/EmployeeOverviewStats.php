@@ -3,12 +3,12 @@
 namespace App\Filament\Widgets\EmployeeAnalytics\Overview;
 
 use App\Filament\Widgets\EmployeeAnalytics\Concerns\HasEmployeeFilter;
-use App\Models\HR\Attendance;
-use App\Models\HR\LeaveRequest;
-use App\Models\HR\Leave;
 use App\Models\Finance\ReimbursementRequest;
-use Filament\Widgets\StatsOverviewWidget as BaseWidget;
+use App\Models\HR\Attendance;
+use App\Models\HR\Leave;
+use App\Models\HR\LeaveRequest;
 use Filament\Widgets\StatsOverviewWidget\Stat;
+use Filament\Widgets\StatsOverviewWidget as BaseWidget;
 use Illuminate\Support\Carbon;
 
 class EmployeeOverviewStats extends BaseWidget
@@ -16,7 +16,11 @@ class EmployeeOverviewStats extends BaseWidget
     use HasEmployeeFilter;
 
     protected static bool $isLazy = false;
-    protected int|string|array $columnSpan = 'full';
+
+    protected int|string|array $columnSpan = [
+        'default' => 12,
+        'md' => 12,
+    ];
 
     protected function getStats(): array
     {
@@ -90,22 +94,18 @@ class EmployeeOverviewStats extends BaseWidget
                 ->chart(
                     $this->getAttendanceMiniChart($employeeId, $start, $end)
                 ),
-
             Stat::make('Keterlambatan', $terlambat . 'x')
                 ->description("Rata-rata: {$avgLateMinutes} menit")
                 ->descriptionIcon('heroicon-m-clock')
                 ->color($terlambat === 0 ? 'success' : ($terlambat <= 3 ? 'warning' : 'danger')),
-
             Stat::make('Total Jam Kerja', $totalWorkHours . ' jam')
                 ->description('Periode yang dipilih')
                 ->descriptionIcon('heroicon-m-briefcase')
                 ->color('primary'),
-
             Stat::make('Sisa Cuti Tahunan', $annualSisa . ' hari')
                 ->description($annualLeave ? "Kuota: {$annualLeave->days_count} hari/tahun" : 'Tidak ada kuota')
                 ->descriptionIcon('heroicon-m-sun')
                 ->color('info'),
-
             Stat::make('Reimburse Pending', $pendingReimburse . ' pengajuan')
                 ->description('Menunggu persetujuan')
                 ->descriptionIcon('heroicon-m-banknotes')

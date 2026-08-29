@@ -2,20 +2,24 @@
 
 namespace App\Filament\Widgets\Sales;
 
+use App\Mail\InvoiceReminderMail;
 use App\Models\Sales\Invoice;
-use Filament\Tables;
+use Filament\Notifications\Notification;
+use Filament\Tables\Actions\Action;
 use Filament\Tables\Table;
 use Filament\Widgets\TableWidget as BaseWidget;
+use Filament\Tables;
 use Illuminate\Database\Eloquent\Builder;
-use Filament\Tables\Actions\Action;
 use Illuminate\Support\Facades\Mail;
-use App\Mail\InvoiceReminderMail;
-use Filament\Notifications\Notification;
 
 class OperationalAlertTable extends BaseWidget
 {
     protected static ?string $heading = 'Jatuh Tempo (Perlu Penagihan)';
-    protected int|string|array $columnSpan = 'full';
+
+    protected int|string|array $columnSpan = [
+        'default' => 12,
+        'md' => 12,
+    ];
 
     public function table(Table $table): Table
     {
@@ -23,37 +27,32 @@ class OperationalAlertTable extends BaseWidget
             ->query(
                 Invoice::query()
                     ->select('*')
-
                     ->whereDate('due_date', '<', now())
                     ->where(function (Builder $query) {
-                        $query->where('status', 'unpaid')
+                        $query
+                            ->where('status', 'unpaid')
                             ->orWhere('status', 'partial');
                     })
                     ->orderBy('due_date', 'asc')
                     ->limit(5)
             )
-
             ->columns([
                 Tables\Columns\TextColumn::make('invoice_number')
                     ->label('No. Invoice')
                     ->searchable(),
-
                 Tables\Columns\TextColumn::make('customer.name')
                     ->label('Customer'),
-
                 Tables\Columns\TextColumn::make('due_date')
                     ->date('d M Y')
                     ->label('Jatuh Tempo')
                     ->color('danger')
                     ->description(fn(Invoice $record) => $record->due_date->diffForHumans()),
-
                 Tables\Columns\TextColumn::make('grand_total')
                     ->label('Total Tagihan')
                     ->money('IDR')
                     ->color(fn($state) => $state < 0 ? 'danger' : 'success')
                     ->sortable()
                     ->weight('semibold'),
-
                 Tables\Columns\TextColumn::make('status')
                     ->label('Status')
                     ->badge()

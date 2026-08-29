@@ -14,7 +14,7 @@ class MonthlyReimbursementChart extends ApexChartWidget
     protected static ?string $heading = 'Monthly Reimbursement Trend';
 
     protected int|string|array $columnSpan = [
-        'default' => 'full',
+        'default' => 12,
         'md' => 8,
     ];
 
@@ -35,7 +35,6 @@ class MonthlyReimbursementChart extends ApexChartWidget
         $amounts = [];
 
         foreach ($period as $date) {
-
             $categories[] = $date->format('d M');
 
             $amount = ReimbursementRequest::query()
@@ -48,7 +47,6 @@ class MonthlyReimbursementChart extends ApexChartWidget
         }
 
         return [
-
             'chart' => [
                 'type' => 'bar',
                 'height' => 350,
@@ -56,29 +54,24 @@ class MonthlyReimbursementChart extends ApexChartWidget
                     'show' => false,
                 ],
             ],
-
             'series' => [
                 [
                     'name' => 'Reimbursement',
                     'data' => $amounts,
                 ],
             ],
-
             'xaxis' => [
                 'categories' => $categories,
             ],
-
             'plotOptions' => [
                 'bar' => [
                     'borderRadius' => 6,
                     'columnWidth' => '45%',
                 ],
             ],
-
             'dataLabels' => [
                 'enabled' => false,
             ],
-
             'yaxis' => [
                 'labels' => [
                     'formatter' => 'function(val) {
@@ -86,7 +79,6 @@ class MonthlyReimbursementChart extends ApexChartWidget
                     }',
                 ],
             ],
-
             'tooltip' => [
                 'y' => [
                     'formatter' => 'function(val) {

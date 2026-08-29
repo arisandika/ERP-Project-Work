@@ -2,9 +2,9 @@
 namespace App\Filament\Widgets\CRM;
 
 use App\Models\Sales\Quotation;
-use Filament\Tables;
 use Filament\Tables\Table;
 use Filament\Widgets\TableWidget as BaseWidget;
+use Filament\Tables;
 
 class ExpiringQuotationsTableWidget extends BaseWidget
 {
@@ -12,7 +12,10 @@ class ExpiringQuotationsTableWidget extends BaseWidget
 
     protected static ?int $sort = 8;
 
-    protected int|string|array $columnSpan = 'full';
+    protected int|string|array $columnSpan = [
+        'default' => 12,
+        'md' => 12,
+    ];
 
     public function table(Table $table): Table
     {
@@ -27,34 +30,29 @@ class ExpiringQuotationsTableWidget extends BaseWidget
                 Tables\Columns\TextColumn::make('quotation_number')
                     ->label('No. Penawaran')
                     ->weight('semibold'),
-
                 Tables\Columns\TextColumn::make('client_name')
                     ->label('Klien')
                     ->state(function (Quotation $record) {
                         $deal = $record->deal()->withTrashed()->first();
                         return $deal?->customer?->name ?? $deal?->lead()->withTrashed()->first()?->name ?? '-';
                     }),
-
                 Tables\Columns\TextColumn::make('status')
                     ->label('Status')
                     ->badge()
                     ->color(fn(string $state) => match ($state) {
-                        'new'         => 'gray',
-                        'sent'        => 'warning',
+                        'new' => 'gray',
+                        'sent' => 'warning',
                         'negotiation' => 'info',
-                        default       => 'gray',
+                        default => 'gray',
                     }),
-
                 Tables\Columns\TextColumn::make('valid_until')
                     ->label('Berlaku Hingga')
                     ->date('d M Y')
                     ->color(fn($record) => \Carbon\Carbon::parse($record->valid_until)->isPast() ? 'danger' : 'warning'),
-
                 Tables\Columns\TextColumn::make('grand_total')
                     ->label('Nilai')
                     ->money('IDR')
                     ->weight('semibold'),
-
                 Tables\Columns\TextColumn::make('internalPic.full_name')
                     ->label('PIC')
                     ->icon('heroicon-o-user'),

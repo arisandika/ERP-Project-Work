@@ -4,16 +4,19 @@ namespace App\Filament\Widgets\Inventory;
 
 use App\Models\Inventory\ProductStock;
 use App\Models\Inventory\StockTransaction;
-use Filament\Tables;
 use Filament\Tables\Table;
 use Filament\Widgets\TableWidget as BaseWidget;
+use Filament\Tables;
 use Illuminate\Database\Eloquent\Builder;
 
 class SystemAuditTable extends BaseWidget
 {
     protected static ?string $heading = 'System Audit — Data Integrity';
 
-    protected int|string|array $columnSpan = 'full';
+    protected int|string|array $columnSpan = [
+        'default' => 12,
+        'md' => 12,
+    ];
 
     protected static ?int $sort = 5;
 
@@ -30,48 +33,42 @@ class SystemAuditTable extends BaseWidget
                 Tables\Columns\TextColumn::make('severity')
                     ->label('Severity')
                     ->badge()
-                    ->color(fn (string $state): string => match ($state) {
+                    ->color(fn(string $state): string => match ($state) {
                         'critical' => 'danger',
                         'warning' => 'warning',
                         'info' => 'info',
                         default => 'gray',
                     })
-                    ->formatStateUsing(fn (string $state): string => ucfirst($state)),
-
+                    ->formatStateUsing(fn(string $state): string => ucfirst($state)),
                 Tables\Columns\TextColumn::make('category')
                     ->label('Kategori')
                     ->badge()
-                    ->color(fn (string $state): string => match ($state) {
+                    ->color(fn(string $state): string => match ($state) {
                         'negative_stock' => 'danger',
                         'data_mismatch' => 'warning',
                         'failed_transaction' => 'danger',
                         default => 'gray',
                     })
-                    ->formatStateUsing(fn (string $state): string => match ($state) {
+                    ->formatStateUsing(fn(string $state): string => match ($state) {
                         'negative_stock' => 'Stok Negatif',
                         'data_mismatch' => 'Ketidakcocokan Data',
                         'failed_transaction' => 'Transaksi Gagal',
                         default => $state,
                     }),
-
                 Tables\Columns\TextColumn::make('description')
                     ->label('Deskripsi')
                     ->limit(50),
-
                 Tables\Columns\TextColumn::make('expected_value')
                     ->label('Expected')
                     ->numeric(),
-
                 Tables\Columns\TextColumn::make('actual_value')
                     ->label('Actual')
                     ->numeric()
-                    ->color(fn ($state, $record) => $state != $record->expected_value ? 'danger' : 'success'),
-
+                    ->color(fn($state, $record) => $state != $record->expected_value ? 'danger' : 'success'),
                 Tables\Columns\TextColumn::make('detected_at')
                     ->label('Detected')
                     ->dateTime('d M H:i')
                     ->sortable(),
-
                 Tables\Columns\IconColumn::make('resolved')
                     ->label('Resolved')
                     ->boolean(),
@@ -81,23 +78,20 @@ class SystemAuditTable extends BaseWidget
                     ->label('Severity')
                     ->options(['critical' => 'Critical', 'warning' => 'Warning', 'info' => 'Info'])
                     ->multiple(),
-
                 Tables\Filters\Filter::make('unresolved')
                     ->label('Belum Diselesaikan')
-                    ->query(fn (Builder $query) => $query->where('resolved', false)),
-
+                    ->query(fn(Builder $query) => $query->where('resolved', false)),
                 Tables\Filters\Filter::make('last_24h')
                     ->label('24 Jam Terakhir')
-                    ->query(fn (Builder $query) => $query->where('detected_at', '>=', now()->subDay())),
+                    ->query(fn(Builder $query) => $query->where('detected_at', '>=', now()->subDay())),
             ])
             ->actions([
                 Tables\Actions\Action::make('investigate')
                     ->label('Investigate')
                     ->icon('heroicon-o-magnifying-glass')
                     ->color('primary')
-                    ->url(fn () => route('filament.admin.resources.inventory.transactions.index'))
+                    ->url(fn() => route('filament.admin.resources.inventory.transactions.index'))
                     ->openUrlInNewTab(),
-
                 Tables\Actions\Action::make('markResolved')
                     ->label('Resolve')
                     ->icon('heroicon-o-check-circle')
@@ -105,7 +99,7 @@ class SystemAuditTable extends BaseWidget
                     ->requiresConfirmation()
                     ->modalHeading('Tandai Selesai')
                     ->modalDescription('Tandai masalah ini sebagai sudah diselesaikan.')
-                    ->action(fn ($record) => $record->update(['resolved' => true])),
+                    ->action(fn($record) => $record->update(['resolved' => true])),
             ])
             ->bulkActions([])
             ->defaultSort('detected_at', 'desc')

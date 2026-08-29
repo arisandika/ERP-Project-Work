@@ -1,6 +1,6 @@
-<div class="mt-6 mb-2 col-span-full">
+<div class="mt-6 mb-2 col-span-full-12 w-full">
     <div
-        class="relative flex items-center gap-4 px-6 py-4 border border-primary-500 shadow-sm rounded-2xl bg-main-light dark:bg-main-dark">
+        class="w-full relative flex items-center gap-4 px-6 py-4 border border-primary-500 shadow-sm rounded-2xl bg-main-light dark:bg-main-dark">
 
         {{-- Icon --}}
         <div

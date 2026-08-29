@@ -15,7 +15,7 @@ class AttendanceStatusChart extends ApexChartWidget
     protected static ?string $heading = 'Status Presensi Hari Ini';
 
     protected int|string|array $columnSpan = [
-        'default' => 'full',
+        'default' => 12,
         'md' => 1,
     ];
 
@@ -54,7 +54,6 @@ class AttendanceStatusChart extends ApexChartWidget
                 ],
                 'fontFamily' => 'inherit',
             ],
-
             'series' => [
                 [
                     'name' => 'Jumlah',
@@ -66,7 +65,6 @@ class AttendanceStatusChart extends ApexChartWidget
                     ],
                 ],
             ],
-
             'xaxis' => [
                 'categories' => [
                     'Hadir',
@@ -81,7 +79,6 @@ class AttendanceStatusChart extends ApexChartWidget
                     ],
                 ],
             ],
-
             'yaxis' => [
                 'min' => 0,
                 'forceNiceScale' => true,
@@ -92,14 +89,12 @@ class AttendanceStatusChart extends ApexChartWidget
                     ],
                 ],
             ],
-
             'plotOptions' => [
                 'bar' => [
                     'borderRadius' => 1,
                     'columnWidth' => '35%',
                 ],
             ],
-
             'dataLabels' => [
                 'enabled' => true,
                 'offsetY' => 0,
@@ -108,23 +103,19 @@ class AttendanceStatusChart extends ApexChartWidget
                     'fontWeight' => 600,
                 ],
             ],
-
             'grid' => [
                 'borderColor' => '#374151',
                 'strokeDashArray' => 4,
             ],
-
             'colors' => [
-                '#f59e0b', // terlambat
-                '#ef4444', // absen
-                '#10b981', // hadir
-                '#6366f1', // cuti
+                '#f59e0b',  // terlambat
+                '#ef4444',  // absen
+                '#10b981',  // hadir
+                '#6366f1',  // cuti
             ],
-
             'legend' => [
                 'show' => false,
             ],
-
             'title' => [
                 'align' => 'left',
                 'style' => [
@@ -132,7 +123,6 @@ class AttendanceStatusChart extends ApexChartWidget
                     'fontWeight' => 600,
                 ],
             ],
-
         ];
     }
 }

@@ -15,7 +15,7 @@ class AttendancePolicy
      */
     public function viewAny(User $user): bool
     {
-        return $user->can('view_any_h::r::attendance::history');
+        return $user->can('view_any_h::r::overtime::monitoring');
     }
 
     /**
@@ -23,7 +23,7 @@ class AttendancePolicy
      */
     public function view(User $user, Attendance $attendance): bool
     {
-        return $user->can('view_h::r::attendance::history');
+        return $user->can('view_h::r::overtime::monitoring');
     }
 
     /**
@@ -31,7 +31,7 @@ class AttendancePolicy
      */
     public function create(User $user): bool
     {
-        return $user->can('create_h::r::attendance::history');
+        return $user->can('create_h::r::overtime::monitoring');
     }
 
     /**
@@ -39,7 +39,7 @@ class AttendancePolicy
      */
     public function update(User $user, Attendance $attendance): bool
     {
-        return $user->can('update_h::r::attendance::history');
+        return $user->can('update_h::r::overtime::monitoring');
     }
 
     /**
@@ -47,7 +47,7 @@ class AttendancePolicy
      */
     public function delete(User $user, Attendance $attendance): bool
     {
-        return $user->can('delete_h::r::attendance::history');
+        return $user->can('delete_h::r::overtime::monitoring');
     }
 
     /**
@@ -55,7 +55,7 @@ class AttendancePolicy
      */
     public function deleteAny(User $user): bool
     {
-        return $user->can('delete_any_h::r::attendance::history');
+        return $user->can('delete_any_h::r::overtime::monitoring');
     }
 
     /**
@@ -63,7 +63,7 @@ class AttendancePolicy
      */
     public function forceDelete(User $user, Attendance $attendance): bool
     {
-        return $user->can('force_delete_h::r::attendance::history');
+        return $user->can('force_delete_h::r::overtime::monitoring');
     }
 
     /**
@@ -71,7 +71,7 @@ class AttendancePolicy
      */
     public function forceDeleteAny(User $user): bool
     {
-        return $user->can('force_delete_any_h::r::attendance::history');
+        return $user->can('force_delete_any_h::r::overtime::monitoring');
     }
 
     /**
@@ -79,7 +79,7 @@ class AttendancePolicy
      */
     public function restore(User $user, Attendance $attendance): bool
     {
-        return $user->can('restore_h::r::attendance::history');
+        return $user->can('restore_h::r::overtime::monitoring');
     }
 
     /**
@@ -87,7 +87,7 @@ class AttendancePolicy
      */
     public function restoreAny(User $user): bool
     {
-        return $user->can('restore_any_h::r::attendance::history');
+        return $user->can('restore_any_h::r::overtime::monitoring');
     }
 
     /**
@@ -95,7 +95,7 @@ class AttendancePolicy
      */
     public function replicate(User $user, Attendance $attendance): bool
     {
-        return $user->can('replicate_h::r::attendance::history');
+        return $user->can('replicate_h::r::overtime::monitoring');
     }
 
     /**
@@ -103,6 +103,6 @@ class AttendancePolicy
      */
     public function reorder(User $user): bool
     {
-        return $user->can('reorder_h::r::attendance::history');
+        return $user->can('reorder_h::r::overtime::monitoring');
     }
 }

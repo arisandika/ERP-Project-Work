@@ -3,9 +3,9 @@ namespace App\Filament\Widgets\CRM;
 
 use App\Filament\Resources\CRM\DealResource;
 use App\Models\CRM\Deal;
-use Filament\Tables;
 use Filament\Tables\Table;
 use Filament\Widgets\TableWidget as BaseWidget;
+use Filament\Tables;
 
 class HotDealsTableWidget extends BaseWidget
 {
@@ -13,7 +13,10 @@ class HotDealsTableWidget extends BaseWidget
 
     protected static ?int $sort = 7;
 
-    protected int|string|array $columnSpan = 'full';
+    protected int|string|array $columnSpan = [
+        'default' => 12,
+        'md' => 12,
+    ];
 
     public function table(Table $table): Table
     {
@@ -28,36 +31,30 @@ class HotDealsTableWidget extends BaseWidget
                 Tables\Columns\TextColumn::make('deal_number')
                     ->label('No. Deal')
                     ->weight('semibold'),
-
                 Tables\Columns\TextColumn::make('title')
                     ->label('Judul Deal')
                     ->limit(30),
-
                 Tables\Columns\TextColumn::make('client_name')
                     ->label('Klien')
                     ->state(fn(Deal $record) => $record->customer?->name ?? $record->lead()->withTrashed()->first()?->name ?? '-'),
-
                 Tables\Columns\TextColumn::make('stage.name')
                     ->label('Stage')
                     ->badge()
                     ->color('info'),
-
                 Tables\Columns\TextColumn::make('estimated_value')
                     ->label('Est. Value')
                     ->money('IDR')
                     ->weight('semibold')
                     ->color('success')
                     ->sortable(),
-
                 Tables\Columns\TextColumn::make('createdBy.full_name')
                     ->label('Sales')
                     ->icon('heroicon-o-user'),
-
                 Tables\Columns\TextColumn::make('deal_date')
                     ->label('Umur Deal')
                     ->getStateUsing(fn(Deal $record) => $record->deal_date
-                            ? \Carbon\Carbon::parse($record->deal_date)->diffInDays(now()) . ' Hari'
-                            : '—')
+                        ? \Carbon\Carbon::parse($record->deal_date)->diffInDays(now()) . ' Hari'
+                        : '—')
                     ->badge()
                     ->color(fn(Deal $record) => \Carbon\Carbon::parse($record->deal_date)->diffInDays(now()) > 30 ? 'danger' : 'gray'),
             ])

@@ -10,9 +10,14 @@ class AnalyticsSectionHeaderWidget extends Widget
 
     protected static bool $isLazy = false;
 
-    protected int | string | array $columnSpan = 'full';
+    protected int|string|array $columnSpan = [
+        'default' => 12,
+        'md' => 12,
+    ];
 
     public string $title = '';
+
     public string $description = '';
+
     public string $icon = 'heroicon-o-chart-bar';
 }

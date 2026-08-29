@@ -3,10 +3,10 @@
 namespace App\Filament\Widgets\Sales;
 
 use App\Models\Sales\SalesOrder;
-use Filament\Tables;
 use Filament\Tables\Table;
-use Filament\Widgets\TableWidget as BaseWidget;
 use Filament\Widgets\Concerns\InteractsWithPageFilters;
+use Filament\Widgets\TableWidget as BaseWidget;
+use Filament\Tables;
 use Illuminate\Database\Eloquent\Builder;
 
 class PromoReportTable extends BaseWidget
@@ -14,7 +14,11 @@ class PromoReportTable extends BaseWidget
     use InteractsWithPageFilters;
 
     protected static ?string $heading = 'Top Promo Performance';
-    protected int | string | array $columnSpan = 'full';
+
+    protected int|string|array $columnSpan = [
+        'default' => 12,
+        'md' => 12,
+    ];
 
     public function table(Table $table): Table
     {
@@ -25,36 +29,31 @@ class PromoReportTable extends BaseWidget
                     // Trik: Alias-kan ID agar Filament mengira ini Primary Key
                     ->selectRaw('promo_code_id as id')
                     ->whereNotNull('promo_code_id')
-
                     // Filter Tanggal
                     ->when(
                         $this->filters['start_date'] ?? null,
-                        fn (Builder $q, $date) => $q->whereDate('created_at', '>=', $date)
+                        fn(Builder $q, $date) => $q->whereDate('created_at', '>=', $date)
                     )
                     ->when(
                         $this->filters['end_date'] ?? null,
-                        fn (Builder $q, $date) => $q->whereDate('created_at', '<=', $date)
+                        fn(Builder $q, $date) => $q->whereDate('created_at', '<=', $date)
                     )
-
                     ->groupBy('promo_code_id')
                     ->orderByDesc('usage_count')
                     ->limit(5)
             )
             // HAPUS BARIS INI: ->recordKey(...)
-
             ->columns([
                 Tables\Columns\TextColumn::make('promoCode.code')
                     ->label('Kode Product')
                     ->badge()
                     ->color('info')
-                    ->description(fn ($record) => $record->promoCode->type ?? '-'),
-
+                    ->description(fn($record) => $record->promoCode->type ?? '-'),
                 Tables\Columns\TextColumn::make('usage_count')
                     ->label('Used')
                     ->alignCenter()
                     ->badge()
                     ->color('gray'),
-
                 Tables\Columns\TextColumn::make('revenue_generated')
                     ->label('Sales')
                     ->money('IDR')

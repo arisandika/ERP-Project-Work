@@ -4,8 +4,8 @@ namespace App\Filament\Resources\Finance\FinancialRecordResource\Widgets;
 use App\Models\Finance\FinancialRecord;
 use App\Models\Procurement\PurchaseOrder;
 use App\Models\Sales\Invoice;
-use Filament\Widgets\StatsOverviewWidget as BaseWidget;
 use Filament\Widgets\StatsOverviewWidget\Stat;
+use Filament\Widgets\StatsOverviewWidget as BaseWidget;
 use Illuminate\Support\Carbon;
 
 class FinanceOverview extends BaseWidget
@@ -15,19 +15,19 @@ class FinanceOverview extends BaseWidget
     protected static ?string $pollingInterval = '60s';
 
     protected int|string|array $columnSpan = [
-        'default' => 1,
-        'xl'      => 12,
+        'default' => 12,
+        'xl' => 12,
     ];
 
     protected function getColumns(): int
     {
         return [
-            'default' => 1,
+            'default' => 12,
             'md' => 4,
         ];
     }
 
-    protected function formatRupiah(float | int | null $amount): string
+    protected function formatRupiah(float|int|null $amount): string
     {
         return 'Rp ' . number_format((float) $amount, 0, ',', '.');
     }
@@ -35,7 +35,7 @@ class FinanceOverview extends BaseWidget
     protected function getStats(): array
     {
         $startOfMonth = Carbon::now()->startOfMonth();
-        $endOfMonth   = Carbon::now()->endOfMonth();
+        $endOfMonth = Carbon::now()->endOfMonth();
 
         $totalPemasukanKeseluruhan = (float) FinancialRecord::query()
             ->where('type', 'pemasukan')
@@ -98,7 +98,6 @@ class FinanceOverview extends BaseWidget
                 ->extraAttributes([
                     'class' => $baseCardClass,
                 ]),
-
             Stat::make('Saldo Kas Tersedia', $this->formatRupiah($saldoKas))
                 ->description('Total pemasukan - pengeluaran')
                 ->descriptionIcon($saldoKas >= 0 ? 'heroicon-m-wallet' : 'heroicon-m-exclamation-triangle')
@@ -106,7 +105,6 @@ class FinanceOverview extends BaseWidget
                 ->extraAttributes([
                     'class' => $baseCardClass,
                 ]),
-
             Stat::make('Pemasukan Bulan Ini', $this->formatRupiah($pemasukanBulanIni))
                 ->description('Cash inflow bulan berjalan')
                 ->descriptionIcon('heroicon-m-arrow-trending-up')
@@ -114,7 +112,6 @@ class FinanceOverview extends BaseWidget
                 ->extraAttributes([
                     'class' => $baseCardClass,
                 ]),
-
             Stat::make('Pengeluaran Bulan Ini', $this->formatRupiah($pengeluaranBulanIni))
                 ->description('Cash outflow bulan berjalan')
                 ->descriptionIcon('heroicon-m-arrow-trending-down')
@@ -122,7 +119,6 @@ class FinanceOverview extends BaseWidget
                 ->extraAttributes([
                     'class' => $baseCardClass,
                 ]),
-
             Stat::make('Piutang Belum Lunas', $this->formatRupiah($totalPiutang))
                 ->description('Tagihan customer belum lunas')
                 ->descriptionIcon('heroicon-m-document-currency-dollar')
@@ -130,7 +126,6 @@ class FinanceOverview extends BaseWidget
                 ->extraAttributes([
                     'class' => $baseCardClass,
                 ]),
-
             Stat::make('Hutang Belum Lunas', $this->formatRupiah($totalHutang))
                 ->description('Tagihan supplier belum lunas')
                 ->descriptionIcon('heroicon-m-credit-card')
@@ -138,7 +133,6 @@ class FinanceOverview extends BaseWidget
                 ->extraAttributes([
                     'class' => $baseCardClass,
                 ]),
-
             Stat::make('Laba / Rugi Bulan Ini', $this->formatRupiah($labaBersihBulanIni))
                 ->description($labaBersihBulanIni >= 0 ? 'Bulan ini profit' : 'Bulan ini rugi')
                 ->descriptionIcon($labaBersihBulanIni >= 0 ? 'heroicon-m-check-badge' : 'heroicon-m-exclamation-circle')
@@ -146,7 +140,6 @@ class FinanceOverview extends BaseWidget
                 ->extraAttributes([
                     'class' => $baseCardClass,
                 ]),
-
             Stat::make('Transaksi Bulan Ini', number_format($jumlahTransaksiBulanIni, 0, ',', '.'))
                 ->description('Total catatan finance bulan ini')
                 ->descriptionIcon('heroicon-m-clipboard-document-list')

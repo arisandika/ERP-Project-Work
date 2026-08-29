@@ -15,14 +15,14 @@ class WarehousePerformanceChart extends ChartWidget
     protected static bool $isLazy = true;
 
     protected int|string|array $columnSpan = [
-        'default' => 'full',
+        'default' => 12,
         'md' => 12,
         'xl' => 6,
     ];
 
     protected function getData(): array
     {
-        $data = Cache::remember('warehouse_performance', now()->addMinutes(15), fn () =>
+        $data = Cache::remember('warehouse_performance', now()->addMinutes(15), fn() =>
             Warehouse::where('is_active', true)
                 ->withSum('stocks', 'qty_available')
                 ->withSum('stocks', 'qty_reserved')
@@ -37,8 +37,7 @@ class WarehousePerformanceChart extends ChartWidget
                     ];
                 })
                 ->sortByDesc('available')
-                ->values()
-        );
+                ->values());
 
         return [
             'datasets' => [
