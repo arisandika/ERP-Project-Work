@@ -2,8 +2,8 @@
 
 namespace App\Policies\AfterSales;
 
-use App\Models\AfterSales\ReturnRequest;
 use App\Models\User;
+use App\Models\AfterSales\ReturnRequest;
 use Illuminate\Auth\Access\HandlesAuthorization;
 
 class ReturnRequestPolicy
@@ -11,27 +11,11 @@ class ReturnRequestPolicy
     use HandlesAuthorization;
 
     /**
-     * Super Admin bypass.
-     * Metode ini akan dieksekusi pertama kali sebelum metode lain.
-     */
-    public function before(User $user, $ability): ?bool
-    {
-        // Sesuaikan dengan penamaan role Super Admin Anda
-        if ($user->hasRole('super_admin')) {
-            return true;
-        }
-
-        return null; // Lanjut ke pengecekan spesifik di bawah jika bukan super_admin
-    }
-
-    /**
      * Determine whether the user can view any models.
-     * Siapa saja yang boleh melihat daftar retur?
      */
     public function viewAny(User $user): bool
     {
-        // Berikan akses jika user memiliki salah satu dari role terkait After-Sales
-        return $user->hasAnyRole(['super_admin', 'inventory_employees', 'technician', 'procurement_employees']);
+        return $user->can('view_any_after::sales::supplier::warranty');
     }
 
     /**
@@ -39,12 +23,15 @@ class ReturnRequestPolicy
      */
     public function view(User $user, ReturnRequest $returnRequest): bool
     {
-        return $user->hasAnyRole(['super_admin', 'inventory_employees', 'technician', 'procurement_employees']);
+        return $user->can('view_after::sales::supplier::warranty');
     }
 
+    /**
+     * Determine whether the user can create models.
+     */
     public function create(User $user): bool
     {
-        return $user->hasRole('inventory_employees');
+        return $user->can('create_after::sales::supplier::warranty');
     }
 
     /**
@@ -52,24 +39,70 @@ class ReturnRequestPolicy
      */
     public function update(User $user, ReturnRequest $returnRequest): bool
     {
-        if ($user->hasRole('inventory_employees') && $returnRequest->status === ReturnRequest::STATUS_RECEIVED) {
-            return true;
-        }
-
-        // Teknisi dan Purchasing selalu bisa update selama mereka mengakses menu mereka
-        if ($user->hasAnyRole(['super_admin', 'technician', 'procurement_employees'])) {
-            return true;
-        }
-
-        return false;
+        return $user->can('update_after::sales::supplier::warranty');
     }
 
     /**
      * Determine whether the user can delete the model.
-     * Dalam ERP, penghapusan data transaksi sangat dilarang untuk menjaga audit trail.
      */
     public function delete(User $user, ReturnRequest $returnRequest): bool
     {
-        return false;
+        return $user->can('delete_after::sales::supplier::warranty');
+    }
+
+    /**
+     * Determine whether the user can bulk delete.
+     */
+    public function deleteAny(User $user): bool
+    {
+        return $user->can('delete_any_after::sales::supplier::warranty');
+    }
+
+    /**
+     * Determine whether the user can permanently delete.
+     */
+    public function forceDelete(User $user, ReturnRequest $returnRequest): bool
+    {
+        return $user->can('force_delete_after::sales::supplier::warranty');
+    }
+
+    /**
+     * Determine whether the user can permanently bulk delete.
+     */
+    public function forceDeleteAny(User $user): bool
+    {
+        return $user->can('force_delete_any_after::sales::supplier::warranty');
+    }
+
+    /**
+     * Determine whether the user can restore.
+     */
+    public function restore(User $user, ReturnRequest $returnRequest): bool
+    {
+        return $user->can('restore_after::sales::supplier::warranty');
+    }
+
+    /**
+     * Determine whether the user can bulk restore.
+     */
+    public function restoreAny(User $user): bool
+    {
+        return $user->can('restore_any_after::sales::supplier::warranty');
+    }
+
+    /**
+     * Determine whether the user can replicate.
+     */
+    public function replicate(User $user, ReturnRequest $returnRequest): bool
+    {
+        return $user->can('replicate_after::sales::supplier::warranty');
+    }
+
+    /**
+     * Determine whether the user can reorder.
+     */
+    public function reorder(User $user): bool
+    {
+        return $user->can('reorder_after::sales::supplier::warranty');
     }
 }

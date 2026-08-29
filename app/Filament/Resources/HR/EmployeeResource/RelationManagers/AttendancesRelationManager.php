@@ -38,8 +38,8 @@ class AttendancesRelationManager extends RelationManager
     public function exportAttendances(array $data): void
     {
         $selectedColumns = $data['columns'] ?? [];
-        $startDate = $data['start_date'] ?? null;
-        $endDate = $data['end_date'] ?? null;
+        $startDate       = $data['start_date'] ?? null;
+        $endDate         = $data['end_date'] ?? null;
 
         if (empty($selectedColumns)) {
             Notification::make()
@@ -80,7 +80,7 @@ class AttendancesRelationManager extends RelationManager
                 ->toString();
 
             $fileName = 'presensi_' . $employeeName . '_' . now()->format('Y-m-d_H-i-s') . '.xlsx';
-            $export = new AttendancesExport($attendances, $selectedColumns);
+            $export   = new AttendancesExport($attendances, $selectedColumns);
 
             Excel::store($export, 'exports/' . $fileName, 'public');
 
@@ -124,8 +124,10 @@ class AttendancesRelationManager extends RelationManager
                     ->icon('heroicon-o-user')
                     ->color(function (Attendance $record) {
                         $record->withTrashed()->first();
-                        if ($record && $record->trashed())
+                        if ($record && $record->trashed()) {
                             return 'danger';
+                        }
+
                         return '';
                     })
                     ->placeholder('—'),
@@ -134,22 +136,31 @@ class AttendancesRelationManager extends RelationManager
                     ->label('Status')
                     ->sortable()
                     ->color(fn(string $state): string => match ($state) {
-                        'hadir' => 'success',
-                        'terlambat' => 'warning',
-                        'absen' => 'danger',
-                        'izin' => 'yellow',
-                        'cuti' => 'info',
-                        default => 'gray',
+                        'hadir'       => 'success',
+                        'terlambat'   => 'warning',
+                        'absen'       => 'danger',
+                        'izin'        => 'yellow',
+                        'cuti'        => 'info',
+                        'sakit'       => 'danger', // <-- tambahkan
+                        'libur'       => 'gray',   // <-- tambahkan (biar konsisten, opsional)
+                        'no_checkout' => 'orange', // <-- tambahkan (opsional)
+
+                        default       => 'gray',
                     })
                     ->formatStateUsing(fn(string $state) => match ($state) {
                         'belum_presensi' => 'Belum Presensi',
-                        'hadir' => 'Hadir',
-                        'terlambat' => 'Terlambat',
-                        'absen' => 'Absen',
-                        'cuti' => 'Cuti',
-                        'izin' => 'Izin',
-                        'no_checkout' => 'Tidak Presensi Keluar',
-                        default => ucwords(str_replace('_', ' ', $state)),
+                        'hadir'          => 'Hadir',
+                        'terlambat'      => 'Terlambat',
+                        'absen'          => 'Absen',
+                        'cuti'           => 'Cuti',
+                        'izin'           => 'Izin',
+                        'sakit'          => 'Sakit', // <-- tambahkan
+                        'libur'          => 'Libur', // <-- tambahkan
+                        'no_checkout'    => 'Tidak Presensi Keluar',
+
+                        default          => ucwords(
+                            str_replace('_', ' ', $state)
+                        ),
                     })
                     ->placeholder('—'),
 
@@ -194,12 +205,14 @@ class AttendancesRelationManager extends RelationManager
                     ->label('Status Presensi')
                     ->options([
                         'belum_presensi' => 'Belum Presensi',
-                        'hadir' => 'Hadir',
-                        'terlambat' => 'Terlambat',
-                        'absen' => 'Absen',
-                        'cuti' => 'Cuti',
-                        'izin' => 'Izin',
-                        'no_checkout' => 'Tidak Presensi Keluar',
+                        'hadir'          => 'Hadir',
+                        'terlambat'      => 'Terlambat',
+                        'absen'          => 'Absen',
+                        'cuti'           => 'Cuti',
+                        'izin'           => 'Izin',
+                        'sakit'          => 'Sakit', // <-- tambahkan
+                        'libur'          => 'Libur', // <-- tambahkan
+                        'no_checkout'    => 'Tidak Presensi Keluar',
                     ])
                     ->native(false),
 
@@ -276,17 +289,17 @@ class AttendancesRelationManager extends RelationManager
                                     ->label('Kolom')
                                     ->options([
                                         'employee_name' => 'Nama Karyawan',
-                                        'date' => 'Tanggal',
-                                        'shift' => 'Shift',
-                                        'note' => 'Catatan',
-                                        'clock_in' => 'Jam Masuk',
-                                        'latitude_in' => 'Latitude Masuk',
-                                        'longitude_in' => 'Longitude Masuk',
-                                        'clock_out' => 'Jam Keluar',
-                                        'latitude_out' => 'Latitude Keluar',
+                                        'date'          => 'Tanggal',
+                                        'shift'         => 'Shift',
+                                        'note'          => 'Catatan',
+                                        'clock_in'      => 'Jam Masuk',
+                                        'latitude_in'   => 'Latitude Masuk',
+                                        'longitude_in'  => 'Longitude Masuk',
+                                        'clock_out'     => 'Jam Keluar',
+                                        'latitude_out'  => 'Latitude Keluar',
                                         'longitude_out' => 'Longitude Keluar',
-                                        'status' => 'Status Kehadiran',
-                                        'created_at' => 'Dibuat Pada',
+                                        'status'        => 'Status Kehadiran',
+                                        'created_at'    => 'Dibuat Pada',
                                     ])
                                     ->default([
                                         'employee_name',
@@ -340,12 +353,15 @@ class AttendancesRelationManager extends RelationManager
                             ->label('Status')
                             ->badge()
                             ->color(fn(string $state): string => match ($state) {
-                                'hadir' => 'success',
+                                'hadir'     => 'success',
                                 'terlambat' => 'warning',
-                                'absen' => 'danger',
-                                'izin' => 'yellow',
-                                'cuti' => 'info',
-                                default => 'gray',
+                                'absen'     => 'danger',
+                                'izin'      => 'yellow',
+                                'cuti'      => 'info',
+                                'sakit'     => 'yellow', // <-- tambahkan
+                                'libur'     => 'gray',   // <-- tambahkan
+
+                                default     => 'gray',
                             })
                             ->formatStateUsing(fn(string $state): string => ucwords(str_replace('_', ' ', $state)))
                             ->placeholder('—'),

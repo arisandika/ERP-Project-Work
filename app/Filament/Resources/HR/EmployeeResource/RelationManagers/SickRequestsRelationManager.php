@@ -1,27 +1,26 @@
 <?php
 namespace App\Filament\Resources\HR\EmployeeResource\RelationManagers;
 
-use App\Models\Finance\ReimbursementRequest;
+use App\Models\HR\SickRequest;
 use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Infolists\Components\ImageEntry;
 use Filament\Infolists\Components\Section;
 use Filament\Infolists\Components\TextEntry;
 use Filament\Infolists\Infolist;
-use Filament\Notifications\Notification;
 use Filament\Resources\RelationManagers\RelationManager;
 use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Carbon;
 
-class ReimbursementRequestsRelationManager extends RelationManager
+class SickRequestsRelationManager extends RelationManager
 {
-    protected static string $relationship = 'reimbursementRequests';
+    protected static string $relationship = 'sickRequests';
 
-    protected static ?string $recordTitleAttribute = 'date';
+    protected static ?string $recordTitleAttribute = 'start_date';
 
-    protected static ?string $title = 'Riwayat Reimburse';
+    protected static ?string $title = 'Riwayat Sakit';
 
     public function form(Form $form): Form
     {
@@ -42,54 +41,54 @@ class ReimbursementRequestsRelationManager extends RelationManager
                     ->sortable()
                     ->weight('semibold')
                     ->icon('heroicon-o-user')
-                    ->color(function (ReimbursementRequest $record) {
+                    ->color(function (SickRequest $record) {
                         $record->withTrashed()->first();
-                        if ($record && $record->trashed())
+                        if ($record && $record->trashed()) {
                             return 'danger';
+                        }
+
                         return '';
                     })
-                    ->placeholder('—'),
-
-                Tables\Columns\TextColumn::make('type')
-                    ->label('Jenis Reimburse')
-                    ->sortable()
-                    ->searchable()
                     ->placeholder('—'),
 
                 Tables\Columns\BadgeColumn::make('status')
                     ->label('Status')
                     ->sortable()
                     ->color(fn(string $state): string => match ($state) {
-                        'pending' => 'warning',
+                        'pending'  => 'warning',
                         'approved' => 'success',
 
-                        default => 'danger',
+                        default    => 'danger',
                     })
                     ->formatStateUsing(fn(string $state) => match ($state) {
-                        'pending' => 'Menunggu',
-                        'approved' => 'Disetujui',
-                        'rejected' => 'Ditolak',
+                        'pending'   => 'Menunggu',
+                        'approved'  => 'Disetujui',
+                        'rejected'  => 'Ditolak',
                         'cancelled' => 'Dibatalkan',
-                        'expired' => 'Kadaluwarsa',
+                        'expired'   => 'Kadaluwarsa',
 
-                        default => ucwords(
+                        default     => ucwords(
                             str_replace('_', ' ', $state)
                         ),
                     })
                     ->placeholder('—'),
 
-                Tables\Columns\TextColumn::make('date')
-                    ->label('Tanggal')
-                    ->date('D, d M Y')
+                Tables\Columns\TextColumn::make('start_date')
+                    ->label('Tanggal Mulai')
+                    ->date('d M Y')
                     ->sortable()
                     ->placeholder('—'),
 
-                Tables\Columns\TextColumn::make('amount')
-                    ->label('Nominal')
-                    ->money('IDR')
-                    ->color(fn($state) => $state < 0 ? 'success' : 'danger')
+                Tables\Columns\TextColumn::make('end_date')
+                    ->label('Tanggal Selesai')
+                    ->date('d M Y')
                     ->sortable()
-                    ->weight('semibold')
+                    ->placeholder('—'),
+
+                Tables\Columns\TextColumn::make('total_days')
+                    ->label('Durasi (Hari)')
+                    ->sortable()
+                    ->formatStateUsing(fn($state) => $state . ' Hari')
                     ->placeholder('—'),
 
                 Tables\Columns\TextColumn::make('approver.full_name')
@@ -98,18 +97,14 @@ class ReimbursementRequestsRelationManager extends RelationManager
                     ->sortable()
                     ->weight('semibold')
                     ->icon('heroicon-o-user')
-                    ->color(function (ReimbursementRequest $record) {
+                    ->color(function (SickRequest $record) {
                         $record->withTrashed()->first();
-                        if ($record && $record->trashed())
+                        if ($record && $record->trashed()) {
                             return 'danger';
+                        }
+
                         return '';
                     })
-                    ->placeholder('—'),
-
-                Tables\Columns\TextColumn::make('created_at')
-                    ->label('Dibuat Pada')
-                    ->dateTime('d M Y H:i')
-                    ->sortable()
                     ->placeholder('—'),
 
                 Tables\Columns\TextColumn::make('created_at')
@@ -133,10 +128,11 @@ class ReimbursementRequestsRelationManager extends RelationManager
             ->filters([
                 Tables\Filters\SelectFilter::make('status')
                     ->options([
-                        'pending' => 'Pending',
-                        'approved' => 'Approved',
-                        'rejected' => 'Rejected',
-                        'cancelled' => 'Cancelled',
+                        'pending'   => 'Menunggu',
+                        'approved'  => 'Disetujui',
+                        'rejected'  => 'Ditolak',
+                        'cancelled' => 'Dibatalkan',
+                        'expired'   => 'Kadaluwarsa',
                     ])
                     ->native(false),
 
@@ -198,7 +194,7 @@ class ReimbursementRequestsRelationManager extends RelationManager
     {
         return $infolist
             ->schema([
-                Section::make('Informasi Pengajuan Reimburse')
+                Section::make('Informasi Pengajuan Sakit')
                     ->columns(2)
                     ->schema([
                         TextEntry::make('employee.full_name')
@@ -207,32 +203,32 @@ class ReimbursementRequestsRelationManager extends RelationManager
                             ->icon('heroicon-o-user')
                             ->placeholder('—'),
 
-                        TextEntry::make('type')
-                            ->label('Jenis Reimburse')
-                            ->placeholder('—'),
-
-                        TextEntry::make('date')
-                            ->label('Tanggal Transaksi')
+                        TextEntry::make('start_date')
+                            ->label('Tanggal Mulai')
                             ->date('D, d M Y')
                             ->placeholder('—'),
 
-                        TextEntry::make('amount')
-                            ->label('Nominal')
-                            ->money('IDR')
-                            ->color('danger')
-                            ->weight('semibold')
+                        TextEntry::make('end_date')
+                            ->label('Tanggal Selesai')
+                            ->date('D, d M Y')
                             ->placeholder('—'),
 
-                        TextEntry::make('description')
-                            ->label('Keterangan')
+                        TextEntry::make('total_days')
+                            ->label('Durasi (Hari)')
+                            ->numeric()
+                            ->formatStateUsing(fn($state) => $state . ' Hari')
                             ->placeholder('—'),
 
-                        ImageEntry::make('receipt')
-                            ->label('Bukti Transaksi')
+                        TextEntry::make('reason')
+                            ->label('Keterangan Sakit')
+                            ->placeholder('—'),
+
+                        ImageEntry::make('sick_proof')
+                            ->label('Bukti/Surat Dokter')
                             ->placeholder('—')
                             ->extraImgAttributes([
                                 'style' => 'width: 100%; height: auto; object-fit: cover;',
-                                'class' => 'w-full rounded-2xl'
+                                'class' => 'w-full rounded-2xl',
                             ]),
                     ]),
 
@@ -243,24 +239,23 @@ class ReimbursementRequestsRelationManager extends RelationManager
                             ->label('Status')
                             ->badge()
                             ->color(fn(string $state) => match ($state) {
-                                'pending' => 'warning',
+                                'pending'  => 'warning',
                                 'approved' => 'success',
-                                
-                                default => 'danger',
+
+                                default    => 'danger',
                             })
                             ->formatStateUsing(function (string $state): string {
                                 return match ($state) {
-                                    'pending' => 'Menunggu',
-                                    'approved' => 'Disetujui',
-                                    'rejected' => 'Ditolak',
+                                    'pending'   => 'Menunggu',
+                                    'approved'  => 'Disetujui',
+                                    'rejected'  => 'Ditolak',
                                     'cancelled' => 'Dibatalkan',
-                                    'expired' => 'Kadaluwarsa',
+                                    'expired'   => 'Kadaluwarsa',
 
-                                    default => ucwords(
+                                    default     => ucwords(
                                         str_replace('_', ' ', $state)
                                     ),
                                 };
-
                             })
                             ->placeholder('—'),
 
@@ -275,6 +270,11 @@ class ReimbursementRequestsRelationManager extends RelationManager
                             ->dateTime('d M Y H:i')
                             ->visible(fn($record) => $record->approved_at !== null)
                             ->placeholder('—'),
+
+                        TextEntry::make('approval_note')
+                            ->label('Catatan Admin')
+                            ->placeholder('—')
+                            ->columnSpanFull(),
                     ]),
 
                 Section::make('Pengelolaan Data')

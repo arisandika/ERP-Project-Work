@@ -6,6 +6,7 @@ use App\Filament\Resources\HR\EmployeeResource\Pages;
 use App\Filament\Resources\HR\EmployeeResource\RelationManagers\AttendancesRelationManager;
 use App\Filament\Resources\HR\EmployeeResource\RelationManagers\LeaveRequestsRelationManager;
 use App\Filament\Resources\HR\EmployeeResource\RelationManagers\ReimbursementRequestsRelationManager;
+use App\Filament\Resources\HR\EmployeeResource\RelationManagers\SickRequestsRelationManager;
 use App\Models\HR\Employee;
 use Filament\Forms;
 use Filament\Forms\Form;
@@ -653,6 +654,7 @@ class EmployeeResource extends Resource
         return [
             AttendancesRelationManager::class,
             LeaveRequestsRelationManager::class,
+            SickRequestsRelationManager::class,
             ReimbursementRequestsRelationManager::class,
         ];
     }

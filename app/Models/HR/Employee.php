@@ -85,6 +85,11 @@ class Employee extends Model
         return $this->hasMany(LeaveRequest::class, 'employee_id', 'id');
     }
 
+    public function sickRequests()
+    {
+        return $this->hasMany(SickRequest::class, 'employee_id', 'id');
+    }
+
     public function reimbursementRequests()
     {
         return $this->hasMany(ReimbursementRequest::class, 'employee_id', 'id');

@@ -1,12 +1,12 @@
 <?php
 namespace App\Filament\Resources\HR;
 
+use App\Filament\Concerns\BelongsToModule;
 use App\Filament\Resources\HR\AttendanceResource\Pages;
 use App\Infolists\Components\AttendanceMapEntry;
 use App\Models\HR\Attendance;
 use Filament\Forms;
 use Filament\Forms\Form;
-use Filament\Infolists\Components\ImageEntry;
 use Filament\Infolists\Components\Section;
 use Filament\Infolists\Components\TextEntry;
 use Filament\Infolists\Infolist;
@@ -16,7 +16,6 @@ use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
 use Illuminate\Support\Carbon;
-use App\Filament\Concerns\BelongsToModule;
 
 class AttendanceResource extends Resource
 {
@@ -56,8 +55,10 @@ class AttendanceResource extends Resource
                     ->icon('heroicon-o-user')
                     ->color(function (Attendance $record) {
                         $record->withTrashed()->first();
-                        if ($record && $record->trashed())
+                        if ($record && $record->trashed()) {
                             return 'danger';
+                        }
+
                         return '';
                     })
                     ->placeholder('—'),
@@ -66,24 +67,29 @@ class AttendanceResource extends Resource
                     ->label('Status')
                     ->sortable()
                     ->color(fn(string $state): string => match ($state) {
-                        'hadir' => 'success',
-                        'terlambat' => 'warning',
-                        'absen' => 'danger',
-                        'izin' => 'yellow',
-                        'cuti' => 'info',
+                        'hadir'       => 'success',
+                        'terlambat'   => 'warning',
+                        'absen'       => 'danger',
+                        'izin'        => 'yellow',
+                        'cuti'        => 'info',
+                        'sakit'       => 'danger', // <-- tambahkan
+                        'libur'       => 'gray',   // <-- tambahkan (biar konsisten, opsional)
+                        'no_checkout' => 'orange', // <-- tambahkan (opsional)
 
-                        default => 'gray',
+                        default       => 'gray',
                     })
                     ->formatStateUsing(fn(string $state) => match ($state) {
                         'belum_presensi' => 'Belum Presensi',
-                        'hadir' => 'Hadir',
-                        'terlambat' => 'Terlambat',
-                        'absen' => 'Absen',
-                        'cuti' => 'Cuti',
-                        'izin' => 'Izin',
-                        'no_checkout' => 'Tidak Presensi Keluar',
+                        'hadir'          => 'Hadir',
+                        'terlambat'      => 'Terlambat',
+                        'absen'          => 'Absen',
+                        'cuti'           => 'Cuti',
+                        'izin'           => 'Izin',
+                        'sakit'          => 'Sakit', // <-- tambahkan
+                        'libur'          => 'Libur', // <-- tambahkan
+                        'no_checkout'    => 'Tidak Presensi Keluar',
 
-                        default => ucwords(
+                        default          => ucwords(
                             str_replace('_', ' ', $state)
                         ),
                     })
@@ -130,12 +136,14 @@ class AttendanceResource extends Resource
                     ->label('Status Presensi')
                     ->options([
                         'belum_presensi' => 'Belum Presensi',
-                        'hadir' => 'Hadir',
-                        'terlambat' => 'Terlambat',
-                        'absen' => 'Absen',
-                        'cuti' => 'Cuti',
-                        'izin' => 'Izin',
-                        'no_checkout' => 'Tidak Presensi Keluar',
+                        'hadir'          => 'Hadir',
+                        'terlambat'      => 'Terlambat',
+                        'absen'          => 'Absen',
+                        'cuti'           => 'Cuti',
+                        'izin'           => 'Izin',
+                        'sakit'          => 'Sakit', // <-- tambahkan
+                        'libur'          => 'Libur', // <-- tambahkan
+                        'no_checkout'    => 'Tidak Presensi Keluar',
                     ])
                     ->native(false),
 
@@ -230,13 +238,15 @@ class AttendanceResource extends Resource
                             ->label('Status')
                             ->badge()
                             ->color(fn(string $state): string => match ($state) {
-                                'hadir' => 'success',
+                                'hadir'     => 'success',
                                 'terlambat' => 'warning',
-                                'absen' => 'danger',
-                                'izin' => 'yellow',
-                                'cuti' => 'info',
+                                'absen'     => 'danger',
+                                'izin'      => 'yellow',
+                                'cuti'      => 'info',
+                                'sakit'     => 'yellow', // <-- tambahkan
+                                'libur'     => 'gray',   // <-- tambahkan
 
-                                default => 'gray',
+                                default     => 'gray',
                             })
                             ->formatStateUsing(fn(string $state): string => ucwords(str_replace('_', ' ', $state)))
                             ->placeholder('—'),
