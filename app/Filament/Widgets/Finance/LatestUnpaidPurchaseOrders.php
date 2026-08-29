@@ -4,9 +4,9 @@ namespace App\Filament\Widgets\Finance;
 
 use App\Enums\Procurement\PurchaseOrderStatus;
 use App\Models\Procurement\PurchaseOrder;
-use Filament\Tables;
 use Filament\Tables\Table;
 use Filament\Widgets\TableWidget as BaseWidget;
+use Filament\Tables;
 
 class LatestUnpaidPurchaseOrders extends BaseWidget
 {
@@ -14,6 +14,7 @@ class LatestUnpaidPurchaseOrders extends BaseWidget
     protected static ?int $sort = 5;
 
     protected int|string|array $columnSpan = [
+        'default' => 12,
         'xl' => 12,
     ];
 
@@ -38,17 +39,14 @@ class LatestUnpaidPurchaseOrders extends BaseWidget
                     ->color('primary')
                     ->searchable()
                     ->copyable(),
-
                 Tables\Columns\TextColumn::make('supplier.name')
                     ->label('Supplier')
                     ->limit(20)
                     ->icon('heroicon-m-building-office'),
-
                 Tables\Columns\TextColumn::make('status')
                     ->label('Status')
                     ->badge()
-                    ->formatStateUsing(fn ($state) => str($state->value ?? $state)->title()->toString()),
-
+                    ->formatStateUsing(fn($state) => str($state->value ?? $state)->title()->toString()),
                 Tables\Columns\TextColumn::make('grand_total')
                     ->label('Outstanding')
                     ->money('IDR', locale: 'id')
@@ -60,7 +58,7 @@ class LatestUnpaidPurchaseOrders extends BaseWidget
                 Tables\Actions\Action::make('view')
                     ->label('Lihat')
                     ->icon('heroicon-m-eye')
-                    ->url(fn ($record) => route('filament.admin.resources.procurement.purchase-orders.edit', $record)),
+                    ->url(fn($record) => route('filament.admin.resources.procurement.purchase-orders.edit', $record)),
             ])
             ->emptyStateHeading('Tidak Ada Hutang')
             ->emptyStateDescription('Semua PO sudah lunas.')

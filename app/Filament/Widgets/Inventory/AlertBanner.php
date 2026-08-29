@@ -11,7 +11,10 @@ class AlertBanner extends Widget
 {
     protected static string $view = 'filament.widgets.inventory.alert-banner';
 
-    protected int|string|array $columnSpan = 'full';
+    protected int|string|array $columnSpan = [
+        'default' => 12,
+        'md' => 12,
+    ];
 
     protected static ?int $sort = 0;
 
@@ -26,25 +29,22 @@ class AlertBanner extends Widget
     {
         $ttl = now()->addMinutes(5);
 
-        $outOfStockWithOrders = Cache::remember('mon_alert_oos_orders', $ttl, fn () =>
+        $outOfStockWithOrders = Cache::remember('mon_alert_oos_orders', $ttl, fn() =>
             ProductStock::where('qty_available', '<=', 0)
                 ->where('qty_reserved', '>', 0)
-                ->count()
-        );
+                ->count());
 
-        $lowStockCount = Cache::remember('mon_alert_low_stock', $ttl, fn () =>
+        $lowStockCount = Cache::remember('mon_alert_low_stock', $ttl, fn() =>
             ProductStock::where('qty_available', '>', 0)
                 ->where('qty_available', '<=', 10)
                 ->distinct('product_id')
-                ->count('product_id')
-        );
+                ->count('product_id'));
 
-        $failedCount = Cache::remember('mon_alert_failed_24h', $ttl, fn () =>
+        $failedCount = Cache::remember('mon_alert_failed_24h', $ttl, fn() =>
             StockTransaction::where('type', 'keluar')
                 ->whereDate('transaction_date', '>=', now()->subDay())
                 ->where('stock_after', '<', 0)
-                ->count()
-        );
+                ->count());
 
         $this->alerts = [];
 

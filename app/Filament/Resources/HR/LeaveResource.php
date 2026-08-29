@@ -1,37 +1,33 @@
 <?php
 namespace App\Filament\Resources\HR;
 
+use App\Filament\Concerns\BelongsToModule;
 use App\Filament\Resources\HR\LeaveResource\Pages;
 use App\Models\HR\Leave;
-use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Infolists\Components\IconEntry;
 use Filament\Infolists\Components\Section;
 use Filament\Infolists\Components\TextEntry;
 use Filament\Infolists\Infolist;
 use Filament\Resources\Resource;
-use Filament\Tables;
 use Filament\Tables\Table;
+use Filament\Forms;
+use Filament\Tables;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\HtmlString;
-use App\Filament\Concerns\BelongsToModule;
 
 class LeaveResource extends Resource
 {
     use BelongsToModule;
+
     protected static ?string $module = 'hr';
     protected static ?string $model = Leave::class;
-
     protected static ?string $navigationIcon = 'heroicon-o-arrow-right-start-on-rectangle';
-
     protected static ?string $navigationGroup = 'Manajemen HR';
-
     protected static ?int $navigationSort = 4;
-
     protected static ?string $slug = 'hr/leaves';
-
     protected static ?string $pluralModelLabel = 'Cuti';
 
     public static function getNavigationBadge(): ?string
@@ -49,26 +45,22 @@ class LeaveResource extends Resource
                         ->required()
                         ->maxLength(255)
                         ->prefixIcon('heroicon-o-document-text'),
-
                     Forms\Components\TextInput::make('days_count')
                         ->label('Jumlah Hari')
                         ->required()
                         ->numeric()
                         ->prefixIcon('heroicon-o-calendar-days'),
-
                     Forms\Components\Toggle::make('is_female_only')
                         ->label('Khusus Wanita')
                         ->default(false)
                         ->inline(false),
-
                     Forms\Components\Toggle::make('is_male_only')
                         ->label('Khusus Laki-laki')
                         ->default(false)
                         ->inline(false),
                 ])
-                ->columns(2),
+                ->columns(['default' => 122, 'md' => 2]),
         ]);
-
     }
 
     public static function table(Table $table): Table
@@ -79,33 +71,27 @@ class LeaveResource extends Resource
                     ->label('Jenis Cuti')
                     ->searchable()
                     ->placeholder('—'),
-
                 Tables\Columns\TextColumn::make('days_count')
                     ->label('Jumlah Hari')
                     ->numeric()
                     ->sortable()
                     ->placeholder('—'),
-
                 Tables\Columns\ToggleColumn::make('is_female_only')
                     ->label('Khusus Wanita')
                     ->placeholder('—'),
-
                 Tables\Columns\ToggleColumn::make('is_male_only')
                     ->label('Khusus Laki-laki')
                     ->placeholder('—'),
-
                 Tables\Columns\TextColumn::make('created_at')
                     ->label('Dibuat Pada')
                     ->dateTime('d M Y H:i')
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
-
                 Tables\Columns\TextColumn::make('updated_at')
                     ->label('Diperbarui Pada')
                     ->dateTime('d M Y H:i')
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
-
                 Tables\Columns\TextColumn::make('deleted_at')
                     ->label('Dihapus Pada')
                     ->dateTime('d M Y H:i')
@@ -121,7 +107,6 @@ class LeaveResource extends Resource
                             ->displayFormat('d M Y')
                             ->native(false)
                             ->prefixIcon('heroicon-o-calendar-days'),
-
                         Forms\Components\DatePicker::make('created_until')
                             ->label('Dibuat Hingga')
                             ->required()
@@ -153,7 +138,6 @@ class LeaveResource extends Resource
 
                         return $indicators;
                     }),
-
                 Tables\Filters\TrashedFilter::make()
                     ->label('Deleted Status')
                     ->native(false),
@@ -181,41 +165,35 @@ class LeaveResource extends Resource
         return $infolist
             ->schema([
                 Section::make('Informasi Cutii')
-                    ->columns(2)
+                    ->columns(['default' => 122, 'md' => 2])
                     ->schema([
                         TextEntry::make('leave_type')
                             ->label('Nama Cuti')
                             ->placeholder('—'),
-
                         TextEntry::make('days_count')
                             ->label('Jumlah Hari')
                             ->formatStateUsing(fn($state) => $state . ' Hari')
                             ->placeholder('—'),
-
                         IconEntry::make('is_female_only')
                             ->label('Khusus Wanita')
                             ->trueIcon('heroicon-o-check-circle')
                             ->falseIcon('heroicon-o-x-circle')
                             ->placeholder('—'),
-
                         IconEntry::make('is_male_only')
                             ->label('Khusus Laki-laki')
                             ->trueIcon('heroicon-o-check-circle')
                             ->falseIcon('heroicon-o-x-circle')
                             ->placeholder('—'),
                     ]),
-
                 Section::make('Pengelolaan Data')
-                    ->columns(2)
+                    ->columns(['default' => 122, 'md' => 2])
                     ->schema([
                         TextEntry::make('created_at')
                             ->label('Dibuat Pada')
                             ->dateTime('d M Y H:i'),
-
                         TextEntry::make('updated_at')
                             ->label('Diperbarui Pada')
                             ->dateTime('d M Y H:i'),
-
                         TextEntry::make('deleted_at')
                             ->label('Dihapus Pada')
                             ->dateTime('d M Y H:i')

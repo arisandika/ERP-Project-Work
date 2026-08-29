@@ -3,15 +3,15 @@
 namespace App\Filament\Resources\Project\ProjectResource\RelationManagers;
 
 use App\Models\Project\Epic;
-use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Infolists\Components\Section;
 use Filament\Infolists\Components\TextEntry;
 use Filament\Infolists\Infolist;
 use Filament\Notifications\Notification;
 use Filament\Resources\RelationManagers\RelationManager;
-use Filament\Tables;
 use Filament\Tables\Table;
+use Filament\Forms;
+use Filament\Tables;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
@@ -42,13 +42,13 @@ class EpicsRelationManager extends RelationManager
                             ->label('Nama Epic')
                             ->required()
                             ->maxLength(255),
-
                         Forms\Components\TextInput::make('sort_order')
                             ->label('Urutan')
                             ->numeric()
                             ->required()
                             ->default(function ($livewire) {
-                                $lastOrder = $livewire->getOwnerRecord()
+                                $lastOrder = $livewire
+                                    ->getOwnerRecord()
                                     ->epics()
                                     ->max('sort_order');
 
@@ -62,7 +62,8 @@ class EpicsRelationManager extends RelationManager
                                 $project = $livewire->getOwnerRecord();
 
                                 $isTaken = function ($val) use ($project, $record) {
-                                    return $project->epics()
+                                    return $project
+                                        ->epics()
                                         ->where('sort_order', $val)
                                         ->when($record, fn($q) => $q->where('id', '!=', $record->id))
                                         ->exists();
@@ -86,7 +87,6 @@ class EpicsRelationManager extends RelationManager
                                 }
                             })
                             ->helperText('Otomatis menyesuaikan jika nomor sudah terpakai'),
-
                         Forms\Components\DatePicker::make('start_date')
                             ->label('Tanggal Mulai')
                             ->default(now())
@@ -94,14 +94,12 @@ class EpicsRelationManager extends RelationManager
                             ->required()
                             ->displayFormat('d M Y')
                             ->native(false),
-
                         Forms\Components\DatePicker::make('end_date')
                             ->label('Tanggal Selesai')
                             ->required()
                             ->displayFormat('d M Y')
                             ->native(false)
                             ->prefixIcon('heroicon-o-calendar-days'),
-
                         Forms\Components\RichEditor::make('description')
                             ->label('Deskripsi Epic')
                             ->columnSpanFull()
@@ -124,11 +122,10 @@ class EpicsRelationManager extends RelationManager
                             ->fileAttachmentsDisk('public')
                             ->fileAttachmentsDirectory('attachments/epic-descriptions')
                             ->fileAttachmentsVisibility('public'),
-
                         Forms\Components\Hidden::make('created_by')
                             ->default(fn() => auth()->user()->employee?->id),
                     ])
-                    ->columns(2)
+                    ->columns(['default' => 122, 'md' => 2])
             ]);
     }
 
@@ -144,24 +141,20 @@ class EpicsRelationManager extends RelationManager
                     ->sortable()
                     ->weight('semibold')
                     ->placeholder('—'),
-
                 // Tables\Columns\TextColumn::make('sort_order')
                 //     ->label('Urutan')
                 //     ->alignCenter()
                 //     ->sortable(),
-
                 Tables\Columns\TextColumn::make('start_date')
                     ->label('Tanggal Mulai')
                     ->dateTime('d M Y')
                     ->sortable()
                     ->placeholder('—'),
-
                 Tables\Columns\TextColumn::make('end_date')
                     ->label('Tanggal Selesai')
                     ->dateTime('d M Y')
                     ->sortable()
                     ->placeholder('—'),
-
                 Tables\Columns\TextColumn::make('tickets_count')
                     ->label('Ticket')
                     ->counts('tickets')
@@ -170,7 +163,6 @@ class EpicsRelationManager extends RelationManager
                     ->sortable()
                     ->formatStateUsing(fn($state) => $state . ' Ticket')
                     ->placeholder('—'),
-
                 Tables\Columns\TextColumn::make('creator.full_name')
                     ->label('Dibuat Oleh')
                     ->searchable()
@@ -178,13 +170,11 @@ class EpicsRelationManager extends RelationManager
                     ->weight('semibold')
                     ->icon('heroicon-o-user')
                     ->placeholder('—'),
-
                 Tables\Columns\TextColumn::make('created_at')
                     ->label('Dibuat Pada')
                     ->dateTime('d M Y H:i')
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: false),
-
                 Tables\Columns\TextColumn::make('updated_at')
                     ->label('Diperbarui Pada')
                     ->dateTime('d M Y H:i')
@@ -200,7 +190,6 @@ class EpicsRelationManager extends RelationManager
                             ->displayFormat('d M Y')
                             ->native(false)
                             ->prefixIcon('heroicon-o-calendar-days'),
-
                         Forms\Components\DatePicker::make('created_until')
                             ->label('Dibuat Hingga')
                             ->required()
@@ -259,36 +248,31 @@ class EpicsRelationManager extends RelationManager
             ->schema([
                 Section::make('Informasi Epic')
                     ->description('Detail durasi dan urutan pengerjaan Epic.')
-                    ->columns(2)
+                    ->columns(['default' => 122, 'md' => 2])
                     ->schema([
                         TextEntry::make('name')
                             ->label('Nama Epic')
                             ->weight('semibold')
                             ->size('lg')
                             ->placeholder('—'),
-
                         TextEntry::make('sort_order')
                             ->label('Urutan Tampil')
                             ->formatStateUsing(fn($state): string => 'Urutan ke-' . $state)
                             ->placeholder('—'),
-
                         TextEntry::make('creator.full_name')
                             ->label('Dibuat Oleh')
                             ->weight('semibold')
                             ->icon('heroicon-o-user')
                             ->placeholder('—'),
-
                         TextEntry::make('start_date')
                             ->label('Tanggal Mulai')
                             ->date('d M Y')
                             ->placeholder('—'),
-
                         TextEntry::make('end_date')
                             ->label('Tanggal Selesai')
                             ->date('d M Y')
                             ->placeholder('—')
                             ->color(fn($state) => $state < now() ? 'danger' : 'success'),
-
                         TextEntry::make('duration')
                             ->label('Durasi Pengerjaan')
                             ->getStateUsing(function ($record) {
@@ -297,23 +281,20 @@ class EpicsRelationManager extends RelationManager
                                 return $record->start_date->diffInDays($record->end_date) . ' Hari';
                             }),
                     ]),
-
                 Section::make('Statistik Ticket')
                     ->description('Ringkasan jumlah ticket yang terhubung dengan Epic ini.')
-                    ->columns(2)
+                    ->columns(['default' => 122, 'md' => 2])
                     ->schema([
                         TextEntry::make('tickets_count')
                             ->label('Total Ticket')
                             ->getStateUsing(fn($record) => $record->tickets()->count())
                             ->formatStateUsing(fn($state) => $state . ' Ticket'),
-
                         TextEntry::make('last_ticket_update')
                             ->label('Aktivitas Terakhir')
                             ->getStateUsing(fn($record) => $record->tickets()->latest('updated_at')->first()?->updated_at)
                             ->since()
                             ->placeholder('Belum ada aktivitas'),
                     ]),
-
                 Section::make('Deskripsi Epic')
                     ->schema([
                         TextEntry::make('description')
@@ -323,14 +304,12 @@ class EpicsRelationManager extends RelationManager
                             ->placeholder('Tidak ada deskripsi'),
                     ])
                     ->collapsible(),
-
                 Section::make('Pengelolaan Data')
-                    ->columns(2)
+                    ->columns(['default' => 122, 'md' => 2])
                     ->schema([
                         TextEntry::make('created_at')
                             ->label('Dibuat Pada')
                             ->dateTime('d M Y H:i'),
-
                         TextEntry::make('updated_at')
                             ->label('Diperbarui Pada')
                             ->dateTime('d M Y H:i'),

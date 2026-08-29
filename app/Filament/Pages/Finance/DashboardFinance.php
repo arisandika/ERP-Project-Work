@@ -9,11 +9,11 @@ use App\Filament\Widgets\Finance\LatestUnpaidPurchaseOrders;
 use App\Filament\Widgets\Finance\ReimburseApprovalOverview;
 use App\Services\Finance\FinancialService;
 use BezhanSalleh\FilamentShield\Traits\HasPageShield;
-use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Section;
+use Filament\Forms\Components\Select;
 use Filament\Forms\Form;
-use Filament\Pages\Dashboard as BaseDashboard;
 use Filament\Pages\Dashboard\Concerns\HasFiltersForm;
+use Filament\Pages\Dashboard as BaseDashboard;
 
 class DashboardFinance extends BaseDashboard
 {
@@ -32,7 +32,7 @@ class DashboardFinance extends BaseDashboard
     protected static ?string $navigationLabel = 'Dashboard Finance';
 
     protected static ?string $title = 'Dashboard Finance';
-    
+
     protected static ?int $navigationSort = 1;
 
     public function getSubheading(): ?string
@@ -51,11 +51,11 @@ class DashboardFinance extends BaseDashboard
                     ->schema([
                         Select::make('year')
                             ->label('Tahun Analisis')
-                            ->options(fn (FinancialService $service) => $service->getYearOptions())
+                            ->options(fn(FinancialService $service) => $service->getYearOptions())
                             ->default(now()->year)
                             ->selectablePlaceholder(false),
                     ])
-                    ->columns(4) // Menjaga form tetap ramping di atas
+                    ->columns(['default' => 122, 'md' => 4])  // Menjaga form tetap ramping di atas
             ]);
     }
 

@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources\Sales;
 
+use App\Filament\Concerns\BelongsToModule;
 use App\Filament\Resources\Sales\QuotationResource\Pages;
 use App\Models\Inventory\Package;
 use App\Models\Inventory\Product;
@@ -9,6 +10,7 @@ use App\Models\Inventory\Service;
 use App\Models\Marketing\PromoCode;
 use App\Models\Sales\Quotation;
 use App\Models\Sales\SalesPerson;
+use App\Services\Sales\QuotationService;
 use Filament\Forms\Components\Actions\Action as FormAction;
 use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\Grid;
@@ -24,30 +26,24 @@ use Filament\Forms\Get;
 use Filament\Forms\Set;
 use Filament\Notifications\Notification;
 use Filament\Resources\Resource;
-use Filament\Tables;
 use Filament\Tables\Table;
+use Filament\Tables;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
-use App\Services\Sales\QuotationService;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\HtmlString;
-use App\Filament\Concerns\BelongsToModule;
 
 class QuotationResource extends Resource
 {
     use BelongsToModule;
+
     protected static ?string $module = 'sales';
     protected static ?string $model = Quotation::class;
-
     protected static ?string $navigationIcon = 'heroicon-o-document-text';
-
     protected static ?string $navigationGroup = 'Manajemen Sales';
-
     protected static ?int $navigationSort = 2;
-
     protected static ?string $slug = 'sales/quotations';
-
     protected static ?string $pluralModelLabel = 'Penawaran';
 
     public static function getNavigationBadge(): ?string
@@ -69,7 +65,6 @@ class QuotationResource extends Resource
                                     ->dehydrated()
                                     ->unique(ignoreRecord: true)
                                     ->prefixIcon('heroicon-o-hashtag'),
-
                                 Select::make('nx_deal_id')
                                     ->label('No. Deal (Ref)')
                                     ->relationship(
@@ -99,7 +94,6 @@ class QuotationResource extends Resource
                                             return "{$label} (Lead Terhapus)";
                                         return $label;
                                     }),
-
                                 DatePicker::make('quotation_date')
                                     ->label('Tanggal Penawaran')
                                     ->default(now())
@@ -107,7 +101,6 @@ class QuotationResource extends Resource
                                     ->required()
                                     ->displayFormat('d M Y')
                                     ->native(false),
-
                                 DatePicker::make('valid_until')
                                     ->label('Berlaku Hingga')
                                     ->default(now()->addDays(7))
@@ -115,7 +108,6 @@ class QuotationResource extends Resource
                                     ->required()
                                     ->displayFormat('d M Y')
                                     ->native(false),
-
                                 Select::make('internal_pic_id')
                                     ->label('PIC (Internal Sales)')
                                     ->relationship('internalPic', 'full_name')
@@ -126,7 +118,6 @@ class QuotationResource extends Resource
                                         return auth()->user()?->employee?->id;
                                     })
                                     ->prefixIcon('heroicon-o-user'),
-
                                 Select::make('field_staff_pic_id')
                                     ->label('PIC (External/Field Staff)')
                                     ->relationship('fieldStaffPic', 'full_name', function ($query) {
@@ -135,12 +126,10 @@ class QuotationResource extends Resource
                                     ->searchable()
                                     ->preload()
                                     ->prefixIcon('heroicon-o-users'),
-
                                 Select::make('created_by')
                                     ->label('Dibuat Oleh')
                                     ->relationship('createdBy', 'full_name')
                                     ->disabled(),
-
                                 Select::make('status')
                                     ->options(function (string $operation): array {
                                         $allStatuses = [
@@ -164,12 +153,11 @@ class QuotationResource extends Resource
                                     ->prefixIcon('heroicon-o-adjustments-vertical'),
                             ]),
                     ]),
-
                 Section::make('Daftar Item Penawaran')
                     ->schema([
                         Repeater::make('items')
                             ->schema(self::getQuotationItemsSchema())
-                            ->columns(2)
+                            ->columns(['default' => 122, 'md' => 2])
                             ->live()
                             ->afterStateUpdated(fn(Get $get, Set $set) => self::updateTotals($get, $set))
                             ->createItemButtonLabel('Tambah Item')
@@ -180,7 +168,6 @@ class QuotationResource extends Resource
                     ])
                     ->collapsible(),
             ])->columnSpan(['lg' => 2]),
-
             Group::make()->schema([
                 Section::make('Ringkasan Harga')
                     ->schema([
@@ -200,11 +187,9 @@ class QuotationResource extends Resource
                                 return strtoupper($state ?? '');
                             })
                             ->afterStateUpdated(fn(Set $set, $state) => $set('promo_code_input', strtoupper($state ?? ''))),
-
                         Hidden::make('promo_code_id'),
                         Hidden::make('temp_discount_type')->dehydrated(false),
                         Hidden::make('temp_discount_value')->dehydrated(false),
-
                         TextInput::make('subtotal')
                             ->label('Subtotal')
                             ->numeric()
@@ -214,7 +199,6 @@ class QuotationResource extends Resource
                             ->disabled()
                             ->dehydrated()
                             ->formatStateUsing(fn($state) => (int) $state),
-
                         TextInput::make('discount_amount')
                             ->label('Potongan / Diskon')
                             ->numeric()
@@ -223,7 +207,6 @@ class QuotationResource extends Resource
                             ->disabled()
                             ->dehydrated()
                             ->formatStateUsing(fn($state) => (int) $state),
-
                         TextInput::make('tax')
                             ->label('Pajak PPN (%)')
                             ->numeric()
@@ -233,7 +216,6 @@ class QuotationResource extends Resource
                             ->afterStateUpdated(fn($state, Set $set, Get $get) => self::updateTotals($get, $set))
                             ->formatStateUsing(fn($state) => (float) $state)
                             ->prefixIcon('heroicon-o-receipt-percent'),
-
                         TextInput::make('grand_total')
                             ->label('Grand Total')
                             ->numeric()
@@ -245,17 +227,14 @@ class QuotationResource extends Resource
                             ->extraInputAttributes(['style' => 'font-size: 1rem; font-weight: bold; color: green;'])
                             ->formatStateUsing(fn($state) => (int) $state),
                     ]),
-
                 Section::make('Catatan')
                     ->schema([
                         Textarea::make('notes')
                             ->label('Catatan Tambahan / Syarat Ketentuan')
                             ->rows(5),
                     ]),
-
-            ])->columnSpan(['lg' => 1]), // Menempati 1 dari 3 kolom grid utama
-
-        ])->columns(3); // Container utama dibagi menjadi 3 kolom
+            ])->columnSpan(['lg' => 1]),  // Menempati 1 dari 3 kolom grid utama
+        ])->columns(['default' => 122, 'md' => 3]);  // Container utama dibagi menjadi 3 kolom
     }
 
     public static function table(Table $table): Table
@@ -267,7 +246,6 @@ class QuotationResource extends Resource
                     ->sortable()
                     ->searchable()
                     ->weight('semibold'),
-
                 Tables\Columns\TextColumn::make('client_name')
                     ->label('Lead')
                     ->state(function (Quotation $record) {
@@ -328,7 +306,6 @@ class QuotationResource extends Resource
                         }
                         return '';
                     }),
-
                 Tables\Columns\TextColumn::make('status')
                     ->label('Status Penawaran')
                     ->badge()
@@ -352,7 +329,6 @@ class QuotationResource extends Resource
 
                         default => ucfirst($state),
                     }),
-
                 Tables\Columns\TextColumn::make('internalPic.full_name')
                     ->label('PIC Internal')
                     ->searchable()
@@ -360,7 +336,6 @@ class QuotationResource extends Resource
                     ->icon('heroicon-o-user')
                     ->weight('semibold')
                     ->toggleable(isToggledHiddenByDefault: false),
-
                 Tables\Columns\TextColumn::make('fieldStaffPic.full_name')
                     ->label('Field Staff')
                     ->searchable()
@@ -368,12 +343,10 @@ class QuotationResource extends Resource
                     ->icon('heroicon-o-users')
                     ->weight('semibold')
                     ->toggleable(isToggledHiddenByDefault: false),
-
                 Tables\Columns\TextColumn::make('quotation_date')
                     ->label('Tanggal Penawaran')
                     ->date('d M Y H:i')
                     ->sortable(),
-
                 Tables\Columns\TextColumn::make('valid_until')
                     ->label('Berlaku Hingga')
                     ->date('d M Y')
@@ -401,7 +374,6 @@ class QuotationResource extends Resource
                             return 'Hari ini terakhir';
                         return 'Sisa ' . intval($days) . ' Hari';
                     }),
-
                 Tables\Columns\TextColumn::make('status')
                     ->badge()
                     ->color(fn(string $state): string => match ($state) {
@@ -424,14 +396,12 @@ class QuotationResource extends Resource
 
                         default => ucfirst($state),
                     }),
-
                 Tables\Columns\TextColumn::make('grand_total')
                     ->label('Total')
                     ->money('IDR')
                     ->color(fn($state) => $state < 0 ? 'danger' : 'success')
                     ->sortable()
                     ->weight('semibold'),
-
                 Tables\Columns\TextColumn::make('subtotal')
                     ->label('Subtotal')
                     ->money('IDR')
@@ -439,26 +409,22 @@ class QuotationResource extends Resource
                     ->sortable()
                     ->weight('semibold')
                     ->toggleable(isToggledHiddenByDefault: true),
-
                 Tables\Columns\TextColumn::make('discount_amount')
                     ->money('IDR')
                     ->color(fn($state) => $state < 0 ? 'success' : 'warning')
                     ->sortable()
                     ->weight('semibold')
                     ->toggleable(isToggledHiddenByDefault: true),
-
                 Tables\Columns\TextColumn::make('created_at')
                     ->label('Dibuat Pada')
                     ->dateTime('d M Y H:i')
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
-
                 Tables\Columns\TextColumn::make('updated_at')
                     ->label('Diperbarui Pada')
                     ->dateTime('d M Y H:i')
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: false),
-
                 Tables\Columns\TextColumn::make('deleted_at')
                     ->label('Dihapus Pada')
                     ->dateTime('d M Y H:i')
@@ -476,16 +442,14 @@ class QuotationResource extends Resource
                         'rejected' => 'Ditolak',
                         'expired' => 'Expired',
                     ]),
-
                 Tables\Filters\SelectFilter::make('internal_pic_id')
                     ->label('PIC (Internal Sales)')
                     ->relationship('internalPic', 'full_name')
                     ->searchable()
                     ->preload(),
-                    // ->default(function () {
-                    //     return auth()->user()?->employee?->id;
-                    // }),
-
+                // ->default(function () {
+                //     return auth()->user()?->employee?->id;
+                // }),
                 Tables\Filters\SelectFilter::make('field_staff_pic_id')
                     ->label('PIC (External/Field Staff)')
                     ->relationship('fieldStaffPic', 'full_name', function ($query) {
@@ -493,7 +457,6 @@ class QuotationResource extends Resource
                     })
                     ->searchable()
                     ->preload(),
-
                 Tables\Filters\TernaryFilter::make('is_expired')
                     ->label('Status Kedaluwarsa')
                     ->placeholder('Semua Penawaran')
@@ -503,7 +466,6 @@ class QuotationResource extends Resource
                         true: fn(Builder $query) => $query->whereDate('valid_until', '<', now())->whereIn('status', ['new', 'sent']),
                         false: fn(Builder $query) => $query->whereDate('valid_until', '>=', now())->orWhereNotIn('status', ['new', 'sent']),
                     ),
-
                 Tables\Filters\Filter::make('created_at')
                     ->form([
                         DatePicker::make('created_from')
@@ -512,7 +474,6 @@ class QuotationResource extends Resource
                             ->displayFormat('d M Y')
                             ->native(false)
                             ->prefixIcon('heroicon-o-calendar-days'),
-
                         DatePicker::make('created_until')
                             ->label('Dibuat Hingga')
                             ->required()
@@ -544,7 +505,6 @@ class QuotationResource extends Resource
 
                         return $indicators;
                     }),
-
                 Tables\Filters\TrashedFilter::make()
                     ->label('Deleted Status')
                     ->native(false),
@@ -603,7 +563,7 @@ class QuotationResource extends Resource
                                     Notification::make()
                                         ->warning()
                                         ->title('Gagal Restore Bulk')
-                                        ->body("Satu atau lebih Penawaran tidak dapat di-restore karena Deal/Lead terkait masih terhapus.")
+                                        ->body('Satu atau lebih Penawaran tidak dapat di-restore karena Deal/Lead terkait masih terhapus.')
                                         ->send();
 
                                     $action->cancel();
@@ -652,17 +612,16 @@ class QuotationResource extends Resource
                     $set('qty', 1);
                     self::updateTotals($get, $set);
                 }),
-
             Select::make('item_id')
                 ->label('Pilih Item')
                 ->options(function (Get $get) {
                     $type = $get('item_type');
 
-                    if ($type === 'App\\Models\\Inventory\\Product' || $type === Product::class)
+                    if ($type === 'App\Models\Inventory\Product' || $type === Product::class)
                         $type = 'product';
-                    if ($type === 'App\\Models\\Inventory\\Service' || $type === Service::class)
+                    if ($type === 'App\Models\Inventory\Service' || $type === Service::class)
                         $type = 'service';
-                    if ($type === 'App\\Models\\Inventory\\Package' || $type === Package::class)
+                    if ($type === 'App\Models\Inventory\Package' || $type === Package::class)
                         $type = 'package';
 
                     return match ($type) {
@@ -675,11 +634,11 @@ class QuotationResource extends Resource
                 ->getOptionLabelUsing(function ($value, Get $get) {
                     $type = $get('item_type');
 
-                    if ($type === 'App\\Models\\Inventory\\Product' || $type === Product::class)
+                    if ($type === 'App\Models\Inventory\Product' || $type === Product::class)
                         $type = 'product';
-                    if ($type === 'App\\Models\\Inventory\\Service' || $type === Service::class)
+                    if ($type === 'App\Models\Inventory\Service' || $type === Service::class)
                         $type = 'service';
-                    if ($type === 'App\\Models\\Inventory\\Package' || $type === Package::class)
+                    if ($type === 'App\Models\Inventory\Package' || $type === Package::class)
                         $type = 'package';
 
                     $modelClass = match ($type) {
@@ -710,11 +669,11 @@ class QuotationResource extends Resource
 
                     $type = $get('item_type');
 
-                    if ($type === 'App\\Models\\Inventory\\Product' || $type === Product::class)
+                    if ($type === 'App\Models\Inventory\Product' || $type === Product::class)
                         $type = 'product';
-                    if ($type === 'App\\Models\\Inventory\\Service' || $type === Service::class)
+                    if ($type === 'App\Models\Inventory\Service' || $type === Service::class)
                         $type = 'service';
-                    if ($type === 'App\\Models\\Inventory\\Package' || $type === Package::class)
+                    if ($type === 'App\Models\Inventory\Package' || $type === Package::class)
                         $type = 'package';
 
                     $model = match ($type) {
@@ -748,21 +707,17 @@ class QuotationResource extends Resource
                         self::updateItemTotal($get, $set);
                     }
                 }),
-
             Hidden::make('cost_price')
                 ->dehydrated(true),
-
             TextInput::make('item_code')
                 ->label('Kode Item')
                 ->disabled()
                 ->dehydrated()
                 ->required(),
-
             TextInput::make('item_name')
                 ->label('Nama Item')
                 ->disabled()
                 ->dehydrated(true),
-
             TextInput::make('qty')
                 ->label('Qty')
                 ->numeric()
@@ -777,7 +732,6 @@ class QuotationResource extends Resource
 
                     self::updateItemTotal($get, $set);
                 }),
-
             TextInput::make('unit_price')
                 ->label('Harga Jual Satuan')
                 ->numeric()
@@ -789,7 +743,6 @@ class QuotationResource extends Resource
                 ->formatStateUsing(fn($state) => (int) $state)
                 ->reactive()
                 ->afterStateUpdated(fn(Set $set, Get $get) => self::updateItemTotal($get, $set)),
-
             TextInput::make('line_total')
                 ->label('Subtotal')
                 ->numeric()
@@ -879,7 +832,7 @@ class QuotationResource extends Resource
             $set('temp_discount_type', null);
             $set('temp_discount_value', 0);
         } else {
-            Notification::make()->title("Promo Applied!")->success()->send();
+            Notification::make()->title('Promo Applied!')->success()->send();
             $set('promo_code_id', $promo->id);
             $set('temp_discount_type', $promo->type);
             $set('temp_discount_value', $promo->value);

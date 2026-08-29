@@ -10,7 +10,10 @@ class TicketPriorityChartWidget extends ChartWidget
 
     protected static ?int $sort = 3;
 
-    protected int|string|array $columnSpan = 3;
+    protected int|string|array $columnSpan = [
+        'default' => 12,
+        'md' => 3,
+    ];
 
     protected function getData(): array
     {
@@ -21,25 +24,25 @@ class TicketPriorityChartWidget extends ChartWidget
             ->pluck('total', 'priority_name');
 
         $colorMap = [
-            'High'        => '#EF4444',
-            'Medium'      => '#F59E0B',
-            'Low'         => '#22C55E',
+            'High' => '#EF4444',
+            'Medium' => '#F59E0B',
+            'Low' => '#22C55E',
             'No Priority' => '#9CA3AF',
         ];
 
         $labels = $grouped->keys()->toArray();
-        $data   = $grouped->values()->toArray();
+        $data = $grouped->values()->toArray();
         $colors = array_map(fn($label) => $colorMap[$label] ?? '#6B7280', $labels);
 
         return [
             'datasets' => [
                 [
-                    'label'           => 'Jumlah Ticket',
-                    'data'            => $data,
+                    'label' => 'Jumlah Ticket',
+                    'data' => $data,
                     'backgroundColor' => $colors,
                 ],
             ],
-            'labels'   => $labels,
+            'labels' => $labels,
         ];
     }
 
@@ -54,7 +57,7 @@ class TicketPriorityChartWidget extends ChartWidget
             'plugins' => [
                 'legend' => ['display' => false],
             ],
-            'scales'  => [
+            'scales' => [
                 'y' => ['beginAtZero' => true, 'ticks' => ['stepSize' => 1]],
             ],
         ];

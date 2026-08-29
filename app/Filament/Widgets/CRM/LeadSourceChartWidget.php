@@ -10,7 +10,10 @@ class LeadSourceChartWidget extends ChartWidget
 
     protected static ?int $sort = 4;
 
-    protected int|string|array $columnSpan = 1;
+    protected int|string|array $columnSpan = [
+        'default' => 12,
+        'md' => 1,
+    ];
 
     protected function getData(): array
     {
@@ -19,23 +22,23 @@ class LeadSourceChartWidget extends ChartWidget
             ->pluck('total', 'source');
 
         $labelMap = [
-            'manual'       => 'Manual',
-            'website'      => 'Website/Form',
+            'manual' => 'Manual',
+            'website' => 'Website/Form',
             'social_media' => 'Social Media',
-            'referral'     => 'Referral',
-            'cold_call'    => 'Cold Call',
-            'ads'          => 'Iklan Berbayar',
-            'other'        => 'Lainnya',
+            'referral' => 'Referral',
+            'cold_call' => 'Cold Call',
+            'ads' => 'Iklan Berbayar',
+            'other' => 'Lainnya',
         ];
 
         return [
             'datasets' => [
                 [
-                    'data'            => $sources->values()->toArray(),
+                    'data' => $sources->values()->toArray(),
                     'backgroundColor' => ['#6366f1', '#22c55e', '#f59e0b', '#3b82f6', '#ec4899', '#ef4444', '#9ca3af'],
                 ],
             ],
-            'labels'   => $sources->keys()->map(fn($k) => $labelMap[$k] ?? ucfirst($k))->toArray(),
+            'labels' => $sources->keys()->map(fn($k) => $labelMap[$k] ?? ucfirst($k))->toArray(),
         ];
     }
 

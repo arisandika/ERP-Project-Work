@@ -2,17 +2,17 @@
 
 namespace App\Filament\Resources\CRM;
 
+use App\Filament\Concerns\BelongsToModule;
 use App\Filament\Resources\CRM\CustomerResource\Pages;
 use App\Models\CRM\Customer;
-use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Resources\Resource;
-use Filament\Tables;
 use Filament\Tables\Table;
+use Filament\Forms;
+use Filament\Tables;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
 use Illuminate\Support\HtmlString;
-use App\Filament\Concerns\BelongsToModule;
 
 class CustomerResource extends Resource
 {
@@ -51,7 +51,6 @@ class CustomerResource extends Resource
                                     ->required()
                                     ->maxLength(255)
                                     ->prefixIcon('heroicon-o-building-office'),
-
                                 Forms\Components\Select::make('customer_type')
                                     ->label('Tipe')
                                     ->options([
@@ -62,7 +61,6 @@ class CustomerResource extends Resource
                                     ->native(false)
                                     ->live()
                                     ->prefixIcon('heroicon-o-identification'),
-
                                 Forms\Components\TextInput::make('email')
                                     ->label('Email')
                                     ->email()
@@ -70,22 +68,19 @@ class CustomerResource extends Resource
                                     ->maxLength(255)
                                     ->unique(ignoreRecord: true)
                                     ->prefixIcon('heroicon-o-envelope'),
-
                                 Forms\Components\TextInput::make('phone')
                                     ->label('No. WhatsApp')
                                     ->tel()
                                     ->maxLength(20)
                                     ->prefixIcon('heroicon-o-device-phone-mobile')
                                     ->required(),
-
                                 Forms\Components\Textarea::make('address')
                                     ->label(fn(Forms\Get $get) => $get('customer_type') === 'company' ? 'Alamat Kantor' : 'Alamat Domisili')
                                     ->rows(3)
                                     ->maxLength(255)
-                                    ->columnSpanFull(), // KONSISTENSI: Layout seperti Lead
+                                    ->columnSpanFull(),  // KONSISTENSI: Layout seperti Lead
                             ]),
                     ]),
-
                 Forms\Components\Section::make('Informasi Tambahan & Legalitas')
                     ->description('Lengkapi data legalitas seperti NIK atau NPWP.')
                     ->schema([
@@ -97,13 +92,12 @@ class CustomerResource extends Resource
                             ->prefixIcon('heroicon-o-identification')
                             ->required()
                             ->visible(fn(Forms\Get $get) => $get('customer_type') === 'individual'),
-
                         Forms\Components\TextInput::make('npwp')
                             ->label('NPWP Perusahaan')
                             ->prefixIcon('heroicon-o-document-text')
                             ->visible(fn(Forms\Get $get) => $get('customer_type') === 'company'),
-                    ])->columns(2),
-
+                    ])
+                    ->columns(['default' => 122, 'md' => 2]),
                 Forms\Components\Section::make('Informasi PIC (Person In Charge)')
                     ->description('Data narahubung dari pihak Customer/Perusahaan')
                     ->collapsible()
@@ -115,26 +109,22 @@ class CustomerResource extends Resource
                                     ->label('Nama PIC')
                                     ->required()
                                     ->prefixIcon('heroicon-o-user-circle'),
-
                                 Forms\Components\TextInput::make('pic_email')
                                     ->label('Email PIC')
                                     ->email()
                                     ->required()
                                     ->prefixIcon('heroicon-o-envelope'),
-
                                 Forms\Components\TextInput::make('pic_phone')
                                     ->label('No. WhatsApp PIC')
                                     ->tel()
                                     ->maxLength(20)
                                     ->prefixIcon('heroicon-o-device-phone-mobile')
                                     ->required(),
-
                                 Forms\Components\TextInput::make('pic_position')
                                     ->label('Jabatan PIC')
                                     ->prefixIcon('heroicon-o-briefcase'),
                             ]),
                     ]),
-
                 Forms\Components\Section::make('Status & Klasifikasi')
                     ->schema([
                         Forms\Components\Grid::make(2)
@@ -154,7 +144,6 @@ class CustomerResource extends Resource
                                     ->required()
                                     ->searchable()
                                     ->native(false),
-
                                 Forms\Components\Select::make('status')
                                     ->label('Status Customer')
                                     ->options([
@@ -167,7 +156,6 @@ class CustomerResource extends Resource
                                     ->native(false),
                             ]),
                     ]),
-
                 Forms\Components\Section::make('Daftar Deal Terkait')
                     ->icon('heroicon-o-briefcase')
                     ->collapsible()
@@ -213,7 +201,6 @@ class CustomerResource extends Resource
                             }),
                     ])
                     ->visible(fn($record) => $record && $record->deals()->withTrashed()->exists()),
-
                 Forms\Components\Section::make('Daftar Penawaran Terkait')
                     ->icon('heroicon-o-document-text')
                     ->collapsible()
@@ -257,8 +244,8 @@ class CustomerResource extends Resource
                             }),
                     ])
                     ->visible(fn($record) => $record && $record->quotations()->withTrashed()->exists()),
-
-            ])->columns(1); // DIUBAH: Layout utama menjadi 1 kolom untuk Section
+            ])
+            ->columns(1);  // DIUBAH: Layout utama menjadi 1 kolom untuk Section
     }
 
     public static function table(Table $table): Table
@@ -269,21 +256,18 @@ class CustomerResource extends Resource
                     ->label('ID')
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
-
                 Tables\Columns\TextColumn::make('name')
                     ->label('Nama Customer')
                     ->searchable()
                     ->sortable()
                     ->weight('semibold')
                     ->description(fn(Customer $record) => $record->customer_type === 'company' ? 'PIC: ' . $record->pic_name : null),
-
                 Tables\Columns\TextColumn::make('phone')
                     ->label('Kontak')
                     ->icon('heroicon-o-phone')
                     ->searchable(['phone', 'email'])
                     ->getStateUsing(fn(Customer $record) => $record->customer_type === 'individual' ? $record->phone : $record->pic_phone)
                     ->description(fn(Customer $record) => $record->email),
-
                 Tables\Columns\TextColumn::make('customer_type')
                     ->label('Tipe Customer')
                     ->badge()
@@ -294,7 +278,6 @@ class CustomerResource extends Resource
                     })
                     ->sortable()
                     ->formatStateUsing(fn(string $state): string => ucwords(str_replace('_', ' ', $state))),
-
                 Tables\Columns\TextColumn::make('status')
                     ->label('Status')
                     ->badge()
@@ -304,27 +287,22 @@ class CustomerResource extends Resource
                         'danger' => 'lost',
                     ])
                     ->formatStateUsing(fn(string $state): string => ucwords(str_replace('_', ' ', $state))),
-
                 Tables\Columns\TextColumn::make('nik')
                     ->label('NIK')
                     ->toggleable(isToggledHiddenByDefault: true),
-
                 Tables\Columns\TextColumn::make('npwp')
                     ->label('NPWP')
                     ->toggleable(isToggledHiddenByDefault: true),
-
                 Tables\Columns\TextColumn::make('created_at')
                     ->label('Dibuat Pada')
                     ->dateTime('d M Y H:i')
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
-
                 Tables\Columns\TextColumn::make('updated_at')
                     ->label('Diperbarui Pada')
                     ->dateTime('d M Y H:i')
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
-
                 Tables\Columns\TextColumn::make('deleted_at')
                     ->label('Dihapus Pada')
                     ->dateTime('d M Y')
@@ -338,9 +316,7 @@ class CustomerResource extends Resource
                         'individual' => 'Perorangan (B2C)',
                         'company' => 'Perusahaan (B2B)',
                     ]),
-
                 Tables\Filters\TrashedFilter::make(),
-
                 Tables\Filters\Filter::make('created_at')
                     ->form([
                         Forms\Components\DatePicker::make('created_from')->label('Dari Tanggal'),
@@ -368,8 +344,7 @@ class CustomerResource extends Resource
 
     public static function getRelations(): array
     {
-        return [
-        ];
+        return [];
     }
 
     public static function getPages(): array

@@ -1,37 +1,33 @@
 <?php
 namespace App\Filament\Resources\HR;
 
+use App\Filament\Concerns\BelongsToModule;
 use App\Filament\Resources\HR\LeaveApprovalResource\Pages;
 use App\Models\HR\LeaveRequest;
-use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Infolists\Components\ImageEntry;
 use Filament\Infolists\Components\Section;
 use Filament\Infolists\Components\TextEntry;
 use Filament\Infolists\Infolist;
 use Filament\Resources\Resource;
-use Filament\Tables;
 use Filament\Tables\Table;
+use Filament\Forms;
+use Filament\Tables;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\HtmlString;
-use App\Filament\Concerns\BelongsToModule;
 
 class LeaveApprovalResource extends Resource
 {
     use BelongsToModule;
+
     protected static ?string $module = 'hr';
     protected static ?string $model = LeaveRequest::class;
-
     protected static ?string $navigationIcon = 'heroicon-o-check-badge';
-
     protected static ?string $navigationGroup = 'Manajemen HR';
-
     protected static ?int $navigationSort = 7;
-
     protected static ?string $slug = 'hr/leave-approvals';
-
     protected static ?string $pluralModelLabel = 'Persetujuan Cuti';
 
     public static function getNavigationBadge(): ?string
@@ -62,7 +58,6 @@ class LeaveApprovalResource extends Resource
                         ->preload()
                         ->disabled()
                         ->prefixIcon('heroicon-o-user'),
-
                     Forms\Components\Select::make('leave_id')
                         ->label('Jenis Cuti')
                         ->relationship('leave', 'leave_type')
@@ -71,38 +66,32 @@ class LeaveApprovalResource extends Resource
                         ->preload()
                         ->disabled()
                         ->prefixIcon('heroicon-o-briefcase'),
-
                     Forms\Components\TextInput::make('start_date')
                         ->label('Tanggal Mulai')
                         ->disabled()
                         ->formatStateUsing(fn($state) => Carbon::parse($state)->format('d M Y'))
                         ->prefixIcon('heroicon-o-calendar'),
-
                     Forms\Components\TextInput::make('end_date')
                         ->label('Tanggal Selesai')
                         ->disabled()
                         ->formatStateUsing(fn($state) => Carbon::parse($state)->format('d M Y'))
                         ->prefixIcon('heroicon-o-calendar'),
-
                     Forms\Components\TextInput::make('total_days')
                         ->label('Durasi Cuti (Hari Kerja)')
                         ->disabled()
                         ->prefixIcon('heroicon-o-clock'),
-
                     Forms\Components\Textarea::make('reason')
                         ->label('Alasan Cuti')
                         ->disabled(),
-
                     Forms\Components\Placeholder::make('leave_proof_preview')
                         ->label('Bukti Cuti/Sakit')
                         ->content(
                             fn($record) => $record?->leave_proof
-                            ? new HtmlString('<img src="/storage/' . $record->leave_proof . '" class="w-full rounded-2xl">')
-                            : 'Tidak menyertakan bukti cuti'
+                                ? new HtmlString('<img src="/storage/' . $record->leave_proof . '" class="w-full rounded-2xl">')
+                                : 'Tidak menyertakan bukti cuti'
                         )
                 ])
-                ->columns(2),
-
+                ->columns(['default' => 122, 'md' => 2]),
             Forms\Components\Section::make('Persetujuan')
                 ->schema([
                     Forms\Components\Select::make('status')
@@ -121,12 +110,11 @@ class LeaveApprovalResource extends Resource
                             }
                         })
                         ->native(false),
-
                     Forms\Components\Textarea::make('approval_note')
                         ->label('Catatan Admin')
                         ->nullable(),
                 ])
-                ->columns(2),
+                ->columns(['default' => 122, 'md' => 2]),
         ]);
     }
 
@@ -147,13 +135,11 @@ class LeaveApprovalResource extends Resource
                         return '';
                     })
                     ->placeholder('—'),
-
                 Tables\Columns\TextColumn::make('leave.leave_type')
                     ->label('Jenis Cuti')
                     ->sortable()
                     ->searchable()
                     ->placeholder('—'),
-
                 Tables\Columns\BadgeColumn::make('status')
                     ->label('Status')
                     ->sortable()
@@ -175,25 +161,21 @@ class LeaveApprovalResource extends Resource
                         ),
                     })
                     ->placeholder('—'),
-
                 Tables\Columns\TextColumn::make('start_date')
                     ->label('Tanggal Mulai')
                     ->date('d M Y')
                     ->sortable()
                     ->placeholder('—'),
-
                 Tables\Columns\TextColumn::make('end_date')
                     ->label('Tanggal Selesai')
                     ->date('d M Y')
                     ->sortable()
                     ->placeholder('—'),
-
                 Tables\Columns\TextColumn::make('total_days')
                     ->label('Durasi (Hari)')
                     ->sortable()
                     ->formatStateUsing(fn($state) => $state . ' Hari')
                     ->placeholder('—'),
-
                 Tables\Columns\TextColumn::make('approver.full_name')
                     ->label('Disetujui Oleh')
                     ->searchable()
@@ -207,25 +189,21 @@ class LeaveApprovalResource extends Resource
                         return '';
                     })
                     ->placeholder('—'),
-
                 Tables\Columns\TextColumn::make('created_at')
                     ->label('Dibuat Pada')
                     ->dateTime('d M Y H:i')
                     ->sortable()
                     ->placeholder('—'),
-
                 Tables\Columns\TextColumn::make('created_at')
                     ->label('Dibuat Pada')
                     ->dateTime('d M Y H:i')
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
-
                 Tables\Columns\TextColumn::make('updated_at')
                     ->label('Diperbarui Pada')
                     ->dateTime('d M Y H:i')
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
-
                 Tables\Columns\TextColumn::make('deleted_at')
                     ->label('Dihapus Pada')
                     ->dateTime('d M Y H:i')
@@ -242,7 +220,6 @@ class LeaveApprovalResource extends Resource
                         'expired' => 'Kadaluwarsa',
                     ])
                     ->native(false),
-
                 Tables\Filters\Filter::make('created_at')
                     ->form([
                         Forms\Components\DatePicker::make('created_from')
@@ -251,7 +228,6 @@ class LeaveApprovalResource extends Resource
                             ->displayFormat('d M Y')
                             ->native(false)
                             ->prefixIcon('heroicon-o-calendar-days'),
-
                         Forms\Components\DatePicker::make('created_until')
                             ->label('Dibuat Hingga')
                             ->required()
@@ -283,7 +259,6 @@ class LeaveApprovalResource extends Resource
 
                         return $indicators;
                     }),
-
                 Tables\Filters\TrashedFilter::make()
                     ->label('Deleted Status')
                     ->native(false),
@@ -293,7 +268,6 @@ class LeaveApprovalResource extends Resource
                     ->label('Review')
                     ->color('warning')
                     ->visible(fn(LeaveRequest $record) => $record->status === 'pending'),
-
                 Tables\Actions\ViewAction::make(),
             ])
             ->bulkActions([
@@ -311,38 +285,32 @@ class LeaveApprovalResource extends Resource
         return $infolist
             ->schema([
                 Section::make('Informasi Pengajuan Cuti')
-                    ->columns(2)
+                    ->columns(['default' => 122, 'md' => 2])
                     ->schema([
                         TextEntry::make('employee.full_name')
                             ->label('Nama Karyawan')
                             ->weight('semibold')
                             ->icon('heroicon-o-user')
                             ->placeholder('—'),
-
                         TextEntry::make('leave.leave_type')
                             ->label('Jenis Cuti')
                             ->placeholder('—'),
-
                         TextEntry::make('start_date')
                             ->label('Tanggal Mulai')
                             ->date('D, d M Y')
                             ->placeholder('—'),
-
                         TextEntry::make('end_date')
                             ->label('Tanggal Selesai')
                             ->date('D, d M Y')
                             ->placeholder('—'),
-
                         TextEntry::make('total_days')
                             ->label('Durasi (Hari Kerja)')
                             ->numeric()
                             ->formatStateUsing(fn($state) => $state . ' Hari')
                             ->placeholder('—'),
-
                         TextEntry::make('reason')
                             ->label('Alasan Cuti')
                             ->placeholder('—'),
-
                         ImageEntry::make('leave_proof')
                             ->label('Bukti Cuti/Sakit')
                             ->placeholder('—')
@@ -351,9 +319,8 @@ class LeaveApprovalResource extends Resource
                                 'class' => 'w-full rounded-2xl'
                             ]),
                     ]),
-
                 Section::make('Status Persetujuan')
-                    ->columns(2)
+                    ->columns(['default' => 122, 'md' => 2])
                     ->schema([
                         TextEntry::make('status')
                             ->label('Status')
@@ -378,36 +345,30 @@ class LeaveApprovalResource extends Resource
                                 };
                             })
                             ->placeholder('—'),
-
                         TextEntry::make('approver.full_name')
                             ->label('Disetujui Oleh')
                             ->weight('semibold')
                             ->icon('heroicon-o-user')
                             ->placeholder('—'),
-
                         TextEntry::make('approved_at')
                             ->label('Waktu Persetujuan')
                             ->dateTime('d M Y H:i')
                             ->visible(fn($record) => $record->approved_at !== null)
                             ->placeholder('—'),
-
                         TextEntry::make('approval_note')
                             ->label('Catatan Admin')
                             ->placeholder('—')
                             ->columnSpanFull(),
                     ]),
-
                 Section::make('Pengelolaan Data')
-                    ->columns(2)
+                    ->columns(['default' => 122, 'md' => 2])
                     ->schema([
                         TextEntry::make('created_at')
                             ->label('Dibuat Pada')
                             ->dateTime('d M Y H:i'),
-
                         TextEntry::make('updated_at')
                             ->label('Diperbarui Pada')
                             ->dateTime('d M Y H:i'),
-
                         TextEntry::make('deleted_at')
                             ->label('Dihapus Pada')
                             ->dateTime('d M Y H:i')

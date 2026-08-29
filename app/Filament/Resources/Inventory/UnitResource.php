@@ -1,34 +1,30 @@
 <?php
 namespace App\Filament\Resources\Inventory;
 
+use App\Filament\Concerns\BelongsToModule;
 use App\Filament\Resources\Inventory\UnitResource\Pages;
 use App\Models\Inventory\Unit;
-use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Infolists\Components\Section;
 use Filament\Infolists\Components\TextEntry;
 use Filament\Infolists\Infolist;
 use Filament\Resources\Resource;
-use Filament\Tables;
 use Filament\Tables\Table;
+use Filament\Forms;
+use Filament\Tables;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Carbon;
-use App\Filament\Concerns\BelongsToModule;
 
 class UnitResource extends Resource
 {
     use BelongsToModule;
+
     protected static ?string $module = 'inventory';
     protected static ?string $model = Unit::class;
-
     protected static ?string $navigationIcon = 'heroicon-o-scale';
-
     protected static ?string $navigationGroup = 'Manajemen Inventory';
-
     protected static ?int $navigationSort = 2;
-
     protected static ?string $slug = 'inventory/units';
-
     protected static ?string $pluralModelLabel = 'Satuan';
 
     public static function getNavigationBadge(): ?string
@@ -50,13 +46,11 @@ class UnitResource extends Resource
                                     ->maxLength(20)
                                     ->unique(ignoreRecord: true)
                                     ->prefixIcon('heroicon-o-scale'),
-
                                 Forms\Components\TextInput::make('symbol')
                                     ->label('Simbol')
                                     ->maxLength(10)
                                     ->placeholder('Contoh: pcs, kg, m, dll'),
                             ]),
-
                         Forms\Components\Textarea::make('description')
                             ->label('Deskripsi')
                             ->rows(3)
@@ -73,14 +67,12 @@ class UnitResource extends Resource
                     ->label('Nama Satuan')
                     ->searchable()
                     ->sortable(),
-
                 Tables\Columns\TextColumn::make('symbol')
                     ->label('Simbol')
                     ->badge()
                     ->color('info')
                     ->sortable()
                     ->searchable(),
-
                 Tables\Columns\BadgeColumn::make('products_count')
                     ->label('Jumlah Product')
                     ->counts('products')
@@ -88,13 +80,11 @@ class UnitResource extends Resource
                     ->color(fn(int $state): string => $state > 0 ? 'info' : 'gray')
                     ->sortable()
                     ->formatStateUsing(fn($state) => $state . ' Product'),
-
                 Tables\Columns\TextColumn::make('created_at')
                     ->label('Dibuat Pada')
                     ->dateTime('d M Y')
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
-
                 Tables\Columns\TextColumn::make('updated_at')
                     ->label('Diperbarui Pada')
                     ->dateTime('d M Y')
@@ -110,7 +100,6 @@ class UnitResource extends Resource
                             ->displayFormat('d M Y')
                             ->native(false)
                             ->prefixIcon('heroicon-o-calendar-days'),
-
                         Forms\Components\DatePicker::make('created_until')
                             ->label('Dibuat Hingga')
                             ->required()
@@ -161,19 +150,16 @@ class UnitResource extends Resource
         return $infolist
             ->schema([
                 Section::make('Informasi Satuan')
-                    ->columns(2)
+                    ->columns(['default' => 122, 'md' => 2])
                     ->schema([
                         TextEntry::make('name')
                             ->label('Nama Satuan'),
-
                         TextEntry::make('symbol')
                             ->label('Simbol')
                             ->badge()
                             ->color('info'),
-
                         TextEntry::make('description')
                             ->label('Deskripsi'),
-
                         TextEntry::make('products_count')
                             ->label('Jumlah Product')
                             ->badge()
@@ -181,7 +167,7 @@ class UnitResource extends Resource
                             ->state(fn(Unit $unit) => $unit->products()->count()),
                     ]),
                 Section::make('Pengelolaan Data')
-                    ->columns(2)
+                    ->columns(['default' => 122, 'md' => 2])
                     ->schema([
                         TextEntry::make('created_at')
                             ->label('Dibuat Pada')

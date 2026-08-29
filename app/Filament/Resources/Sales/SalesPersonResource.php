@@ -4,14 +4,14 @@ namespace App\Filament\Resources\Sales;
 use App\Filament\Concerns\BelongsToModule;
 use App\Filament\Resources\Sales\SalesPersonResource\Pages;
 use App\Models\Sales\SalesPerson;
-use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Infolists\Components\Section;
 use Filament\Infolists\Components\TextEntry;
 use Filament\Infolists\Infolist;
 use Filament\Resources\Resource;
-use Filament\Tables;
 use Filament\Tables\Table;
+use Filament\Forms;
+use Filament\Tables;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
 
@@ -19,11 +19,11 @@ class SalesPersonResource extends Resource
 {
     use BelongsToModule;
 
-    protected static ?string $module           = 'sales';
-    protected static ?string $model            = SalesPerson::class;
-    protected static ?string $navigationIcon   = 'heroicon-o-user-group';
-    protected static ?string $navigationGroup  = 'Manajemen Sales';
-    protected static ?string $slug             = 'sales/sales-people';
+    protected static ?string $module = 'sales';
+    protected static ?string $model = SalesPerson::class;
+    protected static ?string $navigationIcon = 'heroicon-o-user-group';
+    protected static ?string $navigationGroup = 'Manajemen Sales';
+    protected static ?string $slug = 'sales/sales-people';
     protected static ?string $pluralModelLabel = 'Sales Person';
 
     public static function form(Form $form): Form
@@ -37,7 +37,6 @@ class SalesPersonResource extends Resource
                             ->required()
                             ->maxLength(255)
                             ->prefixIcon('heroicon-o-user'),
-
                         Forms\Components\Select::make('type')
                             ->label('Tipe Sales')
                             ->options([
@@ -46,7 +45,6 @@ class SalesPersonResource extends Resource
                             ->required()
                             ->native(false)
                             ->prefixIcon('heroicon-o-briefcase'),
-
                         Forms\Components\Select::make('roles')
                             ->label('Role')
                             ->multiple()
@@ -61,7 +59,6 @@ class SalesPersonResource extends Resource
                                     $component->state($record->user->roles->pluck('name')->toArray());
                                 }
                             }),
-
                         Forms\Components\TextInput::make('email')
                             ->label('Email')
                             ->required()
@@ -76,7 +73,6 @@ class SalesPersonResource extends Resource
                                     $component->state(optional($record->user)->email);
                                 }
                             }),
-
                         Forms\Components\TextInput::make('password')
                             ->label('Kata Sandi')
                             ->password()
@@ -84,23 +80,22 @@ class SalesPersonResource extends Resource
                             ->prefixIcon('heroicon-o-lock-closed')
                             ->helperText('Jika email sudah terdaftar di sistem, kata sandi ini akan diabaikan.')
                             ->required(fn(string $operation): bool => $operation === 'create'),
-
                         Forms\Components\TextInput::make('phone')
                             ->label('No. Telepon')
                             ->tel()
                             ->maxLength(20)
                             ->prefixIcon('heroicon-o-phone'),
-
                         Forms\Components\Select::make('status')
                             ->label('Status')
                             ->options([
-                                'active'   => 'Active',
+                                'active' => 'Active',
                                 'inactive' => 'Inactive',
                             ])
                             ->default('active')
                             ->native(false)
                             ->prefixIcon('heroicon-o-check-circle'),
-                    ])->columns(2),
+                    ])
+                    ->columns(['default' => 122, 'md' => 2]),
             ]);
     }
 
@@ -113,24 +108,20 @@ class SalesPersonResource extends Resource
                     ->searchable()
                     ->sortable()
                     ->weight('semibold'),
-
                 Tables\Columns\TextColumn::make('type')
                     ->label('Tipe')
                     ->badge()
                     ->formatStateUsing(fn(?string $state) => match ($state) {
                         'external' => 'External',
-                        default    => '-',
+                        default => '-',
                     })
                     ->color(fn(?string $state) => $state === 'external' ? 'warning' : 'info'),
-
                 Tables\Columns\TextColumn::make('email')
                     ->label('Email')
                     ->searchable(['email', 'user.email']),
-
                 Tables\Columns\TextColumn::make('phone')
                     ->label('No. Telepon')
                     ->searchable(),
-
                 Tables\Columns\TextColumn::make('user.roles.name')
                     ->label('Role')
                     ->badge()
@@ -138,14 +129,12 @@ class SalesPersonResource extends Resource
                     ->formatStateUsing(fn(string $state): string => ucwords(str_replace('_', ' ', $state)))
                     ->placeholder('—')
                     ->searchable(),
-
                 Tables\Columns\BadgeColumn::make('status')
                     ->sortable()
                     ->colors([
                         'success' => 'active',
-                        'gray'    => 'inactive',
+                        'gray' => 'inactive',
                     ]),
-
                 Tables\Columns\TextColumn::make('created_at')
                     ->label('Dibuat Pada')
                     ->dateTime('d M Y H:i')
@@ -158,14 +147,12 @@ class SalesPersonResource extends Resource
                         'external' => 'External',
                     ])
                     ->native(false),
-
                 Tables\Filters\SelectFilter::make('status')
                     ->options([
-                        'active'   => 'Active',
+                        'active' => 'Active',
                         'inactive' => 'Inactive',
                     ])
                     ->native(false),
-
                 Tables\Filters\TrashedFilter::make()
                     ->native(false),
             ])
@@ -191,7 +178,7 @@ class SalesPersonResource extends Resource
         return $infolist
             ->schema([
                 Section::make('Informasi Sales Person')
-                    ->columns(2)
+                    ->columns(['default' => 122, 'md' => 2])
                     ->schema([
                         TextEntry::make('full_name')->label('Nama Lengkap'),
                         TextEntry::make('type')->label('Tipe'),
@@ -209,10 +196,10 @@ class SalesPersonResource extends Resource
     public static function getPages(): array
     {
         return [
-            'index'  => Pages\ListSalesPeople::route('/'),
+            'index' => Pages\ListSalesPeople::route('/'),
             'create' => Pages\CreateSalesPerson::route('/create'),
-            'view'   => Pages\ViewSalesPerson::route('/{record}'),
-            'edit'   => Pages\EditSalesPerson::route('/{record}/edit'),
+            'view' => Pages\ViewSalesPerson::route('/{record}'),
+            'edit' => Pages\EditSalesPerson::route('/{record}/edit'),
         ];
     }
 

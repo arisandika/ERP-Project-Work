@@ -4,14 +4,14 @@ namespace App\Filament\Resources\HR;
 use App\Filament\Concerns\BelongsToModule;
 use App\Filament\Resources\HR\DepartmentResource\Pages;
 use App\Models\HR\Department;
-use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Infolists\Components\Section;
 use Filament\Infolists\Components\TextEntry;
 use Filament\Infolists\Infolist;
 use Filament\Resources\Resource;
-use Filament\Tables;
 use Filament\Tables\Table;
+use Filament\Forms;
+use Filament\Tables;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
 use Illuminate\Support\Carbon;
@@ -52,7 +52,7 @@ class DepartmentResource extends Resource
                                     ->required()
                                     ->maxLength(25)
                                     ->prefixIcon('heroicon-o-document-text')
-                                // Tambahkan Custom Rule di sini
+                                    // Tambahkan Custom Rule di sini
                                     ->rules([
                                         fn(?Department $record) => function (string $attribute, $value, \Closure $fail) use ($record) {
                                             // Cek database, termasuk yang sudah di-soft delete
@@ -74,7 +74,6 @@ class DepartmentResource extends Resource
                                             }
                                         },
                                     ]),
-
                                 Forms\Components\TextInput::make('code')
                                     ->label('Kode Departemen')
                                     ->required()
@@ -115,13 +114,11 @@ class DepartmentResource extends Resource
                     ->sortable()
                     ->searchable()
                     ->placeholder('—'),
-
                 Tables\Columns\TextColumn::make('code')
                     ->label('Kode Departemen')
                     ->sortable()
                     ->searchable()
                     ->placeholder('—'),
-
                 Tables\Columns\BadgeColumn::make('employees_count')
                     ->label('Jumlah Karyawan')
                     ->counts('employees')
@@ -130,19 +127,16 @@ class DepartmentResource extends Resource
                     ->sortable()
                     ->formatStateUsing(fn($state) => $state . ' Karyawan')
                     ->placeholder('—'),
-
                 Tables\Columns\TextColumn::make('created_at')
                     ->label('Dibuat Pada')
                     ->dateTime('d M Y H:i')
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
-
                 Tables\Columns\TextColumn::make('updated_at')
                     ->label('Diperbarui Pada')
                     ->dateTime('d M Y H:i')
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
-
                 Tables\Columns\TextColumn::make('deleted_at')
                     ->label('Dihapus Pada')
                     ->dateTime('d M Y H:i')
@@ -158,7 +152,6 @@ class DepartmentResource extends Resource
                             ->displayFormat('d M Y')
                             ->native(false)
                             ->prefixIcon('heroicon-o-calendar-days'),
-
                         Forms\Components\DatePicker::make('created_until')
                             ->label('Dibuat Hingga')
                             ->required()
@@ -190,7 +183,6 @@ class DepartmentResource extends Resource
 
                         return $indicators;
                     }),
-
                 Tables\Filters\TrashedFilter::make()
                     ->label('Deleted Status')
                     ->native(false),
@@ -218,12 +210,11 @@ class DepartmentResource extends Resource
         return $infolist
             ->schema([
                 Section::make('Informasi Departemen')
-                    ->columns(2)
+                    ->columns(['default' => 122, 'md' => 2])
                     ->schema([
                         TextEntry::make('name')
                             ->label('Nama Departemen')
                             ->placeholder('—'),
-
                         TextEntry::make('employees_count')
                             ->label('Jumlah Karyawan')
                             ->state(function (Department $department) {
@@ -231,18 +222,15 @@ class DepartmentResource extends Resource
                             })
                             ->placeholder('—'),
                     ]),
-
                 Section::make('Pengelolaan Data')
-                    ->columns(2)
+                    ->columns(['default' => 122, 'md' => 2])
                     ->schema([
                         TextEntry::make('created_at')
                             ->label('Dibuat Pada')
                             ->dateTime('d M Y H:i'),
-
                         TextEntry::make('updated_at')
                             ->label('Diperbarui Pada')
                             ->dateTime('d M Y H:i'),
-
                         TextEntry::make('deleted_at')
                             ->label('Dihapus Pada')
                             ->dateTime('d M Y H:i')
@@ -261,10 +249,10 @@ class DepartmentResource extends Resource
     public static function getPages(): array
     {
         return [
-            'index'  => Pages\ListDepartments::route('/'),
+            'index' => Pages\ListDepartments::route('/'),
             'create' => Pages\CreateDepartment::route('/create'),
             // 'view' => Pages\ViewDepartment::route('/{record}'),
-            'edit'   => Pages\EditDepartment::route('/{record}/edit'),
+            'edit' => Pages\EditDepartment::route('/{record}/edit'),
         ];
     }
 

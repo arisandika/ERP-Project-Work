@@ -16,15 +16,15 @@ class InventoryHealthGauge extends ChartWidget
     protected static bool $isLazy = true;
 
     protected int|string|array $columnSpan = [
+        'default' => 12,
         'md' => 12,
         'xl' => 6,
     ];
 
     protected function getData(): array
     {
-        $healthScore = Cache::remember('inventory_health_composite', now()->addMinutes(15), fn () =>
-            $this->calculateHealthScore()
-        );
+        $healthScore = Cache::remember('inventory_health_composite', now()->addMinutes(15), fn() =>
+            $this->calculateHealthScore());
 
         return [
             'datasets' => [
@@ -72,33 +72,33 @@ class InventoryHealthGauge extends ChartWidget
     private function calculateHealthScore(): int
     {
         $totalProducts = Product::count();
-        if ($totalProducts === 0) return 100;
+        if ($totalProducts === 0)
+            return 100;
 
-        $lowStockCount = Product::whereHas('productStocks', fn ($q) =>
-            $q->whereColumn('qty_available', '<=', 'nx_products.min_stock')->where('qty_available', '>', 0)
-        )->count();
+        $lowStockCount = Product::whereHas('productStocks', fn($q) =>
+            $q->whereColumn('qty_available', '<=', 'nx_products.min_stock')->where('qty_available', '>', 0))->count();
         $lowStockRatio = $lowStockCount / $totalProducts;
 
         $overstockCount = Product::where('max_stock', '>', 0)
-            ->whereHas('productStocks', fn ($q) =>
-                $q->join('nx_products', 'nx_products.id', '=', 'nx_product_stock.product_id')
-                    ->whereColumn('nx_product_stock.qty_available', '>', 'nx_products.max_stock')
-            )->count();
+            ->whereHas('productStocks', fn($q) =>
+                $q
+                    ->join('nx_products', 'nx_products.id', '=', 'nx_product_stock.product_id')
+                    ->whereColumn('nx_product_stock.qty_available', '>', 'nx_products.max_stock'))
+            ->count();
         $overstockRatio = $overstockCount / $totalProducts;
 
         $negativeCount = ProductStock::where('qty_available', '<', 0)->count();
         $negativeStockRatio = $negativeCount / max(ProductStock::count(), 1);
 
-        $idleProductIds = Product::whereDoesntHave('stockTransactions', fn ($q) =>
-            $q->where('transaction_date', '>=', now()->subDays(60))
-        )->pluck('id');
+        $idleProductIds = Product::whereDoesntHave('stockTransactions', fn($q) =>
+            $q->where('transaction_date', '>=', now()->subDays(60)))->pluck('id');
         $idleCount = ProductStock::whereIn('product_id', $idleProductIds)
             ->where('qty_available', '>', 0)
             ->count();
         $idleRatio = $idleCount / max(ProductStock::count(), 1);
 
-        $weightedSum = ($lowStockRatio * 0.30)
-            + ($overstockRatio * 0.20)
+        $weightedSum = ($lowStockRatio * 0.3)
+            + ($overstockRatio * 0.2)
             + ($negativeStockRatio * 0.25)
             + ($idleRatio * 0.25);
 

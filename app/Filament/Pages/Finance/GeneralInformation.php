@@ -47,17 +47,17 @@ class GeneralInformation extends Page
         ];
     }
 
-    public function getHeaderWidgetsColumns(): int | string | array
+    public function getHeaderWidgetsColumns(): int|string|array
     {
         return [
-            'default' => 1,
+            'default' => 122,
             'xl' => 2,
         ];
     }
 
     public function setSummaryMode(string $mode): void
     {
-        if (! in_array($mode, ['monthly', 'yearly'], true)) {
+        if (!in_array($mode, ['monthly', 'yearly'], true)) {
             return;
         }
 
@@ -83,7 +83,7 @@ class GeneralInformation extends Page
             return collect([now()->year]);
         }
 
-        if (! $years->contains(now()->year)) {
+        if (!$years->contains(now()->year)) {
             $years->prepend(now()->year);
         }
 
@@ -140,7 +140,8 @@ class GeneralInformation extends Page
 
     public function getYearlySummariesProperty(): Collection
     {
-        return $this->yearOptions
+        return $this
+            ->yearOptions
             ->map(function ($year) {
                 $date = Carbon::create((int) $year, 1, 1);
 

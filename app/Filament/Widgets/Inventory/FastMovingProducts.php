@@ -3,15 +3,16 @@
 namespace App\Filament\Widgets\Inventory;
 
 use App\Models\Inventory\StockTransaction;
-use Filament\Tables;
 use Filament\Tables\Table;
 use Filament\Widgets\TableWidget as BaseWidget;
+use Filament\Tables;
 
 class FastMovingProducts extends BaseWidget
 {
     protected static ?string $heading = 'Top 10 Fast-Moving Products (30 Hari)';
 
     protected int|string|array $columnSpan = [
+        'default' => 12,
         'md' => 12,
         'xl' => 6,
     ];
@@ -27,32 +28,27 @@ class FastMovingProducts extends BaseWidget
             ->columns([
                 Tables\Columns\TextColumn::make('rank')
                     ->label('#')
-                    ->stateUsing(fn ($record, $rowIndex) => $rowIndex + 1)
+                    ->stateUsing(fn($record, $rowIndex) => $rowIndex + 1)
                     ->alignCenter()
                     ->weight('bold')
                     ->color('primary'),
-
                 Tables\Columns\TextColumn::make('product_code')
                     ->label('Kode')
                     ->sortable()
                     ->weight('semibold'),
-
                 Tables\Columns\TextColumn::make('product_name')
                     ->label('Produk')
                     ->limit(25)
                     ->sortable(),
-
                 Tables\Columns\TextColumn::make('total_movements')
                     ->label('Mutasi')
                     ->numeric()
                     ->sortable()
                     ->weight('bold')
                     ->color('success'),
-
                 Tables\Columns\TextColumn::make('avg_per_day')
                     ->label('Rata2/Hari')
-                    ->getStateUsing(fn ($record): string => number_format($record->total_movements / 30, 1)),
-
+                    ->getStateUsing(fn($record): string => number_format($record->total_movements / 30, 1)),
                 Tables\Columns\TextColumn::make('current_stock')
                     ->label('Stok')
                     ->numeric()

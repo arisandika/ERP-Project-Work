@@ -3,8 +3,8 @@ namespace App\Filament\Widgets\HR;
 
 use App\Models\HR\Attendance;
 use App\Models\HR\Employee;
-use Filament\Widgets\StatsOverviewWidget as BaseWidget;
 use Filament\Widgets\StatsOverviewWidget\Stat;
+use Filament\Widgets\StatsOverviewWidget as BaseWidget;
 use Illuminate\Support\Carbon;
 
 class AttendanceSummaryOverview extends BaseWidget
@@ -13,12 +13,10 @@ class AttendanceSummaryOverview extends BaseWidget
 
     protected static ?string $maxHeight = '150px';
 
-    protected int|string|array $columnSpan = '2';
-
-    public function getColumns(): int
-    {
-        return 4;
-    }
+    protected int|string|array $columnSpan = [
+        'default' => 12,
+        'md' => 2,
+    ];
 
     protected function getStats(): array
     {
@@ -42,15 +40,12 @@ class AttendanceSummaryOverview extends BaseWidget
             Stat::make('Total Karyawan', $totalEmployees)
                 ->description('Semua karyawan aktif')
                 ->color('gray'),
-
             Stat::make('Hadir', $attendanceStats->present_count)
                 ->description('Karyawan hadir hari ini')
                 ->color('success'),
-
             Stat::make('Terlambat', $attendanceStats->late_count)
                 ->description('Karyawan terlambat hari ini')
                 ->color('warning'),
-
             Stat::make('Belum Presensi', $absentCount)
                 ->description('Belum presensi hari ini')
                 ->color('danger'),

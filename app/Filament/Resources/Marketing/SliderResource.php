@@ -2,10 +2,10 @@
 
 namespace App\Filament\Resources\Marketing;
 
+use App\Filament\Concerns\BelongsToModule;
 use App\Filament\Resources\Marketing\SliderResource\Pages;
 use App\Filament\Resources\Marketing\SliderResource\RelationManagers;
 use App\Models\Marketing\Slider;
-use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Infolists\Components\ImageEntry;
 use Filament\Infolists\Components\Section;
@@ -13,27 +13,23 @@ use Filament\Infolists\Components\TextEntry;
 use Filament\Infolists\Infolist;
 use Filament\Notifications\Notification;
 use Filament\Resources\Resource;
-use Filament\Tables;
 use Filament\Tables\Table;
+use Filament\Forms;
+use Filament\Tables;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Carbon;
-use App\Filament\Concerns\BelongsToModule;
 
 class SliderResource extends Resource
 {
     use BelongsToModule;
+
     protected static ?string $module = 'marketing';
     protected static ?string $model = Slider::class;
-
     protected static ?string $navigationIcon = 'heroicon-o-photo';
-
     protected static ?string $navigationGroup = 'Manajemen Marketing';
-
     protected static ?int $navigationSort = 3;
-
     protected static ?string $slug = 'marketing/sliders';
-
     protected static ?string $pluralModelLabel = 'Konten Slider';
 
     public static function getNavigationBadge(): ?string
@@ -47,14 +43,13 @@ class SliderResource extends Resource
             ->schema([
                 Forms\Components\Section::make('Informasi Slider')
                     ->description('Informasi teks yang akan tampil pada banner.')
-                    ->columns(2)
+                    ->columns(['default' => 122, 'md' => 2])
                     ->schema([
                         Forms\Components\TextInput::make('title')
                             ->label('Judul (Heading)')
                             ->maxLength(255)
                             ->placeholder('Contoh: Promo Spesial Ramadhan')
                             ->prefixIcon('heroicon-o-h1'),
-
                         Forms\Components\Textarea::make('description')
                             ->label('Deskripsi (Sub Heading)')
                             ->rows(3)
@@ -62,10 +57,9 @@ class SliderResource extends Resource
                             ->placeholder('Tambahkan penjelasan singkat mengenai promo...')
                             ->columnSpanFull(),
                     ]),
-
                 Forms\Components\Section::make('Konten Visual')
                     ->description('Upload gambar banner untuk desktop dan mobile.')
-                    ->columns(2)
+                    ->columns(['default' => 122, 'md' => 2])
                     ->schema([
                         Forms\Components\FileUpload::make('image_desktop')
                             ->label('Banner Desktop')
@@ -74,7 +68,6 @@ class SliderResource extends Resource
                             ->directory('sliders/desktop')
                             ->imageEditor()
                             ->helperText('Rekomendasi ukuran: 1920x600 px'),
-
                         Forms\Components\FileUpload::make('image_mobile')
                             ->label('Banner Mobile')
                             ->image()
@@ -82,22 +75,19 @@ class SliderResource extends Resource
                             ->imageEditor()
                             ->helperText('Opsional. Jika kosong akan menggunakan gambar desktop'),
                     ]),
-
                 Forms\Components\Section::make('Call To Action')
                     ->description('Arahkan pelanggan ke halaman tertentu.')
-                    ->columns(2)
+                    ->columns(['default' => 122, 'md' => 2])
                     ->schema([
                         Forms\Components\TextInput::make('cta_text')
                             ->label('Label Button')
                             ->placeholder('Contoh: Lihat Promo')
                             ->prefixIcon('heroicon-o-cursor-arrow-rays'),
-
                         Forms\Components\TextInput::make('cta_url')
                             ->label('URL Tujuan')
                             ->url()
                             ->placeholder('https://website.com/promo')
                             ->prefixIcon('heroicon-o-link'),
-
                         Forms\Components\Toggle::make('open_in_new_tab')
                             ->label('Buka Link di Tab Baru')
                             ->helperText('Aktifkan jika link mengarah ke website luar.')
@@ -105,24 +95,21 @@ class SliderResource extends Resource
                             ->inline(false)
                             ->columnSpanFull(),
                     ]),
-
                 Forms\Components\Section::make('Pengaturan Tayang')
                     ->description('Atur jadwal dan urutan tampilan slider.')
-                    ->columns(2)
+                    ->columns(['default' => 122, 'md' => 2])
                     ->schema([
                         Forms\Components\DateTimePicker::make('start_date')
                             ->label('Mulai Tayang')
                             ->required()
                             ->native(false)
                             ->prefixIcon('heroicon-o-calendar-days'),
-
                         Forms\Components\DateTimePicker::make('end_date')
                             ->label('Selesai Tayang')
                             ->required()
                             ->after('start_date')
                             ->native(false)
                             ->prefixIcon('heroicon-o-calendar-days'),
-
                         Forms\Components\TextInput::make('sort_order')
                             ->label('Urutan Tampil')
                             ->numeric()
@@ -130,7 +117,6 @@ class SliderResource extends Resource
                             ->default(fn() => (Slider::max('sort_order') ?? 0) + 1)
                             ->live(onBlur: true)
                             ->afterStateUpdated(function ($state, $set, ?Model $record) {
-
                                 if (blank($state)) {
                                     return;
                                 }
@@ -143,7 +129,6 @@ class SliderResource extends Resource
                                 };
 
                                 if ($isTaken($state)) {
-
                                     $original = $state;
 
                                     while ($isTaken($state)) {
@@ -161,7 +146,6 @@ class SliderResource extends Resource
                                 }
                             })
                             ->helperText('Jika nomor sudah dipakai, sistem akan menyesuaikan otomatis.'),
-
                         Forms\Components\Toggle::make('is_active')
                             ->label('Status Aktif')
                             ->default(true)
@@ -184,7 +168,6 @@ class SliderResource extends Resource
                         'alt' => 'Gambar Hilang',
                     ])
                     ->placeholder('Tidak ada gambar'),
-
                 Tables\Columns\TextColumn::make('title')
                     ->label('Judul (Heading)')
                     ->weight('semibold')
@@ -193,33 +176,28 @@ class SliderResource extends Resource
                     ->placeholder('—')
                     ->description(
                         fn($record) =>
-                        $record->description
-                        ? str($record->description)->limit(40)
-                        : 'Tidak ada deskripsi'
+                            $record->description
+                                ? str($record->description)->limit(40)
+                                : 'Tidak ada deskripsi'
                     ),
-
                 Tables\Columns\TextColumn::make('cta_text')
                     ->label('Tombol CTA')
                     ->icon('heroicon-o-cursor-arrow-rays')
                     ->placeholder('Tidak ada tombol')
                     ->description(
                         fn($record) =>
-                        $record->cta_url ? str($record->cta_url)->limit(30) : null
+                            $record->cta_url ? str($record->cta_url)->limit(30) : null
                     ),
-
                 Tables\Columns\TextColumn::make('sort_order')
                     ->label('Urutan')
                     ->alignCenter()
                     ->sortable(),
-
                 Tables\Columns\ToggleColumn::make('is_active')
                     ->label('Status Aktif'),
-
                 Tables\Columns\TextColumn::make('status_tayang')
                     ->label('Status Tayang')
                     ->badge()
                     ->state(function (Slider $record) {
-
                         if (!$record->is_active) {
                             return 'Nonaktif';
                         }
@@ -242,28 +220,24 @@ class SliderResource extends Resource
                         'Sedang Tayang' => 'success',
                         'Selesai Tayang' => 'danger',
                     }),
-
                 Tables\Columns\TextColumn::make('start_date')
                     ->label('Periode Tayang')
                     ->dateTime('d M Y H:i')
                     ->description(
                         fn($record) =>
-                        's/d ' . ($record->end_date?->format('d M Y H:i') ?? '—')
+                            's/d ' . ($record->end_date?->format('d M Y H:i') ?? '—')
                     )
                     ->sortable(),
-
                 Tables\Columns\TextColumn::make('created_at')
                     ->label('Dibuat')
                     ->dateTime('d M Y H:i')
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
-
                 Tables\Columns\TextColumn::make('updated_at')
                     ->label('Diperbarui')
                     ->dateTime('d M Y H:i')
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
-
                 Tables\Columns\TextColumn::make('deleted_at')
                     ->label('Dihapus')
                     ->dateTime('d M Y H:i')
@@ -278,7 +252,6 @@ class SliderResource extends Resource
                         0 => 'Nonaktif',
                     ])
                     ->native(false),
-
                 Tables\Filters\Filter::make('created_at')
                     ->form([
                         Forms\Components\DatePicker::make('created_from')
@@ -287,7 +260,6 @@ class SliderResource extends Resource
                             ->displayFormat('d M Y')
                             ->native(false)
                             ->prefixIcon('heroicon-o-calendar-days'),
-
                         Forms\Components\DatePicker::make('created_until')
                             ->label('Dibuat Hingga')
                             ->required()
@@ -319,7 +291,6 @@ class SliderResource extends Resource
 
                         return $indicators;
                     }),
-
                 Tables\Filters\TrashedFilter::make()
                     ->label('Deleted Status')
                     ->native(false),
@@ -347,22 +318,20 @@ class SliderResource extends Resource
         return $infolist
             ->schema([
                 Section::make('Informasi Slider')
-                    ->columns(2)
+                    ->columns(['default' => 122, 'md' => 2])
                     ->schema([
                         TextEntry::make('title')
                             ->label('Judul (Heading)')
                             ->weight('semibold')
                             ->placeholder('—')
                             ->columnSpanFull(),
-
                         TextEntry::make('description')
                             ->label('Deskripsi (Sub Heading)')
                             ->placeholder('—')
                             ->columnSpanFull(),
                     ]),
-
                 Section::make('Konten Visual')
-                    ->columns(2)
+                    ->columns(['default' => 122, 'md' => 2])
                     ->schema([
                         ImageEntry::make('image_desktop')
                             ->label('Versi Desktop')
@@ -371,7 +340,6 @@ class SliderResource extends Resource
                                 'style' => 'width: 100%; height: auto; object-fit: cover;',
                                 'class' => 'w-full rounded-2xl'
                             ]),
-
                         ImageEntry::make('image_mobile')
                             ->label('Versi Mobile')
                             ->placeholder('Otomatis menyesuaikan dari versi Desktop')
@@ -380,14 +348,12 @@ class SliderResource extends Resource
                                 'class' => 'w-full rounded-2xl'
                             ]),
                     ]),
-
                 Section::make('Call To Action')
-                    ->columns(2)
+                    ->columns(['default' => 122, 'md' => 2])
                     ->schema([
                         TextEntry::make('cta_text')
                             ->label('Label Button')
                             ->placeholder('—'),
-
                         TextEntry::make('cta_url')
                             ->label('URL Tujuan')
                             ->copyable()
@@ -395,39 +361,34 @@ class SliderResource extends Resource
                             ->openUrlInNewTab()
                             ->color('primary')
                             ->placeholder('—'),
-
                         TextEntry::make('open_in_new_tab')
                             ->label('Perilaku Klik')
                             ->formatStateUsing(
                                 fn($state) =>
-                                $state ? 'Buka di Tab Baru' : 'Buka di Tab yang Sama'
+                                    $state ? 'Buka di Tab Baru' : 'Buka di Tab yang Sama'
                             )
                             ->columnSpanFull(),
                     ]),
-
                 Section::make('Pengaturan Tayang')
-                    ->columns(3)
+                    ->columns(['default' => 122, 'md' => 3])
                     ->schema([
                         TextEntry::make('sort_order')
                             ->label('Urutan Tampil')
                             ->label('Urutan Tampil')
                             ->formatStateUsing(fn($state): string => 'Urutan ke-' . $state)
                             ->placeholder('—'),
-
                         TextEntry::make('is_active')
                             ->label('Status Aktif')
                             ->badge()
                             ->color(fn($state) => $state ? 'success' : 'danger')
                             ->formatStateUsing(
                                 fn($state) =>
-                                $state ? 'Aktif' : 'Nonaktif'
+                                    $state ? 'Aktif' : 'Nonaktif'
                             ),
-
                         TextEntry::make('status_tayang')
                             ->label('Status Penayangan')
                             ->badge()
                             ->state(function ($record) {
-
                                 if (!$record->is_active)
                                     return 'Nonaktif';
 
@@ -446,27 +407,22 @@ class SliderResource extends Resource
                                 'Sedang Tayang' => 'success',
                                 'Selesai Tayang' => 'danger',
                             }),
-
                         TextEntry::make('start_date')
                             ->label('Mulai Tayang')
                             ->dateTime('d M Y H:i'),
-
                         TextEntry::make('end_date')
                             ->label('Berakhir Pada')
                             ->dateTime('d M Y H:i'),
                     ]),
-
                 Section::make('Pengelolaan Data')
-                    ->columns(2)
+                    ->columns(['default' => 122, 'md' => 2])
                     ->schema([
                         TextEntry::make('created_at')
                             ->label('Dibuat Pada')
                             ->dateTime('d M Y H:i'),
-
                         TextEntry::make('updated_at')
                             ->label('Diperbarui Pada')
                             ->dateTime('d M Y H:i'),
-
                         TextEntry::make('deleted_at')
                             ->label('Dihapus Pada')
                             ->dateTime('d M Y H:i')

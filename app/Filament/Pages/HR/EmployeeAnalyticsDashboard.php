@@ -3,11 +3,10 @@
 namespace App\Filament\Pages\HR;
 
 use App\Filament\Concerns\BelongsToModule;
-use App\Filament\Widgets\EmployeeAnalytics\Attendance\ClockInOutAverageWidget;
-use App\Filament\Widgets\EmployeeAnalytics\Sections\AnalyticsSectionHeaderWidget;
 use App\Filament\Widgets\EmployeeAnalytics\Attendance\AttendanceHeatmapChart;
 use App\Filament\Widgets\EmployeeAnalytics\Attendance\AttendanceStatusDonutChart;
 use App\Filament\Widgets\EmployeeAnalytics\Attendance\AttendanceTrendChart;
+use App\Filament\Widgets\EmployeeAnalytics\Attendance\ClockInOutAverageWidget;
 use App\Filament\Widgets\EmployeeAnalytics\Attendance\WorkHoursChart;
 use App\Filament\Widgets\EmployeeAnalytics\Leave\LeaveBalanceRadialChart;
 use App\Filament\Widgets\EmployeeAnalytics\Leave\LeaveHistoryTable;
@@ -16,6 +15,7 @@ use App\Filament\Widgets\EmployeeAnalytics\Overview\EmployeeOverviewStats;
 use App\Filament\Widgets\EmployeeAnalytics\Reimbursement\MonthlyReimbursementChart;
 use App\Filament\Widgets\EmployeeAnalytics\Reimbursement\RecentReimbursementTable;
 use App\Filament\Widgets\EmployeeAnalytics\Reimbursement\ReimbursementStatusChart;
+use App\Filament\Widgets\EmployeeAnalytics\Sections\AnalyticsSectionHeaderWidget;
 use BezhanSalleh\FilamentShield\Traits\HasPageShield;
 use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\Section;
@@ -26,7 +26,6 @@ use Filament\Pages\Page;
 class EmployeeAnalyticsDashboard extends Page
 {
     use HasFiltersForm;
-
     use HasPageShield, BelongsToModule {
         HasPageShield::canAccess insteadof BelongsToModule;
         HasPageShield::shouldRegisterNavigation insteadof BelongsToModule;
@@ -42,7 +41,7 @@ class EmployeeAnalyticsDashboard extends Page
 
     protected static ?string $navigationIcon = 'heroicon-o-chart-bar-square';
 
-    protected static ?string $navigationLabel = 'Employee Analytics Dashboard';
+    protected static ?string $navigationLabel = 'Employee Analytics';
 
     protected static ?string $title = 'Employee Analytics';
 
@@ -59,8 +58,8 @@ class EmployeeAnalyticsDashboard extends Page
 
     public static function shouldRegisterNavigation(): bool
     {
-        return static::shieldShouldRegisterNavigation()
-            && static::moduleShouldRegisterNavigation();
+        return static::shieldShouldRegisterNavigation() &&
+            static::moduleShouldRegisterNavigation();
     }
 
     public function filtersForm(Form $form): Form
@@ -75,14 +74,13 @@ class EmployeeAnalyticsDashboard extends Page
                             ->default(now()->startOfMonth())
                             ->native(false)
                             ->live(),
-
                         DatePicker::make('endDate')
                             ->label('Tanggal Akhir')
                             ->default(now()->endOfMonth())
                             ->native(false)
                             ->live(),
                     ])
-                    ->columns(2),
+                    ->columns(['default' => 122, 'md' => 2]),
             ]);
     }
 
@@ -102,31 +100,26 @@ class EmployeeAnalyticsDashboard extends Page
                 'description' => 'Monitor aktivitas kehadiran, keterlambatan, dan jam kerja.',
                 'icon' => 'heroicon-o-calendar-days',
             ]),
-
             AttendanceTrendChart::class,
             AttendanceStatusDonutChart::class,
-            WorkHoursChart::class,
+            // WorkHoursChart::class,
             AttendanceHeatmapChart::class,
             ClockInOutAverageWidget::class,
-
             // ── Leave Section ──
             AnalyticsSectionHeaderWidget::make([
                 'title' => 'Leave Analytics',
                 'description' => 'Pantau penggunaan cuti dan riwayat pengajuan.',
                 'icon' => 'heroicon-o-clock',
             ]),
-
             LeaveBalanceRadialChart::class,
             LeaveTrendChart::class,
             LeaveHistoryTable::class,
-
             // ── Reimbursement Section ──
             AnalyticsSectionHeaderWidget::make([
                 'title' => 'Reimbursement Analytics',
                 'description' => 'Monitor pengajuan reimburse dan status approval.',
                 'icon' => 'heroicon-o-banknotes',
             ]),
-
             ReimbursementStatusChart::class,
             MonthlyReimbursementChart::class,
             RecentReimbursementTable::class,

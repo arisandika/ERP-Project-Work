@@ -4,8 +4,6 @@ namespace App\Filament\Resources\HR\EmployeeResource\RelationManagers;
 use App\Exports\AttendancesExport;
 use App\Infolists\Components\AttendanceMapEntry;
 use App\Models\HR\Attendance;
-use Exception;
-use Filament\Forms;
 use Filament\Forms\Components\CheckboxList;
 use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\Section as FormSection;
@@ -15,12 +13,14 @@ use Filament\Infolists\Components\TextEntry;
 use Filament\Infolists\Infolist;
 use Filament\Notifications\Notification;
 use Filament\Resources\RelationManagers\RelationManager;
-use Filament\Tables;
 use Filament\Tables\Actions\Action;
 use Filament\Tables\Table;
+use Filament\Forms;
+use Filament\Tables;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Carbon;
 use Maatwebsite\Excel\Facades\Excel;
+use Exception;
 
 class AttendancesRelationManager extends RelationManager
 {
@@ -101,7 +101,6 @@ class AttendancesRelationManager extends RelationManager
                 ->body('File Excel presensi sedang diunduh')
                 ->success()
                 ->send();
-
         } catch (Exception $e) {
             Notification::make()
                 ->title('Export Gagal')
@@ -123,13 +122,13 @@ class AttendancesRelationManager extends RelationManager
                     ->weight('semibold')
                     ->icon('heroicon-o-user')
                     ->color(function (Attendance $record) {
-                        $record->withTrashed()->first();
-                        if ($record && $record->trashed())
+                        if ($record && $record->trashed()) {
                             return 'danger';
+                        }
+
                         return '';
                     })
                     ->placeholder('—'),
-
                 Tables\Columns\BadgeColumn::make('status')
                     ->label('Status')
                     ->sortable()
@@ -139,6 +138,9 @@ class AttendancesRelationManager extends RelationManager
                         'absen' => 'danger',
                         'izin' => 'yellow',
                         'cuti' => 'info',
+                        'sakit' => 'danger',  // <-- tambahkan
+                        'libur' => 'gray',  // <-- tambahkan (biar konsisten, opsional)
+                        'no_checkout' => 'orange',  // <-- tambahkan (opsional)
                         default => 'gray',
                     })
                     ->formatStateUsing(fn(string $state) => match ($state) {
@@ -148,41 +150,40 @@ class AttendancesRelationManager extends RelationManager
                         'absen' => 'Absen',
                         'cuti' => 'Cuti',
                         'izin' => 'Izin',
+                        'sakit' => 'Sakit',  // <-- tambahkan
+                        'libur' => 'Libur',  // <-- tambahkan
                         'no_checkout' => 'Tidak Presensi Keluar',
-                        default => ucwords(str_replace('_', ' ', $state)),
+
+                        default => ucwords(
+                            str_replace('_', ' ', $state)
+                        ),
                     })
                     ->placeholder('—'),
-
                 Tables\Columns\TextColumn::make('date')
                     ->label('Tanggal')
                     ->date('D, d M Y')
                     ->sortable()
                     ->placeholder('—'),
-
                 Tables\Columns\TextColumn::make('clock_in')
                     ->label('Jam Masuk')
                     ->time('H:i')
                     ->placeholder('—')
                     ->sortable(),
-
                 Tables\Columns\TextColumn::make('clock_out')
                     ->label('Jam Keluar')
                     ->time('H:i')
                     ->placeholder('—')
                     ->sortable(),
-
                 Tables\Columns\TextColumn::make('created_at')
                     ->label('Dibuat Pada')
                     ->dateTime('d M Y H:i')
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
-
                 Tables\Columns\TextColumn::make('updated_at')
                     ->label('Diperbarui Pada')
                     ->dateTime('d M Y H:i')
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
-
                 Tables\Columns\TextColumn::make('deleted_at')
                     ->label('Dihapus Pada')
                     ->dateTime('d M Y H:i')
@@ -199,10 +200,11 @@ class AttendancesRelationManager extends RelationManager
                         'absen' => 'Absen',
                         'cuti' => 'Cuti',
                         'izin' => 'Izin',
+                        'sakit' => 'Sakit',  // <-- tambahkan
+                        'libur' => 'Libur',  // <-- tambahkan
                         'no_checkout' => 'Tidak Presensi Keluar',
                     ])
                     ->native(false),
-
                 Tables\Filters\Filter::make('date')
                     ->form([
                         Forms\Components\DatePicker::make('created_from')
@@ -210,7 +212,6 @@ class AttendancesRelationManager extends RelationManager
                             ->displayFormat('d M Y')
                             ->native(false)
                             ->prefixIcon('heroicon-o-calendar-days'),
-
                         Forms\Components\DatePicker::make('created_until')
                             ->label('Sampai Tanggal')
                             ->displayFormat('d M Y')
@@ -238,7 +239,6 @@ class AttendancesRelationManager extends RelationManager
                         }
                         return $indicators;
                     }),
-
                 Tables\Filters\TrashedFilter::make()
                     ->label('Deleted Status')
                     ->native(false),
@@ -267,8 +267,8 @@ class AttendancesRelationManager extends RelationManager
                                     ->native(false)
                                     ->displayFormat('d M Y')
                                     ->required(),
-                            ])->columns(2),
-
+                            ])
+                            ->columns(['default' => 12, 'md' => 2]),
                         FormSection::make('Pilih Kolom')
                             ->description('Pilih kolom yang ingin disertakan dalam file Excel')
                             ->schema([
@@ -298,7 +298,7 @@ class AttendancesRelationManager extends RelationManager
                                     ])
                                     ->required()
                                     ->minItems(1)
-                                    ->columns(2)
+                                    ->columns(['default' => 12, 'md' => 2])
                                     ->gridDirection('row'),
                             ]),
                     ])
@@ -313,29 +313,25 @@ class AttendancesRelationManager extends RelationManager
         return $infolist
             ->schema([
                 Section::make('Informasi Presensi')
-                    ->columns(2)
+                    ->columns(['default' => 12, 'md' => 2])
                     ->schema([
                         TextEntry::make('employee.full_name')
                             ->label('Nama Karyawan')
                             ->weight('semibold')
                             ->icon('heroicon-o-user')
                             ->placeholder('—'),
-
                         TextEntry::make('date')
                             ->label('Tanggal')
                             ->date('D, d M Y')
                             ->placeholder('—'),
-
                         TextEntry::make('clock_in')
                             ->label('Jam Masuk')
                             ->time('H:i')
                             ->placeholder('—'),
-
                         TextEntry::make('clock_out')
                             ->label('Jam Keluar')
                             ->time('H:i')
                             ->placeholder('—'),
-
                         TextEntry::make('status')
                             ->label('Status')
                             ->badge()
@@ -345,34 +341,31 @@ class AttendancesRelationManager extends RelationManager
                                 'absen' => 'danger',
                                 'izin' => 'yellow',
                                 'cuti' => 'info',
+                                'sakit' => 'yellow',  // <-- tambahkan
+                                'libur' => 'gray',  // <-- tambahkan
                                 default => 'gray',
                             })
                             ->formatStateUsing(fn(string $state): string => ucwords(str_replace('_', ' ', $state)))
                             ->placeholder('—'),
-
                         TextEntry::make('note')
                             ->label('Catatan')
                             ->placeholder('—'),
                     ]),
-
                 Section::make('Lokasi Presensi')
                     ->schema([
                         AttendanceMapEntry::make('map')
                             ->label('')
                             ->columnSpanFull(),
                     ]),
-
                 Section::make('Pengelolaan Data')
-                    ->columns(2)
+                    ->columns(['default' => 12, 'md' => 2])
                     ->schema([
                         TextEntry::make('created_at')
                             ->label('Dibuat Pada')
                             ->dateTime('d M Y H:i'),
-
                         TextEntry::make('updated_at')
                             ->label('Diperbarui Pada')
                             ->dateTime('d M Y H:i'),
-
                         TextEntry::make('deleted_at')
                             ->label('Dihapus Pada')
                             ->dateTime('d M Y H:i')

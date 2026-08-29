@@ -2,19 +2,20 @@
 
 namespace App\Filament\Resources\Finance;
 
+use App\Filament\Concerns\BelongsToModule;
 use App\Filament\Resources\Finance\PurchaseInvoiceResource\Pages;
 use App\Models\Procurement\PurchaseInvoice;
 use App\Models\Procurement\PurchaseOrder;
-use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Resources\Resource;
-use Filament\Tables;
 use Filament\Tables\Table;
-use App\Filament\Concerns\BelongsToModule;
+use Filament\Forms;
+use Filament\Tables;
 
 class PurchaseInvoiceResource extends Resource
 {
     use BelongsToModule;
+
     protected static ?string $module = 'finance';
     protected static ?string $model = PurchaseInvoice::class;
     protected static ?string $navigationIcon = 'heroicon-o-receipt-percent';
@@ -51,12 +52,10 @@ class PurchaseInvoiceResource extends Resource
                                 ->label('No. Internal PI')
                                 ->default('AUTO-GENERATED')
                                 ->disabled(),
-
                             Forms\Components\TextInput::make('vendor_invoice_number')
                                 ->label('No. Tagihan (Dari Supplier)')
                                 ->required()
                                 ->placeholder('Contoh: INV-SUP-001'),
-
                             Forms\Components\Select::make('purchase_order_id')
                                 ->label('Berdasarkan PO')
                                 ->options(PurchaseOrder::whereIn('status', ['partial', 'completed'])->pluck('po_number', 'id'))
@@ -102,20 +101,17 @@ class PurchaseInvoiceResource extends Resource
                                     $set('grand_total', $subtotal + $taxAmount);
                                 })
                                 ->disabled(fn(string $operation): bool => $operation === 'edit'),
-
                             Forms\Components\Hidden::make('supplier_id'),
-
                             Forms\Components\DatePicker::make('invoice_date')
                                 ->label('Tanggal Tagihan')
                                 ->default(now())
                                 ->required(),
-
                             Forms\Components\DatePicker::make('due_date')
                                 ->label('Jatuh Tempo')
                                 ->default(now()->addDays(14))
                                 ->required(),
-                        ])->columns(2),
-
+                        ])
+                        ->columns(['default' => 122, 'md' => 2]),
                     Forms\Components\Section::make('Rincian Tagihan')
                         ->schema([
                             Forms\Components\Repeater::make('items')
@@ -123,19 +119,16 @@ class PurchaseInvoiceResource extends Resource
                                 ->schema([
                                     Forms\Components\Hidden::make('purchase_order_item_id'),
                                     Forms\Components\Hidden::make('product_id'),
-
                                     Forms\Components\TextInput::make('product_name')
                                         ->label('Nama Barang')
                                         ->disabled()
                                         ->dehydrated(false)
                                         ->columnSpan(2),
-
                                     Forms\Components\TextInput::make('max_qty')
                                         ->label('Max (Sesuai GR Gudang)')
                                         ->disabled()
                                         ->dehydrated(false)
                                         ->numeric(),
-
                                     Forms\Components\TextInput::make('quantity_billed')
                                         ->label('Qty Ditagihkan')
                                         ->numeric()
@@ -147,7 +140,6 @@ class PurchaseInvoiceResource extends Resource
                                             $set('total_price', $price * (int) $state);
                                             self::updateTotals($get, $set);
                                         }),
-
                                     Forms\Components\TextInput::make('unit_price')
                                         ->label('Harga Satuan')
                                         ->numeric()
@@ -158,7 +150,6 @@ class PurchaseInvoiceResource extends Resource
                                             $set('total_price', (float) $state * $qty);
                                             self::updateTotals($get, $set);
                                         }),
-
                                     Forms\Components\TextInput::make('total_price')
                                         ->label('Total Baris')
                                         ->numeric()
@@ -166,26 +157,41 @@ class PurchaseInvoiceResource extends Resource
                                         ->disabled()
                                         ->dehydrated(),
                                 ])
-                                ->columns(3)
+                                ->columns(['default' => 122, 'md' => 3])
                                 ->addable(false)
                                 ->deletable(false),
                         ]),
                 ])->columnSpan(['lg' => 2]),
-
                 Forms\Components\Group::make()->schema([
                     Forms\Components\Section::make('Kalkulasi Pembayaran')
                         ->schema([
                             Forms\Components\TextInput::make('subtotal')->disabled()->dehydrated()->prefix('Rp')->default(0),
-                            Forms\Components\TextInput::make('tax_rate')->label('PPN (%)')->numeric()->default(11)->live(debounce: 500)
-                                ->afterStateUpdated(fn(Forms\Get $get, Forms\Set $set) => self::updateTotals($get, $set))->suffix('%')->dehydrated(false),
+                            Forms\Components\TextInput::make('tax_rate')
+                                ->label('PPN (%)')
+                                ->numeric()
+                                ->default(11)
+                                ->live(debounce: 500)
+                                ->afterStateUpdated(fn(Forms\Get $get, Forms\Set $set) => self::updateTotals($get, $set))
+                                ->suffix('%')
+                                ->dehydrated(false),
                             Forms\Components\Hidden::make('tax_amount'),
-                            Forms\Components\TextInput::make('discount_amount')->label('Diskon')->numeric()->default(0)->live(debounce: 500)
-                                ->afterStateUpdated(fn(Forms\Get $get, Forms\Set $set) => self::updateTotals($get, $set))->prefix('Rp'),
-                            Forms\Components\TextInput::make('grand_total')->label('Grand Total Tagihan')->disabled()->dehydrated()->prefix('Rp')
-                                ->extraInputAttributes(['style' => 'font-size: 1.5rem; font-weight: bold; color: #dc2626;']), // Merah karena ini hutang
+                            Forms\Components\TextInput::make('discount_amount')
+                                ->label('Diskon')
+                                ->numeric()
+                                ->default(0)
+                                ->live(debounce: 500)
+                                ->afterStateUpdated(fn(Forms\Get $get, Forms\Set $set) => self::updateTotals($get, $set))
+                                ->prefix('Rp'),
+                            Forms\Components\TextInput::make('grand_total')
+                                ->label('Grand Total Tagihan')
+                                ->disabled()
+                                ->dehydrated()
+                                ->prefix('Rp')
+                                ->extraInputAttributes(['style' => 'font-size: 1.5rem; font-weight: bold; color: #dc2626;']),  // Merah karena ini hutang
                         ]),
                 ])->columnSpan(['lg' => 1]),
-            ])->columns(3);
+            ])
+            ->columns(['default' => 122, 'md' => 3]);
     }
 
     public static function table(Table $table): Table
@@ -204,7 +210,8 @@ class PurchaseInvoiceResource extends Resource
                         'partial' => 'warning',
                         'paid' => 'success',
                         'cancelled' => 'gray',
-                    })->formatStateUsing(fn($state) => strtoupper($state)),
+                    })
+                    ->formatStateUsing(fn($state) => strtoupper($state)),
             ])
             ->actions([
                 Tables\Actions\EditAction::make()->visible(fn($record) => $record->status === 'unpaid'),

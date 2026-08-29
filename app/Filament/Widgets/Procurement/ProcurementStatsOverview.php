@@ -8,8 +8,8 @@ use App\Models\Procurement\PurchaseOrder;
 use App\Models\Procurement\PurchaseRequisition;
 use App\Models\Procurement\Supplier;
 use Filament\Widgets\Concerns\InteractsWithPageFilters;
-use Filament\Widgets\StatsOverviewWidget as BaseWidget;
 use Filament\Widgets\StatsOverviewWidget\Stat;
+use Filament\Widgets\StatsOverviewWidget as BaseWidget;
 use Illuminate\Support\Facades\DB;
 
 class ProcurementStatsOverview extends BaseWidget
@@ -18,7 +18,10 @@ class ProcurementStatsOverview extends BaseWidget
 
     protected static ?int $sort = 1;
 
-    protected int|string|array $columnSpan = 12;
+    protected int|string|array $columnSpan = [
+        'default' => 12,
+        'md' => 12,
+    ];
 
     protected function getStats(): array
     {
@@ -69,16 +72,14 @@ class ProcurementStatsOverview extends BaseWidget
                 ->chart([12, 10, 8, 14, 6, 4, $pendingPRCount])
                 ->color(match (true) {
                     $pendingPRCount > 15 => 'danger',
-                    $pendingPRCount > 5  => 'warning',
-                    default              => 'success',
+                    $pendingPRCount > 5 => 'warning',
+                    default => 'success',
                 }),
-
             Stat::make('Open Purchase Orders', $pendingDeliveryPOCount)
                 ->description('Menunggu proses delivery / GR')
                 ->descriptionIcon('heroicon-m-truck')
                 ->chart([5, 7, 9, 11, 10, 8, $pendingDeliveryPOCount])
                 ->color('warning'),
-
             Stat::make(
                 'Outstanding Payable',
                 'Rp ' . number_format($outstandingPayable, 0, ',', '.')
@@ -87,7 +88,6 @@ class ProcurementStatsOverview extends BaseWidget
                 ->descriptionIcon('heroicon-m-banknotes')
                 ->chart([18, 20, 16, 14, 19, 17, 15])
                 ->color('danger'),
-
             Stat::make('Active Suppliers', $activeSuppliers)
                 ->description('Supplier aktif siap transaksi')
                 ->descriptionIcon('heroicon-m-building-storefront')

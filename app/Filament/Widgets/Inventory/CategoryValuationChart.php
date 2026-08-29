@@ -13,6 +13,7 @@ class CategoryValuationChart extends ChartWidget
     protected static bool $isLazy = true;
 
     protected int|string|array $columnSpan = [
+        'default' => 12,
         'md' => 12,
         'xl' => 6,
     ];
@@ -29,7 +30,9 @@ class CategoryValuationChart extends ChartWidget
                     'label' => $category->name,
                     'value' => $valuation,
                 ];
-            })->sortByDesc('value')->take(8);
+            })
+            ->sortByDesc('value')
+            ->take(8);
 
         return [
             'datasets' => [

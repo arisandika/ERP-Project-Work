@@ -13,7 +13,10 @@ class LeaveBalanceRadialChart extends ApexChartWidget
 
     protected static ?string $heading = 'Leave Balance';
 
-    protected int|string|array $columnSpan = 4;
+    protected int|string|array $columnSpan = [
+        'default' => 12,
+        'md' => 4,
+    ];
 
     protected function getOptions(): array
     {
@@ -38,22 +41,17 @@ class LeaveBalanceRadialChart extends ApexChartWidget
                 'type' => 'radialBar',
                 'height' => 350,
             ],
-
             'series' => [$percentage],
-
             'labels' => ['Remaining Leave'],
-
             'plotOptions' => [
                 'radialBar' => [
                     'hollow' => [
                         'size' => '65%',
                     ],
-
                     'dataLabels' => [
                         'name' => [
                             'fontSize' => '16px',
                         ],
-
                         'value' => [
                             'fontSize' => '28px',
                         ],

@@ -39,13 +39,11 @@ class ProcurementDashboard extends BaseDashboard
 
     protected static ?string $title = 'Dashboard Procurement';
 
-    public function getColumns(): int | string | array
-    {
-        return [
-            'md' => 12,
-            'xl' => 12,
-        ];
-    }
+    protected int|string|array $columnSpan = [
+        'default' => 12,
+        'md' => 12,
+        'xl' => 12,
+    ];
 
     public static function canAccess(): bool
     {
@@ -69,29 +67,26 @@ class ProcurementDashboard extends BaseDashboard
                             ->label('Start Date')
                             ->native(false)
                             ->maxDate(now()),
-
                         DatePicker::make('endDate')
                             ->label('End Date')
                             ->native(false)
                             ->afterOrEqual('startDate')
                             ->maxDate(now()),
-
                         Select::make('supplier_id')
                             ->label('Supplier')
                             ->searchable()
                             ->preload()
                             ->placeholder('All Suppliers')
-                            ->getSearchResultsUsing(fn (string $search): array => Supplier::query()
+                            ->getSearchResultsUsing(fn(string $search): array => Supplier::query()
                                 ->where('name', 'like', "%{$search}%")
                                 ->limit(50)
                                 ->pluck('name', 'id')
-                                ->toArray()
-                            )
+                                ->toArray())
                             ->getOptionLabelUsing(
-                                fn ($value): ?string => Supplier::find($value)?->name
+                                fn($value): ?string => Supplier::find($value)?->name
                             ),
                     ])
-                    ->columns(3)
+                    ->columns(['default' => 12, 'md' => 3])
                     ->collapsible()
                     ->persistCollapsed(),
             ]);
@@ -101,13 +96,9 @@ class ProcurementDashboard extends BaseDashboard
     {
         return [
             \App\Filament\Widgets\Procurement\ProcurementStatsOverview::class,
-
             \App\Filament\Widgets\Procurement\ProcurementMonthlyCostChart::class,
-
             \App\Filament\Widgets\Procurement\ProcurementPoStatusChart::class,
-
             \App\Filament\Widgets\Procurement\PendingRequisitionTable::class,
-
             \App\Filament\Widgets\Procurement\ProcurementLatestPoTable::class,
         ];
     }

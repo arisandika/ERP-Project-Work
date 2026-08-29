@@ -2,20 +2,20 @@
 
 namespace App\Filament\Resources\Procurement;
 
+use App\Filament\Concerns\BelongsToModule;
 use App\Filament\Resources\Procurement\PurchaseRequisitionResource\Pages;
 use App\Models\Inventory\Product;
 use App\Models\Procurement\PurchaseRequisition;
-use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Forms\Get;
 use Filament\Notifications\Notification;
 use Filament\Resources\Resource;
-use Filament\Tables;
-use Filament\Tables\Table;
-use Illuminate\Support\Facades\Auth;
-use Illuminate\Database\Eloquent\Builder;
-use App\Filament\Concerns\BelongsToModule;
 use Filament\Support\Enums\FontWeight;
+use Filament\Tables\Table;
+use Filament\Forms;
+use Filament\Tables;
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Support\Facades\Auth;
 
 class PurchaseRequisitionResource extends Resource
 {
@@ -39,7 +39,8 @@ class PurchaseRequisitionResource extends Resource
 
         $count = static::canApproveAny()
             ? $query->where('status', 'pending')->count()
-            : $query->where('requested_by', $user->id)
+            : $query
+                ->where('requested_by', $user->id)
                 ->whereIn('status', ['draft', 'pending'])
                 ->count();
 
@@ -83,14 +84,12 @@ class PurchaseRequisitionResource extends Resource
                     ->prefixIcon('heroicon-o-hashtag')
                     ->default(fn() => PurchaseRequisition::generatePRNumber())
                     ->columnSpan(1),
-
                 Forms\Components\TextInput::make('title')
                     ->label('Nama / Judul Permintaan')
                     ->required()
                     ->maxLength(255)
                     ->columnSpan(2)
                     ->extraInputAttributes(['class' => 'text-xl font-normal border-t-0 border-l-0 border-r-0 border-b-2 border-gray-300 focus:ring-0 px-0 bg-transparent']),
-
                 Forms\Components\DatePicker::make('request_date')
                     ->label('Tanggal Permintaan')
                     ->default(today())
@@ -98,7 +97,6 @@ class PurchaseRequisitionResource extends Resource
                     ->native(false)
                     ->prefixIcon('heroicon-o-calendar-days')
                     ->columnSpan(1),
-
                 Forms\Components\DatePicker::make('required_date')
                     ->label('Tanggal Dibutuhkan')
                     ->required()
@@ -106,18 +104,16 @@ class PurchaseRequisitionResource extends Resource
                     ->prefixIcon('heroicon-o-calendar')
                     ->minDate(fn(Get $get) => $get('request_date') ?: today())
                     ->columnSpan(1),
-
                 Forms\Components\Placeholder::make('status_preview')
                     ->label('Status Saat Ini')
                     ->content(fn(?PurchaseRequisition $record) => strtoupper($record?->status ?? 'draft')),
-
                 Forms\Components\Textarea::make('purpose')
                     ->label('Tujuan / Alasan Pembelian')
                     ->required()
                     ->rows(3)
                     ->columnSpanFull(),
             ])
-            ->columns(3);
+            ->columns(['default' => 122, 'md' => 3]);
     }
 
     protected static function itemsSection(): Forms\Components\Section
@@ -137,7 +133,6 @@ class PurchaseRequisitionResource extends Resource
                             ->preload()
                             ->required()
                             ->columnSpan(2),
-
                         Forms\Components\TextInput::make('quantity')
                             ->label('Kuantitas')
                             ->numeric()
@@ -145,7 +140,6 @@ class PurchaseRequisitionResource extends Resource
                             ->default(1)
                             ->minValue(1)
                             ->columnSpan(1),
-
                         Forms\Components\TextInput::make('estimated_price')
                             ->label('Harga Estimasi')
                             ->numeric()
@@ -153,11 +147,10 @@ class PurchaseRequisitionResource extends Resource
                             ->required()
                             ->columnSpan(1),
                     ])
-                    ->columns(4)
+                    ->columns(['default' => 122, 'md' => 4])
                     ->columnSpanFull()
                     ->addActionLabel('Tambah Item')
                     ->defaultItems(1),
-
                 Forms\Components\Placeholder::make('total_preview')
                     ->label('Total Estimasi')
                     ->content(function (Get $get) {
@@ -180,16 +173,13 @@ class PurchaseRequisitionResource extends Resource
                     ->weight(FontWeight::Bold)
                     ->searchable()
                     ->copyable(),
-
                 Tables\Columns\TextColumn::make('title')
                     ->label('Nama Permintaan')
                     ->searchable()
                     ->limit(30),
-
                 Tables\Columns\TextColumn::make('requester.name')
                     ->label('Peminta')
                     ->sortable(),
-
                 Tables\Columns\TextColumn::make('status')
                     ->label('Status')
                     ->badge()
@@ -201,7 +191,6 @@ class PurchaseRequisitionResource extends Resource
                         default => 'gray',
                     })
                     ->formatStateUsing(fn(string $state): string => strtoupper($state)),
-
                 Tables\Columns\TextColumn::make('request_date')
                     ->label('Tgl Minta')
                     ->date('d M Y')
@@ -215,12 +204,11 @@ class PurchaseRequisitionResource extends Resource
                     ->icon('heroicon-s-pencil-square')
                     // Menghilangkan iconButton agar label selalu tampil
                     ->visible(fn($record) => strtolower($record->status) === 'draft'),
-
                 // TOMBOL SUBMIT (Solid Icon + Tooltip)
                 Tables\Actions\Action::make('submit_action')
                     ->label('Submit')
                     ->tooltip('Submit PR')
-                    ->icon('heroicon-s-paper-airplane') // Menggunakan Solid Icon
+                    ->icon('heroicon-s-paper-airplane')  // Menggunakan Solid Icon
                     ->color('info')
                     // Menghilangkan iconButton agar label selalu tampil
                     ->visible(fn($record) => strtolower($record->status) === 'draft')
@@ -229,19 +217,18 @@ class PurchaseRequisitionResource extends Resource
                         $record->update(['status' => 'pending']);
                         Notification::make()->title('PR Submitted Successfully')->success()->send();
                     }),
-
                 // TOMBOL APPROVE (Solid Icon + Tooltip)
                 Tables\Actions\Action::make('approve_button')
                     ->label('Approve')
                     ->tooltip('Approve PR')
-                    ->icon('heroicon-s-check-circle') // Menggunakan Solid Icon
+                    ->icon('heroicon-s-check-circle')  // Menggunakan Solid Icon
                     ->color('success')
                     // Menghilangkan iconButton agar label selalu tampil
                     ->visible(
                         fn($record) =>
-                        strtolower($record->status) === 'pending' &&
-                        static::canApproveAny() &&
-                        $record->requested_by != auth()->id()
+                            strtolower($record->status) === 'pending' &&
+                            static::canApproveAny() &&
+                            $record->requested_by != auth()->id()
                     )
                     ->requiresConfirmation()
                     ->action(function ($record) {
@@ -252,19 +239,18 @@ class PurchaseRequisitionResource extends Resource
                         ]);
                         Notification::make()->title('PR Approved')->success()->send();
                     }),
-
                 // TOMBOL REJECT (Solid Icon + Tooltip)
                 Tables\Actions\Action::make('reject_button')
                     ->label('Reject')
                     ->tooltip('Reject PR')
-                    ->icon('heroicon-s-x-circle') // Menggunakan Solid Icon
+                    ->icon('heroicon-s-x-circle')  // Menggunakan Solid Icon
                     ->color('danger')
                     // Menghilangkan iconButton agar label selalu tampil
                     ->visible(
                         fn($record) =>
-                        strtolower($record->status) === 'pending' &&
-                        static::canApproveAny() &&
-                        $record->requested_by != auth()->id()
+                            strtolower($record->status) === 'pending' &&
+                            static::canApproveAny() &&
+                            $record->requested_by != auth()->id()
                     )
                     ->requiresConfirmation()
                     ->action(function ($record) {

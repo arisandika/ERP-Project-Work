@@ -10,7 +10,10 @@ class DealByStageChartWidget extends ChartWidget
 
     protected static ?int $sort = 3;
 
-    protected int|string|array $columnSpan = 2;
+    protected int|string|array $columnSpan = [
+        'default' => 12,
+        'md' => 2,
+    ];
 
     protected function getData(): array
     {
@@ -26,12 +29,12 @@ class DealByStageChartWidget extends ChartWidget
         return [
             'datasets' => [
                 [
-                    'label'           => 'Total Value (IDR)',
-                    'data'            => $stages->pluck('deals_sum_estimated_value')->map(fn($v) => $v ?? 0)->toArray(),
+                    'label' => 'Total Value (IDR)',
+                    'data' => $stages->pluck('deals_sum_estimated_value')->map(fn($v) => $v ?? 0)->toArray(),
                     'backgroundColor' => '#6366f1',
                 ],
             ],
-            'labels'   => $stages->map(fn($s) => $s->name . ' (' . $s->deals_count . ')')->toArray(),
+            'labels' => $stages->map(fn($s) => $s->name . ' (' . $s->deals_count . ')')->toArray(),
         ];
     }
 

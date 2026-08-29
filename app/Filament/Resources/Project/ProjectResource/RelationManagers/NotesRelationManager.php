@@ -2,15 +2,15 @@
 
 namespace App\Filament\Resources\Project\ProjectResource\RelationManagers;
 
-use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Infolists\Components\Group;
 use Filament\Infolists\Components\Section;
 use Filament\Infolists\Components\TextEntry;
 use Filament\Infolists\Infolist;
 use Filament\Resources\RelationManagers\RelationManager;
-use Filament\Tables;
 use Filament\Tables\Table;
+use Filament\Forms;
+use Filament\Tables;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
 use Illuminate\Support\Carbon;
@@ -35,7 +35,6 @@ class NotesRelationManager extends RelationManager
                             ->label('Title')
                             ->required()
                             ->maxLength(255),
-
                         Forms\Components\DatePicker::make('note_date')
                             ->label('Tanggal Catatan')
                             ->default(now())
@@ -43,7 +42,6 @@ class NotesRelationManager extends RelationManager
                             ->required()
                             ->displayFormat('d M Y')
                             ->native(false),
-
                         Forms\Components\RichEditor::make('content')
                             ->label('Catatan')
                             ->columnSpanFull()
@@ -67,11 +65,10 @@ class NotesRelationManager extends RelationManager
                             ->fileAttachmentsDirectory('attachments/project-notes')
                             ->fileAttachmentsVisibility('public')
                             ->helperText('Tuliskan catatan dan lampirkan file atau gambar disini'),
-
                         Forms\Components\Hidden::make('created_by')
                             ->default(auth()->user()->employee->id),
                     ])
-                    ->columns(2)
+                    ->columns(['default' => 122, 'md' => 2])
             ]);
     }
 
@@ -87,7 +84,6 @@ class NotesRelationManager extends RelationManager
                     ->sortable()
                     ->weight('semibold')
                     ->placeholder('—'),
-
                 Tables\Columns\TextColumn::make('creator.full_name')
                     ->label('Dibuat Oleh')
                     ->searchable()
@@ -95,13 +91,11 @@ class NotesRelationManager extends RelationManager
                     ->weight('semibold')
                     ->icon('heroicon-o-user')
                     ->placeholder('—'),
-
                 Tables\Columns\TextColumn::make('created_at')
                     ->label('Dibuat Pada')
                     ->dateTime('d M Y H:i')
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: false),
-
                 Tables\Columns\TextColumn::make('updated_at')
                     ->label('Diperbarui Pada')
                     ->dateTime('d M Y H:i')
@@ -112,7 +106,6 @@ class NotesRelationManager extends RelationManager
                 Tables\Filters\Filter::make('recent')
                     ->query(fn($query) => $query->where('created_at', '>=', now()->subDays(30)))
                     ->label('Recent (30 days)'),
-
                 Tables\Filters\Filter::make('created_at')
                     ->form([
                         Forms\Components\DatePicker::make('created_from')
@@ -121,7 +114,6 @@ class NotesRelationManager extends RelationManager
                             ->displayFormat('d M Y')
                             ->native(false)
                             ->prefixIcon('heroicon-o-calendar-days'),
-
                         Forms\Components\DatePicker::make('created_until')
                             ->label('Dibuat Hingga')
                             ->required()
@@ -182,24 +174,20 @@ class NotesRelationManager extends RelationManager
                             ->label('Judul Catatan')
                             ->weight('semibold')
                             ->placeholder('—'),
-
                         TextEntry::make('creator.full_name')
                             ->label('Dibuat Oleh')
                             ->weight('semibold')
                             ->icon('heroicon-o-user')
                             ->placeholder('—'),
-
                         TextEntry::make('created_at')
                             ->label('Dibuat Pada')
                             ->dateTime('d M Y H:i'),
-
                         TextEntry::make('updated_at')
                             ->label('Diperbarui Pada')
                             ->dateTime('d M Y H:i'),
                     ])
                     ->columnSpanFull()
-                    ->columns(2),
-
+                    ->columns(['default' => 122, 'md' => 2]),
                 Section::make('Isi Catatan')
                     ->schema([
                         TextEntry::make('content')

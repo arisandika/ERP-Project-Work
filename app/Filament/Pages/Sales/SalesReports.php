@@ -14,7 +14,6 @@ use Filament\Support\Enums\MaxWidth;
 class SalesReports extends Page implements HasForms
 {
     use InteractsWithForms;
-
     /**
      * Resolusi Konflik Trait untuk Keamanan & Multi-Tenant
      * Memastikan akses divalidasi berdasarkan Role (Shield) DAN Modul yang aktif (Sales).
@@ -71,7 +70,7 @@ class SalesReports extends Page implements HasForms
     {
         $this->form->fill([
             'start_date' => now()->startOfMonth()->toDateString(),
-            'end_date'   => now()->toDateString(),
+            'end_date' => now()->toDateString(),
         ]);
     }
 
@@ -90,7 +89,6 @@ class SalesReports extends Page implements HasForms
                             ->native(false)
                             ->prefixIcon('heroicon-o-calendar-days')
                             ->live(),
-
                         DatePicker::make('end_date')
                             ->label('Sampai Tanggal')
                             ->default(now())
@@ -100,7 +98,7 @@ class SalesReports extends Page implements HasForms
                             ->prefixIcon('heroicon-o-calendar-days')
                             ->live(),
                     ])
-                    ->columns(2),
+                    ->columns(['default' => 122, 'md' => 2]),
             ])
             ->statePath('data');
     }

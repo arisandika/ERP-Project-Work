@@ -2,6 +2,7 @@
 namespace App\Filament\Resources\HR\AttendanceHistoryResource\Pages;
 
 use App\Filament\Resources\HR\AttendanceHistoryResource;
+use App\Filament\Widgets\HR\AttendanceOvertimeSummaryWidget;
 use App\Models\HR\Attendance;
 use Filament\Resources\Components\Tab;
 use Filament\Resources\Pages\ListRecords;
@@ -18,6 +19,13 @@ class ListAttendanceHistories extends ListRecords
         if (auth()->user()->hasRole('super_admin')) {
             abort(403, 'Super Admin tidak memiliki akses melihat riwayat presensi.');
         }
+    }
+
+    protected function getHeaderWidgets(): array
+    {
+        return [
+            AttendanceOvertimeSummaryWidget::class,
+        ];
     }
 
     public function getTabs(): array

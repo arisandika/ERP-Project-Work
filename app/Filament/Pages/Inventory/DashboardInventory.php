@@ -45,6 +45,9 @@ class DashboardInventory extends Dashboard
 
     public function getColumns(): int | string | array
     {
-        return 2;
+        return [
+            'default' => 1,
+            'md' => 2,
+        ];
     }
 }

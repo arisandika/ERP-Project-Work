@@ -3,16 +3,20 @@
 namespace App\Filament\Widgets\System;
 
 use App\Models\User;
-use Filament\Widgets\StatsOverviewWidget as BaseWidget;
 use Filament\Widgets\StatsOverviewWidget\Stat;
-use Spatie\Permission\Models\Role;
-use Spatie\Permission\Models\Permission;
+use Filament\Widgets\StatsOverviewWidget as BaseWidget;
 use Illuminate\Support\Facades\Cache;
+use Spatie\Permission\Models\Permission;
+use Spatie\Permission\Models\Role;
 
 class SystemStatsOverview extends BaseWidget
 {
     protected static ?int $sort = 1;
-    protected int|string|array $columnSpan = 'full';
+
+    protected int|string|array $columnSpan = [
+        'default' => 12,
+        'md' => 12,
+    ];
 
     protected function getStats(): array
     {
@@ -31,18 +35,15 @@ class SystemStatsOverview extends BaseWidget
                 ->descriptionIcon('heroicon-m-users')
                 ->color('primary')
                 ->chart([5, 8, 12, 10, 15, 13, $stats['users']]),
-
             Stat::make('Active Users (30 Hari)', number_format($stats['active_users']))
                 ->description('User aktif bulan ini')
                 ->descriptionIcon('heroicon-m-user-group')
                 ->color('success')
                 ->chart([3, 5, 7, 6, 8, 9, $stats['active_users']]),
-
             Stat::make('Roles', number_format($stats['roles']))
                 ->description('Role akses terdaftar')
                 ->descriptionIcon('heroicon-m-shield-check')
                 ->color('info'),
-
             Stat::make('Permissions', number_format($stats['permissions']))
                 ->description('Total hak akses')
                 ->descriptionIcon('heroicon-m-key')
