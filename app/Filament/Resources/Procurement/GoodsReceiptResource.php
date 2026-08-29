@@ -147,7 +147,7 @@ class GoodsReceiptResource extends Resource
                                 ->placeholder('Misal: SJ-12345')
                                 ->columnSpan(2), // Mengisi sisa kolom agar rapi
                         ])
-                        ->columns(3), // <-- Diubah menjadi 3 kolom
+                        ->columns(['default' => 1, 'md' => 3]), // <-- Diubah menjadi 3 kolom
 
                     Forms\Components\Section::make('Ceklis Barang Fisik & Scan SN')
                         ->schema([
@@ -291,7 +291,7 @@ class GoodsReceiptResource extends Resource
                                         ])
                                         ->columnSpanFull(),
                                 ])
-                                ->columns(2)
+                                ->columns(['default' => 1, 'md' => 2])
                                 ->addable(false)
                                 ->deletable(false)
                                 ->reorderable(false),
@@ -341,7 +341,7 @@ class GoodsReceiptResource extends Resource
                             ->label('Penerima (Gudang)')
                             ->placeholder('-'),
                     ])
-                    ->columns(3),
+                    ->columns(['default' => 1, 'md' => 3]),
 
                 Infolists\Components\Section::make('Detail Barang yang Diterima')
                     ->schema([
@@ -362,7 +362,7 @@ class GoodsReceiptResource extends Resource
                                             : (is_string($state) ? preg_replace('/\s+/', ', ', trim($state)) : (string)$state)
                                     ),
                             ])
-                            ->columns(3),
+                            ->columns(['default' => 1, 'md' => 3]),
                     ]),
             ]);
     }

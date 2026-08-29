@@ -29,7 +29,7 @@ class ExportAttendancesAction
                             ->native(false)
                             ->displayFormat('d M Y')
                             ->required(),
-                    ])->columns(2),
+                    ])->columns(['default' => 1, 'md' => 2]),
 
                 Section::make('Pilih Kolom')
                     ->description('Pilih kolom yang ingin disertakan dalam file Excel')
@@ -60,7 +60,7 @@ class ExportAttendancesAction
                             ])
                             ->required()
                             ->minItems(1)
-                            ->columns(2)
+                            ->columns(['default' => 1, 'md' => 2])
                             ->gridDirection('row')
                     ])
             ])

@@ -3,8 +3,8 @@
 namespace App\Filament\Widgets\Inventory;
 
 use App\Models\Inventory\StockTransaction;
-use Filament\Widgets\ChartWidget;
 use Carbon\Carbon;
+use Filament\Widgets\ChartWidget;
 use Illuminate\Support\Facades\Cache;
 
 class MovementAnalysisChart extends ChartWidget
@@ -13,7 +13,10 @@ class MovementAnalysisChart extends ChartWidget
     protected static ?string $maxHeight = '300px';
     protected static bool $isLazy = true;
 
-    protected int|string|array $columnSpan = 'full';
+    protected int|string|array $columnSpan = [
+        'default' => 12,
+        'md' => 12,
+    ];
 
     protected function getData(): array
     {

@@ -10,7 +10,10 @@ class ProjectProgressChartWidget extends ChartWidget
 
     protected static ?int $sort = 4;
 
-    protected int|string|array $columnSpan = 3;
+    protected int|string|array $columnSpan = [
+        'default' => 12,
+        'md' => 3,
+    ];
 
     protected function getData(): array
     {
@@ -23,15 +26,16 @@ class ProjectProgressChartWidget extends ChartWidget
         return [
             'datasets' => [
                 [
-                    'label'           => 'Progress (%)',
-                    'data'            => $projects->map(fn($p) => $p->progress_percentage)->toArray(),
+                    'label' => 'Progress (%)',
+                    'data' => $projects->map(fn($p) => $p->progress_percentage)->toArray(),
                     'backgroundColor' => $projects->map(
-                        fn($p) => $p->progress_percentage >= 100 ? '#22C55E'
+                        fn($p) => $p->progress_percentage >= 100
+                            ? '#22C55E'
                             : ($p->progress_percentage >= 50 ? '#3B82F6' : '#F59E0B')
                     )->toArray(),
                 ],
             ],
-            'labels'   => $projects->map(fn($p) => $p->name)->toArray(),
+            'labels' => $projects->map(fn($p) => $p->name)->toArray(),
         ];
     }
 
@@ -44,10 +48,10 @@ class ProjectProgressChartWidget extends ChartWidget
     {
         return [
             'indexAxis' => 'y',
-            'plugins'   => [
+            'plugins' => [
                 'legend' => ['display' => false],
             ],
-            'scales'    => [
+            'scales' => [
                 'x' => ['beginAtZero' => true, 'max' => 100],
             ],
         ];

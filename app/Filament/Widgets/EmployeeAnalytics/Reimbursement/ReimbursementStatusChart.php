@@ -12,7 +12,10 @@ class ReimbursementStatusChart extends ApexChartWidget
 
     protected static ?string $heading = 'Reimbursement Status';
 
-    protected int|string|array $columnSpan = 4;
+    protected int|string|array $columnSpan = [
+        'default' => 12,
+        'md' => 4,
+    ];
 
     protected function getOptions(): array
     {
@@ -39,7 +42,6 @@ class ReimbursementStatusChart extends ApexChartWidget
         $series = [];
 
         foreach ($statuses as $status) {
-
             $series[] = ReimbursementRequest::query()
                 ->where('employee_id', $employee->id)
                 ->whereBetween('date', [$startDate, $endDate])
@@ -48,20 +50,15 @@ class ReimbursementStatusChart extends ApexChartWidget
         }
 
         return [
-
             'chart' => [
                 'type' => 'donut',
                 'height' => 350,
             ],
-
             'series' => $series,
-
             'labels' => $labels,
-
             'legend' => [
                 'position' => 'bottom',
             ],
-
             'plotOptions' => [
                 'pie' => [
                     'donut' => [
@@ -69,11 +66,9 @@ class ReimbursementStatusChart extends ApexChartWidget
                     ],
                 ],
             ],
-
             'dataLabels' => [
                 'enabled' => true,
             ],
-
             'stroke' => [
                 'show' => false,
             ],

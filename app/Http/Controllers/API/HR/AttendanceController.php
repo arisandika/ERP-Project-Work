@@ -5,6 +5,7 @@ use App\Http\Controllers\Controller;
 use App\Models\HR\Attendance;
 use App\Models\HR\Holiday;
 use App\Models\HR\LeaveRequest;
+use App\Models\HR\SickRequest;
 use Filament\Notifications\Notification;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
@@ -17,7 +18,7 @@ class AttendanceController extends Controller
     {
         $employee = Auth::user()->employee;
 
-        if (!$employee) {
+        if (! $employee) {
             Notification::make()
                 ->title('Gagal Presensi')
                 ->body('Data karyawan tidak ditemukan.')
@@ -29,8 +30,8 @@ class AttendanceController extends Controller
 
         $request->validate([
             'face_snapshot' => ['required', 'string'],
-            'lat' => ['required', 'numeric'],
-            'lng' => ['required', 'numeric'],
+            'lat'           => ['required', 'numeric'],
+            'lng'           => ['required', 'numeric'],
         ]);
 
         $today = now()->toDateString();
@@ -46,6 +47,22 @@ class AttendanceController extends Controller
             Notification::make()
                 ->title('Tidak Bisa Presensi')
                 ->body('Kamu sedang dalam masa cuti. Tidak diperbolehkan presensi.')
+                ->danger()
+                ->persistent()
+                ->send();
+            return redirect()->back();
+        }
+
+        $isOnSick = SickRequest::where('employee_id', $employee->id)
+            ->where('status', 'approved')
+            ->whereDate('start_date', '<=', $today)
+            ->whereDate('end_date', '>=', $today)
+            ->exists();
+
+        if ($isOnSick) {
+            Notification::make()
+                ->title('Tidak Bisa Presensi')
+                ->body('Kamu sedang dalam masa sakit. Tidak diperbolehkan presensi.')
                 ->danger()
                 ->persistent()
                 ->send();
@@ -83,10 +100,10 @@ class AttendanceController extends Controller
         $attendance = Attendance::firstOrNew(
             [
                 'employee_id' => $employee->id,
-                'date' => $today,
+                'date'        => $today,
             ],
             [
-                'status' => 'belum_presensi',
+                'status'   => 'belum_presensi',
                 'shift_id' => $employee->shift_id,
             ]
         );
@@ -103,14 +120,14 @@ class AttendanceController extends Controller
         }
 
         // Ambil data shift dan toleransi waktu
-        $shift = $employee->shift;
+        $shift      = $employee->shift;
         $shiftStart = Carbon::parse($shift->start_time);
-        $shiftEnd = Carbon::parse($shift->end_time);
-        $tolerance = $shift->tolerance_minutes ?? 0;
-        $now = now();
+        $shiftEnd   = Carbon::parse($shift->end_time);
+        $tolerance  = $shift->tolerance_minutes ?? 0;
+        $now        = now();
 
         // Validasi lokasi (radius)
-        $office = $employee->office;
+        $office    = $employee->office;
         $isOutside = false;
 
         if ($office && $office->latitude && $office->longitude) {
@@ -171,13 +188,13 @@ class AttendanceController extends Controller
 
         // UPDATE data attendance
         $attendance->fill([
-            'shift_id' => $shift->id,
-            'note' => $request->filled('note') ? $request->note : null,
-            'clock_in' => now(),
-            'latitude_in' => $request->lat,
-            'longitude_in' => $request->lng,
+            'shift_id'         => $shift->id,
+            'note'             => $request->filled('note') ? $request->note : null,
+            'clock_in'         => now(),
+            'latitude_in'      => $request->lat,
+            'longitude_in'     => $request->lng,
             'face_snapshot_in' => $photoInPath,
-            'status' => $status,
+            'status'           => $status,
         ]);
 
         $attendance->save();
@@ -196,7 +213,7 @@ class AttendanceController extends Controller
     {
         $employee = Auth::user()->employee;
 
-        if (!$employee) {
+        if (! $employee) {
             Notification::make()
                 ->title('Gagal Presensi')
                 ->body('Data karyawan tidak ditemukan.')
@@ -208,8 +225,8 @@ class AttendanceController extends Controller
 
         $request->validate([
             'face_snapshot' => ['required', 'string'],
-            'lat' => ['required', 'numeric'],
-            'lng' => ['required', 'numeric'],
+            'lat'           => ['required', 'numeric'],
+            'lng'           => ['required', 'numeric'],
         ]);
 
         $today = now()->toDateString();
@@ -220,7 +237,7 @@ class AttendanceController extends Controller
             ->first();
 
         // 1. BLOKIR JIKA AKHIR PEKAN (Jika belum pernah clock in)
-        if (now()->isWeekend() && (!$attendance || !$attendance->clock_in)) {
+        if (now()->isWeekend() && (! $attendance || ! $attendance->clock_in)) {
             Notification::make()
                 ->title('Sistem Ditutup')
                 ->body('Hari ini adalah akhir pekan (Sabtu/Minggu). Sistem ditutup.')
@@ -236,7 +253,7 @@ class AttendanceController extends Controller
             ->whereDate('end_date', '>=', $today)
             ->first();
 
-        if ($holiday && (!$attendance || !$attendance->clock_in)) {
+        if ($holiday && (! $attendance || ! $attendance->clock_in)) {
             Notification::make()
                 ->title('Tidak Bisa Presensi Keluar')
                 ->body('Hari ini adalah hari libur (' . $holiday->name . '). Sistem ditutup.')
@@ -247,7 +264,7 @@ class AttendanceController extends Controller
         }
 
         // Jika belum ada clock_in, tolak
-        if (!$attendance || !$attendance->clock_in) {
+        if (! $attendance || ! $attendance->clock_in) {
             Notification::make()
                 ->title('Belum Presensi Masuk')
                 ->body('Kamu belum melakukan presensi masuk hari ini.')
@@ -267,7 +284,7 @@ class AttendanceController extends Controller
         }
 
         // Validasi lokasi
-        $office = $employee->office;
+        $office   = $employee->office;
         $distance = $this->getDistance(
             $office->latitude,
             $office->longitude,
@@ -289,7 +306,7 @@ class AttendanceController extends Controller
 
         $shift = $attendance->shift;
 
-        if (!$shift || !$shift->end_time) {
+        if (! $shift || ! $shift->end_time) {
             Notification::make()
                 ->title('Shift Tidak Valid')
                 ->body('Jam keluar shift tidak ditemukan.')
@@ -332,9 +349,9 @@ class AttendanceController extends Controller
 
         // UPDATE record
         $attendance->update([
-            'clock_out' => now(),
-            'latitude_out' => $request->lat,
-            'longitude_out' => $request->lng,
+            'clock_out'         => now(),
+            'latitude_out'      => $request->lat,
+            'longitude_out'     => $request->lng,
             'face_snapshot_out' => $photoOutPath,
         ]);
 
@@ -351,10 +368,10 @@ class AttendanceController extends Controller
     private function getDistance($lat1, $lng1, $lat2, $lng2)
     {
         $earthRadius = 6371000; // meters
-        $latFrom = deg2rad($lat1);
-        $lonFrom = deg2rad($lng1);
-        $latTo = deg2rad($lat2);
-        $lonTo = deg2rad($lng2);
+        $latFrom     = deg2rad($lat1);
+        $lonFrom     = deg2rad($lng1);
+        $latTo       = deg2rad($lat2);
+        $lonTo       = deg2rad($lng2);
 
         $latDelta = $latTo - $latFrom;
         $lonDelta = $lonTo - $lonFrom;
@@ -367,7 +384,7 @@ class AttendanceController extends Controller
 
     public function getMapData(Request $request)
     {
-        $date = $request->input('date', now()->toDateString());
+        $date     = $request->input('date', now()->toDateString());
         $officeId = $request->input('office_id');
 
         $query = Attendance::query()
@@ -379,32 +396,32 @@ class AttendanceController extends Controller
         }
 
         $attendances = $query->get()->map(fn($item) => [
-            'id' => $item->employee->id,
-            'name' => $item->employee->full_name ?? 'Unknown',
-            'photo' => $item->employee->photo
+            'id'                => $item->employee->id,
+            'name'              => $item->employee->full_name ?? 'Unknown',
+            'photo'             => $item->employee->photo
                 ? Storage::url($item->employee->photo)
                 : asset('assets/placeholder.jpg'),
-            'department' => $item->employee->department->name ?? '-',
-            'position' => $item->employee->position ?? '-',
-            'lat' => $item->latitude_in,
-            'lng' => $item->longitude_in,
-            'clock_in' => optional($item->clock_in)->format('H:i') ?? '-',
-            'clock_out' => optional($item->clock_out)->format('H:i') ?? '-',
-            'status' => $item->status ?? '-',
-            'can_wfa' => $item->can_wfa ?? false,
-            'can_unlock_shift' => $item->can_unlock_shift ?? false,
-            'office' => [
-                'name' => $item->employee->office->name ?? '',
-                'lat' => $item->employee->office->latitude ?? null,
-                'lng' => $item->employee->office->longitude ?? null,
+            'department'        => $item->employee->department->name ?? '-',
+            'position'          => $item->employee->position ?? '-',
+            'lat'               => $item->latitude_in,
+            'lng'               => $item->longitude_in,
+            'clock_in'          => optional($item->clock_in)->format('H:i') ?? '-',
+            'clock_out'         => optional($item->clock_out)->format('H:i') ?? '-',
+            'status'            => $item->status ?? '-',
+            'can_wfa'           => $item->can_wfa ?? false,
+            'can_unlock_shift'  => $item->can_unlock_shift ?? false,
+            'office'            => [
+                'name'   => $item->employee->office->name ?? '',
+                'lat'    => $item->employee->office->latitude ?? null,
+                'lng'    => $item->employee->office->longitude ?? null,
                 'radius' => $item->employee->office->radius_meters ?? 0,
             ],
-            'shift' => [
-                'name' => $item->employee->shift->name ?? '',
+            'shift'             => [
+                'name'       => $item->employee->shift->name ?? '',
                 'start_time' => $item->employee->shift->start_time ?? '',
-                'end_time' => $item->employee->shift->end_time ?? '',
+                'end_time'   => $item->employee->shift->end_time ?? '',
             ],
-            'face_snapshot_in' => $item->face_snapshot_in
+            'face_snapshot_in'  => $item->face_snapshot_in
                 ? Storage::url($item->face_snapshot_in) : asset('assets/placeholder.jpg'),
             'face_snapshot_out' => $item->face_snapshot_out
                 ? Storage::url($item->face_snapshot_out) : asset('assets/placeholder.jpg'),
@@ -412,19 +429,19 @@ class AttendanceController extends Controller
 
         return response()->json([
             'success' => true,
-            'data' => $attendances,
+            'data'    => $attendances,
         ]);
     }
 
     private function saveBase64Image(string $base64, string $folder): string
     {
-        if (!preg_match('/^data:image\/(\w+);base64,/', $base64, $type)) {
+        if (! preg_match('/^data:image\/(\w+);base64,/', $base64, $type)) {
             throw new \Exception('Format gambar tidak valid');
         }
 
         $extension = strtolower($type[1]); // jpeg, png, jpg
-        $data = substr($base64, strpos($base64, ',') + 1);
-        $data = base64_decode($data);
+        $data      = substr($base64, strpos($base64, ',') + 1);
+        $data      = base64_decode($data);
 
         if ($data === false) {
             throw new \Exception('Gagal decode gambar');

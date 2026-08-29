@@ -7,14 +7,14 @@ use App\Models\Project\Epic;
 use App\Models\Project\Ticket;
 use App\Models\Project\TicketPriority;
 use App\Models\Project\TicketStatus;
-use Filament\Forms;
 use Filament\Forms\Components\Radio;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Form;
 use Filament\Notifications\Notification;
 use Filament\Resources\RelationManagers\RelationManager;
-use Filament\Tables;
 use Filament\Tables\Table;
+use Filament\Forms;
+use Filament\Tables;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Model;
@@ -51,7 +51,6 @@ class TicketsRelationManager extends RelationManager
                             ->label('Nama Ticket')
                             ->required()
                             ->maxLength(255),
-
                         Forms\Components\Select::make('epic_id')
                             ->label('Nama Epic')
                             ->options(function () use ($projectId) {
@@ -61,7 +60,6 @@ class TicketsRelationManager extends RelationManager
                             })
                             ->native(false)
                             ->nullable(),
-
                         Forms\Components\Select::make('ticket_status_id')
                             ->label('Status Pengerjaan')
                             ->options(function () use ($projectId) {
@@ -72,7 +70,6 @@ class TicketsRelationManager extends RelationManager
                             ->default($defaultStatusId)
                             ->required()
                             ->searchable(),
-
                         Forms\Components\Select::make('priority_id')
                             ->label('Prioritas Ticket')
                             ->options(TicketPriority::pluck('name', 'id')->toArray())
@@ -81,8 +78,7 @@ class TicketsRelationManager extends RelationManager
                             ->preload()
                             ->nullable(),
                     ])
-                    ->columns(2),
-
+                    ->columns(['default' => 122, 'md' => 2]),
                 Forms\Components\Section::make('Jadwal Pengerjaan')
                     ->description('Timeline target penyelesaian ticket.')
                     ->schema([
@@ -93,7 +89,6 @@ class TicketsRelationManager extends RelationManager
                             ->required()
                             ->displayFormat('d M Y')
                             ->native(false),
-
                         Forms\Components\DatePicker::make('due_date')
                             ->label('Tanggal Selesai')
                             ->required()
@@ -101,8 +96,7 @@ class TicketsRelationManager extends RelationManager
                             ->native(false)
                             ->prefixIcon('heroicon-o-calendar-days'),
                     ])
-                    ->columns(2),
-
+                    ->columns(['default' => 122, 'md' => 2]),
                 Forms\Components\Section::make('Member Ticket')
                     ->schema([
                         Forms\Components\Select::make('assignees')
@@ -126,22 +120,21 @@ class TicketsRelationManager extends RelationManager
                                 }
 
                                 $project = $this->getOwnerRecord();
-                                $isCurrentUserMember = $project->members()
+                                $isCurrentUserMember = $project
+                                    ->members()
                                     ->where('nx_employees.id', auth()->user()->employee->id)
                                     ->exists();
 
                                 return $isCurrentUserMember ? [auth()->user()->employee->id] : [];
                             })
                             ->helperText('Pilih beberapa member untuk ditugaskan Ticket ini. Hanya anggota project yang dapat ditugaskan.'),
-
                         Forms\Components\Select::make('created_by')
                             ->label('Dibuat Oleh')
                             ->relationship('creator', 'full_name')
                             ->disabled()
                             ->hiddenOn('create'),
                     ])
-                    ->columns(2),
-
+                    ->columns(['default' => 122, 'md' => 2]),
                 Forms\Components\Section::make('Deskripsi Ticket')
                     ->schema([
                         Forms\Components\RichEditor::make('description')
@@ -183,18 +176,15 @@ class TicketsRelationManager extends RelationManager
                     ->weight('semibold')
                     ->placeholder('—')
                     ->copyable(),
-
                 Tables\Columns\TextColumn::make('name')
                     ->label('Nama Ticket')
                     ->searchable()
                     ->sortable(),
-
                 Tables\Columns\TextColumn::make('epic.name')
                     ->label('Nama Epic')
                     ->sortable()
                     ->searchable()
                     ->placeholder('—'),
-
                 Tables\Columns\TextColumn::make('status.name')
                     ->label('Status')
                     ->badge()
@@ -207,7 +197,6 @@ class TicketsRelationManager extends RelationManager
                     })
                     ->sortable()
                     ->formatStateUsing(fn(string $state): string => ucwords(str_replace('_', ' ', $state))),
-
                 Tables\Columns\TextColumn::make('priority.name')
                     ->label('Prioritas Ticket')
                     ->badge()
@@ -220,7 +209,6 @@ class TicketsRelationManager extends RelationManager
                     ->sortable()
                     ->default('—')
                     ->placeholder('No Priority'),
-
                 Tables\Columns\TextColumn::make('assignees.full_name')
                     ->label('Ditugaskan')
                     ->badge()
@@ -229,17 +217,14 @@ class TicketsRelationManager extends RelationManager
                     ->searchable()
                     ->listWithLineBreaks()
                     ->placeholder('—'),
-
                 Tables\Columns\TextColumn::make('start_date')
                     ->label('Tanggal Mulai')
                     ->dateTime('d M Y')
                     ->sortable(),
-
                 Tables\Columns\TextColumn::make('due_date')
                     ->label('Tanggal Selesai')
                     ->dateTime('d M Y')
                     ->sortable(),
-
                 Tables\Columns\TextColumn::make('remaining_days')
                     ->label('Sisa Hari')
                     ->getStateUsing(function (Ticket $record): ?string {
@@ -276,7 +261,6 @@ class TicketsRelationManager extends RelationManager
 
                         return 'success';
                     }),
-
                 Tables\Columns\TextColumn::make('creator.full_name')
                     ->label('Dibuat Oleh')
                     ->searchable()
@@ -284,13 +268,11 @@ class TicketsRelationManager extends RelationManager
                     ->weight('semibold')
                     ->icon('heroicon-o-user')
                     ->placeholder('—'),
-
                 Tables\Columns\TextColumn::make('created_at')
                     ->label('Dibuat Pada')
                     ->dateTime('d M Y H:i')
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: false),
-
                 Tables\Columns\TextColumn::make('updated_at')
                     ->label('Diperbarui Pada')
                     ->dateTime('d M Y H:i')
@@ -307,7 +289,6 @@ class TicketsRelationManager extends RelationManager
                             ->pluck('name', 'id')
                             ->toArray();
                     }),
-
                 Tables\Filters\SelectFilter::make('epic_id')
                     ->label('Nama Epic')
                     ->options(function () {
@@ -316,20 +297,17 @@ class TicketsRelationManager extends RelationManager
                             ->pluck('name', 'id')
                             ->toArray();
                     }),
-
                 Tables\Filters\SelectFilter::make('assignees')
                     ->label('Ditugaskan')
                     ->relationship('assignees', 'full_name')
                     ->multiple()
                     ->searchable()
                     ->preload(),
-
                 Tables\Filters\SelectFilter::make('created_by')
                     ->label('Dibuat Oleh')
                     ->relationship('creator', 'full_name')
                     ->searchable()
                     ->preload(),
-
                 Tables\Filters\Filter::make('created_at')
                     ->form([
                         Forms\Components\DatePicker::make('created_from')
@@ -338,7 +316,6 @@ class TicketsRelationManager extends RelationManager
                             ->displayFormat('d M Y')
                             ->native(false)
                             ->prefixIcon('heroicon-o-calendar-days'),
-
                         Forms\Components\DatePicker::make('created_until')
                             ->label('Dibuat Hingga')
                             ->required()
@@ -376,14 +353,12 @@ class TicketsRelationManager extends RelationManager
                     ->modalHeading('Lihat Ticket')
                     ->url(fn($record) => TicketResource::getUrl('view', ['record' => $record]))
                     ->openUrlInNewTab(),
-
                 Tables\Actions\EditAction::make(),
                 Tables\Actions\DeleteAction::make(),
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([
                     Tables\Actions\DeleteBulkAction::make(),
-
                     Tables\Actions\BulkAction::make('updateStatus')
                         ->label('Update Status')
                         ->icon('heroicon-o-arrow-path')
@@ -412,7 +387,6 @@ class TicketsRelationManager extends RelationManager
                                 ->body(count($records) . ' tickets have been updated.')
                                 ->send();
                         }),
-
                     Tables\Actions\BulkAction::make('assignUsers')
                         ->label('Tugaskan Member')
                         ->icon('heroicon-o-user-plus')
@@ -421,7 +395,8 @@ class TicketsRelationManager extends RelationManager
                                 ->label('Member')
                                 ->multiple()
                                 ->options(function (RelationManager $livewire) {
-                                    return $livewire->getOwnerRecord()
+                                    return $livewire
+                                        ->getOwnerRecord()
                                         ->members()
                                         ->pluck('full_name', 'nx_employees.id')
                                         ->toArray();
@@ -429,7 +404,6 @@ class TicketsRelationManager extends RelationManager
                                 ->searchable()
                                 ->preload()
                                 ->required(),
-
                             Radio::make('assignment_mode')
                                 ->label('Mode Penugasan')
                                 ->options([
@@ -454,7 +428,6 @@ class TicketsRelationManager extends RelationManager
                                 ->body(count($records) . ' ticket berhasil diperbarui dengan member ditugaskan')
                                 ->send();
                         }),
-
                     Tables\Actions\BulkAction::make('updatePriority')
                         ->label('Update Prioritas')
                         ->icon('heroicon-o-flag')
@@ -471,7 +444,6 @@ class TicketsRelationManager extends RelationManager
                                 ]);
                             }
                         }),
-
                     Tables\Actions\BulkAction::make('assignToEpic')
                         ->label('Tandai ke Epic')
                         ->icon('heroicon-o-bookmark')

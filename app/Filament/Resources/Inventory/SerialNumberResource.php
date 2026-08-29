@@ -2,21 +2,21 @@
 
 namespace App\Filament\Resources\Inventory;
 
+use App\Filament\Concerns\BelongsToModule;
 use App\Filament\Resources\Inventory\SerialNumberResource\Pages;
 use App\Models\Inventory\SerialNumber;
 use App\Models\Inventory\StockTransaction;
-use Filament\Forms;
 use Filament\Forms\Form;
+use Filament\Infolists\Components\Grid;
 use Filament\Infolists\Components\Section;
 use Filament\Infolists\Components\TextEntry;
-use Filament\Infolists\Components\Grid;
 use Filament\Infolists\Infolist;
 use Filament\Notifications\Notification;
 use Filament\Resources\Resource;
-use Filament\Tables;
 use Filament\Tables\Table;
+use Filament\Forms;
+use Filament\Tables;
 use Illuminate\Support\Facades\DB;
-use App\Filament\Concerns\BelongsToModule;
 
 class SerialNumberResource extends Resource
 {
@@ -77,7 +77,6 @@ class SerialNumberResource extends Resource
                     ->extraAttributes([
                         'class' => 'sticky-column',
                     ]),
-
                 Tables\Columns\TextColumn::make('product.product_name')
                     ->label('Nama Product')
                     ->searchable()
@@ -85,7 +84,6 @@ class SerialNumberResource extends Resource
                     ->limit(30)
                     ->description(fn($record) => $record->product->product_code ?? '-')
                     ->width('250px'),
-
                 Tables\Columns\TextColumn::make('warehouse.warehouse_name')
                     ->label('Lokasi Gudang')
                     ->searchable()
@@ -94,7 +92,6 @@ class SerialNumberResource extends Resource
                     ->color('gray')
                     ->icon('heroicon-o-building-storefront')
                     ->width('180px'),
-
                 Tables\Columns\TextColumn::make('status')
                     ->label('Status Unit')
                     ->badge()
@@ -109,33 +106,28 @@ class SerialNumberResource extends Resource
                     })
                     ->formatStateUsing(fn(string $state): string => str_replace('_', ' ', $state))
                     ->width('150px'),
-
                 Tables\Columns\TextColumn::make('supplier.name')
                     ->label('Supplier Asal')
                     ->searchable()
                     ->toggleable()
                     ->width('200px'),
-
                 Tables\Columns\TextColumn::make('customer.name')
                     ->label('Klien / Pembeli')
                     ->searchable()
                     ->toggleable()
                     ->width('200px'),
-
                 Tables\Columns\TextColumn::make('warranty_expired_at')
                     ->label('Garansi Habis')
                     ->date('d M Y')
                     ->sortable()
                     ->toggleable()
                     ->width('150px'),
-
                 Tables\Columns\TextColumn::make('inbound_date')
                     ->label('Tgl Masuk')
                     ->date('d M Y')
                     ->sortable()
                     ->toggleable()
                     ->width('150px'),
-
                 Tables\Columns\TextColumn::make('outbound_date')
                     ->label('Tgl Keluar')
                     ->date('d M Y')
@@ -150,13 +142,11 @@ class SerialNumberResource extends Resource
                     ->relationship('product', 'product_name')
                     ->searchable()
                     ->preload(),
-
                 Tables\Filters\SelectFilter::make('warehouse_id')
                     ->label('Filter Gudang')
                     ->relationship('warehouse', 'warehouse_name')
                     ->searchable()
                     ->preload(),
-
                 Tables\Filters\SelectFilter::make('status')
                     ->label('Status SN')
                     ->options(SerialNumber::getAllStatuses()),
@@ -166,7 +156,6 @@ class SerialNumberResource extends Resource
                     ->icon('heroicon-s-eye')
                     ->iconButton()
                     ->tooltip('Lihat Riwayat & Detail'),
-
                 Tables\Actions\Action::make('mark_as_defective')
                     ->label('Lapor Rusak')
                     ->icon('heroicon-s-exclamation-triangle')
@@ -193,18 +182,18 @@ class SerialNumberResource extends Resource
                             ]);
 
                             StockTransaction::create([
-                                'product_id'       => $record->product_id,
-                                'warehouse_id'     => $record->warehouse_id,
+                                'product_id' => $record->product_id,
+                                'warehouse_id' => $record->warehouse_id,
                                 'serial_number_id' => $record->id,
                                 'transaction_code' => static::generateTransactionCode('ST-OUT', $now),
                                 'reference_number' => 'Pelaporan Kerusakan SN',
-                                'mutation_type'    => 'adjustment_out',
+                                'mutation_type' => 'adjustment_out',
                                 'transaction_date' => $now,
-                                'quantity'         => 1,
-                                'price'            => 0,
-                                'total_price'      => 0,
-                                'notes'            => "Dilaporkan rusak (SN: {$record->serial_number}). Alasan: {$data['reason']}",
-                                'created_by'       => auth()->id() ?? 1,
+                                'quantity' => 1,
+                                'price' => 0,
+                                'total_price' => 0,
+                                'notes' => "Dilaporkan rusak (SN: {$record->serial_number}). Alasan: {$data['reason']}",
+                                'created_by' => auth()->id() ?? 1,
                             ]);
                         });
 
@@ -214,7 +203,6 @@ class SerialNumberResource extends Resource
                             ->success()
                             ->send();
                     }),
-
                 Tables\Actions\Action::make('mark_as_lost')
                     ->label('Tandai Hilang')
                     ->icon('heroicon-s-x-circle')
@@ -244,18 +232,18 @@ class SerialNumberResource extends Resource
                             ]);
 
                             StockTransaction::create([
-                                'product_id'       => $record->product_id,
-                                'warehouse_id'     => $record->warehouse_id,
+                                'product_id' => $record->product_id,
+                                'warehouse_id' => $record->warehouse_id,
                                 'serial_number_id' => $record->id,
                                 'transaction_code' => static::generateTransactionCode('ST-OUT', $now),
                                 'reference_number' => 'Pelaporan Kehilangan SN',
-                                'mutation_type'    => 'adjustment_out',
+                                'mutation_type' => 'adjustment_out',
                                 'transaction_date' => $now,
-                                'quantity'         => 1,
-                                'price'            => 0,
-                                'total_price'      => 0,
-                                'notes'            => "Ditandai hilang (SN: {$record->serial_number}). Keterangan: {$data['reason']}",
-                                'created_by'       => auth()->id() ?? 1,
+                                'quantity' => 1,
+                                'price' => 0,
+                                'total_price' => 0,
+                                'notes' => "Ditandai hilang (SN: {$record->serial_number}). Keterangan: {$data['reason']}",
+                                'created_by' => auth()->id() ?? 1,
                             ]);
                         });
 
@@ -284,7 +272,6 @@ class SerialNumberResource extends Resource
                                 ->label('Serial Number')
                                 ->weight('bold')
                                 ->copyable(),
-
                             TextEntry::make('status')
                                 ->label('Status Terkini')
                                 ->badge()
@@ -298,18 +285,14 @@ class SerialNumberResource extends Resource
                                     default => 'gray',
                                 })
                                 ->formatStateUsing(fn(string $state): string => str_replace('_', ' ', $state)),
-
                             TextEntry::make('product.product_name')
                                 ->label('Nama Product'),
-
                             TextEntry::make('product.product_code')
                                 ->label('Kode Product'),
-
                             TextEntry::make('warehouse.warehouse_name')
                                 ->label('Posisi Gudang')
                                 ->icon('heroicon-o-building-storefront'),
                         ]),
-
                     // BLOK 2: RIWAYAT MASUK (INBOUND)
                     Section::make('Riwayat Masuk (Hulu)')
                         ->icon('heroicon-o-arrow-down-tray')
@@ -319,16 +302,13 @@ class SerialNumberResource extends Resource
                                 ->label('Tanggal Masuk (Inbound)')
                                 ->date('d F Y')
                                 ->placeholder('-'),
-
                             TextEntry::make('supplier.name')
                                 ->label('Dari Supplier')
                                 ->placeholder('Tidak diketahui / Saldo Awal'),
-
                             TextEntry::make('purchaseOrder.po_number')
                                 ->label('Berdasarkan Nomor PO')
                                 ->placeholder('Tidak ada referensi PO'),
                         ]),
-
                     // BLOK 3: RIWAYAT KELUAR (OUTBOUND) & GARANSI
                     Section::make('Riwayat Keluar (Hilir)')
                         ->icon('heroicon-o-arrow-up-tray')
@@ -338,28 +318,24 @@ class SerialNumberResource extends Resource
                                 ->label('Tanggal Keluar (Outbound)')
                                 ->date('d F Y')
                                 ->placeholder('Belum Keluar / Masih di Gudang'),
-
                             TextEntry::make('customer.name')
                                 ->label('Terjual ke Klien')
                                 ->placeholder('Belum dialokasikan ke Klien'),
-
                             TextEntry::make('warranty_expired_at')
                                 ->label('Masa Berlaku Garansi')
                                 ->date('d F Y')
                                 ->placeholder('Tidak ada data garansi')
                                 ->badge()
-                                ->color(fn ($state) => \Carbon\Carbon::parse($state)->isPast() ? 'danger' : 'success'),
+                                ->color(fn($state) => \Carbon\Carbon::parse($state)->isPast() ? 'danger' : 'success'),
                         ]),
                 ]),
-
                 Section::make('Audit Trail Sistem')
                     ->collapsed()
-                    ->columns(2)
+                    ->columns(['default' => 122, 'md' => 2])
                     ->schema([
                         TextEntry::make('created_at')
                             ->label('Data Dibuat')
                             ->dateTime('d M Y H:i:s'),
-
                         TextEntry::make('updated_at')
                             ->label('Terakhir Diperbarui')
                             ->dateTime('d M Y H:i:s'),

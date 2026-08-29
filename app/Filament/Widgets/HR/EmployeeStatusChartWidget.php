@@ -10,22 +10,25 @@ class EmployeeStatusChartWidget extends ChartWidget
 
     protected static ?int $sort = 5;
 
-    protected int|string|array $columnSpan = 1;
+    protected int|string|array $columnSpan = [
+        'default' => 12,
+        'md' => 2,
+    ];
 
     protected function getData(): array
     {
-        $active     = Employee::where('status', 'active')->count();
-        $resigned   = Employee::where('status', 'resigned')->count();
+        $active = Employee::where('status', 'active')->count();
+        $resigned = Employee::where('status', 'resigned')->count();
         $terminated = Employee::where('status', 'terminated')->count();
 
         return [
             'datasets' => [
                 [
-                    'data'            => [$active, $resigned, $terminated],
+                    'data' => [$active, $resigned, $terminated],
                     'backgroundColor' => ['#22c55e', '#9ca3af', '#ef4444'],
                 ],
             ],
-            'labels'   => ['Active', 'Resigned', 'Terminated'],
+            'labels' => ['Active', 'Resigned', 'Terminated'],
         ];
     }
 

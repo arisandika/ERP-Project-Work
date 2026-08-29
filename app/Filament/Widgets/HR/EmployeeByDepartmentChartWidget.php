@@ -10,7 +10,10 @@ class EmployeeByDepartmentChartWidget extends ChartWidget
 
     protected static ?int $sort = 3;
 
-    protected int|string|array $columnSpan = 2;
+    protected int|string|array $columnSpan = [
+        'default' => 12,
+        'md' => 10,
+    ];
 
     protected function getData(): array
     {
@@ -21,12 +24,12 @@ class EmployeeByDepartmentChartWidget extends ChartWidget
         return [
             'datasets' => [
                 [
-                    'label'           => 'Jumlah Karyawan',
-                    'data'            => $departments->pluck('employees_count')->toArray(),
+                    'label' => 'Jumlah Karyawan',
+                    'data' => $departments->pluck('employees_count')->toArray(),
                     'backgroundColor' => '#6366f1',
                 ],
             ],
-            'labels'   => $departments->pluck('name')->toArray(),
+            'labels' => $departments->pluck('name')->toArray(),
         ];
     }
 

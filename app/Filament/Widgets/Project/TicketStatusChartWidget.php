@@ -10,7 +10,10 @@ class TicketStatusChartWidget extends ChartWidget
 
     protected static ?int $sort = 2;
 
-    protected int|string|array $columnSpan = 1;
+    protected int|string|array $columnSpan = [
+        'default' => 12,
+        'md' => 1,
+    ];
 
     protected function getData(): array
     {
@@ -21,12 +24,12 @@ class TicketStatusChartWidget extends ChartWidget
         return [
             'datasets' => [
                 [
-                    'label'           => 'Ticket',
-                    'data'            => $statuses->pluck('tickets_count')->toArray(),
+                    'label' => 'Ticket',
+                    'data' => $statuses->pluck('tickets_count')->toArray(),
                     'backgroundColor' => $statuses->pluck('color')->toArray(),
                 ],
             ],
-            'labels'   => $statuses->pluck('name')->toArray(),
+            'labels' => $statuses->pluck('name')->toArray(),
         ];
     }
 

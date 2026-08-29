@@ -5,7 +5,6 @@ use App\Filament\Concerns\BelongsToModule;
 use App\Filament\Resources\HR\LeaveRequestResource\Pages;
 use App\Models\HR\Leave;
 use App\Models\HR\LeaveRequest;
-use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Infolists\Components\ImageEntry;
 use Filament\Infolists\Components\Section;
@@ -13,8 +12,9 @@ use Filament\Infolists\Components\TextEntry;
 use Filament\Infolists\Infolist;
 use Filament\Notifications\Notification;
 use Filament\Resources\Resource;
-use Filament\Tables;
 use Filament\Tables\Table;
+use Filament\Forms;
+use Filament\Tables;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
 use Illuminate\Support\Carbon;
@@ -44,7 +44,7 @@ class LeaveRequestResource extends Resource
         $query = static::getModel()::query()
             ->where('status', 'pending');
 
-        if (! $user->hasRole('super_admin')) {
+        if (!$user->hasRole('super_admin')) {
             $employee = $user->employee;
 
             if ($employee) {
@@ -79,20 +79,22 @@ class LeaveRequestResource extends Resource
                             ->options(function () {
                                 $employee = auth()->user()?->employee;
 
-                                if (! $employee) {
+                                if (!$employee) {
                                     return [];
                                 }
 
                                 $leaves = Leave::query()
                                     ->when($employee->gender === 'male', function ($query) {
                                         $query->whereNot(function ($q) {
-                                            $q->where('is_female_only', true)
+                                            $q
+                                                ->where('is_female_only', true)
                                                 ->where('is_male_only', false);
                                         });
                                     })
                                     ->when($employee->gender === 'female', function ($query) {
                                         $query->whereNot(function ($q) {
-                                            $q->where('is_female_only', false)
+                                            $q
+                                                ->where('is_female_only', false)
                                                 ->where('is_male_only', true);
                                         });
                                     })
@@ -117,7 +119,6 @@ class LeaveRequestResource extends Resource
                             ->native(false)
                             ->required()
                             ->prefixIcon('heroicon-o-arrow-right-start-on-rectangle'),
-
                         Forms\Components\DatePicker::make('start_date')
                             ->label('Tanggal Mulai')
                             ->required()
@@ -128,11 +129,11 @@ class LeaveRequestResource extends Resource
                             ->reactive()
                             ->afterStateUpdated(function (callable $set, $get) {
                                 $start = $get('start_date');
-                                $end   = $get('end_date');
+                                $end = $get('end_date');
 
                                 if ($start && $end) {
                                     $startDate = Carbon::parse($start);
-                                    $endDate   = Carbon::parse($end);
+                                    $endDate = Carbon::parse($end);
 
                                     if ($startDate->gt($endDate)) {
                                         $set('total_days', null);
@@ -145,7 +146,7 @@ class LeaveRequestResource extends Resource
                                     }
 
                                     $workingDays = $startDate->diffInDaysFiltered(
-                                        fn(Carbon $date) => ! $date->isWeekend(),
+                                        fn(Carbon $date) => !$date->isWeekend(),
                                         $endDate
                                     );
 
@@ -154,7 +155,6 @@ class LeaveRequestResource extends Resource
                                     $set('total_days', null);
                                 }
                             }),
-
                         Forms\Components\DatePicker::make('end_date')
                             ->label('Tanggal Selesai')
                             ->required()
@@ -165,11 +165,11 @@ class LeaveRequestResource extends Resource
                             ->reactive()
                             ->afterStateUpdated(function (callable $set, $state, $get) {
                                 $start = $get('start_date');
-                                $end   = $state;
+                                $end = $state;
 
                                 if ($start && $end) {
                                     $startDate = Carbon::parse($start);
-                                    $endDate   = Carbon::parse($end);
+                                    $endDate = Carbon::parse($end);
 
                                     if ($startDate->gt($endDate)) {
                                         $set('total_days', null);
@@ -182,7 +182,7 @@ class LeaveRequestResource extends Resource
                                     }
 
                                     $workingDays = $startDate->diffInDaysFiltered(
-                                        fn(Carbon $date) => ! $date->isWeekend(),
+                                        fn(Carbon $date) => !$date->isWeekend(),
                                         $endDate
                                     );
 
@@ -191,27 +191,24 @@ class LeaveRequestResource extends Resource
                                     $set('total_days', null);
                                 }
                             }),
-
                         Forms\Components\TextInput::make('total_days')
                             ->label('Durasi Cuti (Hari Kerja)')
                             ->prefixIcon('heroicon-o-clock')
                             ->disabled()
                             ->dehydrated(false)
                             ->reactive(),
-
                         Forms\Components\Textarea::make('reason')
                             ->label('Alasan Cuti')
                             ->placeholder('Tuliskan alasan pengajuan cuti...')
                             ->rows(3)
                             ->maxLength(500),
-
                         Forms\Components\FileUpload::make('leave_proof')
                             ->label('Bukti Cuti/Sakit')
                             ->image()
                             ->directory('leave-proofs')
                             ->imageEditor()
                             ->previewable()
-                            ->maxSize(2048) // 2MB
+                            ->maxSize(2048)  // 2MB
                             ->acceptedFileTypes([
                                 'image/jpeg',
                                 'image/png',
@@ -220,7 +217,7 @@ class LeaveRequestResource extends Resource
                             ])
                             ->helperText('Upload bukti seperti surat dokter atau dokumen pendukung (opsional)'),
                     ])
-                    ->columns(2),
+                    ->columns(['default' => 122, 'md' => 2]),
             ]);
     }
 
@@ -243,53 +240,47 @@ class LeaveRequestResource extends Resource
                         return '';
                     })
                     ->placeholder('—'),
-
                 Tables\Columns\TextColumn::make('leave.leave_type')
                     ->label('Jenis Cuti')
                     ->sortable()
                     ->searchable()
                     ->placeholder('—'),
-
                 Tables\Columns\BadgeColumn::make('status')
                     ->label('Status')
                     ->sortable()
                     ->color(fn(string $state): string => match ($state) {
-                        'pending'  => 'warning',
+                        'pending' => 'warning',
                         'approved' => 'success',
 
-                        default    => 'danger',
+                        default => 'danger',
                     })
                     ->formatStateUsing(fn(string $state) => match ($state) {
-                        'pending'   => 'Menunggu',
-                        'approved'  => 'Disetujui',
-                        'rejected'  => 'Ditolak',
+                        'pending' => 'Menunggu',
+                        'approved' => 'Disetujui',
+                        'rejected' => 'Ditolak',
                         'cancelled' => 'Dibatalkan',
-                        'expired'   => 'Kadaluwarsa',
+                        'expired' => 'Kadaluwarsa',
 
-                        default     => ucwords(
+                        default => ucwords(
                             str_replace('_', ' ', $state)
                         ),
                     })
                     ->placeholder('—'),
-
                 Tables\Columns\TextColumn::make('start_date')
                     ->label('Tanggal Mulai')
                     ->date('d M Y')
                     ->sortable()
                     ->placeholder('—'),
-
                 Tables\Columns\TextColumn::make('end_date')
                     ->label('Tanggal Selesai')
                     ->date('d M Y')
                     ->sortable()
                     ->placeholder('—'),
-
                 Tables\Columns\TextColumn::make('total_days')
                     ->label('Durasi (Hari)')
                     ->sortable()
                     ->formatStateUsing(fn($state) => $state . ' Hari')
                     ->placeholder('—'),
-
                 Tables\Columns\TextColumn::make('approver.full_name')
                     ->label('Disetujui Oleh')
                     ->searchable()
@@ -305,19 +296,16 @@ class LeaveRequestResource extends Resource
                         return '';
                     })
                     ->placeholder('—'),
-
                 Tables\Columns\TextColumn::make('created_at')
                     ->label('Dibuat Pada')
                     ->dateTime('d M Y H:i')
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
-
                 Tables\Columns\TextColumn::make('updated_at')
                     ->label('Diperbarui Pada')
                     ->dateTime('d M Y H:i')
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
-
                 Tables\Columns\TextColumn::make('deleted_at')
                     ->label('Dihapus Pada')
                     ->dateTime('d M Y H:i')
@@ -327,14 +315,13 @@ class LeaveRequestResource extends Resource
             ->filters([
                 Tables\Filters\SelectFilter::make('status')
                     ->options([
-                        'pending'   => 'Menunggu',
-                        'approved'  => 'Disetujui',
-                        'rejected'  => 'Ditolak',
+                        'pending' => 'Menunggu',
+                        'approved' => 'Disetujui',
+                        'rejected' => 'Ditolak',
                         'cancelled' => 'Dibatalkan',
-                        'expired'   => 'Kadaluwarsa',
+                        'expired' => 'Kadaluwarsa',
                     ])
                     ->native(false),
-
                 Tables\Filters\Filter::make('created_at')
                     ->form([
                         Forms\Components\DatePicker::make('created_from')
@@ -343,7 +330,6 @@ class LeaveRequestResource extends Resource
                             ->displayFormat('d M Y')
                             ->native(false)
                             ->prefixIcon('heroicon-o-calendar-days'),
-
                         Forms\Components\DatePicker::make('created_until')
                             ->label('Dibuat Hingga')
                             ->required()
@@ -375,7 +361,6 @@ class LeaveRequestResource extends Resource
 
                         return $indicators;
                     }),
-
                 Tables\Filters\TrashedFilter::make()
                     ->label('Deleted Status')
                     ->native(false),
@@ -391,7 +376,7 @@ class LeaveRequestResource extends Resource
                         $employeeId = auth()->user()?->employee?->id;
 
                         // Employee tidak ditemukan
-                        if (! $employeeId) {
+                        if (!$employeeId) {
                             Notification::make()
                                 ->title('Data karyawan tidak ditemukan')
                                 ->danger()
@@ -411,7 +396,7 @@ class LeaveRequestResource extends Resource
                         }
 
                         // Status tidak valid
-                        if (! in_array($record->status, ['pending', 'approved'])) {
+                        if (!in_array($record->status, ['pending', 'approved'])) {
                             Notification::make()
                                 ->title('Status pengajuan tidak bisa dibatalkan')
                                 ->warning()
@@ -429,12 +414,9 @@ class LeaveRequestResource extends Resource
                             ->success()
                             ->send();
                     }),
-
                 Tables\Actions\ViewAction::make(),
-
                 Tables\Actions\EditAction::make()
                     ->visible(fn(LeaveRequest $record) => $record->status === 'pending'),
-
                 // Tables\Actions\DeleteAction::make(),
                 Tables\Actions\ForceDeleteAction::make(),
                 // Tables\Actions\RestoreAction::make(),
@@ -455,38 +437,32 @@ class LeaveRequestResource extends Resource
             ->schema([
                 Section::make('Informasi Pengajuan Cuti')
                     ->description('Kamu bisa edit pengajuan cuti ini jika masih berstatus pending atau menunggu persetujuan.')
-                    ->columns(2)
+                    ->columns(['default' => 122, 'md' => 2])
                     ->schema([
                         TextEntry::make('employee.full_name')
                             ->label('Nama Karyawan')
                             ->weight('semibold')
                             ->icon('heroicon-o-user')
                             ->placeholder('—'),
-
                         TextEntry::make('leave.leave_type')
                             ->label('Jenis Cuti')
                             ->placeholder('—'),
-
                         TextEntry::make('start_date')
                             ->label('Tanggal Mulai')
                             ->date('D, d M Y')
                             ->placeholder('—'),
-
                         TextEntry::make('end_date')
                             ->label('Tanggal Selesai')
                             ->date('D, d M Y')
                             ->placeholder('—'),
-
                         TextEntry::make('total_days')
                             ->label('Durasi (Hari Kerja)')
                             ->numeric()
                             ->formatStateUsing(fn($state) => $state . ' Hari')
                             ->placeholder('—'),
-
                         TextEntry::make('reason')
                             ->label('Alasan Cuti')
                             ->placeholder('—'),
-
                         ImageEntry::make('leave_proof')
                             ->label('Bukti Cuti/Sakit')
                             ->placeholder('—')
@@ -495,63 +471,56 @@ class LeaveRequestResource extends Resource
                                 'class' => 'w-full rounded-2xl',
                             ]),
                     ]),
-
                 Section::make('Status Persetujuan')
-                    ->columns(2)
+                    ->columns(['default' => 122, 'md' => 2])
                     ->schema([
                         TextEntry::make('status')
                             ->label('Status')
                             ->badge()
                             ->color(fn(string $state) => match ($state) {
-                                'pending'  => 'warning',
+                                'pending' => 'warning',
                                 'approved' => 'success',
 
-                                default    => 'danger',
+                                default => 'danger',
                             })
                             ->formatStateUsing(function (string $state): string {
                                 return match ($state) {
-                                    'pending'   => 'Menunggu',
-                                    'approved'  => 'Disetujui',
-                                    'rejected'  => 'Ditolak',
+                                    'pending' => 'Menunggu',
+                                    'approved' => 'Disetujui',
+                                    'rejected' => 'Ditolak',
                                     'cancelled' => 'Dibatalkan',
-                                    'expired'   => 'Kadaluwarsa',
+                                    'expired' => 'Kadaluwarsa',
 
-                                    default     => ucwords(
+                                    default => ucwords(
                                         str_replace('_', ' ', $state)
                                     ),
                                 };
                             })
                             ->placeholder('—'),
-
                         TextEntry::make('approver.full_name')
                             ->label('Disetujui Oleh')
                             ->weight('semibold')
                             ->icon('heroicon-o-user')
                             ->placeholder('—'),
-
                         TextEntry::make('approved_at')
                             ->label('Waktu Persetujuan')
                             ->dateTime('d M Y H:i')
                             ->visible(fn($record) => $record->approved_at !== null)
                             ->placeholder('—'),
-
                         TextEntry::make('approval_note')
                             ->label('Catatan Admin')
                             ->placeholder('—')
                             ->columnSpanFull(),
                     ]),
-
                 Section::make('Pengelolaan Data')
-                    ->columns(2)
+                    ->columns(['default' => 122, 'md' => 2])
                     ->schema([
                         TextEntry::make('created_at')
                             ->label('Dibuat Pada')
                             ->dateTime('d M Y H:i'),
-
                         TextEntry::make('updated_at')
                             ->label('Diperbarui Pada')
                             ->dateTime('d M Y H:i'),
-
                         TextEntry::make('deleted_at')
                             ->label('Dihapus Pada')
                             ->dateTime('d M Y H:i')
@@ -570,10 +539,10 @@ class LeaveRequestResource extends Resource
     public static function getPages(): array
     {
         return [
-            'index'  => Pages\ListLeaveRequests::route('/'),
+            'index' => Pages\ListLeaveRequests::route('/'),
             'create' => Pages\CreateLeaveRequest::route('/create'),
-            'view'   => Pages\ViewLeaveRequest::route('/{record}'),
-            'edit'   => Pages\EditLeaveRequest::route('/{record}/edit'),
+            'view' => Pages\ViewLeaveRequest::route('/{record}'),
+            'edit' => Pages\EditLeaveRequest::route('/{record}/edit'),
         ];
     }
 
@@ -586,7 +555,7 @@ class LeaveRequestResource extends Resource
         $user = auth()->user();
 
         // Jika bukan super_admin, hanya tampilkan data cutinya sendiri
-        if (! $user->hasRole('super_admin')) {
+        if (!$user->hasRole('super_admin')) {
             $employee = $user->employee;
             if ($employee) {
                 $query->where('employee_id', $employee->id);

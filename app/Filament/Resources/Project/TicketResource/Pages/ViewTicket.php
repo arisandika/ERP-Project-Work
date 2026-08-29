@@ -6,7 +6,6 @@ use App\Filament\Pages\Project\ProjectBoard;
 use App\Filament\Resources\Project\TicketResource;
 use App\Models\Project\Ticket;
 use App\Models\Project\TicketComment;
-use Filament\Actions;
 use Filament\Actions\Action;
 use Filament\Forms\Components\Hidden;
 use Filament\Forms\Components\RichEditor;
@@ -15,6 +14,7 @@ use Filament\Infolists\Components\TextEntry;
 use Filament\Infolists\Infolist;
 use Filament\Notifications\Notification;
 use Filament\Resources\Pages\ViewRecord;
+use Filament\Actions;
 
 class ViewTicket extends ViewRecord
 {
@@ -44,28 +44,24 @@ class ViewTicket extends ViewRecord
             ->schema([
                 Section::make('Informasi Ticket')
                     ->description('Detail project, epic, status dan informasi ticket.')
-                    ->columns(2)
+                    ->columns(['default' => 122, 'md' => 2])
                     ->schema([
                         TextEntry::make('name')
                             ->label('Nama Ticket')
                             ->weight('semibold')
                             ->size('lg')
                             ->placeholder('—'),
-
                         TextEntry::make('uuid')
                             ->label('Ticket ID')
                             ->weight('semibold')
                             ->placeholder('—')
                             ->icon('heroicon-o-hashtag')
                             ->copyable(),
-
                         TextEntry::make('project.name')
                             ->label('Nama Project'),
-
                         TextEntry::make('epic.name')
                             ->label('Nama Epic')
                             ->placeholder('—'),
-
                         TextEntry::make('status.name')
                             ->label('Status Pengerjaan')
                             ->badge()
@@ -77,7 +73,6 @@ class ViewTicket extends ViewRecord
                                 default => 'gray',
                             })
                             ->formatStateUsing(fn(string $state): string => ucwords(str_replace('_', ' ', $state))),
-
                         TextEntry::make('priority.name')
                             ->label('Prioritas Ticket')
                             ->badge()
@@ -88,20 +83,17 @@ class ViewTicket extends ViewRecord
                                 default => 'gray',
                             }),
                     ]),
-
                 Section::make('Jadwal Pengerjaan')
                     ->description('Timeline target penyelesaian ticket.')
-                    ->columns(3)
+                    ->columns(['default' => 122, 'md' => 3])
                     ->schema([
                         TextEntry::make('start_date')
                             ->label('Tanggal Mulai')
                             ->date('d M Y'),
-
                         TextEntry::make('due_date')
                             ->label('Tanggal Selesai')
                             ->date('d M Y')
                             ->color(fn($record) => $record->due_date < now() && $record->status?->name !== 'Done' ? 'danger' : 'gray'),
-
                         TextEntry::make('remaining_days')
                             ->label('Sisa Hari')
                             ->getStateUsing(function ($record) {
@@ -112,9 +104,8 @@ class ViewTicket extends ViewRecord
                             })
                             ->color(fn($state) => str_contains($state, 'terlambat') ? 'danger' : 'success'),
                     ]),
-
                 Section::make('Member Ticket')
-                    ->columns(2)
+                    ->columns(['default' => 122, 'md' => 2])
                     ->schema([
                         TextEntry::make('assignees.full_name')
                             ->label('Ditugaskan Kepada')
@@ -123,14 +114,12 @@ class ViewTicket extends ViewRecord
                             ->icon('heroicon-o-user')
                             ->placeholder('Belum ada member ditugaskan')
                             ->listWithLineBreaks(),
-
                         TextEntry::make('creator.full_name')
                             ->label('Dibuat Oleh')
                             ->weight('semibold')
                             ->icon('heroicon-o-user')
                             ->placeholder('—'),
                     ]),
-
                 Section::make('Deskripsi Ticket')
                     ->schema([
                         TextEntry::make('description')
@@ -145,7 +134,6 @@ class ViewTicket extends ViewRecord
                     ])
                     ->columnSpanFull()
                     ->collapsible(),
-
                 Section::make('Komentar')
                     ->description('Diskusi tentang ticket ini')
                     ->schema([
@@ -163,7 +151,6 @@ class ViewTicket extends ViewRecord
                     ])
                     ->columnSpanFull()
                     ->collapsible(),
-
                 Section::make('Riwayat Status')
                     ->collapsible()
                     ->collapsed()
@@ -172,14 +159,12 @@ class ViewTicket extends ViewRecord
                             ->hiddenLabel()
                             ->view('filament.infolists.components.ticket-history'),
                     ]),
-
                 Section::make('Pengelolaan Data')
-                    ->columns(2)
+                    ->columns(['default' => 122, 'md' => 2])
                     ->schema([
                         TextEntry::make('created_at')
                             ->label('Dibuat Pada')
                             ->dateTime('d M Y H:i'),
-
                         TextEntry::make('updated_at')
                             ->label('Diperbarui Pada')
                             ->dateTime('d M Y H:i'),
@@ -210,7 +195,6 @@ class ViewTicket extends ViewRecord
             ->modalWidth('2xl')
             ->form([
                 Hidden::make('comment_id'),
-
                 RichEditor::make('comment')
                     ->label('Komentar')
                     ->required()

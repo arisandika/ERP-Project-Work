@@ -1,23 +1,21 @@
 <?php
 namespace App\Filament\Resources\HR;
 
+use App\Filament\Concerns\BelongsToModule;
 use App\Filament\Resources\HR\AttendanceHistoryResource\Pages;
 use App\Infolists\Components\AttendanceMapEntry;
 use App\Models\HR\Attendance;
-use Filament\Forms;
 use Filament\Forms\Form;
-use Filament\Infolists\Components\ImageEntry;
 use Filament\Infolists\Components\Section;
 use Filament\Infolists\Components\TextEntry;
-use Filament\Infolists\Components\View;
 use Filament\Infolists\Infolist;
 use Filament\Resources\Resource;
-use Filament\Tables;
 use Filament\Tables\Table;
+use Filament\Forms;
+use Filament\Tables;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
 use Illuminate\Support\Carbon;
-use App\Filament\Concerns\BelongsToModule;
 
 class AttendanceHistoryResource extends Resource
 {
@@ -31,7 +29,7 @@ class AttendanceHistoryResource extends Resource
 
     protected static ?string $navigationGroup = 'Manajemen Presensi';
 
-    protected static ?int $navigationSort = 3;
+    protected static ?int $navigationSort = 5;
 
     protected static ?string $slug = 'attendance-history';
 
@@ -56,13 +54,13 @@ class AttendanceHistoryResource extends Resource
                     ->weight('semibold')
                     ->icon('heroicon-o-user')
                     ->color(function (Attendance $record) {
-                        $record->withTrashed()->first();
-                        if ($record && $record->trashed())
+                        if ($record && $record->trashed()) {
                             return 'danger';
+                        }
+
                         return '';
                     })
                     ->placeholder('—'),
-
                 Tables\Columns\BadgeColumn::make('status')
                     ->label('Status')
                     ->sortable()
@@ -72,7 +70,9 @@ class AttendanceHistoryResource extends Resource
                         'absen' => 'danger',
                         'izin' => 'yellow',
                         'cuti' => 'info',
-
+                        'sakit' => 'danger',  // <-- tambahkan
+                        'libur' => 'gray',  // <-- tambahkan (biar konsisten, opsional)
+                        'no_checkout' => 'orange',  // <-- tambahkan (opsional)
                         default => 'gray',
                     })
                     ->formatStateUsing(fn(string $state) => match ($state) {
@@ -82,6 +82,8 @@ class AttendanceHistoryResource extends Resource
                         'absen' => 'Absen',
                         'cuti' => 'Cuti',
                         'izin' => 'Izin',
+                        'sakit' => 'Sakit',  // <-- tambahkan
+                        'libur' => 'Libur',  // <-- tambahkan
                         'no_checkout' => 'Tidak Presensi Keluar',
 
                         default => ucwords(
@@ -89,37 +91,39 @@ class AttendanceHistoryResource extends Resource
                         ),
                     })
                     ->placeholder('—'),
-
                 Tables\Columns\TextColumn::make('date')
                     ->label('Tanggal')
                     ->date('D, d M Y')
                     ->sortable()
                     ->placeholder('—'),
-
                 Tables\Columns\TextColumn::make('clock_in')
                     ->label('Jam Masuk')
                     ->time('H:i')
                     ->placeholder('—')
                     ->sortable(),
-
                 Tables\Columns\TextColumn::make('clock_out')
                     ->label('Jam Keluar')
                     ->time('H:i')
                     ->placeholder('—')
                     ->sortable(),
-
+                Tables\Columns\TextColumn::make('overtime_duration')
+                    ->label('Lembur')
+                    ->getStateUsing(fn(Attendance $record) => $record->overtime_duration)
+                    ->badge()
+                    ->color('warning')
+                    ->icon('heroicon-m-clock')
+                    ->placeholder('—')
+                    ->toggleable(),
                 Tables\Columns\TextColumn::make('created_at')
                     ->label('Dibuat Pada')
                     ->dateTime('d M Y H:i')
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
-
                 Tables\Columns\TextColumn::make('updated_at')
                     ->label('Diperbarui Pada')
                     ->dateTime('d M Y H:i')
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
-
                 Tables\Columns\TextColumn::make('deleted_at')
                     ->label('Dihapus Pada')
                     ->dateTime('d M Y H:i')
@@ -136,10 +140,11 @@ class AttendanceHistoryResource extends Resource
                         'absen' => 'Absen',
                         'cuti' => 'Cuti',
                         'izin' => 'Izin',
+                        'sakit' => 'Sakit',  // <-- tambahkan
+                        'libur' => 'Libur',  // <-- tambahkan
                         'no_checkout' => 'Tidak Presensi Keluar',
                     ])
                     ->native(false),
-
                 Tables\Filters\Filter::make('date')
                     ->form([
                         Forms\Components\DatePicker::make('created_from')
@@ -148,7 +153,6 @@ class AttendanceHistoryResource extends Resource
                             ->displayFormat('d M Y')
                             ->native(false)
                             ->prefixIcon('heroicon-o-calendar-days'),
-
                         Forms\Components\DatePicker::make('created_until')
                             ->label('Dibuat Hingga')
                             ->required()
@@ -177,7 +181,6 @@ class AttendanceHistoryResource extends Resource
                         }
                         return $indicators;
                     }),
-
                 Tables\Filters\TrashedFilter::make()
                     ->label('Deleted Status')
                     ->native(false),
@@ -185,7 +188,6 @@ class AttendanceHistoryResource extends Resource
             ->actions([
                 Tables\Actions\ViewAction::make()
                     ->modalHeading('Lihat Riwayat Presensi'),
-
                 // Tables\Actions\DeleteAction::make(),
                 Tables\Actions\ForceDeleteAction::make(),
                 // Tables\Actions\RestoreAction::make(),
@@ -205,29 +207,32 @@ class AttendanceHistoryResource extends Resource
         return $infolist
             ->schema([
                 Section::make('Informasi Presensi')
-                    ->columns(2)
+                    ->columns(['default' => 12, 'md' => 2])
                     ->schema([
                         TextEntry::make('employee.full_name')
                             ->label('Nama Karyawan')
                             ->weight('semibold')
                             ->icon('heroicon-o-user')
                             ->placeholder('—'),
-
                         TextEntry::make('date')
                             ->label('Tanggal')
                             ->date('D, d M Y')
                             ->placeholder('—'),
-
                         TextEntry::make('clock_in')
                             ->label('Jam Masuk')
                             ->time('H:i')
                             ->placeholder('—'),
-
                         TextEntry::make('clock_out')
                             ->label('Jam Keluar')
                             ->time('H:i')
                             ->placeholder('—'),
-
+                        TextEntry::make('overtime_duration')
+                            ->label('Durasi Lembur')
+                            ->getStateUsing(fn(Attendance $record) => $record->overtime_duration ?? '—')
+                            ->badge()
+                            ->color(fn(Attendance $record) => $record->overtime_minutes > 0 ? 'warning' : 'gray')
+                            ->icon('heroicon-m-clock')
+                            ->placeholder('—'),
                         TextEntry::make('status')
                             ->label('Status')
                             ->badge()
@@ -237,35 +242,31 @@ class AttendanceHistoryResource extends Resource
                                 'absen' => 'danger',
                                 'izin' => 'yellow',
                                 'cuti' => 'info',
-
+                                'sakit' => 'yellow',  // <-- tambahkan
+                                'libur' => 'gray',  // <-- tambahkan
                                 default => 'gray',
                             })
                             ->formatStateUsing(fn(string $state): string => ucwords(str_replace('_', ' ', $state)))
                             ->placeholder('—'),
-
                         TextEntry::make('note')
                             ->label('Catatan')
                             ->placeholder('—'),
                     ]),
-
                 Section::make('Lokasi Presensi')
                     ->schema([
                         AttendanceMapEntry::make('map')
                             ->label('')
                             ->columnSpanFull(),
                     ]),
-
                 Section::make('Pengelolaan Data')
-                    ->columns(2)
+                    ->columns(['default' => 12, 'md' => 2])
                     ->schema([
                         TextEntry::make('created_at')
                             ->label('Dibuat Pada')
                             ->dateTime('d M Y H:i'),
-
                         TextEntry::make('updated_at')
                             ->label('Diperbarui Pada')
                             ->dateTime('d M Y H:i'),
-
                         TextEntry::make('deleted_at')
                             ->label('Dihapus Pada')
                             ->dateTime('d M Y H:i')
@@ -293,7 +294,7 @@ class AttendanceHistoryResource extends Resource
     {
         $query = parent::getEloquentQuery()->withoutGlobalScopes([
             SoftDeletingScope::class,
-        ]);
+        ])->with('shift');
 
         $user = auth()->user();
 

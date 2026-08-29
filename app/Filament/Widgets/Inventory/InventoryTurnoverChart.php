@@ -17,6 +17,7 @@ class InventoryTurnoverChart extends ChartWidget
     protected static bool $isLazy = true;
 
     protected int|string|array $columnSpan = [
+        'default' => 12,
         'md' => 12,
         'xl' => 6,
     ];
@@ -24,7 +25,7 @@ class InventoryTurnoverChart extends ChartWidget
     protected function getData(): array
     {
         $turnoverData = Cache::remember('inventory_turnover_12m', now()->addHours(1), function () {
-            $months = collect(range(11, 0))->map(fn ($m) => now()->subMonths($m)->startOfMonth());
+            $months = collect(range(11, 0))->map(fn($m) => now()->subMonths($m)->startOfMonth());
             $results = [];
 
             foreach ($months as $month) {
@@ -47,7 +48,7 @@ class InventoryTurnoverChart extends ChartWidget
         });
 
         $labels = collect(range(11, 0))
-            ->map(fn ($m) => now()->subMonths($m)->format('M Y'))
+            ->map(fn($m) => now()->subMonths($m)->format('M Y'))
             ->toArray();
 
         return [

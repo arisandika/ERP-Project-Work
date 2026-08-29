@@ -1,9 +1,6 @@
-<div class="mt-6 mb-2 col-span-full">
+<div class="mt-6 mb-2 col-span-full-12 w-full">
     <div
-        class="relative flex items-center gap-4 px-6 py-4 border ring-border-light shadow-sm rounded-2xl bg-gradient-to-r from-gray-50 to-white dark:border-gray-700 dark:from-gray-800 dark:to-gray-900">
-        {{-- Accent bar kiri --}}
-        <div class="absolute top-0 left-0 w-1 h-[80%] rounded-l-2xl bg-gradient-to-b from-primary-500 to-primary-700">
-        </div>
+        class="w-full relative flex items-center gap-4 px-6 py-4 border border-primary-500 shadow-sm rounded-2xl bg-main-light dark:bg-main-dark">
 
         {{-- Icon --}}
         <div

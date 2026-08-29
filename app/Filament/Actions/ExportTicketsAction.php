@@ -35,7 +35,7 @@ class ExportTicketsAction
                             ->default(['uuid', 'name', 'status', 'assignee', 'due_date', 'created_at'])
                             ->required()
                             ->minItems(1)
-                            ->columns(2)
+                            ->columns(['default' => 1, 'md' => 2])
                             ->gridDirection('row')
                     ])
             ])

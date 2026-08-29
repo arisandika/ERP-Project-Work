@@ -4,31 +4,27 @@ namespace App\Filament\Resources\Inventory;
 use App\Filament\Concerns\BelongsToModule;
 use App\Filament\Resources\Inventory\ServiceResource\Pages;
 use App\Models\Inventory\Service;
-use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Infolists\Components\Section;
 use Filament\Infolists\Components\TextEntry;
 use Filament\Infolists\Infolist;
 use Filament\Resources\Resource;
-use Filament\Tables;
 use Filament\Tables\Table;
+use Filament\Forms;
+use Filament\Tables;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Carbon;
 
 class ServiceResource extends Resource
 {
     use BelongsToModule;
+
     protected static ?string $module = 'inventory';
-    protected static ?string $model  = Service::class;
-
+    protected static ?string $model = Service::class;
     protected static ?string $navigationIcon = 'heroicon-o-percent-badge';
-
     protected static ?string $navigationGroup = 'Manajemen Inventory';
-
     protected static ?int $navigationSort = 5;
-
     protected static ?string $slug = 'inventory/services';
-
     protected static ?string $pluralModelLabel = 'Jasa';
 
     public static function getNavigationBadge(): ?string
@@ -49,14 +45,12 @@ class ServiceResource extends Resource
                                     ->required()
                                     ->maxLength(100)
                                     ->prefixIcon('heroicon-o-percent-badge'),
-
                                 Forms\Components\TextInput::make('price')
                                     ->label('Harga')
                                     ->numeric()
                                     ->prefix('IDR')
                                     ->required()
                                     ->minValue(0),
-
                                 Forms\Components\Select::make('category_id')
                                     ->label('Kategori')
                                     ->relationship('category', 'name')
@@ -70,7 +64,6 @@ class ServiceResource extends Resource
                                             ->required()
                                             ->maxLength(50)
                                             ->prefixIcon('heroicon-o-tag'),
-
                                         Forms\Components\Textarea::make('description')
                                             ->label('Deskripsi')
                                             ->rows(3),
@@ -89,30 +82,25 @@ class ServiceResource extends Resource
                     ->searchable()
                     ->sortable()
                     ->weight('semibold'),
-
                 Tables\Columns\TextColumn::make('service_name')
                     ->label('Nama Layanan')
                     ->sortable()
                     ->searchable(),
-
                 Tables\Columns\TextColumn::make('category.name')
                     ->label('Kategori')
                     ->sortable()
                     ->searchable(),
-
                 Tables\Columns\TextColumn::make('price')
                     ->label('Harga')
                     ->money('IDR', true)
                     ->color(fn($state) => $state < 0 ? 'danger' : 'success')
                     ->sortable()
                     ->weight('semibold'),
-
                 Tables\Columns\TextColumn::make('created_at')
                     ->label('Dibuat Pada')
                     ->dateTime('d M Y')
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
-
                 Tables\Columns\TextColumn::make('updated_at')
                     ->label('Diperbarui Pada')
                     ->dateTime('d M Y')
@@ -128,7 +116,6 @@ class ServiceResource extends Resource
                             ->displayFormat('d M Y')
                             ->native(false)
                             ->prefixIcon('heroicon-o-calendar-days'),
-
                         Forms\Components\DatePicker::make('created_until')
                             ->label('Dibuat Hingga')
                             ->required()
@@ -179,25 +166,22 @@ class ServiceResource extends Resource
         return $infolist
             ->schema([
                 Section::make('Detail Layanan')
-                    ->columns(2)
+                    ->columns(['default' => 122, 'md' => 2])
                     ->schema([
                         TextEntry::make('service_name')
                             ->label('Nama Layanan'),
-
                         TextEntry::make('category.name')
                             ->label('Kategori'),
-
                         TextEntry::make('price')
                             ->label('Harga')
                             ->money('IDR', true),
                     ]),
                 Section::make('Waktu Pengelolaan')
-                    ->columns(2)
+                    ->columns(['default' => 122, 'md' => 2])
                     ->schema([
                         TextEntry::make('created_at')
                             ->label('Dibuat Pada')
                             ->dateTime('d M Y H:i'),
-
                         TextEntry::make('updated_at')
                             ->label('Diperbarui Pada')
                             ->dateTime('d M Y H:i'),
@@ -215,10 +199,10 @@ class ServiceResource extends Resource
     public static function getPages(): array
     {
         return [
-            'index'  => Pages\ListServices::route('/'),
+            'index' => Pages\ListServices::route('/'),
             'create' => Pages\CreateService::route('/create'),
-            'view'   => Pages\ViewService::route('/{record}'),
-            'edit'   => Pages\EditService::route('/{record}/edit'),
+            'view' => Pages\ViewService::route('/{record}'),
+            'edit' => Pages\EditService::route('/{record}/edit'),
         ];
     }
 }

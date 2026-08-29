@@ -347,12 +347,20 @@ select.grow.cursor-pointer {
     @apply !max-w-[19rem] !important;
 }
 
+.fi-ta-filters {
+    @apply z-[100];
+}
+
 .fi-modal-heading .relative .fi-badge {
     display: flex;
     align-items: start;
     top: 0 !important;
     font-size: 13px;
     padding: 2px 4px;
+}
+
+.col-span-full-12 {
+    grid-column: span 12/span 12 !important;
 }
 
 /* .grid.flex-1.auto-cols-fr.gap-y-8 {

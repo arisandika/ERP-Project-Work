@@ -3,10 +3,10 @@
 namespace App\Filament\Widgets\Sales;
 
 use App\Models\Sales\Invoice;
-use Filament\Widgets\ChartWidget;
 use Filament\Widgets\Concerns\InteractsWithPageFilters;
-use Illuminate\Support\Carbon;
+use Filament\Widgets\ChartWidget;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Carbon;
 
 class RevenueChart extends ChartWidget
 {
@@ -18,8 +18,8 @@ class RevenueChart extends ChartWidget
     protected static bool $isLazy = true;
 
     protected int|string|array $columnSpan = [
-        'default' => 1,
-        'xl'      => 12,
+        'default' => 122,
+        'xl' => 12,
     ];
 
     protected function getData(): array

@@ -2,17 +2,18 @@
 namespace App\Filament\Widgets\Finance;
 
 use App\Models\Sales\Invoice;
-use Filament\Tables;
 use Filament\Tables\Table;
 use Filament\Widgets\TableWidget as BaseWidget;
+use Filament\Tables;
 use Illuminate\Support\Carbon;
 
 class LatestUnpaidInvoices extends BaseWidget
 {
     protected static ?string $heading = 'Outstanding Receivables';
-    protected static ?int $sort       = 3;
+    protected static ?int $sort = 3;
 
     protected int|string|array $columnSpan = [
+        'default' => 12,
         'xl' => 12,
     ];
 
@@ -34,23 +35,20 @@ class LatestUnpaidInvoices extends BaseWidget
                     ->color('primary')
                     ->searchable()
                     ->copyable(),
-
                 Tables\Columns\TextColumn::make('customer.name')
                     ->label('Client')
                     ->limit(20)
                     ->icon('heroicon-m-building-office'),
-
                 Tables\Columns\TextColumn::make('due_date')
                     ->label('Jatuh Tempo')
                     ->date('d M Y')
                     ->badge()
                     ->icon(fn($state) => Carbon::parse($state)->isPast()
-                            ? 'heroicon-m-exclamation-triangle'
-                            : 'heroicon-m-clock')
+                        ? 'heroicon-m-exclamation-triangle'
+                        : 'heroicon-m-clock')
                     ->color(fn($state) => Carbon::parse($state)->isPast()
-                            ? 'danger'
-                            : 'warning'),
-
+                        ? 'danger'
+                        : 'warning'),
                 Tables\Columns\TextColumn::make('remaining_balance')
                     ->label('Outstanding')
                     ->money('IDR', locale: 'id')

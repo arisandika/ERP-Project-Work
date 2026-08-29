@@ -1,32 +1,33 @@
 <?php
-
 namespace App\Providers;
 
-use App\Models\HR\LeaveRequest;
+use App\Http\Responses\LoginResponse;
 use App\Models\Finance\ReimbursementRequest;
+use App\Models\HR\LeaveRequest;
+use App\Models\HR\SickRequest;
+use App\Models\Inventory\Product;
+use App\Models\Inventory\ProductStock;
 use App\Models\Inventory\StockTransaction;
 use App\Models\Sales\DeliveryOrder;
 use App\Models\Sales\SalesOrder;
-use App\Models\Inventory\Product;
-use App\Models\Inventory\ProductStock;
-use App\Observers\LeaveRequestObserver;
-use App\Observers\ReimbursementRequestObserver;
-use App\Observers\ProductStockObserver;
 use App\Observers\DeliveryOrderObserver;
+use App\Observers\LeaveRequestObserver;
+use App\Observers\ProductStockObserver;
+use App\Observers\ReimbursementRequestObserver;
 use App\Observers\RoleObserver;
 use App\Observers\SalesOrderObserver;
+use App\Observers\SickRequestObserver;
 use App\Observers\StockTransactionObserver;
+use Filament\Http\Responses\Auth\Contracts\LoginResponse as LoginResponseContract;
 use Filament\Support\Colors\Color;
 use Filament\Support\Facades\FilamentColor;
+use Illuminate\Database\Eloquent\Relations\Relation;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\App;
 use Illuminate\Support\ServiceProvider;
-use Illuminate\Database\Eloquent\Relations\Relation;
-use App\Http\Responses\LoginResponse;
-use Spatie\Permission\Models\Role;
 use Spatie\Permission\Models\Permission;
+use Spatie\Permission\Models\Role;
 use Spatie\Permission\PermissionRegistrar;
-use Filament\Http\Responses\Auth\Contracts\LoginResponse as LoginResponseContract;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -46,12 +47,14 @@ class AppServiceProvider extends ServiceProvider
 
         FilamentColor::register([
             'primary' => Color::hex('#1c9cf0'),
-            'info' => Color::hex('#1c9cf0'),
+            'info'    => Color::hex('#1c9cf0'),
         ]);
 
         // Register Observers
         ProductStock::observe(ProductStockObserver::class);
         LeaveRequest::observe(LeaveRequestObserver::class);
+        SickRequest::observe(SickRequestObserver::class);
+
         DeliveryOrder::observe(DeliveryOrderObserver::class);
         SalesOrder::observe(SalesOrderObserver::class);
         ReimbursementRequest::observe(ReimbursementRequestObserver::class);
@@ -86,9 +89,8 @@ class AppServiceProvider extends ServiceProvider
             }
         });
 
-
         Relation::morphMap([
-            'employee' => \App\Models\HR\Employee::class,
+            'employee'    => \App\Models\HR\Employee::class,
             'salesperson' => \App\Models\Sales\SalesPerson::class,
         ]);
 

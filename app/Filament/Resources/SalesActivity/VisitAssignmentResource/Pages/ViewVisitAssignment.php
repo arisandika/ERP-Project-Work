@@ -8,19 +8,19 @@ use App\Infolists\Components\VisitPhotosEntry;
 use App\Infolists\Components\VisitTimelineEntry;
 use App\Models\SalesActivity\VisitAssignment;
 use App\Models\SalesActivity\VisitRecord;
-use Filament\Actions;
+use Filament\Infolists\Components\Tabs\Tab;
 use Filament\Infolists\Components\Fieldset;
 use Filament\Infolists\Components\Grid;
 use Filament\Infolists\Components\Group;
 use Filament\Infolists\Components\RepeatableEntry;
 use Filament\Infolists\Components\Section;
 use Filament\Infolists\Components\Tabs;
-use Filament\Infolists\Components\Tabs\Tab;
 use Filament\Infolists\Components\TextEntry;
 use Filament\Infolists\Components\ViewEntry;
 use Filament\Infolists\Infolist;
 use Filament\Resources\Pages\ViewRecord;
 use Filament\Support\Enums\FontWeight;
+use Filament\Actions;
 
 class ViewVisitAssignment extends ViewRecord
 {
@@ -30,7 +30,6 @@ class ViewVisitAssignment extends ViewRecord
     {
         return [
             Actions\EditAction::make(),
-
             Actions\Action::make('mark_completed')
                 ->label('Tandai Selesai')
                 ->icon('heroicon-o-check-badge')
@@ -49,7 +48,6 @@ class ViewVisitAssignment extends ViewRecord
     {
         return $infolist
             ->schema([
-
                 // ── 1. HEADER INFO (DIKATEGORIKAN DENGAN GRID & SECTION) ──────────
                 Grid::make(3)
                     ->schema([
@@ -61,19 +59,17 @@ class ViewVisitAssignment extends ViewRecord
                                     ->weight(FontWeight::Bold)
                                     ->copyable()
                                     ->icon('heroicon-o-hashtag'),
-
                                 TextEntry::make('deal.title')
                                     ->label('Judul Deal'),
-
                                 TextEntry::make('client_name')
                                     ->label('Client')
                                     ->state(
                                         fn(VisitAssignment $record) =>
-                                        $record->deal?->customer?->name ?? $record->deal?->lead?->name ?? '-'
+                                            $record->deal?->customer?->name ?? $record->deal?->lead?->name ?? '-'
                                     )
                                     ->icon('heroicon-o-building-office'),
-                            ])->columnSpan(1),
-
+                            ])
+                            ->columnSpan(1),
                         // Kolom 2: Penugasan
                         Section::make('Target Kunjungan')
                             ->schema([
@@ -81,7 +77,6 @@ class ViewVisitAssignment extends ViewRecord
                                     ->label('Ditugaskan Kepada')
                                     ->state(fn(VisitAssignment $record) => $record->assignedTo?->full_name ?? '-')
                                     ->icon('heroicon-o-user'),
-
                                 TextEntry::make('purpose')
                                     ->label('Tujuan')
                                     ->badge()
@@ -94,7 +89,6 @@ class ViewVisitAssignment extends ViewRecord
                                         'closing' => 'success',
                                         default => 'gray',
                                     }),
-
                                 TextEntry::make('status')
                                     ->label('Status Kunjungan')
                                     ->badge()
@@ -106,8 +100,8 @@ class ViewVisitAssignment extends ViewRecord
                                         'cancelled' => 'danger',
                                         default => 'gray',
                                     }),
-                            ])->columnSpan(1),
-
+                            ])
+                            ->columnSpan(1),
                         // Kolom 3: Jadwal
                         Section::make('Jadwal & Tenggat Waktu')
                             ->schema([
@@ -115,36 +109,32 @@ class ViewVisitAssignment extends ViewRecord
                                     ->label('Tanggal Rencana')
                                     ->date('d M Y')
                                     ->icon('heroicon-o-calendar'),
-
                                 TextEntry::make('visit_time')
                                     ->label('Jam Rencana')
                                     ->formatStateUsing(fn($state) => $state ? \Carbon\Carbon::parse($state)->format('H:i') : '-')
                                     ->icon('heroicon-o-clock'),
-
                                 TextEntry::make('deadline_date')
                                     ->label('Deadline')
                                     ->date('d M Y')
                                     ->color(fn(VisitAssignment $record) => $record->isOverdue() ? 'danger' : null)
                                     ->placeholder('-')
                                     ->icon('heroicon-o-exclamation-circle'),
-                            ])->columnSpan(1),
+                            ])
+                            ->columnSpan(1),
                     ]),
-
                 // Bagian Catatan (Full Width)
                 Section::make('Briefing / Catatan Tugas')
                     ->schema([
                         TextEntry::make('notes')
-                            ->label('') // Label dikosongkan karena sudah diwakili judul section
+                            ->label('')  // Label dikosongkan karena sudah diwakili judul section
                             ->placeholder('Tidak ada catatan briefing.')
                             ->columnSpanFull(),
                     ])
-                    ->collapsed(fn($record) => blank($record->notes)), // Otomatis tutup jika tidak ada notes
-
+                    ->collapsed(fn($record) => blank($record->notes)),  // Otomatis tutup jika tidak ada notes
                 // ── 2. DATA PELAKSANAAN (MENGGUNAKAN TABS AGAR RAPI) ──────────────
                 Tabs::make('Data Pelaksanaan')
                     ->columnSpanFull()
                     ->tabs([
-
                         // TAB 1: PETA
                         Tab::make('Peta Kunjungan')
                             ->icon('heroicon-o-map')
@@ -154,16 +144,14 @@ class ViewVisitAssignment extends ViewRecord
                                     ->label('')
                                     ->columnSpanFull(),
                             ]),
-
                         // TAB 2: TIMELINE RIWAYAT KUNJUNGAN
                         Tab::make('Timeline Riwayat Kunjungan')
                             ->icon('heroicon-o-clock')
                             ->schema([
-                                VisitTimelineEntry::make('timeline_riwayat') // Gunakan komponen yg baru kita buat
+                                VisitTimelineEntry::make('timeline_riwayat')  // Gunakan komponen yg baru kita buat
                                     ->label('')
                                     ->columnSpanFull(),
                             ]),
-
                         // TAB 3: DETAIL LENGKAP (REPEATABLE)
                         Tab::make('Detail Rekaman')
                             ->icon('heroicon-o-clipboard-document-list')
@@ -172,7 +160,6 @@ class ViewVisitAssignment extends ViewRecord
                                 RepeatableEntry::make('visitRecords')
                                     ->label('')
                                     ->schema([
-
                                         // Header tiap record kunjungan
                                         Grid::make(3)
                                             ->schema([
@@ -181,22 +168,19 @@ class ViewVisitAssignment extends ViewRecord
                                                     ->formatStateUsing(fn($state) => "#{$state}")
                                                     ->weight(FontWeight::ExtraBold)
                                                     ->size(TextEntry\TextEntrySize::Large),
-
                                                 TextEntry::make('visited_at')
                                                     ->label('Waktu Check-In')
                                                     ->dateTime('d M Y, H:i')
                                                     ->icon('heroicon-o-clock'),
-
                                                 TextEntry::make('visit_result')
                                                     ->label('Hasil')
                                                     ->badge()
                                                     ->formatStateUsing(fn($state) => VisitRecord::resultOptions()[$state] ?? $state)
                                                     ->color(fn($state) => VisitRecord::resultColors()[$state] ?? 'gray'),
                                             ]),
-
                                         // Detail Lokasi & Jarak
                                         Fieldset::make('Informasi Lokasi & Perjalanan')
-                                            ->columns(3)
+                                            ->columns(['default' => 122, 'md' => 3])
                                             ->schema([
                                                 TextEntry::make('location_address')
                                                     ->label('Titik Lokasi (Maps)')
@@ -205,7 +189,6 @@ class ViewVisitAssignment extends ViewRecord
                                                     ->url(fn(VisitRecord $record) => $record->googleMapsUrl())
                                                     ->openUrlInNewTab()
                                                     ->columnSpan(1),
-
                                                 TextEntry::make('distance_from_prev')
                                                     ->label('Jarak dari Sblmnya')
                                                     ->state(function (VisitRecord $record): string {
@@ -213,9 +196,9 @@ class ViewVisitAssignment extends ViewRecord
                                                             ->where('visit_order', $record->visit_order - 1)
                                                             ->first();
                                                         return ($prev && $prev->hasCoordinates() && $record->hasCoordinates())
-                                                            ? $record->distanceTo($prev->latitude, $prev->longitude) . " km" : '-';
+                                                            ? $record->distanceTo($prev->latitude, $prev->longitude) . ' km'
+                                                            : '-';
                                                     }),
-
                                                 TextEntry::make('duration_from_prev')
                                                     ->label('Durasi Perjalanan')
                                                     ->state(function (VisitRecord $record): string {
@@ -229,21 +212,18 @@ class ViewVisitAssignment extends ViewRecord
                                                         return $m > 0 ? "{$h} jam {$m} menit" : "{$h} jam";
                                                     }),
                                             ]),
-
                                         // Laporan Eksekusi
                                         Fieldset::make('Laporan Kunjungan')
-                                            ->columns(2)
+                                            ->columns(['default' => 122, 'md' => 2])
                                             ->schema([
                                                 TextEntry::make('description')
                                                     ->label('Deskripsi / Notulensi')
                                                     ->placeholder('Tidak ada deskripsi.')
                                                     ->columnSpan(1),
-
                                                 Group::make([
                                                     TextEntry::make('followup_notes')
                                                         ->label('Catatan Follow Up')
                                                         ->placeholder('-'),
-
                                                     TextEntry::make('next_followup_date')
                                                         ->label('Tanggal Follow Up Berikutnya')
                                                         ->date('d M Y')

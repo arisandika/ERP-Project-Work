@@ -10,16 +10,19 @@ class WonLostTrendChartWidget extends ChartWidget
 
     protected static ?int $sort = 5;
 
-    protected int|string|array $columnSpan = 2;
+    protected int|string|array $columnSpan = [
+        'default' => 12,
+        'md' => 2,
+    ];
 
     protected function getData(): array
     {
-        $labels   = [];
-        $wonData  = [];
+        $labels = [];
+        $wonData = [];
         $lostData = [];
 
         for ($i = 5; $i >= 0; $i--) {
-            $month    = now()->subMonths($i);
+            $month = now()->subMonths($i);
             $labels[] = $month->translatedFormat('M Y');
 
             $wonData[] = Deal::where('status', Deal::STATUS_CLOSED_WON)
@@ -36,21 +39,21 @@ class WonLostTrendChartWidget extends ChartWidget
         return [
             'datasets' => [
                 [
-                    'label'           => 'Won',
-                    'data'            => $wonData,
-                    'borderColor'     => '#22c55e',
+                    'label' => 'Won',
+                    'data' => $wonData,
+                    'borderColor' => '#22c55e',
                     'backgroundColor' => 'rgba(34, 197, 94, 0.1)',
-                    'fill'            => true,
+                    'fill' => true,
                 ],
                 [
-                    'label'           => 'Lost',
-                    'data'            => $lostData,
-                    'borderColor'     => '#ef4444',
+                    'label' => 'Lost',
+                    'data' => $lostData,
+                    'borderColor' => '#ef4444',
                     'backgroundColor' => 'rgba(239, 68, 68, 0.1)',
-                    'fill'            => true,
+                    'fill' => true,
                 ],
             ],
-            'labels'   => $labels,
+            'labels' => $labels,
         ];
     }
 

@@ -2,9 +2,9 @@
 namespace App\Filament\Widgets\Project;
 
 use App\Models\Project\Project;
-use Filament\Tables;
 use Filament\Tables\Table;
 use Filament\Widgets\TableWidget as BaseWidget;
+use Filament\Tables;
 
 class UpcomingDeadlinesWidget extends BaseWidget
 {
@@ -12,7 +12,10 @@ class UpcomingDeadlinesWidget extends BaseWidget
 
     protected static ?int $sort = 7;
 
-    protected int|string|array $columnSpan = 'full';
+    protected int|string|array $columnSpan = [
+        'default' => 12,
+        'md' => 12,
+    ];
 
     public function table(Table $table): Table
     {
@@ -24,25 +27,20 @@ class UpcomingDeadlinesWidget extends BaseWidget
             )
             ->columns([
                 Tables\Columns\ColorColumn::make('color')->label(''),
-
                 Tables\Columns\TextColumn::make('name')
                     ->label('Project')
                     ->weight('semibold'),
-
                 Tables\Columns\TextColumn::make('projectManager.full_name')
                     ->label('PM')
                     ->placeholder('—'),
-
                 Tables\Columns\TextColumn::make('progress_percentage')
                     ->label('Progress')
                     ->formatStateUsing(fn($state) => $state . '%')
                     ->badge()
                     ->color(fn($state) => $state >= 75 ? 'success' : ($state >= 40 ? 'warning' : 'danger')),
-
                 Tables\Columns\TextColumn::make('end_date')
                     ->label('Deadline')
                     ->dateTime('d M Y'),
-
                 Tables\Columns\TextColumn::make('remaining_days')
                     ->label('Sisa Hari')
                     ->badge()
