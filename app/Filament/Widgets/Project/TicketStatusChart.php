@@ -9,13 +9,15 @@ class TicketStatusChart extends ChartWidget
 {
     protected static ?string $heading = 'Ticket Berdasarkan Status';
 
-    protected static ?int $sort   = 2;
+    protected static ?int $sort = 2;
+
     protected static bool $isLazy = true;
+
     protected static ?string $maxHeight = '300px';
 
     protected int|string|array $columnSpan = [
-        'default' => 1,
-        'xl'      => 12,
+        'default' => 122,
+        'xl' => 12,
     ];
 
     protected function getData(): array
@@ -33,26 +35,26 @@ class TicketStatusChart extends ChartWidget
             ->pluck('total', 'status_name');
 
         $colorMap = [
-            'Backlog'     => '#9CA3AF',
-            'To Do'       => '#F59E0B',
+            'Backlog' => '#9CA3AF',
+            'To Do' => '#F59E0B',
             'In Progress' => '#3B82F6',
-            'Review'      => '#8B5CF6',
-            'Done'        => '#22C55E',
+            'Review' => '#8B5CF6',
+            'Done' => '#22C55E',
         ];
 
         $labels = $grouped->keys()->toArray();
-        $data   = $grouped->values()->toArray();
+        $data = $grouped->values()->toArray();
         $colors = array_map(fn($label) => $colorMap[$label] ?? '#6B7280', $labels);
 
         return [
             'datasets' => [
                 [
-                    'label'           => 'Ticket',
-                    'data'            => $data,
+                    'label' => 'Ticket',
+                    'data' => $data,
                     'backgroundColor' => $colors,
                 ],
             ],
-            'labels'   => $labels,
+            'labels' => $labels,
         ];
     }
 

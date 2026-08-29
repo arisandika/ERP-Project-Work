@@ -4,7 +4,6 @@ namespace App\Filament\Resources\HR;
 use App\Filament\Concerns\BelongsToModule;
 use App\Filament\Resources\HR\SickRequestResource\Pages;
 use App\Models\HR\SickRequest;
-use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Infolists\Components\ImageEntry;
 use Filament\Infolists\Components\Section;
@@ -12,8 +11,9 @@ use Filament\Infolists\Components\TextEntry;
 use Filament\Infolists\Infolist;
 use Filament\Notifications\Notification;
 use Filament\Resources\Resource;
-use Filament\Tables;
 use Filament\Tables\Table;
+use Filament\Forms;
+use Filament\Tables;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
 use Illuminate\Support\Carbon;
@@ -44,7 +44,7 @@ class SickRequestResource extends Resource
 
         $query = static::getModel()::query()->where('status', 'pending');
 
-        if (! $user->hasRole('super_admin')) {
+        if (!$user->hasRole('super_admin')) {
             $employee = $user->employee;
 
             if ($employee) {
@@ -85,7 +85,6 @@ class SickRequestResource extends Resource
                             ->afterStateUpdated(function (callable $set, $get) {
                                 self::calcTotalDays($get('start_date'), $get('end_date'), $set);
                             }),
-
                         Forms\Components\DatePicker::make('end_date')
                             ->label('Tanggal Selesai')
                             ->required()
@@ -97,21 +96,18 @@ class SickRequestResource extends Resource
                             ->afterStateUpdated(function (callable $set, $state, $get) {
                                 self::calcTotalDays($get('start_date'), $state, $set);
                             }),
-
                         Forms\Components\TextInput::make('total_days')
                             ->label('Durasi Sakit (Hari)')
                             ->prefixIcon('heroicon-o-clock')
                             ->disabled()
                             ->dehydrated(false)
                             ->reactive(),
-
                         Forms\Components\Textarea::make('reason')
                             ->label('Keterangan Sakit')
                             ->placeholder('Tuliskan keterangan/keluhan sakit...')
                             ->rows(3)
                             ->maxLength(500)
                             ->columnSpanFull(),
-
                         Forms\Components\FileUpload::make('sick_proof')
                             ->label('Bukti/Surat Dokter')
                             ->image()
@@ -128,7 +124,7 @@ class SickRequestResource extends Resource
                             ->helperText('Upload surat dokter atau dokumen pendukung (opsional)')
                             ->columnSpanFull(),
                     ])
-                    ->columns(['default' => 1, 'md' => 2]),
+                    ->columns(['default' => 122, 'md' => 2]),
             ]);
     }
 
@@ -136,7 +132,7 @@ class SickRequestResource extends Resource
     {
         if ($start && $end) {
             $startDate = Carbon::parse($start);
-            $endDate   = Carbon::parse($end);
+            $endDate = Carbon::parse($end);
 
             if ($startDate->gt($endDate)) {
                 $set('total_days', null);
@@ -165,43 +161,38 @@ class SickRequestResource extends Resource
                         return ($record && $record->trashed()) ? 'danger' : '';
                     })
                     ->placeholder('—'),
-
                 Tables\Columns\BadgeColumn::make('status')
                     ->label('Status')
                     ->sortable()
                     ->color(fn(string $state): string => match ($state) {
-                        'pending'  => 'warning',
+                        'pending' => 'warning',
                         'approved' => 'success',
-                        default    => 'danger',
+                        default => 'danger',
                     })
                     ->formatStateUsing(fn(string $state) => match ($state) {
-                        'pending'   => 'Menunggu',
-                        'approved'  => 'Disetujui',
-                        'rejected'  => 'Ditolak',
+                        'pending' => 'Menunggu',
+                        'approved' => 'Disetujui',
+                        'rejected' => 'Ditolak',
                         'cancelled' => 'Dibatalkan',
-                        'expired'   => 'Kadaluwarsa',
-                        default     => ucwords(str_replace('_', ' ', $state)),
+                        'expired' => 'Kadaluwarsa',
+                        default => ucwords(str_replace('_', ' ', $state)),
                     })
                     ->placeholder('—'),
-
                 Tables\Columns\TextColumn::make('start_date')
                     ->label('Tanggal Mulai')
                     ->date('d M Y')
                     ->sortable()
                     ->placeholder('—'),
-
                 Tables\Columns\TextColumn::make('end_date')
                     ->label('Tanggal Selesai')
                     ->date('d M Y')
                     ->sortable()
                     ->placeholder('—'),
-
                 Tables\Columns\TextColumn::make('total_days')
                     ->label('Durasi (Hari)')
                     ->sortable()
                     ->formatStateUsing(fn($state) => $state . ' Hari')
                     ->placeholder('—'),
-
                 Tables\Columns\TextColumn::make('approver.full_name')
                     ->label('Disetujui Oleh')
                     ->searchable()
@@ -209,19 +200,16 @@ class SickRequestResource extends Resource
                     ->weight('semibold')
                     ->icon('heroicon-o-user')
                     ->placeholder('—'),
-
                 Tables\Columns\TextColumn::make('created_at')
                     ->label('Dibuat Pada')
                     ->dateTime('d M Y H:i')
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
-
                 Tables\Columns\TextColumn::make('updated_at')
                     ->label('Diperbarui Pada')
                     ->dateTime('d M Y H:i')
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
-
                 Tables\Columns\TextColumn::make('deleted_at')
                     ->label('Dihapus Pada')
                     ->dateTime('d M Y H:i')
@@ -231,14 +219,13 @@ class SickRequestResource extends Resource
             ->filters([
                 Tables\Filters\SelectFilter::make('status')
                     ->options([
-                        'pending'   => 'Menunggu',
-                        'approved'  => 'Disetujui',
-                        'rejected'  => 'Ditolak',
+                        'pending' => 'Menunggu',
+                        'approved' => 'Disetujui',
+                        'rejected' => 'Ditolak',
                         'cancelled' => 'Dibatalkan',
-                        'expired'   => 'Kadaluwarsa',
+                        'expired' => 'Kadaluwarsa',
                     ])
                     ->native(false),
-
                 Tables\Filters\Filter::make('created_at')
                     ->form([
                         Forms\Components\DatePicker::make('created_from')
@@ -257,7 +244,6 @@ class SickRequestResource extends Resource
                             ->when($data['created_from'], fn(Builder $q, $date): Builder => $q->whereDate('created_at', '>=', $date))
                             ->when($data['created_until'], fn(Builder $q, $date): Builder => $q->whereDate('created_at', '<=', $date));
                     }),
-
                 Tables\Filters\TrashedFilter::make()
                     ->label('Deleted Status')
                     ->native(false),
@@ -272,7 +258,7 @@ class SickRequestResource extends Resource
                     ->action(function ($record) {
                         $employeeId = auth()->user()?->employee?->id;
 
-                        if (! $employeeId) {
+                        if (!$employeeId) {
                             Notification::make()->title('Data karyawan tidak ditemukan')->danger()->send();
                             return;
                         }
@@ -282,7 +268,7 @@ class SickRequestResource extends Resource
                             return;
                         }
 
-                        if (! in_array($record->status, ['pending', 'approved'])) {
+                        if (!in_array($record->status, ['pending', 'approved'])) {
                             Notification::make()->title('Status pengajuan tidak bisa dibatalkan')->warning()->send();
                             return;
                         }
@@ -291,12 +277,9 @@ class SickRequestResource extends Resource
 
                         Notification::make()->title('Pengajuan berhasil dibatalkan')->success()->send();
                     }),
-
                 Tables\Actions\ViewAction::make(),
-
                 Tables\Actions\EditAction::make()
                     ->visible(fn(SickRequest $record) => $record->status === 'pending'),
-
                 Tables\Actions\ForceDeleteAction::make(),
             ])
             ->bulkActions([
@@ -313,34 +296,29 @@ class SickRequestResource extends Resource
             ->schema([
                 Section::make('Informasi Pengajuan Sakit')
                     ->description('Kamu bisa edit pengajuan sakit ini jika masih berstatus pending.')
-                    ->columns(['default' => 1, 'md' => 2])
+                    ->columns(['default' => 122, 'md' => 2])
                     ->schema([
                         TextEntry::make('employee.full_name')
                             ->label('Nama Karyawan')
                             ->weight('semibold')
                             ->icon('heroicon-o-user')
                             ->placeholder('—'),
-
                         TextEntry::make('total_days')
                             ->label('Durasi (Hari)')
                             ->formatStateUsing(fn($state) => $state . ' Hari')
                             ->placeholder('—'),
-
                         TextEntry::make('start_date')
                             ->label('Tanggal Mulai')
                             ->date('D, d M Y')
                             ->placeholder('—'),
-
                         TextEntry::make('end_date')
                             ->label('Tanggal Selesai')
                             ->date('D, d M Y')
                             ->placeholder('—'),
-
                         TextEntry::make('reason')
                             ->label('Keterangan Sakit')
                             ->columnSpanFull()
                             ->placeholder('—'),
-
                         ImageEntry::make('sick_proof')
                             ->label('Bukti/Surat Dokter')
                             ->columnSpanFull()
@@ -350,48 +328,43 @@ class SickRequestResource extends Resource
                                 'class' => 'w-full rounded-2xl',
                             ]),
                     ]),
-
                 Section::make('Status Persetujuan')
-                    ->columns(['default' => 1, 'md' => 2])
+                    ->columns(['default' => 122, 'md' => 2])
                     ->schema([
                         TextEntry::make('status')
                             ->label('Status')
                             ->badge()
                             ->color(fn(string $state) => match ($state) {
-                                'pending'  => 'warning',
+                                'pending' => 'warning',
                                 'approved' => 'success',
-                                default    => 'danger',
+                                default => 'danger',
                             })
                             ->formatStateUsing(fn(string $state): string => match ($state) {
-                                'pending'   => 'Menunggu',
-                                'approved'  => 'Disetujui',
-                                'rejected'  => 'Ditolak',
+                                'pending' => 'Menunggu',
+                                'approved' => 'Disetujui',
+                                'rejected' => 'Ditolak',
                                 'cancelled' => 'Dibatalkan',
-                                'expired'   => 'Kadaluwarsa',
-                                default     => ucwords(str_replace('_', ' ', $state)),
+                                'expired' => 'Kadaluwarsa',
+                                default => ucwords(str_replace('_', ' ', $state)),
                             })
                             ->placeholder('—'),
-
                         TextEntry::make('approver.full_name')
                             ->label('Disetujui Oleh')
                             ->weight('semibold')
                             ->icon('heroicon-o-user')
                             ->placeholder('—'),
-
                         TextEntry::make('approved_at')
                             ->label('Waktu Persetujuan')
                             ->dateTime('d M Y H:i')
                             ->visible(fn($record) => $record->approved_at !== null)
                             ->placeholder('—'),
-
                         TextEntry::make('approval_note')
                             ->label('Catatan Admin')
                             ->columnSpanFull()
                             ->placeholder('—'),
                     ]),
-
                 Section::make('Pengelolaan Data')
-                    ->columns(['default' => 1, 'md' => 2])
+                    ->columns(['default' => 122, 'md' => 2])
                     ->schema([
                         TextEntry::make('created_at')->label('Dibuat Pada')->dateTime('d M Y H:i'),
                         TextEntry::make('updated_at')->label('Diperbarui Pada')->dateTime('d M Y H:i'),
@@ -411,10 +384,10 @@ class SickRequestResource extends Resource
     public static function getPages(): array
     {
         return [
-            'index'  => Pages\ListSickRequests::route('/'),
+            'index' => Pages\ListSickRequests::route('/'),
             'create' => Pages\CreateSickRequest::route('/create'),
-            'view'   => Pages\ViewSickRequest::route('/{record}'),
-            'edit'   => Pages\EditSickRequest::route('/{record}/edit'),
+            'view' => Pages\ViewSickRequest::route('/{record}'),
+            'edit' => Pages\EditSickRequest::route('/{record}/edit'),
         ];
     }
 
@@ -426,7 +399,7 @@ class SickRequestResource extends Resource
 
         $user = auth()->user();
 
-        if (! $user->hasRole('super_admin')) {
+        if (!$user->hasRole('super_admin')) {
             $employee = $user->employee;
             if ($employee) {
                 $query->where('employee_id', $employee->id);

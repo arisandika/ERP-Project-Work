@@ -10,7 +10,6 @@ use App\Models\HR\Employee;
 use App\Models\Project\Project;
 use App\Models\Project\Ticket;
 use BezhanSalleh\FilamentShield\Traits\HasPageShield;
-use Exception;
 use Filament\Actions\Action;
 use Filament\Forms\Components\CheckboxList;
 use Filament\Notifications\Notification;
@@ -20,6 +19,7 @@ use Illuminate\Support\Str;
 use Livewire\Attributes\Computed;
 use Livewire\Attributes\On;
 use Maatwebsite\Excel\Facades\Excel;
+use Exception;
 
 class ProjectBoard extends Page
 {
@@ -69,7 +69,10 @@ class ProjectBoard extends Page
                 ->orderBy('name')
                 ->get();
         } else {
-            $this->projects = auth()->user()->employee->projects()
+            $this->projects = auth()
+                ->user()
+                ->employee
+                ->projects()
                 ->orderByRaw('pinned_date IS NULL')
                 ->orderBy('pinned_date', 'desc')
                 ->orderBy('name')
@@ -136,15 +139,18 @@ class ProjectBoard extends Page
             return collect();
         }
 
-        $statuses = $this->selectedProject->ticketStatuses()
+        $statuses = $this
+            ->selectedProject
+            ->ticketStatuses()
             ->with([
                 'tickets' => function ($query) {
-                    $query->with([
-                        'assignees:id,full_name',
-                        'status:id,name,color,is_completed',
-                        'priority:id,name,color',
-                        'creator:id,full_name',
-                    ])
+                    $query
+                        ->with([
+                            'assignees:id,full_name',
+                            'status:id,name,color,is_completed',
+                            'priority:id,name,color',
+                            'creator:id,full_name',
+                        ])
                         ->select('id', 'project_id', 'ticket_status_id', 'priority_id', 'name', 'description', 'uuid', 'due_date', 'created_at', 'updated_at', 'created_by')
                         ->when(!empty($this->selectedUserIds), function ($query) {
                             $query->whereHas('assignees', function ($assigneeQuery) {
@@ -182,7 +188,9 @@ class ProjectBoard extends Page
         }
 
         // Get only users who are assigned to tickets in this project
-        $ticketAssigneeIds = $this->selectedProject->tickets()
+        $ticketAssigneeIds = $this
+            ->selectedProject
+            ->tickets()
             ->with('assignees')
             ->get()
             ->flatMap(function ($ticket) {
@@ -312,20 +320,17 @@ class ProjectBoard extends Page
                 ->visible(fn() => auth()->user()->can('create_project::ticket'))
                 ->url(
                     fn() =>
-                    TicketResource::getUrl('create', [
-                        'project_id' => request()->route('project_id'),
-                    ])
+                        TicketResource::getUrl('create', [
+                            'project_id' => request()->route('project_id'),
+                        ])
                 )
                 ->openUrlInNewTab(),
-
             Action::make('refresh_board')
                 ->label('Refresh Board')
                 ->icon('heroicon-m-arrow-path')
                 ->action('refreshBoard')
                 ->color('warning'),
-
             ExportTicketsAction::make(),
-
             Action::make('filter_users')
                 ->label('Filter by User')
                 ->icon('heroicon-m-user-group')
@@ -334,7 +339,7 @@ class ProjectBoard extends Page
                     CheckboxList::make('selectedUserIds')
                         ->label('Pilih user untuk difilter')
                         ->options(fn() => $this->projectUsers->pluck('full_name', 'id')->toArray())
-                        ->columns(['default' => 1, 'md' => 2])
+                        ->columns(['default' => 122, 'md' => 2])
                         ->searchable()
                         ->bulkToggleable(),
                 ])
@@ -381,9 +386,10 @@ class ProjectBoard extends Page
             return false;
         }
 
-        return auth()->user()->hasRole(['super_admin'])
-            || $ticket->created_by === $employee->id
-            || $ticket->assignees()
+        return auth()->user()->hasRole(['super_admin']) ||
+            $ticket->created_by === $employee->id ||
+            $ticket
+                ->assignees()
                 ->where('employees.id', $employee->id)
                 ->exists();
     }
@@ -405,9 +411,10 @@ class ProjectBoard extends Page
             return false;
         }
 
-        return auth()->user()->hasRole(['super_admin'])
-            || $ticket->created_by === $employee->id
-            || $ticket->assignees()
+        return auth()->user()->hasRole(['super_admin']) ||
+            $ticket->created_by === $employee->id ||
+            $ticket
+                ->assignees()
                 ->where('employees.id', $employee->id)
                 ->exists();
     }
@@ -428,9 +435,10 @@ class ProjectBoard extends Page
             return false;
         }
 
-        return auth()->user()->hasRole(['super_admin'])
-            || $ticket->created_by === $employee->id
-            || $ticket->assignees()
+        return auth()->user()->hasRole(['super_admin']) ||
+            $ticket->created_by === $employee->id ||
+            $ticket
+                ->assignees()
                 ->where('employees.id', $employee->id)
                 ->exists();
     }
@@ -450,7 +458,9 @@ class ProjectBoard extends Page
         $tickets = collect();
 
         if ($this->selectedProject) {
-            $tickets = $this->selectedProject->tickets()
+            $tickets = $this
+                ->selectedProject
+                ->tickets()
                 ->with(['assignees', 'status', 'project', 'epic'])
                 ->orderBy('created_at', 'desc')
                 ->get();
@@ -502,7 +512,6 @@ class ProjectBoard extends Page
                 ->body('File Excel sedang diunduh')
                 ->success()
                 ->send();
-
         } catch (Exception $e) {
             Notification::make()
                 ->title('Export Gagal')

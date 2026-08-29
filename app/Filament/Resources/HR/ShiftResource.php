@@ -1,36 +1,32 @@
 <?php
 namespace App\Filament\Resources\HR;
 
+use App\Filament\Concerns\BelongsToModule;
 use App\Filament\Resources\HR\ShiftResource\Pages;
 use App\Models\HR\Shift;
-use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Infolists\Components\Section;
 use Filament\Infolists\Components\TextEntry;
 use Filament\Infolists\Infolist;
 use Filament\Resources\Resource;
-use Filament\Tables;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
+use Filament\Forms;
+use Filament\Tables;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\HtmlString;
-use App\Filament\Concerns\BelongsToModule;
 
 class ShiftResource extends Resource
 {
     use BelongsToModule;
+
     protected static ?string $module = 'hr';
     protected static ?string $model = Shift::class;
-
     protected static ?string $navigationIcon = 'heroicon-o-clock';
-
     protected static ?string $navigationGroup = 'Manajemen HR';
-
     protected static ?int $navigationSort = 3;
-
     protected static ?string $slug = 'hr/shifts';
-
     protected static ?string $pluralModelLabel = 'Jam Kerja';
 
     public static function form(Form $form): Form
@@ -38,26 +34,23 @@ class ShiftResource extends Resource
         return $form
             ->schema([
                 Forms\Components\Section::make('Informasi Jam Kerja')
-                    ->columns(['default' => 1, 'md' => 2])
+                    ->columns(['default' => 122, 'md' => 2])
                     ->schema([
                         Forms\Components\TextInput::make('name')
                             ->label('Nama Jam Kerja')
                             ->required()
                             ->maxLength(50)
                             ->prefixIcon('heroicon-o-document-text'),
-
                         Forms\Components\TimePicker::make('start_time')
                             ->label('Waktu Mulai')
                             ->required()
                             ->prefixIcon('heroicon-o-clock')
                             ->native(false),
-
                         Forms\Components\TimePicker::make('end_time')
                             ->label('Waktu Selesai')
                             ->required()
                             ->prefixIcon('heroicon-o-clock')
                             ->native(false),
-
                         Forms\Components\TextInput::make('tolerance_minutes')
                             ->label('Toleransi (menit)')
                             ->numeric()
@@ -77,28 +70,23 @@ class ShiftResource extends Resource
                     ->searchable()
                     ->sortable()
                     ->placeholder('—'),
-
                 Tables\Columns\TextColumn::make('start_time')
                     ->label('Waktu Mulai')
                     ->time()
                     ->placeholder('—'),
-
                 Tables\Columns\TextColumn::make('end_time')
                     ->label('Waktu Selesai')
                     ->time()
                     ->placeholder('—'),
-
                 Tables\Columns\TextColumn::make('tolerance_minutes')
                     ->label('Toleransi')
                     ->formatStateUsing(fn($state) => $state . ' Menit')
                     ->placeholder('—'),
-
                 Tables\Columns\TextColumn::make('created_at')
                     ->label('Dibuat Pada')
                     ->dateTime('d M Y H:i')
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
-
                 Tables\Columns\TextColumn::make('updated_at')
                     ->label('Diperbarui Pada')
                     ->dateTime('d M Y H:i')
@@ -114,7 +102,6 @@ class ShiftResource extends Resource
                             ->displayFormat('d M Y')
                             ->native(false)
                             ->prefixIcon('heroicon-o-calendar-days'),
-
                         Forms\Components\DatePicker::make('created_until')
                             ->label('Dibuat Hingga')
                             ->required()
@@ -168,39 +155,33 @@ class ShiftResource extends Resource
         return $infolist
             ->schema([
                 Section::make('Informasi Jam Kerja')
-                    ->columns(['default' => 1, 'md' => 2])
+                    ->columns(['default' => 122, 'md' => 2])
                     ->schema([
                         TextEntry::make('name')
                             ->label('Nama Jam Kerja')
                             ->placeholder('—'),
-
                         TextEntry::make('start_time')
                             ->label('Waktu Mulai')
                             ->time()
                             ->placeholder('—'),
-
                         TextEntry::make('end_time')
                             ->label('Waktu Selesai')
                             ->time()
                             ->placeholder('—'),
-
                         TextEntry::make('tolerance_minutes')
                             ->label('Toleransi')
                             ->formatStateUsing(fn($state) => $state . ' Menit')
                             ->placeholder('—'),
                     ]),
-
                 Section::make('Pengelolaan Data')
-                    ->columns(['default' => 1, 'md' => 2])
+                    ->columns(['default' => 122, 'md' => 2])
                     ->schema([
                         TextEntry::make('created_at')
                             ->label('Dibuat Pada')
                             ->dateTime('d M Y H:i'),
-
                         TextEntry::make('updated_at')
                             ->label('Diperbarui Pada')
                             ->dateTime('d M Y H:i'),
-
                         TextEntry::make('deleted_at')
                             ->label('Dihapus Pada')
                             ->dateTime('d M Y H:i')

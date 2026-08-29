@@ -2,33 +2,29 @@
 
 namespace App\Filament\Resources\Inventory;
 
+use App\Filament\Concerns\BelongsToModule;
 use App\Filament\Resources\Inventory\ProductResource\Pages;
 use App\Filament\Resources\Inventory\ProductResource\RelationManagers;
 use App\Models\Inventory\Product;
 use App\Models\Inventory\Warehouse;
-use Filament\Forms;
-use Filament\Forms\Form;
 use Filament\Forms\Components\Toggle;
+use Filament\Forms\Form;
 use Filament\Resources\Resource;
-use Filament\Tables;
 use Filament\Tables\Table;
+use Filament\Forms;
+use Filament\Tables;
 use Illuminate\Database\Eloquent\Builder;
-use App\Filament\Concerns\BelongsToModule;
 
 class ProductResource extends Resource
 {
     use BelongsToModule;
+
     protected static ?string $module = 'inventory';
     protected static ?string $model = Product::class;
-
     protected static ?string $navigationIcon = 'heroicon-o-cube';
-
     protected static ?string $navigationGroup = 'Manajemen Inventory';
-
     protected static ?int $navigationSort = 4;
-
     protected static ?string $slug = 'inventory/products';
-
     protected static ?string $pluralModelLabel = 'Product';
 
     public static function form(Form $form): Form
@@ -43,7 +39,6 @@ class ProductResource extends Resource
                             ->maxLength(100)
                             ->placeholder('Contoh: Laptop Lenovo ThinkPad')
                             ->prefixIcon('heroicon-o-cube'),
-
                         Forms\Components\Select::make('category_id')
                             ->label('Kategori')
                             ->relationship('category', 'name')
@@ -57,12 +52,10 @@ class ProductResource extends Resource
                                     ->required()
                                     ->maxLength(50)
                                     ->prefixIcon('heroicon-o-tag'),
-
                                 Forms\Components\Textarea::make('description')
                                     ->label('Deskripsi')
                                     ->rows(3),
                             ]),
-
                         Forms\Components\Select::make('unit_id')
                             ->label('Satuan')
                             ->relationship('unit', 'name')
@@ -76,23 +69,19 @@ class ProductResource extends Resource
                                     ->required()
                                     ->maxLength(20)
                                     ->prefixIcon('heroicon-o-scale'),
-
                                 Forms\Components\TextInput::make('symbol')
                                     ->label('Simbol')
                                     ->maxLength(10),
-
                                 Forms\Components\Textarea::make('description')
                                     ->label('Deskripsi')
                                     ->rows(2),
                             ]),
-
                         Forms\Components\TextInput::make('selling_price')
                             ->label('Harga Jual')
                             ->numeric()
                             ->prefix('IDR')
                             ->required()
                             ->minValue(0),
-
                         Forms\Components\TextInput::make('min_stock')
                             ->label('Minimum Stock')
                             ->numeric()
@@ -100,7 +89,6 @@ class ProductResource extends Resource
                             ->minValue(0)
                             ->helperText('Batas minimum sebelum alert low stock')
                             ->prefixIcon('heroicon-o-arrow-down-circle'),
-
                         Forms\Components\TextInput::make('max_stock')
                             ->label('Maximum Stock')
                             ->numeric()
@@ -108,7 +96,6 @@ class ProductResource extends Resource
                             ->minValue(0)
                             ->helperText('Batas maksimum (0 = tanpa batas)')
                             ->prefixIcon('heroicon-o-arrow-up-circle'),
-
                         Forms\Components\Section::make('Pengaturan Lanjutan')
                             ->description('Atur identitas unit dan visibilitas katalog')
                             ->schema([
@@ -119,7 +106,6 @@ class ProductResource extends Resource
                                     ->live()
                                     ->onColor('success')
                                     ->offColor('gray'),
-
                                 Toggle::make('is_web_published')
                                     ->label('Tampilkan di Katalog Web')
                                     ->helperText('Jika aktif, produk ini akan muncul di halaman Company Profile.')
@@ -127,8 +113,7 @@ class ProductResource extends Resource
                                     ->onColor('info')
                                     ->offColor('gray'),
                             ])
-                            ->columns(['default' => 1, 'md' => 2]),
-
+                            ->columns(['default' => 122, 'md' => 2]),
                         Forms\Components\FileUpload::make('image_path')
                             ->label('Foto Product')
                             ->directory('products')
@@ -141,8 +126,7 @@ class ProductResource extends Resource
                             ->downloadable()
                             ->preserveFilenames(),
                     ])
-                    ->columns(['default' => 1, 'md' => 2]),
-
+                    ->columns(['default' => 122, 'md' => 2]),
                 Forms\Components\Section::make('Stock per Gudang')
                     ->icon('heroicon-o-building-storefront')
                     ->schema([
@@ -158,7 +142,6 @@ class ProductResource extends Resource
                                     ->prefixIcon('heroicon-o-building-office')
                                     ->distinct()
                                     ->disableOptionsWhenSelectedInSiblingRepeaterItems(),
-
                                 Forms\Components\TextInput::make('qty_available')
                                     ->label('Stock Tersedia')
                                     ->numeric()
@@ -167,14 +150,12 @@ class ProductResource extends Resource
                                     ->dehydrated(true)
                                     ->helperText('Otomatis 0. Tambah via proses stok masuk / mutasi sistem.')
                                     ->prefixIcon('heroicon-o-archive-box'),
-
                                 Forms\Components\TextInput::make('qty_reserved')
                                     ->label('Dipesan (Reserved)')
                                     ->numeric()
                                     ->default(0)
                                     ->disabled()
                                     ->dehydrated(true),
-
                                 Forms\Components\TextInput::make('qty_on_delivery')
                                     ->label('Dalam Pengiriman')
                                     ->numeric()
@@ -182,7 +163,7 @@ class ProductResource extends Resource
                                     ->disabled()
                                     ->dehydrated(true),
                             ])
-                            ->columns(['default' => 1, 'md' => 4])
+                            ->columns(['default' => 122, 'md' => 4])
                             ->defaultItems(1)
                             ->addActionLabel('Tambah Akses Gudang')
                             ->reorderable(false)
@@ -201,21 +182,18 @@ class ProductResource extends Resource
                     ->getStateUsing(fn($record) => $record->image_url)
                     ->circular()
                     ->placeholder('—'),
-
                 Tables\Columns\TextColumn::make('product_code')
                     ->label('Kode Product')
                     ->searchable()
                     ->sortable()
                     ->placeholder('—')
                     ->weight('semibold'),
-
                 Tables\Columns\TextColumn::make('product_name')
                     ->label('Nama Product')
                     ->searchable()
                     ->sortable()
                     ->placeholder('—')
                     ->limit(30),
-
                 Tables\Columns\TextColumn::make('category.name')
                     ->label('Kategori')
                     ->searchable()
@@ -224,11 +202,11 @@ class ProductResource extends Resource
                     ->color('indigo')
                     ->placeholder('—')
                     ->icon('heroicon-o-tag'),
-
                 Tables\Columns\TextColumn::make('warehouses')
                     ->label('Gudang')
                     ->getStateUsing(function ($record) {
-                        return $record->productStocks()
+                        return $record
+                            ->productStocks()
                             ->with('warehouse')
                             ->get()
                             ->pluck('warehouse.warehouse_name')
@@ -241,14 +219,13 @@ class ProductResource extends Resource
                     ->color('info')
                     ->placeholder('—')
                     ->icon('heroicon-o-building-office'),
-
                 Tables\Columns\TextColumn::make('total_stock')
                     ->label('Total Stock Fisik')
                     ->getStateUsing(
                         fn($record) =>
-                        $record->productStocks()->sum('qty_available') +
-                        $record->productStocks()->sum('qty_reserved') +
-                        $record->productStocks()->sum('qty_on_delivery')
+                            $record->productStocks()->sum('qty_available')
+                            + $record->productStocks()->sum('qty_reserved')
+                            + $record->productStocks()->sum('qty_on_delivery')
                     )
                     ->numeric()
                     ->sortable()
@@ -260,7 +237,6 @@ class ProductResource extends Resource
                         default => 'success',
                     })
                     ->suffix(' Qty'),
-
                 Tables\Columns\TextColumn::make('selling_price')
                     ->label('Harga Jual')
                     ->money('IDR')
@@ -279,7 +255,6 @@ class ProductResource extends Resource
                                 'normal' => 'Stock Tersedia Normal',
                             ])
                             ->prefixIcon('heroicon-o-chart-bar'),
-
                         Forms\Components\Select::make('warehouse_id')
                             ->label('Gudang')
                             ->options(
@@ -348,7 +323,6 @@ class ProductResource extends Resource
 
                         return $query;
                     }),
-
                 Tables\Filters\SelectFilter::make('category_id')
                     ->label('Kategori')
                     ->relationship('category', 'name')

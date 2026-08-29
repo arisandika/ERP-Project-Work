@@ -2,23 +2,23 @@
 
 namespace App\Filament\Resources\Finance;
 
+use App\Filament\Concerns\BelongsToModule;
 use App\Filament\Resources\Finance\ReimbursementApprovalResource\Pages;
 use App\Filament\Resources\Finance\ReimbursementApprovalResource\RelationManagers;
 use App\Models\Finance\ReimbursementRequest;
-use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Infolists\Components\ImageEntry;
 use Filament\Infolists\Components\Section;
 use Filament\Infolists\Components\TextEntry;
 use Filament\Infolists\Infolist;
 use Filament\Resources\Resource;
-use Filament\Tables;
 use Filament\Tables\Table;
+use Filament\Forms;
+use Filament\Tables;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\HtmlString;
-use App\Filament\Concerns\BelongsToModule;
 
 class ReimbursementApprovalResource extends Resource
 {
@@ -26,15 +26,10 @@ class ReimbursementApprovalResource extends Resource
 
     protected static ?string $module = 'finance';
     protected static ?string $model = ReimbursementRequest::class;
-
     protected static ?string $navigationIcon = 'heroicon-o-clipboard-document-check';
-
     protected static ?string $navigationGroup = 'Manajemen Finance';
-
     protected static ?int $navigationSort = 3;
-
     protected static ?string $slug = 'finance/reimburse-approvals';
-
     protected static ?string $pluralModelLabel = 'Persetujuan Reimburse';
 
     public static function getNavigationBadge(): ?string
@@ -66,7 +61,6 @@ class ReimbursementApprovalResource extends Resource
                         ->native(false)
                         ->prefixIcon('heroicon-o-user')
                         ->disabled(),
-
                     Forms\Components\DatePicker::make('date')
                         ->label('Tanggal Transaksi')
                         ->required()
@@ -76,7 +70,6 @@ class ReimbursementApprovalResource extends Resource
                         ->closeOnDateSelection()
                         ->prefixIcon('heroicon-o-calendar-days')
                         ->disabled(),
-
                     Forms\Components\Select::make('type')
                         ->label('Jenis Reimburse')
                         ->required()
@@ -92,7 +85,6 @@ class ReimbursementApprovalResource extends Resource
                         ->native(false)
                         ->prefixIcon('heroicon-o-tag')
                         ->disabled(),
-
                     Forms\Components\TextInput::make('amount')
                         ->label('Nominal')
                         ->numeric()
@@ -100,24 +92,21 @@ class ReimbursementApprovalResource extends Resource
                         ->required()
                         ->minValue(0)
                         ->disabled(),
-
                     Forms\Components\Textarea::make('description')
                         ->label('Keterangan')
                         ->placeholder('Tuliskan keterangan reimburse...')
                         ->rows(3)
                         ->maxLength(500)
                         ->disabled(),
-
                     Forms\Components\Placeholder::make('receipt_proof_preview')
                         ->label('Bukti Struk')
                         ->content(
                             fn($record) => $record?->receipt
-                            ? new HtmlString('<img src="/storage/' . $record->receipt . '" class="w-full rounded-2xl">')
-                            : 'Tidak menyertakan bukti struk'
+                                ? new HtmlString('<img src="/storage/' . $record->receipt . '" class="w-full rounded-2xl">')
+                                : 'Tidak menyertakan bukti struk'
                         ),
                 ])
-                ->columns(['default' => 1, 'md' => 2]),
-
+                ->columns(['default' => 122, 'md' => 2]),
             Forms\Components\Section::make('Persetujuan')
                 ->schema([
                     Forms\Components\Select::make('status')
@@ -138,11 +127,10 @@ class ReimbursementApprovalResource extends Resource
                                     auth()->user()->employee->id ?? null
                                 );
                             }
-
                         })
                         ->native(false),
                 ])
-                ->columns(['default' => 1, 'md' => 2])
+                ->columns(['default' => 122, 'md' => 2])
         ]);
     }
 
@@ -163,13 +151,11 @@ class ReimbursementApprovalResource extends Resource
                         return '';
                     })
                     ->placeholder('—'),
-
                 Tables\Columns\TextColumn::make('type')
                     ->label('Jenis Reimburse')
                     ->sortable()
                     ->searchable()
                     ->placeholder('—'),
-
                 Tables\Columns\BadgeColumn::make('status')
                     ->label('Status')
                     ->sortable()
@@ -190,13 +176,11 @@ class ReimbursementApprovalResource extends Resource
                         ),
                     })
                     ->placeholder('—'),
-
                 Tables\Columns\TextColumn::make('date')
                     ->label('Tanggal')
                     ->date('D, d M Y')
                     ->sortable()
                     ->placeholder('—'),
-
                 Tables\Columns\TextColumn::make('amount')
                     ->label('Nominal')
                     ->money('IDR')
@@ -204,7 +188,6 @@ class ReimbursementApprovalResource extends Resource
                     ->sortable()
                     ->weight('semibold')
                     ->placeholder('—'),
-
                 Tables\Columns\TextColumn::make('approver.full_name')
                     ->label('Disetujui Oleh')
                     ->searchable()
@@ -218,25 +201,21 @@ class ReimbursementApprovalResource extends Resource
                         return '';
                     })
                     ->placeholder('—'),
-
                 Tables\Columns\TextColumn::make('created_at')
                     ->label('Dibuat Pada')
                     ->dateTime('d M Y H:i')
                     ->sortable()
                     ->placeholder('—'),
-
                 Tables\Columns\TextColumn::make('created_at')
                     ->label('Dibuat Pada')
                     ->dateTime('d M Y H:i')
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
-
                 Tables\Columns\TextColumn::make('updated_at')
                     ->label('Diperbarui Pada')
                     ->dateTime('d M Y H:i')
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
-
                 Tables\Columns\TextColumn::make('deleted_at')
                     ->label('Dihapus Pada')
                     ->dateTime('d M Y H:i')
@@ -252,7 +231,6 @@ class ReimbursementApprovalResource extends Resource
                         'cancelled' => 'Cancelled',
                     ])
                     ->native(false),
-
                 Tables\Filters\Filter::make('created_at')
                     ->form([
                         Forms\Components\DatePicker::make('created_from')
@@ -261,7 +239,6 @@ class ReimbursementApprovalResource extends Resource
                             ->displayFormat('d M Y')
                             ->native(false)
                             ->prefixIcon('heroicon-o-calendar-days'),
-
                         Forms\Components\DatePicker::make('created_until')
                             ->label('Dibuat Hingga')
                             ->required()
@@ -293,7 +270,6 @@ class ReimbursementApprovalResource extends Resource
 
                         return $indicators;
                     }),
-
                 Tables\Filters\TrashedFilter::make()
                     ->label('Deleted Status')
                     ->native(false),
@@ -303,7 +279,6 @@ class ReimbursementApprovalResource extends Resource
                     ->label('Review')
                     ->color('warning')
                     ->visible(fn(ReimbursementRequest $record) => $record->status === 'pending'),
-
                 Tables\Actions\ViewAction::make(),
             ])
             ->bulkActions([
@@ -321,34 +296,29 @@ class ReimbursementApprovalResource extends Resource
         return $infolist
             ->schema([
                 Section::make('Informasi Pengajuan Reimburse')
-                    ->columns(['default' => 1, 'md' => 2])
+                    ->columns(['default' => 122, 'md' => 2])
                     ->schema([
                         TextEntry::make('employee.full_name')
                             ->label('Nama Karyawan')
                             ->weight('semibold')
                             ->icon('heroicon-o-user')
                             ->placeholder('—'),
-
                         TextEntry::make('type')
                             ->label('Jenis Reimburse')
                             ->placeholder('—'),
-
                         TextEntry::make('date')
                             ->label('Tanggal Transaksi')
                             ->date('D, d M Y')
                             ->placeholder('—'),
-
                         TextEntry::make('amount')
                             ->label('Nominal')
                             ->money('IDR')
                             ->color('danger')
                             ->weight('semibold')
                             ->placeholder('—'),
-
                         TextEntry::make('description')
                             ->label('Keterangan')
                             ->placeholder('—'),
-
                         ImageEntry::make('receipt')
                             ->label('Bukti Transaksi')
                             ->placeholder('—')
@@ -357,9 +327,8 @@ class ReimbursementApprovalResource extends Resource
                                 'class' => 'w-full rounded-2xl'
                             ]),
                     ]),
-
                 Section::make('Status Persetujuan')
-                    ->columns(['default' => 1, 'md' => 2])
+                    ->columns(['default' => 122, 'md' => 2])
                     ->schema([
                         TextEntry::make('status')
                             ->label('Status')
@@ -381,31 +350,26 @@ class ReimbursementApprovalResource extends Resource
                                 ),
                             })
                             ->placeholder('—'),
-
                         TextEntry::make('approver.full_name')
                             ->label('Disetujui Oleh')
                             ->weight('semibold')
                             ->icon('heroicon-o-user')
                             ->placeholder('—'),
-
                         TextEntry::make('approved_at')
                             ->label('Waktu Persetujuan')
                             ->dateTime('d M Y H:i')
                             ->visible(fn($record) => $record->approved_at !== null)
                             ->placeholder('—'),
                     ]),
-
                 Section::make('Pengelolaan Data')
-                    ->columns(['default' => 1, 'md' => 2])
+                    ->columns(['default' => 122, 'md' => 2])
                     ->schema([
                         TextEntry::make('created_at')
                             ->label('Dibuat Pada')
                             ->dateTime('d M Y H:i'),
-
                         TextEntry::make('updated_at')
                             ->label('Diperbarui Pada')
                             ->dateTime('d M Y H:i'),
-
                         TextEntry::make('deleted_at')
                             ->label('Dihapus Pada')
                             ->dateTime('d M Y H:i')

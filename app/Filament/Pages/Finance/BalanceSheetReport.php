@@ -16,7 +16,6 @@ use Illuminate\Support\Carbon;
 class BalanceSheetReport extends Page implements HasForms
 {
     use InteractsWithForms;
-
     use HasPageShield, BelongsToModule {
         HasPageShield::canAccess insteadof BelongsToModule;
         HasPageShield::shouldRegisterNavigation insteadof BelongsToModule;
@@ -35,7 +34,6 @@ class BalanceSheetReport extends Page implements HasForms
     protected static ?string $title = 'Balance Sheet';
     protected static ?string $navigationLabel = 'Balance Sheet';
     protected static ?string $slug = 'finance/balance-sheet';
-
     protected static string $view = 'filament.pages.finance.balance-sheet-report';
 
     public ?array $data = [];
@@ -65,24 +63,24 @@ class BalanceSheetReport extends Page implements HasForms
                 Select::make('period_type')
                     ->label('Periode')
                     ->options([
-                        'custom'         => 'Custom',
-                        'this_month'     => 'Akhir Bulan Ini',
-                        'last_month'     => 'Akhir Bulan Lalu',
-                        'this_quarter'   => 'Akhir Kuartal Ini',
-                        'last_quarter'   => 'Akhir Kuartal Lalu',
-                        'this_year'      => 'Akhir Tahun Ini',
-                        'last_year'      => 'Akhir Tahun Lalu',
+                        'custom' => 'Custom',
+                        'this_month' => 'Akhir Bulan Ini',
+                        'last_month' => 'Akhir Bulan Lalu',
+                        'this_quarter' => 'Akhir Kuartal Ini',
+                        'last_quarter' => 'Akhir Kuartal Lalu',
+                        'this_year' => 'Akhir Tahun Ini',
+                        'last_year' => 'Akhir Tahun Lalu',
                     ])
                     ->default('this_month')
                     ->live()
                     ->afterStateUpdated(function ($state, Forms\Set $set) {
-                        if ($state === 'custom') return;
+                        if ($state === 'custom')
+                            return;
 
                         $date = $this->resolveDateForType($state);
                         $set('as_of_date', $date->format('Y-m-d'));
                     })
                     ->native(false),
-
                 DatePicker::make('as_of_date')
                     ->label('Tanggal')
                     ->native(false)
@@ -91,7 +89,7 @@ class BalanceSheetReport extends Page implements HasForms
                     ->required(),
             ])
             ->statePath('data')
-            ->columns(['default' => 1, 'md' => 2]);
+            ->columns(['default' => 122, 'md' => 2]);
     }
 
     protected function getViewData(): array
@@ -139,13 +137,13 @@ class BalanceSheetReport extends Page implements HasForms
         $now = Carbon::now();
 
         return match ($type) {
-            'this_month'   => $now->copy()->endOfMonth(),
-            'last_month'   => $now->copy()->subMonth()->endOfMonth(),
+            'this_month' => $now->copy()->endOfMonth(),
+            'last_month' => $now->copy()->subMonth()->endOfMonth(),
             'this_quarter' => $now->copy()->endOfQuarter(),
             'last_quarter' => $now->copy()->subQuarter()->endOfQuarter(),
-            'this_year'    => $now->copy()->endOfYear(),
-            'last_year'    => $now->copy()->subYear()->endOfYear(),
-            default        => Carbon::parse($this->data['as_of_date'] ?? $now->endOfMonth())->endOfDay(),
+            'this_year' => $now->copy()->endOfYear(),
+            'last_year' => $now->copy()->subYear()->endOfYear(),
+            default => Carbon::parse($this->data['as_of_date'] ?? $now->endOfMonth())->endOfDay(),
         };
     }
 
@@ -172,9 +170,9 @@ class BalanceSheetReport extends Page implements HasForms
             ->where('account_type', $accountType)
             ->groupBy('category_name')
             ->get()
-            ->map(fn ($item) => [
+            ->map(fn($item) => [
                 'category' => $item->category_name,
-                'amount'   => (float) $item->total_amount,
+                'amount' => (float) $item->total_amount,
             ])
             ->toArray();
     }

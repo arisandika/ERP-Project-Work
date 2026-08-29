@@ -8,14 +8,14 @@ use BezhanSalleh\FilamentShield\Forms\ShieldSelectAllToggle;
 use BezhanSalleh\FilamentShield\Support\Utils;
 use BezhanSalleh\FilamentShield\Traits\HasShieldFormComponents;
 use Filament\Facades\Filament;
-use Filament\Forms;
 use Filament\Forms\Components\CheckboxList;
 use Filament\Forms\Components\Section;
 use Filament\Forms\Form;
 use Filament\Pages\SubNavigationPosition;
 use Filament\Resources\Resource;
-use Filament\Tables;
 use Filament\Tables\Table;
+use Filament\Forms;
+use Filament\Tables;
 use Illuminate\Contracts\Support\Arrayable;
 use Illuminate\Support\HtmlString;
 use Illuminate\Support\Str;
@@ -24,7 +24,6 @@ use Illuminate\Validation\Rules\Unique;
 class RoleResource extends Resource implements HasShieldPermissions
 {
     use HasShieldFormComponents;
-
     use BelongsToModule;
 
     protected static ?string $module = 'system';
@@ -54,33 +53,31 @@ class RoleResource extends Resource implements HasShieldPermissions
                                 Forms\Components\TextInput::make('name')
                                     ->label(__('filament-shield::filament-shield.field.name'))
                                     ->unique(
-                                        ignoreRecord: true, /** @phpstan-ignore-next-line */
+                                        ignoreRecord: true,
+                                        /** @phpstan-ignore-next-line */
                                         modifyRuleUsing: fn(Unique $rule) => Utils::isTenancyEnabled() ? $rule->where(Utils::getTenantModelForeignKey(), Filament::getTenant()?->id) : $rule
                                     )
                                     ->required()
                                     ->maxLength(255),
-
                                 Forms\Components\TextInput::make('guard_name')
                                     ->label(__('filament-shield::filament-shield.field.guard_name'))
                                     ->default(Utils::getFilamentAuthGuard())
                                     ->nullable()
                                     ->maxLength(255),
-
                                 Forms\Components\Select::make(config('permission.column_names.team_foreign_key'))
                                     ->label(__('filament-shield::filament-shield.field.team'))
                                     ->placeholder(__('filament-shield::filament-shield.field.team.placeholder'))
                                     /** @phpstan-ignore-next-line */
                                     ->default([Filament::getTenant()?->id])
                                     ->options(fn(): Arrayable => Utils::getTenantModel() ? Utils::getTenantModel()::pluck('name', 'id') : collect())
-                                    ->hidden(fn(): bool => ! (static::shield()->isCentralApp() && Utils::isTenancyEnabled()))
-                                    ->dehydrated(fn(): bool => ! (static::shield()->isCentralApp() && Utils::isTenancyEnabled())),
+                                    ->hidden(fn(): bool => !(static::shield()->isCentralApp() && Utils::isTenancyEnabled()))
+                                    ->dehydrated(fn(): bool => !(static::shield()->isCentralApp() && Utils::isTenancyEnabled())),
                                 ShieldSelectAllToggle::make('select_all')
                                     ->onIcon('heroicon-s-shield-check')
                                     ->offIcon('heroicon-s-shield-exclamation')
                                     ->label(__('filament-shield::filament-shield.field.select_all.name'))
                                     ->helperText(fn(): HtmlString => new HtmlString(__('filament-shield::filament-shield.field.select_all.message')))
                                     ->dehydrated(fn(bool $state): bool => $state),
-
                             ])
                             ->columns([
                                 'sm' => 2,
@@ -88,7 +85,6 @@ class RoleResource extends Resource implements HasShieldPermissions
                             ]),
                     ]),
                 static::getShieldFormComponents(),
-
                 Section::make('Akses Modul')
                     ->description('Modul ERP yang bisa dibuka role ini. Daftar ini otomatis ikut config/erp-modules.php — tambah modul baru di config, langsung muncul di sini tanpa perlu seeding atau restart apapun.')
                     ->collapsible()
@@ -105,18 +101,19 @@ class RoleResource extends Resource implements HasShieldPermissions
                                     ->mapWithKeys(fn(array $m) => [$m['permission'] => $m['description'] ?? null])
                                     ->toArray()
                             )
-                            ->columns(['default' => 1, 'md' => 3])
+                            ->columns(['default' => 122, 'md' => 3])
                             ->bulkToggleable()
-                            ->dehydrated() // ikut $this->data, tapi tidak disimpan sbg kolom model
+                            ->dehydrated()  // ikut $this->data, tapi tidak disimpan sbg kolom model
                             ->afterStateHydrated(function (CheckboxList $component, $record) {
-                                if (! $record) {
+                                if (!$record) {
                                     return;
                                 }
 
                                 $moduleKeys = collect(config('erp-modules', []))->pluck('permission');
 
                                 $component->state(
-                                    $record->permissions()
+                                    $record
+                                        ->permissions()
                                         ->pluck('name')
                                         ->intersect($moduleKeys)
                                         ->values()
@@ -178,10 +175,10 @@ class RoleResource extends Resource implements HasShieldPermissions
     public static function getPages(): array
     {
         return [
-            'index'  => Pages\ListRoles::route('/'),
+            'index' => Pages\ListRoles::route('/'),
             'create' => Pages\CreateRole::route('/create'),
-            'view'   => Pages\ViewRole::route('/{record}'),
-            'edit'   => Pages\EditRole::route('/{record}/edit'),
+            'view' => Pages\ViewRole::route('/{record}'),
+            'edit' => Pages\EditRole::route('/{record}/edit'),
         ];
     }
 

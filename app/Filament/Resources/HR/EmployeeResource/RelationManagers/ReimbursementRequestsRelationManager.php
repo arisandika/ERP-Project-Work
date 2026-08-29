@@ -2,7 +2,6 @@
 namespace App\Filament\Resources\HR\EmployeeResource\RelationManagers;
 
 use App\Models\Finance\ReimbursementRequest;
-use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Infolists\Components\ImageEntry;
 use Filament\Infolists\Components\Section;
@@ -10,8 +9,9 @@ use Filament\Infolists\Components\TextEntry;
 use Filament\Infolists\Infolist;
 use Filament\Notifications\Notification;
 use Filament\Resources\RelationManagers\RelationManager;
-use Filament\Tables;
 use Filament\Tables\Table;
+use Filament\Forms;
+use Filament\Tables;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Carbon;
 
@@ -49,13 +49,11 @@ class ReimbursementRequestsRelationManager extends RelationManager
                         return '';
                     })
                     ->placeholder('—'),
-
                 Tables\Columns\TextColumn::make('type')
                     ->label('Jenis Reimburse')
                     ->sortable()
                     ->searchable()
                     ->placeholder('—'),
-
                 Tables\Columns\BadgeColumn::make('status')
                     ->label('Status')
                     ->sortable()
@@ -77,13 +75,11 @@ class ReimbursementRequestsRelationManager extends RelationManager
                         ),
                     })
                     ->placeholder('—'),
-
                 Tables\Columns\TextColumn::make('date')
                     ->label('Tanggal')
                     ->date('D, d M Y')
                     ->sortable()
                     ->placeholder('—'),
-
                 Tables\Columns\TextColumn::make('amount')
                     ->label('Nominal')
                     ->money('IDR')
@@ -91,7 +87,6 @@ class ReimbursementRequestsRelationManager extends RelationManager
                     ->sortable()
                     ->weight('semibold')
                     ->placeholder('—'),
-
                 Tables\Columns\TextColumn::make('approver.full_name')
                     ->label('Disetujui Oleh')
                     ->searchable()
@@ -105,25 +100,21 @@ class ReimbursementRequestsRelationManager extends RelationManager
                         return '';
                     })
                     ->placeholder('—'),
-
                 Tables\Columns\TextColumn::make('created_at')
                     ->label('Dibuat Pada')
                     ->dateTime('d M Y H:i')
                     ->sortable()
                     ->placeholder('—'),
-
                 Tables\Columns\TextColumn::make('created_at')
                     ->label('Dibuat Pada')
                     ->dateTime('d M Y H:i')
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
-
                 Tables\Columns\TextColumn::make('updated_at')
                     ->label('Diperbarui Pada')
                     ->dateTime('d M Y H:i')
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
-
                 Tables\Columns\TextColumn::make('deleted_at')
                     ->label('Dihapus Pada')
                     ->dateTime('d M Y H:i')
@@ -139,7 +130,6 @@ class ReimbursementRequestsRelationManager extends RelationManager
                         'cancelled' => 'Cancelled',
                     ])
                     ->native(false),
-
                 Tables\Filters\Filter::make('created_at')
                     ->form([
                         Forms\Components\DatePicker::make('created_from')
@@ -148,7 +138,6 @@ class ReimbursementRequestsRelationManager extends RelationManager
                             ->displayFormat('d M Y')
                             ->native(false)
                             ->prefixIcon('heroicon-o-calendar-days'),
-
                         Forms\Components\DatePicker::make('created_until')
                             ->label('Dibuat Hingga')
                             ->required()
@@ -180,7 +169,6 @@ class ReimbursementRequestsRelationManager extends RelationManager
 
                         return $indicators;
                     }),
-
                 Tables\Filters\TrashedFilter::make()
                     ->label('Deleted Status')
                     ->native(false),
@@ -199,34 +187,29 @@ class ReimbursementRequestsRelationManager extends RelationManager
         return $infolist
             ->schema([
                 Section::make('Informasi Pengajuan Reimburse')
-                    ->columns(['default' => 1, 'md' => 2])
+                    ->columns(['default' => 122, 'md' => 2])
                     ->schema([
                         TextEntry::make('employee.full_name')
                             ->label('Nama Karyawan')
                             ->weight('semibold')
                             ->icon('heroicon-o-user')
                             ->placeholder('—'),
-
                         TextEntry::make('type')
                             ->label('Jenis Reimburse')
                             ->placeholder('—'),
-
                         TextEntry::make('date')
                             ->label('Tanggal Transaksi')
                             ->date('D, d M Y')
                             ->placeholder('—'),
-
                         TextEntry::make('amount')
                             ->label('Nominal')
                             ->money('IDR')
                             ->color('danger')
                             ->weight('semibold')
                             ->placeholder('—'),
-
                         TextEntry::make('description')
                             ->label('Keterangan')
                             ->placeholder('—'),
-
                         ImageEntry::make('receipt')
                             ->label('Bukti Transaksi')
                             ->placeholder('—')
@@ -235,9 +218,8 @@ class ReimbursementRequestsRelationManager extends RelationManager
                                 'class' => 'w-full rounded-2xl'
                             ]),
                     ]),
-
                 Section::make('Status Persetujuan')
-                    ->columns(['default' => 1, 'md' => 2])
+                    ->columns(['default' => 122, 'md' => 2])
                     ->schema([
                         TextEntry::make('status')
                             ->label('Status')
@@ -245,7 +227,7 @@ class ReimbursementRequestsRelationManager extends RelationManager
                             ->color(fn(string $state) => match ($state) {
                                 'pending' => 'warning',
                                 'approved' => 'success',
-                                
+
                                 default => 'danger',
                             })
                             ->formatStateUsing(function (string $state): string {
@@ -260,34 +242,28 @@ class ReimbursementRequestsRelationManager extends RelationManager
                                         str_replace('_', ' ', $state)
                                     ),
                                 };
-
                             })
                             ->placeholder('—'),
-
                         TextEntry::make('approver.full_name')
                             ->label('Disetujui Oleh')
                             ->weight('semibold')
                             ->icon('heroicon-o-user')
                             ->placeholder('—'),
-
                         TextEntry::make('approved_at')
                             ->label('Waktu Persetujuan')
                             ->dateTime('d M Y H:i')
                             ->visible(fn($record) => $record->approved_at !== null)
                             ->placeholder('—'),
                     ]),
-
                 Section::make('Pengelolaan Data')
-                    ->columns(['default' => 1, 'md' => 2])
+                    ->columns(['default' => 122, 'md' => 2])
                     ->schema([
                         TextEntry::make('created_at')
                             ->label('Dibuat Pada')
                             ->dateTime('d M Y H:i'),
-
                         TextEntry::make('updated_at')
                             ->label('Diperbarui Pada')
                             ->dateTime('d M Y H:i'),
-
                         TextEntry::make('deleted_at')
                             ->label('Dihapus Pada')
                             ->dateTime('d M Y H:i')

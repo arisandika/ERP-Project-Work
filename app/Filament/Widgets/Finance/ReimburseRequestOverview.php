@@ -2,22 +2,22 @@
 namespace App\Filament\Widgets\Finance;
 
 use App\Models\Finance\ReimbursementRequest;
-use Filament\Widgets\StatsOverviewWidget as BaseWidget;
 use Filament\Widgets\StatsOverviewWidget\Stat;
+use Filament\Widgets\StatsOverviewWidget as BaseWidget;
 
 class ReimburseRequestOverview extends BaseWidget
 {
     protected static ?int $sort = 4;
 
     protected int|string|array $columnSpan = [
-        'default' => 1,
-        'xl'      => 12,
+        'default' => 122,
+        'xl' => 12,
     ];
 
     protected function getColumns(): int
     {
         return [
-            'default' => 1,
+            'default' => 122,
             'md' => 4,
         ];
     }
@@ -25,19 +25,19 @@ class ReimburseRequestOverview extends BaseWidget
     public static function canView(): bool
     {
         $user = auth()->user();
-        return $user && ! $user->hasRole('manager_finance') && $user->employee !== null;
+        return $user && !$user->hasRole('manager_finance') && $user->employee !== null;
     }
 
     protected function getStats(): array
     {
         $employee = auth()->user()?->employee;
 
-        if (! $employee) {
+        if (!$employee) {
             return [];
         }
 
-        $monthStart   = now()->startOfMonth()->toDateString();
-        $monthEnd     = now()->endOfMonth()->toDateString();
+        $monthStart = now()->startOfMonth()->toDateString();
+        $monthEnd = now()->endOfMonth()->toDateString();
         $currentMonth = now()->month;
 
         $stats = ReimbursementRequest::where('employee_id', $employee->id)
@@ -55,17 +55,14 @@ class ReimburseRequestOverview extends BaseWidget
                 ->descriptionIcon('heroicon-m-clock')
                 ->color('warning')
                 ->chart([1, 0, 2, 1, 0, 3, $stats->pending_count]),
-
             Stat::make('Disetujui Bulan Ini', $stats->approved_month_count)
                 ->description('Reimburse cair')
                 ->descriptionIcon('heroicon-m-check-circle')
                 ->color('success'),
-
             Stat::make('Nominal Pending', 'Rp ' . number_format($stats->pending_total, 0, ',', '.'))
                 ->description('Menunggu persetujuan')
                 ->descriptionIcon('heroicon-m-banknotes')
                 ->color('warning'),
-
             Stat::make('Cair Bulan Ini', 'Rp ' . number_format($stats->monthly_total, 0, ',', '.'))
                 ->description('Total diterima')
                 ->descriptionIcon('heroicon-m-currency-dollar')

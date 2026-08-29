@@ -2,13 +2,14 @@
 
 namespace App\Filament\Resources\Sales;
 
+use App\Filament\Concerns\BelongsToModule;
 use App\Filament\Resources\Sales\SalesOrderResource\Pages;
-use App\Models\Marketing\PromoCode;
-use App\Models\Sales\Quotation;
-use App\Models\Sales\SalesOrder;
 use App\Models\Inventory\Package;
 use App\Models\Inventory\Product;
 use App\Models\Inventory\Service;
+use App\Models\Marketing\PromoCode;
+use App\Models\Sales\Quotation;
+use App\Models\Sales\SalesOrder;
 use App\Services\Sales\QuotationService;
 use Filament\Forms\Components\Actions\Action as FormAction;
 use Filament\Forms\Components\DatePicker;
@@ -25,14 +26,14 @@ use Filament\Forms\Get;
 use Filament\Forms\Set;
 use Filament\Notifications\Notification;
 use Filament\Resources\Resource;
-use Filament\Tables;
 use Filament\Tables\Table;
+use Filament\Tables;
 use Illuminate\Database\Eloquent\Builder;
-use App\Filament\Concerns\BelongsToModule;
 
 class SalesOrderResource extends Resource
 {
     use BelongsToModule;
+
     protected static ?string $module = 'sales';
     protected static ?string $model = SalesOrder::class;
     protected static ?string $navigationIcon = 'heroicon-o-shopping-bag';
@@ -59,7 +60,6 @@ class SalesOrderResource extends Resource
                             ->dehydrated()
                             ->unique(ignoreRecord: true)
                             ->prefixIcon('heroicon-o-hashtag'),
-
                         DatePicker::make('order_date')
                             ->label('Tanggal Pesanan')
                             ->default(now())
@@ -67,20 +67,18 @@ class SalesOrderResource extends Resource
                             ->required()
                             ->displayFormat('d M Y')
                             ->native(false),
-
                         TextInput::make('customer_po_number')
                             ->label('No. PO Customer')
                             ->placeholder('Contoh: PO-ABC-001')
                             ->maxLength(50)
-                            ->required(fn (Get $get) => blank($get('nx_quotation_id')))
+                            ->required(fn(Get $get) => blank($get('nx_quotation_id')))
                             ->dehydrated(),
-
                         Select::make('nx_quotation_id')
                             ->label('No. Penawaran (Ref)')
                             ->searchable()
                             ->preload()
                             ->live()
-                            ->required(fn (Get $get) => blank($get('customer_po_number')))
+                            ->required(fn(Get $get) => blank($get('customer_po_number')))
                             ->options(function (?SalesOrder $record) {
                                 return Quotation::query()
                                     ->where('status', 'accepted')
@@ -93,12 +91,14 @@ class SalesOrderResource extends Resource
                                     ->pluck('quotation_number', 'id');
                             })
                             ->afterStateUpdated(function ($state, Set $set, Get $get) {
-                                if (!$state) return;
+                                if (!$state)
+                                    return;
                                 $quotation = Quotation::with('items', 'promoCode')->find($state);
-                                if (!$quotation) return;
+                                if (!$quotation)
+                                    return;
 
                                 $set('nx_customer_id', $quotation->nx_customer_id ?? $quotation->deal?->nx_customer_id);
-                                $set('tax', (float)$quotation->tax);
+                                $set('tax', (float) $quotation->tax);
 
                                 // Mapping items agar otomatis muncul dari penawaran
                                 $items = $quotation->items->map(fn($item) => [
@@ -114,7 +114,6 @@ class SalesOrderResource extends Resource
                                 $set('items', $items);
                                 self::updateTotals($get, $set);
                             }),
-
                         Select::make('nx_customer_id')
                             ->label('Customer')
                             ->relationship('customer', 'name')
@@ -122,7 +121,6 @@ class SalesOrderResource extends Resource
                             ->live()
                             ->disabled(fn(Get $get) => filled($get('nx_quotation_id')))
                             ->dehydrated(),
-
                         Select::make('status')
                             ->label('Status')
                             ->options([
@@ -132,10 +130,11 @@ class SalesOrderResource extends Resource
                                 'shipped' => 'Dikirim',
                                 'completed' => 'Selesai',
                                 'cancelled' => 'Dibatalkan',
-                            ])->default('draft')->required(),
+                            ])
+                            ->default('draft')
+                            ->required(),
                     ]),
                 ]),
-
                 Section::make('Daftar Item Pesanan')->schema([
                     Repeater::make('items')
                         // NOTE: Kita hapus ->relationship() agar bisa handle saving manual di Service
@@ -148,7 +147,6 @@ class SalesOrderResource extends Resource
                         ->reorderable(false)
                 ])->collapsible(),
             ])->columnSpan(['lg' => 2]),
-
             // === KOLOM KANAN (Lebar 1/3) ===
             Group::make()->schema([
                 Section::make('Ringkasan Harga')
@@ -164,14 +162,16 @@ class SalesOrderResource extends Resource
                                     ->color('success')
                                     ->action(fn($state, Set $set, Get $get) => self::applyPromo($state, $set, $get))
                             ),
-
                         Hidden::make('promo_code_id'),
                         Hidden::make('temp_discount_type'),
                         Hidden::make('temp_discount_value'),
-
                         TextInput::make('subtotal')->label('Subtotal')->disabled()->dehydrated()->prefix('IDR'),
                         TextInput::make('discount_amount')->label('Potongan')->disabled()->dehydrated()->prefix('IDR'),
-                        TextInput::make('tax')->label('Pajak PPN (%)')->numeric()->default(0)->live()
+                        TextInput::make('tax')
+                            ->label('Pajak PPN (%)')
+                            ->numeric()
+                            ->default(0)
+                            ->live()
                             ->disabled(fn(Get $get) => filled($get('nx_quotation_id')))
                             ->dehydrated()
                             ->afterStateUpdated(fn(Get $get, Set $set) => self::updateTotals($get, $set)),
@@ -182,13 +182,12 @@ class SalesOrderResource extends Resource
                             ->prefix('IDR')
                             ->extraInputAttributes(['style' => 'font-size: 1.5rem; font-weight: bold; color: green;']),
                     ]),
-
                 Section::make('Catatan')
                     ->schema([
                         Textarea::make('notes')->label('Catatan Pesanan')->rows(3),
                     ]),
             ])->columnSpan(['lg' => 1]),
-        ])->columns(['default' => 1, 'md' => 3]);
+        ])->columns(['default' => 122, 'md' => 3]);
     }
 
     // === LOGIC FUNCTIONS ===
@@ -214,7 +213,6 @@ class SalesOrderResource extends Resource
                         $set('qty', 1);
                         self::updateTotals($get, $set);
                     }),
-
                 Select::make('item_id')
                     ->label('Pilih Item')
                     ->options(function (Get $get) {
@@ -234,7 +232,8 @@ class SalesOrderResource extends Resource
                             'package' => Package::class,
                             default => null
                         };
-                        if (!$modelClass || !$value) return null;
+                        if (!$modelClass || !$value)
+                            return null;
                         $record = $modelClass::find($value);
                         return $record?->product_name ?? $record?->service_name ?? $record?->package_name ?? $record?->name;
                     })
@@ -245,7 +244,8 @@ class SalesOrderResource extends Resource
                     ->disabled(fn(Get $get) => filled($get('../../nx_quotation_id')))
                     ->dehydrated()
                     ->afterStateUpdated(function ($state, Set $set, Get $get) {
-                        if (!$state) return;
+                        if (!$state)
+                            return;
                         $type = $get('item_type');
                         $model = match ($type) {
                             'product' => Product::find($state),
@@ -268,7 +268,6 @@ class SalesOrderResource extends Resource
                             self::updateItemTotal($get, $set);
                         }
                     }),
-
                 TextInput::make('qty')
                     ->label('Qty')
                     ->numeric()
@@ -280,21 +279,24 @@ class SalesOrderResource extends Resource
                     ->helperText(function (Get $get) {
                         $type = $get('item_type');
                         $itemId = $get('item_id');
-                        if ($type !== 'product' || !$itemId) return null;
+                        if ($type !== 'product' || !$itemId)
+                            return null;
 
                         $warehouseId = \App\Models\Inventory\Warehouse::where('warehouse_name', 'Gudang Utama')->value('id') ?? 1;
                         $stock = \App\Models\Inventory\ProductStock::where('product_id', $itemId)
                             ->where('warehouse_id', $warehouseId)
                             ->first();
 
-                        if (!$stock) return '⚠️ Stok tidak ditemukan';
+                        if (!$stock)
+                            return '⚠️ Stok tidak ditemukan';
                         $avail = (float) $stock->qty_available;
                         return "Stok tersedia: {$avail}";
                     })
                     ->maxValue(function (Get $get) {
                         $type = $get('item_type');
                         $itemId = $get('item_id');
-                        if ($type !== 'product' || !$itemId) return null;
+                        if ($type !== 'product' || !$itemId)
+                            return null;
 
                         $warehouseId = \App\Models\Inventory\Warehouse::where('warehouse_name', 'Gudang Utama')->value('id') ?? 1;
                         $stock = \App\Models\Inventory\ProductStock::where('product_id', $itemId)
@@ -304,10 +306,10 @@ class SalesOrderResource extends Resource
                         return $stock ? (int) $stock : null;
                     })
                     ->afterStateUpdated(function ($state, Set $set, Get $get) {
-                        if ($state < 1) $set('qty', 1);
+                        if ($state < 1)
+                            $set('qty', 1);
                         self::updateItemTotal($get, $set);
                     }),
-
                 TextInput::make('unit_price')
                     ->label('Harga Satuan')
                     ->numeric()
@@ -325,12 +327,10 @@ class SalesOrderResource extends Resource
                     ->disabled()
                     ->dehydrated()
                     ->required(),
-
                 TextInput::make('item_name')
                     ->label('Nama Item')
                     ->disabled()
                     ->dehydrated(true),
-
                 TextInput::make('line_total')
                     ->label('Subtotal Baris')
                     ->numeric()
@@ -363,7 +363,7 @@ class SalesOrderResource extends Resource
             $items = $get('../../items') ?? [];
         }
 
-        $subtotal = collect($items)->sum(fn($i) => (float)($i['qty'] ?? 0) * (float)($i['unit_price'] ?? 0));
+        $subtotal = collect($items)->sum(fn($i) => (float) ($i['qty'] ?? 0) * (float) ($i['unit_price'] ?? 0));
         $set($pathPrefix . 'subtotal', $subtotal);
 
         $discountType = $get($pathPrefix . 'temp_discount_type');
@@ -395,7 +395,7 @@ class SalesOrderResource extends Resource
             Notification::make()->title('Kode tidak valid!')->danger()->send();
             $set('promo_code_id', null);
         } else {
-            Notification::make()->title("Promo Berhasil!")->success()->send();
+            Notification::make()->title('Promo Berhasil!')->success()->send();
             $set('promo_code_id', $promo->id);
             $set('temp_discount_type', $promo->type);
             $set('temp_discount_value', $promo->value);
@@ -434,9 +434,16 @@ class SalesOrderResource extends Resource
                 Tables\Columns\TextColumn::make('customer.name')->label('Customer')->sortable()->searchable(),
                 Tables\Columns\TextColumn::make('order_date')->label('Tanggal')->dateTime('d M Y')->sortable(),
                 Tables\Columns\TextColumn::make('grand_total')->label('Total')->money('IDR', true)->weight('semibold'),
-                Tables\Columns\TextColumn::make('status')->badge()
+                Tables\Columns\TextColumn::make('status')
+                    ->badge()
                     ->color(fn(string $state): string => match ($state) {
-                        'draft' => 'gray', 'processing' => 'warning', 'confirmed' => 'primary', 'shipped' => 'info', 'completed' => 'success', 'cancelled' => 'danger', default => 'gray',
+                        'draft' => 'gray',
+                        'processing' => 'warning',
+                        'confirmed' => 'primary',
+                        'shipped' => 'info',
+                        'completed' => 'success',
+                        'cancelled' => 'danger',
+                        default => 'gray',
                     }),
             ])
             ->actions([

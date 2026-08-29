@@ -2,10 +2,10 @@
 
 namespace App\Filament\Resources\Finance;
 
+use App\Filament\Concerns\BelongsToModule;
 use App\Filament\Resources\Finance\ReimbursementRequestResource\Pages;
 use App\Filament\Resources\Finance\ReimbursementRequestResource\RelationManagers;
 use App\Models\Finance\ReimbursementRequest;
-use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Infolists\Components\ImageEntry;
 use Filament\Infolists\Components\Section;
@@ -13,13 +13,13 @@ use Filament\Infolists\Components\TextEntry;
 use Filament\Infolists\Infolist;
 use Filament\Notifications\Notification;
 use Filament\Resources\Resource;
-use Filament\Tables;
 use Filament\Tables\Table;
+use Filament\Forms;
+use Filament\Tables;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\HtmlString;
-use App\Filament\Concerns\BelongsToModule;
 
 class ReimbursementRequestResource extends Resource
 {
@@ -83,7 +83,6 @@ class ReimbursementRequestResource extends Resource
                         ->native(false)
                         ->closeOnDateSelection()
                         ->prefixIcon('heroicon-o-calendar-days'),
-
                     Forms\Components\Select::make('type')
                         ->label('Jenis Reimburse')
                         ->required()
@@ -98,20 +97,17 @@ class ReimbursementRequestResource extends Resource
                         ->searchable()
                         ->native(false)
                         ->prefixIcon('heroicon-o-tag'),
-
                     Forms\Components\TextInput::make('amount')
                         ->label('Nominal')
                         ->numeric()
                         ->prefix('IDR')
                         ->required()
                         ->minValue(0),
-
                     Forms\Components\Textarea::make('description')
                         ->label('Keterangan')
                         ->placeholder('Tuliskan keterangan reimburse...')
                         ->rows(3)
                         ->maxLength(500),
-
                     Forms\Components\FileUpload::make('receipt')
                         ->label('Upload Bukti')
                         ->image()
@@ -119,7 +115,7 @@ class ReimbursementRequestResource extends Resource
                         ->directory('reimbursements')
                         ->imageEditor()
                         ->previewable()
-                        ->maxSize(2048) // 2MB
+                        ->maxSize(2048)  // 2MB
                         ->acceptedFileTypes([
                             'image/jpeg',
                             'image/png',
@@ -128,7 +124,7 @@ class ReimbursementRequestResource extends Resource
                         ])
                         ->helperText('Upload bukti seperti struk (2MB)'),
                 ])
-                ->columns(['default' => 1, 'md' => 2])
+                ->columns(['default' => 122, 'md' => 2])
         ]);
     }
 
@@ -149,13 +145,11 @@ class ReimbursementRequestResource extends Resource
                         return '';
                     })
                     ->placeholder('—'),
-
                 Tables\Columns\TextColumn::make('type')
                     ->label('Jenis Reimburse')
                     ->sortable()
                     ->searchable()
                     ->placeholder('—'),
-
                 Tables\Columns\BadgeColumn::make('status')
                     ->label('Status')
                     ->sortable()
@@ -176,13 +170,11 @@ class ReimbursementRequestResource extends Resource
                         ),
                     })
                     ->placeholder('—'),
-
                 Tables\Columns\TextColumn::make('date')
                     ->label('Tanggal')
                     ->date('D, d M Y')
                     ->sortable()
                     ->placeholder('—'),
-
                 Tables\Columns\TextColumn::make('amount')
                     ->label('Nominal')
                     ->money('IDR')
@@ -190,7 +182,6 @@ class ReimbursementRequestResource extends Resource
                     ->sortable()
                     ->weight('semibold')
                     ->placeholder('—'),
-
                 Tables\Columns\TextColumn::make('approver.full_name')
                     ->label('Disetujui Oleh')
                     ->searchable()
@@ -204,25 +195,21 @@ class ReimbursementRequestResource extends Resource
                         return '';
                     })
                     ->placeholder('—'),
-
                 Tables\Columns\TextColumn::make('created_at')
                     ->label('Dibuat Pada')
                     ->dateTime('d M Y H:i')
                     ->sortable()
                     ->placeholder('—'),
-
                 Tables\Columns\TextColumn::make('created_at')
                     ->label('Dibuat Pada')
                     ->dateTime('d M Y H:i')
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
-
                 Tables\Columns\TextColumn::make('updated_at')
                     ->label('Diperbarui Pada')
                     ->dateTime('d M Y H:i')
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
-
                 Tables\Columns\TextColumn::make('deleted_at')
                     ->label('Dihapus Pada')
                     ->dateTime('d M Y H:i')
@@ -238,7 +225,6 @@ class ReimbursementRequestResource extends Resource
                         'cancelled' => 'Cancelled',
                     ])
                     ->native(false),
-
                 Tables\Filters\Filter::make('created_at')
                     ->form([
                         Forms\Components\DatePicker::make('created_from')
@@ -247,7 +233,6 @@ class ReimbursementRequestResource extends Resource
                             ->displayFormat('d M Y')
                             ->native(false)
                             ->prefixIcon('heroicon-o-calendar-days'),
-
                         Forms\Components\DatePicker::make('created_until')
                             ->label('Dibuat Hingga')
                             ->required()
@@ -279,7 +264,6 @@ class ReimbursementRequestResource extends Resource
 
                         return $indicators;
                     }),
-
                 Tables\Filters\TrashedFilter::make()
                     ->label('Deleted Status')
                     ->native(false),
@@ -335,12 +319,9 @@ class ReimbursementRequestResource extends Resource
                             ->success()
                             ->send();
                     }),
-
                 Tables\Actions\ViewAction::make(),
-
                 Tables\Actions\EditAction::make()
                     ->visible(fn(ReimbursementRequest $record) => $record->status === 'pending'),
-
                 // Tables\Actions\DeleteAction::make(),
                 Tables\Actions\ForceDeleteAction::make(),
                 // Tables\Actions\RestoreAction::make(),
@@ -361,34 +342,29 @@ class ReimbursementRequestResource extends Resource
             ->schema([
                 Section::make('Informasi Pengajuan Reimburse')
                     ->description('Kamu bisa edit pengajuan reimburse ini jika masih berstatus pending atau menunggu persetujuan.')
-                    ->columns(['default' => 1, 'md' => 2])
+                    ->columns(['default' => 122, 'md' => 2])
                     ->schema([
                         TextEntry::make('employee.full_name')
                             ->label('Nama Karyawan')
                             ->weight('semibold')
                             ->icon('heroicon-o-user')
                             ->placeholder('—'),
-
                         TextEntry::make('type')
                             ->label('Jenis Reimburse')
                             ->placeholder('—'),
-
                         TextEntry::make('date')
                             ->label('Tanggal Transaksi')
                             ->date('D, d M Y')
                             ->placeholder('—'),
-
                         TextEntry::make('amount')
                             ->label('Nominal')
                             ->money('IDR')
                             ->color('danger')
                             ->weight('semibold')
                             ->placeholder('—'),
-
                         TextEntry::make('description')
                             ->label('Keterangan')
                             ->placeholder('—'),
-
                         ImageEntry::make('receipt')
                             ->label('Bukti Transaksi')
                             ->placeholder('—')
@@ -397,9 +373,8 @@ class ReimbursementRequestResource extends Resource
                                 'class' => 'w-full rounded-2xl'
                             ]),
                     ]),
-
                 Section::make('Status Persetujuan')
-                    ->columns(['default' => 1, 'md' => 2])
+                    ->columns(['default' => 122, 'md' => 2])
                     ->schema([
                         TextEntry::make('status')
                             ->label('Status')
@@ -421,31 +396,26 @@ class ReimbursementRequestResource extends Resource
                                 ),
                             })
                             ->placeholder('—'),
-
                         TextEntry::make('approver.full_name')
                             ->label('Disetujui Oleh')
                             ->weight('semibold')
                             ->icon('heroicon-o-user')
                             ->placeholder('—'),
-
                         TextEntry::make('approved_at')
                             ->label('Waktu Persetujuan')
                             ->dateTime('d M Y H:i')
                             ->visible(fn($record) => $record->approved_at !== null)
                             ->placeholder('—'),
                     ]),
-
                 Section::make('Pengelolaan Data')
-                    ->columns(['default' => 1, 'md' => 2])
+                    ->columns(['default' => 122, 'md' => 2])
                     ->schema([
                         TextEntry::make('created_at')
                             ->label('Dibuat Pada')
                             ->dateTime('d M Y H:i'),
-
                         TextEntry::make('updated_at')
                             ->label('Diperbarui Pada')
                             ->dateTime('d M Y H:i'),
-
                         TextEntry::make('deleted_at')
                             ->label('Dihapus Pada')
                             ->dateTime('d M Y H:i')

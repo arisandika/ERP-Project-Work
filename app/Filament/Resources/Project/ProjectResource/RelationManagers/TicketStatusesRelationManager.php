@@ -3,12 +3,12 @@
 namespace App\Filament\Resources\Project\ProjectResource\RelationManagers;
 
 use App\Models\Project\TicketStatus;
-use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Notifications\Notification;
 use Filament\Resources\RelationManagers\RelationManager;
-use Filament\Tables;
 use Filament\Tables\Table;
+use Filament\Forms;
+use Filament\Tables;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
@@ -39,20 +39,18 @@ class TicketStatusesRelationManager extends RelationManager
                             ->label('Status Ticket')
                             ->required()
                             ->maxLength(255),
-
                         Forms\Components\ColorPicker::make('color')
                             ->label('Warna')
                             ->required()
                             ->default('#3490dc')
                             ->helperText('Pilih warna untuk status ini'),
-
                         Forms\Components\TextInput::make('sort_order')
                             ->label('Urutan')
                             ->numeric()
                             ->required()
                             ->default(function ($livewire) {
-
-                                $lastOrder = $livewire->getOwnerRecord()
+                                $lastOrder = $livewire
+                                    ->getOwnerRecord()
                                     ->ticketStatuses()
                                     ->max('sort_order');
 
@@ -90,7 +88,6 @@ class TicketStatusesRelationManager extends RelationManager
                                 }
                             })
                             ->helperText('Tentukan urutan tampilan (otomatis menyesuaikan jika nomor sudah terpakai).'),
-
                         Forms\Components\Toggle::make('is_completed')
                             ->label('Tandai sebagai completed')
                             ->helperText('Hanya satu status per project yang dapat ditandai sebagai completed')
@@ -116,7 +113,7 @@ class TicketStatusesRelationManager extends RelationManager
                                 }
                             }),
                     ])
-                    ->columns(['default' => 1, 'md' => 2])
+                    ->columns(['default' => 122, 'md' => 2])
             ]);
     }
 
@@ -129,15 +126,12 @@ class TicketStatusesRelationManager extends RelationManager
                 Tables\Columns\TextColumn::make('name')
                     ->weight('semibold')
                     ->placeholder('—'),
-
                 Tables\Columns\ColorColumn::make('color')
                     ->label('Warna'),
-
                 Tables\Columns\TextColumn::make('sort_order')
                     ->label('Urutan')
                     ->alignCenter()
                     ->sortable(),
-
                 Tables\Columns\IconColumn::make('is_completed')
                     ->label('Completed')
                     ->boolean()
@@ -145,13 +139,11 @@ class TicketStatusesRelationManager extends RelationManager
                     ->falseIcon('heroicon-o-x-circle')
                     ->trueColor('success')
                     ->falseColor('gray'),
-
                 Tables\Columns\TextColumn::make('created_at')
                     ->label('Dibuat Pada')
                     ->dateTime('d M Y H:i')
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
-
                 Tables\Columns\TextColumn::make('updated_at')
                     ->label('Diperbarui Pada')
                     ->dateTime('d M Y H:i')
@@ -167,7 +159,6 @@ class TicketStatusesRelationManager extends RelationManager
                             ->displayFormat('d M Y')
                             ->native(false)
                             ->prefixIcon('heroicon-o-calendar-days'),
-
                         Forms\Components\DatePicker::make('created_until')
                             ->label('Dibuat Hingga')
                             ->required()

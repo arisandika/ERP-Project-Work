@@ -17,7 +17,6 @@ use Illuminate\Support\Collection;
 class ProfitAndLossReport extends Page implements HasForms
 {
     use InteractsWithForms;
-
     use HasPageShield, BelongsToModule {
         HasPageShield::canAccess insteadof BelongsToModule;
         HasPageShield::shouldRegisterNavigation insteadof BelongsToModule;
@@ -36,7 +35,6 @@ class ProfitAndLossReport extends Page implements HasForms
     protected static ?string $title = 'Profit & Loss Report';
     protected static ?string $navigationLabel = 'Profit & Loss';
     protected static ?string $slug = 'finance/profit-and-loss';
-
     protected static string $view = 'filament.pages.finance.profit-and-loss-report';
 
     public ?array $data = [];
@@ -69,52 +67,50 @@ class ProfitAndLossReport extends Page implements HasForms
                 Select::make('period_type')
                     ->label('Periode')
                     ->options([
-                        'custom'       => 'Custom',
-                        'this_month'   => 'Bulan Ini',
-                        'last_month'   => 'Bulan Lalu',
+                        'custom' => 'Custom',
+                        'this_month' => 'Bulan Ini',
+                        'last_month' => 'Bulan Lalu',
                         'this_quarter' => 'Kuartal Ini',
                         'last_quarter' => 'Kuartal Lalu',
-                        'this_year'    => 'Tahun Ini',
-                        'last_year'    => 'Tahun Lalu',
+                        'this_year' => 'Tahun Ini',
+                        'last_year' => 'Tahun Lalu',
                     ])
                     ->default('this_month')
                     ->live()
                     ->afterStateUpdated(function ($state, Forms\Set $set) {
-                        if ($state === 'custom') return;
+                        if ($state === 'custom')
+                            return;
 
                         $dates = $this->resolveDatesForType($state);
                         $set('start_date', $dates[0]->format('Y-m-d'));
                         $set('end_date', $dates[1]->format('Y-m-d'));
                     })
                     ->native(false),
-
                 DatePicker::make('start_date')
                     ->label('Dari Tanggal')
                     ->native(false)
                     ->displayFormat('d M Y')
                     ->live()
                     ->required(),
-
                 DatePicker::make('end_date')
                     ->label('Sampai Tanggal')
                     ->native(false)
                     ->displayFormat('d M Y')
                     ->live()
                     ->required(),
-
                 Select::make('compare_mode')
                     ->label('Bandingkan Dengan')
                     ->options([
-                        'none'             => 'Tidak Ada Perbandingan',
-                        'previous_period'  => 'Periode Sebelumnya',
-                        'last_year'        => 'Tahun Lalu',
+                        'none' => 'Tidak Ada Perbandingan',
+                        'previous_period' => 'Periode Sebelumnya',
+                        'last_year' => 'Tahun Lalu',
                     ])
                     ->default('none')
                     ->live()
                     ->native(false),
             ])
             ->statePath('data')
-            ->columns(['default' => 1, 'md' => 4]);
+            ->columns(['default' => 122, 'md' => 4]);
     }
 
     protected function getViewData(): array
@@ -157,30 +153,28 @@ class ProfitAndLossReport extends Page implements HasForms
             $compProfitBeforeTax = $compOperatingProfit + $compOtherIncome - $compOtherExpense;
 
             $compareData = [
-                'period'         => $compStart->format('d M Y') . ' - ' . $compEnd->format('d M Y'),
-                'totalRevenue'   => $compRevenue,
-                'totalCogs'      => $compCogs,
-                'grossProfit'    => $compGrossProfit,
-                'totalOpex'      => $compOpex,
-                'operatingProfit'=> $compOperatingProfit,
-                'totalOtherIncome'  => $compOtherIncome,
+                'period' => $compStart->format('d M Y') . ' - ' . $compEnd->format('d M Y'),
+                'totalRevenue' => $compRevenue,
+                'totalCogs' => $compCogs,
+                'grossProfit' => $compGrossProfit,
+                'totalOpex' => $compOpex,
+                'operatingProfit' => $compOperatingProfit,
+                'totalOtherIncome' => $compOtherIncome,
                 'totalOtherExpense' => $compOtherExpense,
-                'profitBeforeTax'   => $compProfitBeforeTax,
-                'taxExpense'     => 0,
-                'netProfit'      => $compProfitBeforeTax,
+                'profitBeforeTax' => $compProfitBeforeTax,
+                'taxExpense' => 0,
+                'netProfit' => $compProfitBeforeTax,
             ];
         }
 
         return [
             'period' => $startDate->format('d M Y') . ' - ' . $endDate->format('d M Y'),
             'compareData' => $compareData,
-
             'revenueDetails' => $revenueDetails,
             'cogsDetails' => $cogsDetails,
             'opexDetails' => $opexDetails,
             'otherIncomeDetails' => $otherIncomeDetails,
             'otherExpenseDetails' => $otherExpenseDetails,
-
             'totalRevenue' => $totalRevenue,
             'totalCogs' => $totalCogs,
             'grossProfit' => $grossProfit,
@@ -207,13 +201,13 @@ class ProfitAndLossReport extends Page implements HasForms
         $now = Carbon::now();
 
         return match ($type) {
-            'this_month'   => [$now->copy()->startOfMonth(), $now->copy()->endOfMonth()],
-            'last_month'   => [$now->copy()->subMonth()->startOfMonth(), $now->copy()->subMonth()->endOfMonth()],
+            'this_month' => [$now->copy()->startOfMonth(), $now->copy()->endOfMonth()],
+            'last_month' => [$now->copy()->subMonth()->startOfMonth(), $now->copy()->subMonth()->endOfMonth()],
             'this_quarter' => [$now->copy()->startOfQuarter(), $now->copy()->endOfQuarter()],
             'last_quarter' => [$now->copy()->subQuarter()->startOfQuarter(), $now->copy()->subQuarter()->endOfQuarter()],
-            'this_year'    => [$now->copy()->startOfYear(), $now->copy()->endOfYear()],
-            'last_year'    => [$now->copy()->subYear()->startOfYear(), $now->copy()->subYear()->endOfYear()],
-            default        => [
+            'this_year' => [$now->copy()->startOfYear(), $now->copy()->endOfYear()],
+            'last_year' => [$now->copy()->subYear()->startOfYear(), $now->copy()->subYear()->endOfYear()],
+            default => [
                 Carbon::parse($this->data['start_date'] ?? $now->startOfMonth())->startOfDay(),
                 Carbon::parse($this->data['end_date'] ?? $now->endOfMonth())->endOfDay(),
             ],
@@ -248,9 +242,9 @@ class ProfitAndLossReport extends Page implements HasForms
     {
         return $aggregates
             ->where('account_type', $accountType)
-            ->map(fn ($item) => [
+            ->map(fn($item) => [
                 'category' => $item->category_name,
-                'amount'   => (float) $item->total_amount,
+                'amount' => (float) $item->total_amount,
             ])
             ->groupBy('category');
     }

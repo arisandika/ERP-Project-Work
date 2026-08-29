@@ -1,34 +1,30 @@
 <?php
 namespace App\Filament\Resources\Inventory;
 
+use App\Filament\Concerns\BelongsToModule;
 use App\Filament\Resources\Inventory\PackageResource\Pages;
 use App\Models\Inventory\Package;
 use App\Models\Inventory\Product;
 use App\Models\Inventory\Service;
-use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Resources\Resource;
-use Filament\Tables;
 use Filament\Tables\Table;
+use Filament\Forms;
+use Filament\Tables;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
 use Illuminate\Support\Carbon;
-use App\Filament\Concerns\BelongsToModule;
 
 class PackageResource extends Resource
 {
     use BelongsToModule;
+
     protected static ?string $module = 'inventory';
     protected static ?string $model = Package::class;
-
     protected static ?string $navigationIcon = 'heroicon-o-archive-box';
-
     protected static ?string $navigationGroup = 'Manajemen Inventory';
-
     protected static ?int $navigationSort = 6;
-
     protected static ?string $slug = 'inventory/packages';
-
     protected static ?string $pluralModelLabel = 'Paket';
 
     public static function getNavigationBadge(): ?string
@@ -61,14 +57,12 @@ class PackageResource extends Resource
                                     ->required()
                                     ->maxLength(100)
                                     ->prefixIcon('heroicon-o-archive-box'),
-
                                 Forms\Components\Textarea::make('description')
                                     ->label('Deskripsi Paket')
                                     ->maxLength(255)
                                     ->rows(3),
                             ]),
                     ]),
-
                 Forms\Components\Section::make('Item dalam Paket')
                     ->schema([
                         Forms\Components\Repeater::make('items')
@@ -90,7 +84,6 @@ class PackageResource extends Resource
 
                                         $recalculateTotal($get, $set);
                                     }),
-
                                 Forms\Components\Select::make('item_id')
                                     ->label('Nama Item')
                                     ->options(function (callable $get) {
@@ -124,7 +117,6 @@ class PackageResource extends Resource
 
                                         $recalculateTotal($get, $set);
                                     })
-
                                     ->afterStateHydrated(function ($state, callable $set, callable $get) {
                                         $type = $get('item_type');
                                         if (!$state || !$type) {
@@ -147,7 +139,6 @@ class PackageResource extends Resource
                                     })
                                     ->required()
                                     ->searchable(),
-
                                 Forms\Components\TextInput::make('quantity')
                                     ->label('Qty')
                                     ->numeric()
@@ -163,7 +154,6 @@ class PackageResource extends Resource
                                         $recalculateTotal($get, $set);
                                     })
                                     ->required(),
-
                                 Forms\Components\TextInput::make('price')
                                     ->label('Harga Satuan')
                                     ->numeric()
@@ -172,7 +162,6 @@ class PackageResource extends Resource
                                     ->minValue(0)
                                     ->disabled()
                                     ->dehydrated(),
-
                                 Forms\Components\TextInput::make('subtotal')
                                     ->label('Subtotal')
                                     ->numeric()
@@ -182,7 +171,7 @@ class PackageResource extends Resource
                                     ->disabled()
                                     ->dehydrated(),
                             ])
-                            ->columns(['default' => 1, 'md' => 3])
+                            ->columns(['default' => 122, 'md' => 3])
                             ->createItemButtonLabel('Tambah Item')
                             ->reactive()
                             ->afterStateUpdated(function ($state, callable $set) {
@@ -191,7 +180,6 @@ class PackageResource extends Resource
                                 $set('total_price', $total);
                             }),
                     ]),
-
                 Forms\Components\Section::make('Total Paket')
                     ->schema([
                         Forms\Components\TextInput::make('total_price')
@@ -202,7 +190,6 @@ class PackageResource extends Resource
                             ->minValue(0)
                             ->disabled()
                             ->dehydrated(),
-
                         Forms\Components\Toggle::make('is_active')
                             ->label('Status Paket')
                             ->default(true)
@@ -222,37 +209,31 @@ class PackageResource extends Resource
                     ->searchable()
                     ->sortable()
                     ->weight('semibold'),
-
                 Tables\Columns\TextColumn::make('package_name')
                     ->label('Nama Paket')
                     ->sortable()
                     ->searchable(),
-
                 Tables\Columns\TextColumn::make('total_price')
                     ->label('Harga')
                     ->money('IDR', true)
                     ->color(fn($state) => $state < 0 ? 'danger' : 'success')
                     ->sortable()
                     ->weight('semibold'),
-
                 Tables\Columns\ToggleColumn::make('is_active')
                     ->label('Aktif')
                     ->onIcon('heroicon-s-check-circle')
                     ->offIcon('heroicon-s-x-circle')
                     ->sortable(),
-
                 Tables\Columns\TextColumn::make('created_at')
                     ->label('Dibuat Pada')
                     ->dateTime('d M Y')
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
-
                 Tables\Columns\TextColumn::make('updated_at')
                     ->label('Diperbarui Pada')
                     ->dateTime('d M Y')
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
-
                 Tables\Columns\TextColumn::make('deleted_at')
                     ->label('Dihapus Pada')
                     ->dateTime('d M Y H:i')
@@ -268,7 +249,6 @@ class PackageResource extends Resource
                             ->displayFormat('d M Y')
                             ->native(false)
                             ->prefixIcon('heroicon-o-calendar-days'),
-
                         Forms\Components\DatePicker::make('created_until')
                             ->label('Dibuat Hingga')
                             ->required()
@@ -300,7 +280,6 @@ class PackageResource extends Resource
 
                         return $indicators;
                     }),
-
                 Tables\Filters\TrashedFilter::make()
                     ->label('Deleted Status')
                     ->native(false),
@@ -324,8 +303,7 @@ class PackageResource extends Resource
 
     public static function getRelations(): array
     {
-        return [
-        ];
+        return [];
     }
 
     public static function getPages(): array

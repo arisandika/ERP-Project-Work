@@ -4,32 +4,28 @@ namespace App\Filament\Resources\Inventory;
 use App\Filament\Concerns\BelongsToModule;
 use App\Filament\Resources\Inventory\CategoryResource\Pages;
 use App\Models\Inventory\Category;
-use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Infolists\Components\Section;
 use Filament\Infolists\Components\TextEntry;
 use Filament\Infolists\Infolist;
 use Filament\Notifications\Notification;
 use Filament\Resources\Resource;
-use Filament\Tables;
 use Filament\Tables\Table;
+use Filament\Forms;
+use Filament\Tables;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Carbon;
 
 class CategoryResource extends Resource
 {
     use BelongsToModule;
+
     protected static ?string $module = 'inventory';
-    protected static ?string $model  = Category::class;
-
+    protected static ?string $model = Category::class;
     protected static ?string $navigationIcon = 'heroicon-o-tag';
-
     protected static ?string $navigationGroup = 'Manajemen Inventory';
-
     protected static ?int $navigationSort = 1;
-
     protected static ?string $slug = 'inventory/categories';
-
     protected static ?string $pluralModelLabel = 'Kategori';
 
     public static function getNavigationBadge(): ?string
@@ -51,7 +47,6 @@ class CategoryResource extends Resource
                                     ->maxLength(50)
                                     ->unique(ignoreRecord: true)
                                     ->prefixIcon('heroicon-o-tag'),
-
                                 Forms\Components\Textarea::make('description')
                                     ->label('Deskripsi')
                                     ->rows(3),
@@ -68,13 +63,11 @@ class CategoryResource extends Resource
                     ->label('Nama Kategori')
                     ->searchable()
                     ->sortable(),
-
                 Tables\Columns\TextColumn::make('description')
                     ->label('Deskripsi')
                     ->limit(50)
                     ->tooltip(fn($record) => $record->description)
                     ->toggleable(isToggledHiddenByDefault: true),
-
                 Tables\Columns\BadgeColumn::make('products_count')
                     ->label('Jumlah Product')
                     ->counts('products')
@@ -82,13 +75,11 @@ class CategoryResource extends Resource
                     ->color(fn(int $state): string => $state > 0 ? 'info' : 'gray')
                     ->sortable()
                     ->formatStateUsing(fn($state) => $state . ' Product'),
-
                 Tables\Columns\TextColumn::make('created_at')
                     ->label('Dibuat Pada')
                     ->dateTime('d M Y')
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
-
                 Tables\Columns\TextColumn::make('updated_at')
                     ->label('Diperbarui Pada')
                     ->dateTime('d M Y')
@@ -104,7 +95,6 @@ class CategoryResource extends Resource
                             ->displayFormat('d M Y')
                             ->native(false)
                             ->prefixIcon('heroicon-o-calendar-days'),
-
                         Forms\Components\DatePicker::make('created_until')
                             ->label('Dibuat Hingga')
                             ->required()
@@ -170,14 +160,12 @@ class CategoryResource extends Resource
         return $infolist
             ->schema([
                 Section::make('Informasi Kategori')
-                    ->columns(['default' => 1, 'md' => 2])
+                    ->columns(['default' => 122, 'md' => 2])
                     ->schema([
                         TextEntry::make('name')
                             ->label('Nama Kategori'),
-
                         TextEntry::make('description')
                             ->label('Deskripsi'),
-
                         TextEntry::make('products_count')
                             ->label('Jumlah Product')
                             ->badge()
@@ -185,7 +173,7 @@ class CategoryResource extends Resource
                             ->state(fn(Category $category) => $category->products()->count()),
                     ]),
                 Section::make('Pengelolaan Data')
-                    ->columns(['default' => 1, 'md' => 2])
+                    ->columns(['default' => 122, 'md' => 2])
                     ->schema([
                         TextEntry::make('created_at')
                             ->label('Dibuat Pada')
@@ -207,10 +195,10 @@ class CategoryResource extends Resource
     public static function getPages(): array
     {
         return [
-            'index'  => Pages\ListCategories::route('/'),
+            'index' => Pages\ListCategories::route('/'),
             'create' => Pages\CreateCategory::route('/create'),
-            'view'   => Pages\ViewCategory::route('/{record}'),
-            'edit'   => Pages\EditCategory::route('/{record}/edit'),
+            'view' => Pages\ViewCategory::route('/{record}'),
+            'edit' => Pages\EditCategory::route('/{record}/edit'),
         ];
     }
 }

@@ -9,13 +9,12 @@ use BezhanSalleh\FilamentShield\Traits\HasPageShield;
 use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\Section;
 use Filament\Forms\Form;
-use Filament\Pages\Dashboard as BaseDashboard;
 use Filament\Pages\Dashboard\Concerns\HasFiltersForm;
+use Filament\Pages\Dashboard as BaseDashboard;
 
 class DashboardSales extends BaseDashboard
 {
     use HasFiltersForm;
-
     /**
      * Resolusi Konflik Trait untuk Keamanan & Multi-Tenant
      * Mencegah akses ke Dashboard jika Modul Sales tidak aktif atau User tidak memiliki hak.
@@ -73,7 +72,6 @@ class DashboardSales extends BaseDashboard
                             ->native(false)
                             ->displayFormat('d M Y')
                             ->live(),
-
                         DatePicker::make('end_date')
                             ->label('Tanggal Akhir')
                             ->default(now())
@@ -81,7 +79,7 @@ class DashboardSales extends BaseDashboard
                             ->displayFormat('d M Y')
                             ->live(),
                     ])
-                    ->columns(['default' => 1, 'md' => 2]),
+                    ->columns(['default' => 122, 'md' => 2]),
             ]);
     }
 

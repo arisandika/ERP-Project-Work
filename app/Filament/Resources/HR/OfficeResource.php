@@ -1,35 +1,31 @@
 <?php
 namespace App\Filament\Resources\HR;
 
+use App\Filament\Concerns\BelongsToModule;
 use App\Filament\Resources\HR\OfficeResource\Pages;
 use App\Models\HR\Office;
 use Dotswan\MapPicker\Fields\Map;
-use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Forms\Set;
 use Filament\Resources\Resource;
-use Filament\Tables;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
+use Filament\Forms;
+use Filament\Tables;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\HtmlString;
-use App\Filament\Concerns\BelongsToModule;
 
 class OfficeResource extends Resource
 {
     use BelongsToModule;
+
     protected static ?string $module = 'hr';
     protected static ?string $model = Office::class;
-
     protected static ?string $navigationIcon = 'heroicon-o-building-office-2';
-
     protected static ?string $navigationGroup = 'Manajemen HR';
-
     protected static ?int $navigationSort = 2;
-
     protected static ?string $slug = 'hr/offices';
-
     protected static ?string $pluralModelLabel = 'Kantor';
 
     public static function getNavigationBadge(): ?string
@@ -42,34 +38,30 @@ class OfficeResource extends Resource
         return $form
             ->schema([
                 Forms\Components\Section::make('Informasi Kantor')
-                    ->columns(['default' => 1, 'md' => 2])
+                    ->columns(['default' => 122, 'md' => 2])
                     ->schema([
                         Forms\Components\TextInput::make('name')
                             ->label('Nama Kantor')
                             ->required()
                             ->maxLength(100)
                             ->prefixIcon('heroicon-o-building-office'),
-
                         Forms\Components\TextInput::make('radius_meters')
                             ->label('Radius Diizinkan (meter)')
                             ->numeric()
                             ->default(100)
                             ->required()
                             ->prefixIcon('heroicon-o-map-pin'),
-
                         Forms\Components\TextInput::make('phone_number')
                             ->label('No. Whatsapp Kantor')
                             ->required()
                             ->numeric()
                             ->unique(ignoreRecord: true)
                             ->prefixIcon('heroicon-o-phone'),
-
                         Forms\Components\Textarea::make('address')
                             ->label('Alamat Kantor')
                             ->required()
                             ->maxLength(500),
                     ]),
-
                 Forms\Components\Section::make('Informasi Lokasi Kantor')
                     ->columns(1)
                     ->schema([
@@ -82,10 +74,10 @@ class OfficeResource extends Resource
                             ->zoom(15)
                             ->minZoom(0)
                             ->maxZoom(28)
-                            ->tilesUrl("https://tile.openstreetmap.de/{z}/{x}/{y}.png")
+                            ->tilesUrl('https://tile.openstreetmap.de/{z}/{x}/{y}.png')
                             ->detectRetina(true)
                             ->showMarker(true)
-                            ->markerColor("#3b82f6")
+                            ->markerColor('#3b82f6')
                             ->extraStyles([
                                 'min-height: 400px',
                                 'border-radius: 8px',
@@ -97,13 +89,11 @@ class OfficeResource extends Resource
                             ->afterStateHydrated(function ($state, $record, Set $set): void {
                                 $set('location', ['lat' => $record?->latitude, 'lng' => $record?->longitude]);
                             }),
-
                         Forms\Components\Section::make()
-                            ->columns(['default' => 1, 'md' => 2])
+                            ->columns(['default' => 122, 'md' => 2])
                             ->schema([
                                 Forms\Components\TextInput::make('latitude')
                                     ->readOnly(),
-
                                 Forms\Components\TextInput::make('longitude')
                                     ->readOnly(),
                             ]),
@@ -119,26 +109,21 @@ class OfficeResource extends Resource
                     ->label('Nama Kantor')
                     ->searchable()
                     ->sortable(),
-
                 TextColumn::make('radius_meters')
                     ->label('Radius (m)'),
-
                 TextColumn::make('phone_number')
                     ->label('No. Whatsapp Kantor')
                     ->searchable()
                     ->sortable(),
-
                 TextColumn::make('address')
                     ->label('Alamat Kantor')
                     ->limit(50)
                     ->searchable(),
-
                 Tables\Columns\TextColumn::make('created_at')
                     ->label('Dibuat Pada')
                     ->dateTime('d M Y H:i')
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
-
                 Tables\Columns\TextColumn::make('updated_at')
                     ->label('Diperbarui Pada')
                     ->dateTime('d M Y H:i')
@@ -154,7 +139,6 @@ class OfficeResource extends Resource
                             ->displayFormat('d M Y')
                             ->native(false)
                             ->prefixIcon('heroicon-o-calendar-days'),
-
                         Forms\Components\DatePicker::make('created_until')
                             ->label('Dibuat Hingga')
                             ->required()

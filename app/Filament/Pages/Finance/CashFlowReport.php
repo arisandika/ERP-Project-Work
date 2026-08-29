@@ -16,7 +16,6 @@ use Illuminate\Support\Carbon;
 class CashFlowReport extends Page implements HasForms
 {
     use InteractsWithForms;
-
     use HasPageShield, BelongsToModule {
         HasPageShield::canAccess insteadof BelongsToModule;
         HasPageShield::shouldRegisterNavigation insteadof BelongsToModule;
@@ -35,7 +34,6 @@ class CashFlowReport extends Page implements HasForms
     protected static ?string $title = 'Cash Flow Report';
     protected static ?string $navigationLabel = 'Cash Flow';
     protected static ?string $slug = 'finance/cash-flow';
-
     protected static string $view = 'filament.pages.finance.cash-flow-report';
 
     public ?array $data = [];
@@ -68,52 +66,50 @@ class CashFlowReport extends Page implements HasForms
                 Select::make('period_type')
                     ->label('Periode')
                     ->options([
-                        'custom'       => 'Custom',
-                        'this_month'   => 'Bulan Ini',
-                        'last_month'   => 'Bulan Lalu',
+                        'custom' => 'Custom',
+                        'this_month' => 'Bulan Ini',
+                        'last_month' => 'Bulan Lalu',
                         'this_quarter' => 'Kuartal Ini',
                         'last_quarter' => 'Kuartal Lalu',
-                        'this_year'    => 'Tahun Ini',
-                        'last_year'    => 'Tahun Lalu',
+                        'this_year' => 'Tahun Ini',
+                        'last_year' => 'Tahun Lalu',
                     ])
                     ->default('this_month')
                     ->live()
                     ->afterStateUpdated(function ($state, Forms\Set $set) {
-                        if ($state === 'custom') return;
+                        if ($state === 'custom')
+                            return;
 
                         $dates = $this->resolveDatesForType($state);
                         $set('start_date', $dates[0]->format('Y-m-d'));
                         $set('end_date', $dates[1]->format('Y-m-d'));
                     })
                     ->native(false),
-
                 DatePicker::make('start_date')
                     ->label('Dari Tanggal')
                     ->native(false)
                     ->displayFormat('d M Y')
                     ->live()
                     ->required(),
-
                 DatePicker::make('end_date')
                     ->label('Sampai Tanggal')
                     ->native(false)
                     ->displayFormat('d M Y')
                     ->live()
                     ->required(),
-
                 Select::make('compare_mode')
                     ->label('Bandingkan Dengan')
                     ->options([
-                        'none'             => 'Tidak Ada Perbandingan',
-                        'previous_period'  => 'Periode Sebelumnya',
-                        'last_year'        => 'Tahun Lalu',
+                        'none' => 'Tidak Ada Perbandingan',
+                        'previous_period' => 'Periode Sebelumnya',
+                        'last_year' => 'Tahun Lalu',
                     ])
                     ->default('none')
                     ->live()
                     ->native(false),
             ])
             ->statePath('data')
-            ->columns(['default' => 1, 'md' => 4]);
+            ->columns(['default' => 122, 'md' => 4]);
     }
 
     protected function getViewData(): array
@@ -142,20 +138,19 @@ class CashFlowReport extends Page implements HasForms
             $compNetCashFlow = $compTotalOperating + $compTotalInvesting + $compTotalFinancing;
 
             $compareData = [
-                'period'                => $compStart->format('d M Y') . ' - ' . $compEnd->format('d M Y'),
-                'openingBalance'        => $compOpeningBalance,
-                'totalOperatingCashFlow'=> $compTotalOperating,
-                'totalInvestingCashFlow'=> $compTotalInvesting,
-                'totalFinancingCashFlow'=> $compTotalFinancing,
-                'netCashFlow'           => $compNetCashFlow,
-                'endingBalance'         => $compOpeningBalance + $compNetCashFlow,
+                'period' => $compStart->format('d M Y') . ' - ' . $compEnd->format('d M Y'),
+                'openingBalance' => $compOpeningBalance,
+                'totalOperatingCashFlow' => $compTotalOperating,
+                'totalInvestingCashFlow' => $compTotalInvesting,
+                'totalFinancingCashFlow' => $compTotalFinancing,
+                'netCashFlow' => $compNetCashFlow,
+                'endingBalance' => $compOpeningBalance + $compNetCashFlow,
             ];
         }
 
         return [
             'period' => $startDate->format('d M Y') . ' - ' . $endDate->format('d M Y'),
             'compareData' => $compareData,
-
             'openingBalance' => $openingBalance,
             'operatingDetails' => $operatingDetails,
             'investingDetails' => $investingDetails,
@@ -181,13 +176,13 @@ class CashFlowReport extends Page implements HasForms
         $now = Carbon::now();
 
         return match ($type) {
-            'this_month'   => [$now->copy()->startOfMonth(), $now->copy()->endOfMonth()],
-            'last_month'   => [$now->copy()->subMonth()->startOfMonth(), $now->copy()->subMonth()->endOfMonth()],
+            'this_month' => [$now->copy()->startOfMonth(), $now->copy()->endOfMonth()],
+            'last_month' => [$now->copy()->subMonth()->startOfMonth(), $now->copy()->subMonth()->endOfMonth()],
             'this_quarter' => [$now->copy()->startOfQuarter(), $now->copy()->endOfQuarter()],
             'last_quarter' => [$now->copy()->subQuarter()->startOfQuarter(), $now->copy()->subQuarter()->endOfQuarter()],
-            'this_year'    => [$now->copy()->startOfYear(), $now->copy()->endOfYear()],
-            'last_year'    => [$now->copy()->subYear()->startOfYear(), $now->copy()->subYear()->endOfYear()],
-            default        => [
+            'this_year' => [$now->copy()->startOfYear(), $now->copy()->endOfYear()],
+            'last_year' => [$now->copy()->subYear()->startOfYear(), $now->copy()->subYear()->endOfYear()],
+            default => [
                 Carbon::parse($this->data['start_date'] ?? $now->startOfMonth())->startOfDay(),
                 Carbon::parse($this->data['end_date'] ?? $now->endOfMonth())->endOfDay(),
             ],
@@ -240,9 +235,9 @@ class CashFlowReport extends Page implements HasForms
 
                 return [
                     'category' => $item->category_name,
-                    'cash_in'  => $in,
+                    'cash_in' => $in,
                     'cash_out' => $out,
-                    'net'      => $in - $out,
+                    'net' => $in - $out,
                 ];
             })
             ->toArray();
