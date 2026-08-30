@@ -72,6 +72,7 @@ class Project extends Model
     public function members(): BelongsToMany
     {
         return $this->belongsToMany(Employee::class, 'nx_project_members')
+            ->withPivot(['role'])
             ->withTimestamps();
     }
 
@@ -79,6 +80,7 @@ class Project extends Model
     public function employees(): BelongsToMany
     {
         return $this->belongsToMany(Employee::class, 'nx_project_members')
+            ->withPivot(['role'])
             ->withTimestamps();
     }
 

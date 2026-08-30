@@ -6,6 +6,7 @@ use App\Models\CRM\Lead;
 use App\Models\Finance\FinancialRecord;
 use App\Models\Finance\ReimbursementRequest;
 use App\Models\Project\Notification;
+use App\Models\HR\PerformanceEvaluation;
 use App\Models\Project\Project;
 use App\Models\Project\Ticket;
 use App\Models\SalesActivity\VisitAssignment;
@@ -128,7 +129,26 @@ class Employee extends Model
     public function projects(): BelongsToMany
     {
         return $this->belongsToMany(Project::class, 'nx_project_members')
+            ->withPivot(['role'])
             ->withTimestamps();
+    }
+
+    // Supervisor (another employee)
+    public function supervisor(): BelongsTo
+    {
+        return $this->belongsTo(Employee::class, 'supervisor_id');
+    }
+
+    // Subordinates reporting to this employee
+    public function subordinates(): HasMany
+    {
+        return $this->hasMany(Employee::class, 'supervisor_id');
+    }
+
+    // Performance evaluations received by this employee
+    public function performanceEvaluations(): HasMany
+    {
+        return $this->hasMany(PerformanceEvaluation::class, 'employee_id');
     }
 
     // Tickets created by or assigned to the employee
