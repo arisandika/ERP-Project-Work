@@ -14,31 +14,32 @@ class RmaStatusUpdated extends Mailable
     use Queueable, SerializesModels;
 
     public ReturnRequest $returnRequest;
-    public string $statusLabel;
 
     public function __construct(ReturnRequest $returnRequest)
     {
         $this->returnRequest = $returnRequest;
-        $this->statusLabel = ReturnRequest::getStatusLabels()[$returnRequest->status] ?? $returnRequest->status;
     }
 
     public function envelope(): Envelope
     {
+        $statusLabel = ReturnRequest::getStatusLabels()[$this->returnRequest->status] ?? $this->returnRequest->status;
+
         return new Envelope(
-            subject: 'Update Status RMA ' . $this->returnRequest->rma_number,
+            subject: "Update Status RMA {$this->returnRequest->rma_number} — {$statusLabel}",
         );
     }
 
     public function content(): Content
     {
+        $statusLabel = ReturnRequest::getStatusLabels()[$this->returnRequest->status] ?? $this->returnRequest->status;
+        $portalUrl = route('customer-portal.return.view', $this->returnRequest->rma_number);
+
         return new Content(
             view: 'emails.rma.status-updated',
             with: [
-                'rma_number'  => $this->returnRequest->rma_number,
-                'statusLabel' => $this->statusLabel,
-                'resolution'  => $this->returnRequest->resolution_type,
-                'notes'       => $this->returnRequest->internal_notes,
-                'loginUrl'    => route('customer-portal.login'),
+                'returnRequest' => $this->returnRequest,
+                'statusLabel'   => $statusLabel,
+                'portalUrl'     => $portalUrl,
             ],
         );
     }
