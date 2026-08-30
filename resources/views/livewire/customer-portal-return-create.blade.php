@@ -205,8 +205,8 @@
                                     <select wire:model="warranty_type"
                                         class="fi-input block w-full border-none py-1.5 text-base text-black transition duration-75 focus:ring-0 outline-none dark:text-white sm:text-sm sm:leading-6 bg-white/0 ps-3 pe-3 dark:bg-transparent">
                                         <option value="">-- Pilih jenis klaim --</option>
-                                        <option value="garansi">Garansi</option>
-                                        <option value="berbayar">Perbaikan Berbayar</option>
+                                        <option value="supplier">Garansi Supplier / Distributor</option>
+                                        <option value="store">Garansi Toko (Service Internal)</option>
                                     </select>
                                 </div>
                                 @error('warranty_type') <p class="text-sm text-red-600 dark:text-red-400">{{ $message }}</p> @enderror

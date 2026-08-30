@@ -4,6 +4,7 @@ namespace App\Models\Sales;
 
 use App\Models\CRM\Customer;
 use App\Models\HR\Employee;
+use App\Models\CustomerPortal\CustomerPortalToken;
 use App\Models\Project\Project;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
@@ -73,6 +74,11 @@ class Invoice extends Model
     public function project(): HasOne
     {
         return $this->hasOne(Project::class, 'nx_invoice_id');
+    }
+
+    public function portalTokens(): HasMany
+    {
+        return $this->hasMany(CustomerPortalToken::class, 'invoice_id');
     }
 
     public function getRemainingBalanceAttribute(): float

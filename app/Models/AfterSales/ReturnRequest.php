@@ -27,6 +27,7 @@ class ReturnRequest extends Model
         'internal_notes',
         'resolution_type',
         'new_serial_number_id',
+        'procurement_claim_id',
         'received_date',
         'sent_to_vendor_date',
         'back_from_vendor_date',
@@ -51,6 +52,7 @@ class ReturnRequest extends Model
     public const STATUS_INTERNAL_REPAIR    = 'internal_repair';
     public const STATUS_READY_FOR_RETURN   = 'ready_for_return';
     public const STATUS_RETURNED_TO_CLIENT = 'returned_to_client';
+    public const STATUS_REJECTED           = 'rejected';
 
     // Helper untuk label status di Filament
     public static function getStatusLabels(): array
@@ -61,6 +63,7 @@ class ReturnRequest extends Model
             self::STATUS_INTERNAL_REPAIR    => 'Proses Internal',
             self::STATUS_READY_FOR_RETURN   => 'Siap Diambil Klien',
             self::STATUS_RETURNED_TO_CLIENT => 'Selesai',
+            self::STATUS_REJECTED           => 'Ditolak',
         ];
     }
 
@@ -92,6 +95,36 @@ class ReturnRequest extends Model
     public function newSerialNumber()
     {
         return $this->belongsTo(SerialNumber::class, 'new_serial_number_id');
+    }
+
+    public function purchaseReturn()
+    {
+        return $this->belongsTo(\App\Models\Procurement\PurchaseReturn::class, 'purchase_return_id');
+    }
+
+    public function procurementClaim()
+    {
+        return $this->belongsTo(\App\Models\Procurement\PurchaseOrder::class, 'procurement_claim_id');
+    }
+
+    protected static function booted(): void
+    {
+        static::updated(function (self $model) {
+            if (! $model->wasChanged('status')) {
+                return;
+            }
+
+            // Notifikasi email ke customer hanya untuk RMA dari customer portal
+            // atau internal (customer_id tetap terhubung)
+            if ($model->customer_id && $model->customer?->email) {
+                try {
+                    \Mail::to($model->customer->email)
+                        ->queue(new \App\Mail\RmaStatusUpdated($model));
+                } catch (\Throwable $e) {
+                    \Log::warning('Gagal kirim email update RMA status: ' . $e->getMessage());
+                }
+            }
+        });
     }
 
     public static function generateRmaNumber(): string

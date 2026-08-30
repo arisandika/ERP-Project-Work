@@ -26,6 +26,17 @@
         </a>
     </div>
 
+    @if (isset($complaintUrl))
+    <div style="margin: 24px 0;">
+        <h3 style="font-size: 16px; font-weight: bold; margin-bottom: 8px;">Ada kendala dengan produk ini?</h3>
+        <p style="font-size: 14px; color: #374151; margin-bottom: 12px;">Ajukan complain / klaim garansi langsung melalui Customer Portal. Kami akan memproses pengajuan Anda.</p>
+        <a href="{{ $complaintUrl }}"
+           style="background-color: #ea580c; color: #ffffff; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: bold; display: inline-block;">
+            Ajukan Complain Sekarang
+        </a>
+    </div>
+    @endif
+
     <p style="font-size: 13px; color: #6b7280;">
         Jika tombol di atas tidak berfungsi, salin dan buka link berikut di browser Anda:<br>
         Download: {{ $downloadUrl }}<br>

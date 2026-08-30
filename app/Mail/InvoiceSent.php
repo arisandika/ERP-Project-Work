@@ -34,11 +34,14 @@ class InvoiceSent extends Mailable
 
     public function content(): Content
     {
+        $portalToken = \App\Actions\InvoiceGeneratePortalToken::generate($this->invoice);
+
         return new Content(
             view: 'emails.invoice',
             with: [
-                'verifyUrl'   => route('invoice.verify.form', ['number' => $this->invoice->invoice_number]),
-                'downloadUrl' => route('invoice.download', ['record' => $this->invoice->id]),
+                'verifyUrl'        => route('invoice.verify.form', ['number' => $this->invoice->invoice_number]),
+                'downloadUrl'      => route('invoice.download', ['record' => $this->invoice->id]),
+                'complaintUrl'     => \App\Actions\InvoiceGeneratePortalToken::url($portalToken),
             ],
         );
     }
