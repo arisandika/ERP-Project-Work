@@ -90,16 +90,16 @@
                     </div>
                 </div>
 
-                <div class="flex flex-wrap gap-3 pt-2 border-t border-gray-200 dark:border-gray-700">
+                <div class="flex items-center justify-start gap-4 pt-4 mt-auto border-t border-gray-200 dark:border-gray-700">
                     <button type="submit"
-                        class="fi-btn fi-btn--primary inline-flex items-center justify-center gap-2 px-4 py-2.5 text-sm font-medium rounded-lg transition-colors"
+                        class="inline-flex items-center justify-center gap-2 px-6 py-2.5 text-sm font-semibold text-white bg-blue-600 rounded-lg shadow hover:bg-blue-700 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800 disabled:opacity-60 transition-all"
                         wire:loading.attr="disabled">
                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
                         Search
                     </button>
 
                     <button type="button" wire:click="resetFilters"
-                        class="fi-btn fi-btn--gray inline-flex items-center justify-center gap-2 px-4 py-2.5 text-sm font-medium rounded-lg transition-colors"
+                        class="inline-flex items-center justify-center gap-2 px-6 py-2.5 text-sm font-semibold text-gray-800 bg-gray-200 rounded-lg shadow hover:bg-gray-300 focus:ring-2 focus:ring-gray-400 focus:ring-offset-2 dark:focus:ring-offset-gray-800 dark:bg-gray-600 dark:text-gray-200 dark:hover:bg-gray-500 disabled:opacity-60 transition-all"
                         wire:loading.attr="disabled">
                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
                         Reset
