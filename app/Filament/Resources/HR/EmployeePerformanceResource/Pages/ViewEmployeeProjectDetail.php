@@ -2,7 +2,6 @@
 
 namespace App\Filament\Resources\HR\EmployeePerformanceResource\Pages;
 
-use App\Filament\Concerns\BelongsToModule;
 use App\Filament\Resources\HR\EmployeePerformanceResource;
 use App\Models\HR\Employee;
 use App\Models\HR\PerformanceEvaluation;
@@ -16,20 +15,14 @@ use Filament\Forms\Components\Radio;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
-use Filament\Forms\Form;
 use Filament\Notifications\Notification;
-use Filament\Pages\Page;
-use Illuminate\Support\Facades\Gate;
+use Filament\Resources\Pages\Page;
 
 class ViewEmployeeProjectDetail extends Page
 {
-    use BelongsToModule;
-
-    protected static ?string $module = 'hr';
+    protected static string $resource = EmployeePerformanceResource::class;
 
     protected static string $view = 'filament.pages.hr.employee-project-detail';
-
-    protected static ?string $slug = 'hr/employees/performance/{record}/project/{project}';
 
     protected static string $routePath = 'hr.employees.performance.project';
 
@@ -50,11 +43,6 @@ class ViewEmployeeProjectDetail extends Page
 
     /** @var \Illuminate\Support\Collection */
     public $evaluations;
-
-    protected function getModulePermission(): ?string
-    {
-        return 'module.access.hr';
-    }
 
     public function mount(int $record, int $project): void
     {
@@ -174,10 +162,18 @@ class ViewEmployeeProjectDetail extends Page
 
     protected function getEvaluationFormSchema(): array
     {
+        $opts = [
+            5 => '5 - Outstanding',
+            4 => '4 - Good',
+            3 => '3 - Average',
+            2 => '2 - Poor',
+            1 => '1 - Very Poor',
+        ];
+
         return [
             Select::make('evaluator_id')
                 ->label('Penilai')
-                ->relationship('evaluator', 'full_name')
+                ->options(Employee::pluck('full_name', 'id'))
                 ->default(auth()->user()->employee?->id)
                 ->required()
                 ->searchable()
@@ -188,9 +184,29 @@ class ViewEmployeeProjectDetail extends Page
                 ->placeholder('cth: 2025-Q4, 2025-12')
                 ->maxLength(32),
             Radio::make('rating')
-                ->label('Rating')
+                ->label('Overall Rating')
                 ->required()
-                ->options(PerformanceEvaluation::RATINGS)
+                ->options($opts)
+                ->inline()
+                ->default(3),
+            Radio::make('quality')
+                ->label('Quality of Work')
+                ->options($opts)
+                ->inline()
+                ->default(3),
+            Radio::make('teamwork')
+                ->label('Teamwork')
+                ->options($opts)
+                ->inline()
+                ->default(3),
+            Radio::make('communication')
+                ->label('Communication')
+                ->options($opts)
+                ->inline()
+                ->default(3),
+            Radio::make('problem_solving')
+                ->label('Problem Solving')
+                ->options($opts)
                 ->inline()
                 ->default(3),
             DatePicker::make('evaluated_at')
@@ -200,7 +216,7 @@ class ViewEmployeeProjectDetail extends Page
                 ->displayFormat('d M Y')
                 ->native(false),
             Textarea::make('feedback')
-                ->label('Feedback')
+                ->label('Comments / Notes')
                 ->maxLength(2000)
                 ->rows(3),
         ];
@@ -213,6 +229,10 @@ class ViewEmployeeProjectDetail extends Page
             'evaluator_id' => $data['evaluator_id'],
             'period' => $data['period'],
             'rating' => $data['rating'],
+            'quality' => $data['quality'] ?? null,
+            'teamwork' => $data['teamwork'] ?? null,
+            'communication' => $data['communication'] ?? null,
+            'problem_solving' => $data['problem_solving'] ?? null,
             'feedback' => $data['feedback'] ?? null,
             'evaluated_at' => $data['evaluated_at'],
         ]);

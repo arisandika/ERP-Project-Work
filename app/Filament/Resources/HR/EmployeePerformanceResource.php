@@ -27,7 +27,7 @@ class EmployeePerformanceResource extends Resource
     protected static ?string $navigationIcon = 'heroicon-o-chart-bar';
     protected static ?string $navigationGroup = 'Manajemen HR';
     protected static ?int $navigationSort = 6;
-    protected static ?string $slug = 'hr/employees/performance';
+    protected static ?string $slug = 'hr/employee-performance';
     protected static ?string $pluralModelLabel = 'Employee Performance';
 
     public static function getNavigationBadge(): ?string

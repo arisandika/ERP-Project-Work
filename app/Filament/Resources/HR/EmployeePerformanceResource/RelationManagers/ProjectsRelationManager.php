@@ -3,6 +3,7 @@
 namespace App\Filament\Resources\HR\EmployeePerformanceResource\RelationManagers;
 
 use App\Filament\Resources\HR\EmployeePerformanceResource;
+use App\Filament\Resources\Project\ProjectResource;
 use App\Models\HR\Employee;
 use App\Models\Project\Project;
 use App\Models\Project\Ticket;
@@ -64,6 +65,7 @@ class ProjectsRelationManager extends RelationManager
                     ->getStateUsing(fn(Project $record) => $this->computeMetric($record, 'overdue')),
                 Tables\Columns\TextColumn::make('completion_rate')
                     ->label('Completion Rate')
+                    ->getStateUsing(fn(Project $record) => $this->computeMetric($record, 'rate'))
                     ->formatStateUsing(fn(float $state): string => $state . '%')
                     ->color(fn(float $state) => $state >= 80 ? 'success' : ($state >= 50 ? 'warning' : 'danger')),
                 Tables\Columns\TextColumn::make('end_date')
@@ -78,6 +80,13 @@ class ProjectsRelationManager extends RelationManager
                     ->url(fn(Project $record) => EmployeePerformanceResource::getUrl('project', [
                         'record' => $employee->id,
                         'project' => $record->id,
+                    ])),
+                Tables\Actions\Action::make('view_project')
+                    ->label('View Project')
+                    ->icon('heroicon-o-briefcase')
+                    ->color('info')
+                    ->url(fn(Project $record) => ProjectResource::getUrl('view', [
+                        'record' => $record->id,
                     ])),
             ])
             ->emptyStateHeading('Karyawan belum bergabung ke project manapun.')

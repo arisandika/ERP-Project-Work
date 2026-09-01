@@ -41,6 +41,12 @@ class EmployeeResource extends Resource
         return static::getModel()::count();
     }
 
+    public static function getNavigationActive(): bool
+    {
+        return request()->routeIs('filament.admin.resources.hr.employees.*')
+            && ! request()->routeIs('filament.admin.resources.hr.employees.performance.*');
+    }
+
     public static function getGloballySearchableAttributes(): array
     {
         return ['full_name', 'email', 'phone_number'];

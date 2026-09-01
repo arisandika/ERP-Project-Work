@@ -27,9 +27,19 @@ class PerformanceEvaluationsRelationManager extends RelationManager
         return $ownerRecord->performanceEvaluations->count();
     }
 
+    protected function ratingOptions(): array
+    {
+        return [
+            5 => '5 - Outstanding',
+            4 => '4 - Good',
+            3 => '3 - Average',
+            2 => '2 - Poor',
+            1 => '1 - Very Poor',
+        ];
+    }
+
     public function form(Form $form): Form
     {
-        $employee = $this->getOwnerRecord();
         $evaluatorId = auth()->user()->employee?->id;
 
         return $form
@@ -47,15 +57,29 @@ class PerformanceEvaluationsRelationManager extends RelationManager
                     ->placeholder('cth: 2025-Q4, 2025-12')
                     ->maxLength(32),
                 Forms\Components\Radio::make('rating')
-                    ->label('Rating')
+                    ->label('Overall Rating')
                     ->required()
-                    ->options([
-                        5 => '5 - Outstanding',
-                        4 => '4 - Good',
-                        3 => '3 - Average',
-                        2 => '2 - Poor',
-                        1 => '1 - Very Poor',
-                    ])
+                    ->options($this->ratingOptions())
+                    ->inline()
+                    ->default(3),
+                Forms\Components\Radio::make('quality')
+                    ->label(PerformanceEvaluation::CRITERIA['quality'])
+                    ->options($this->ratingOptions())
+                    ->inline()
+                    ->default(3),
+                Forms\Components\Radio::make('teamwork')
+                    ->label(PerformanceEvaluation::CRITERIA['teamwork'])
+                    ->options($this->ratingOptions())
+                    ->inline()
+                    ->default(3),
+                Forms\Components\Radio::make('communication')
+                    ->label(PerformanceEvaluation::CRITERIA['communication'])
+                    ->options($this->ratingOptions())
+                    ->inline()
+                    ->default(3),
+                Forms\Components\Radio::make('problem_solving')
+                    ->label(PerformanceEvaluation::CRITERIA['problem_solving'])
+                    ->options($this->ratingOptions())
                     ->inline()
                     ->default(3),
                 Forms\Components\DatePicker::make('evaluated_at')
@@ -66,7 +90,7 @@ class PerformanceEvaluationsRelationManager extends RelationManager
                     ->native(false)
                     ->prefixIcon('heroicon-o-calendar-days'),
                 Forms\Components\Textarea::make('feedback')
-                    ->label('Feedback')
+                    ->label('Comments / Notes')
                     ->maxLength(2000)
                     ->rows(3)
                     ->placeholder('Masukkan feedback evaluasi...'),
@@ -89,15 +113,55 @@ class PerformanceEvaluationsRelationManager extends RelationManager
                     ->sortable()
                     ->placeholder('—'),
                 Tables\Columns\BadgeColumn::make('rating')
-                    ->label('Rating')
+                    ->label('Overall')
                     ->colors([
                         'success' => fn($state) => $state >= 4,
                         'warning' => fn($state) => $state == 3,
                         'danger'  => fn($state) => $state <= 2,
                     ])
                     ->formatStateUsing(fn($state) => ($state) . ' - ' . (PerformanceEvaluation::RATINGS[$state] ?? '')),
+                Tables\Columns\BadgeColumn::make('quality')
+                    ->label(PerformanceEvaluation::CRITERIA['quality'])
+                    ->colors([
+                        'success' => fn($state) => $state >= 4,
+                        'warning' => fn($state) => $state == 3,
+                        'danger'  => fn($state) => $state <= 2,
+                    ])
+                    ->formatStateUsing(fn($state) => ($state) . ' - ' . (PerformanceEvaluation::RATINGS[$state] ?? '—'))
+                    ->placeholder('—')
+                    ->toggleable(isToggledHiddenByDefault: true),
+                Tables\Columns\BadgeColumn::make('teamwork')
+                    ->label(PerformanceEvaluation::CRITERIA['teamwork'])
+                    ->colors([
+                        'success' => fn($state) => $state >= 4,
+                        'warning' => fn($state) => $state == 3,
+                        'danger'  => fn($state) => $state <= 2,
+                    ])
+                    ->formatStateUsing(fn($state) => ($state) . ' - ' . (PerformanceEvaluation::RATINGS[$state] ?? '—'))
+                    ->placeholder('—')
+                    ->toggleable(isToggledHiddenByDefault: true),
+                Tables\Columns\BadgeColumn::make('communication')
+                    ->label(PerformanceEvaluation::CRITERIA['communication'])
+                    ->colors([
+                        'success' => fn($state) => $state >= 4,
+                        'warning' => fn($state) => $state == 3,
+                        'danger'  => fn($state) => $state <= 2,
+                    ])
+                    ->formatStateUsing(fn($state) => ($state) . ' - ' . (PerformanceEvaluation::RATINGS[$state] ?? '—'))
+                    ->placeholder('—')
+                    ->toggleable(isToggledHiddenByDefault: true),
+                Tables\Columns\BadgeColumn::make('problem_solving')
+                    ->label(PerformanceEvaluation::CRITERIA['problem_solving'])
+                    ->colors([
+                        'success' => fn($state) => $state >= 4,
+                        'warning' => fn($state) => $state == 3,
+                        'danger'  => fn($state) => $state <= 2,
+                    ])
+                    ->formatStateUsing(fn($state) => ($state) . ' - ' . (PerformanceEvaluation::RATINGS[$state] ?? '—'))
+                    ->placeholder('—')
+                    ->toggleable(isToggledHiddenByDefault: true),
                 Tables\Columns\TextColumn::make('feedback')
-                    ->label('Feedback')
+                    ->label('Comments / Notes')
                     ->limit(80)
                     ->placeholder('—'),
                 Tables\Columns\TextColumn::make('evaluated_at')
