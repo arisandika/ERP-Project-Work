@@ -3,14 +3,18 @@
 namespace App\Filament\Resources\HR\EmployeePerformanceResource\Pages;
 
 use App\Filament\Resources\HR\EmployeePerformanceResource;
+use App\Models\HR\Department;
 use App\Models\HR\Employee;
+use App\Models\Project\Project;
+use App\Models\Project\TicketStatus;
 use App\Support\EmployeePerformanceMetrics;
-use Filament\Forms\Components\DatePicker;
 use Filament\Resources\Pages\ListRecords;
-use Illuminate\Support\Carbon;
 use Filament\Tables;
 use Filament\Tables\Table;
+use Illuminate\Support\Carbon;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Contracts\View\View;
+use Livewire\Attributes\Url;
 
 class ListEmployeePerformance extends ListRecords
 {
@@ -19,10 +23,43 @@ class ListEmployeePerformance extends ListRecords
     protected static ?string $title = 'Employee Performance';
 
     /** @var array<string,mixed> */
-    protected ?array $dateRange = null;
+    #[Url]
+    public ?array $dateRange = null;
 
-    /** @var array<int,object> per-request cache of metrics. */
-    protected array $metricsCache = [];
+    #[Url]
+    public ?string $filter_department_id = null;
+
+    #[Url]
+    public ?string $filter_position = null;
+
+    #[Url]
+    public ?string $filter_project_id = null;
+
+    #[Url]
+    public ?string $filter_project_status = null;
+
+    #[Url]
+    public ?string $filter_start_date = null;
+
+    #[Url]
+    public ?string $filter_end_date = null;
+
+    #[Url]
+    public ?string $filter_period = null;
+
+    public function getHeader(): ?View
+    {
+        return view('filament.pages.hr.employee-performance-filter', [
+            'departments' => Department::pluck('name', 'id')->toArray(),
+            'positions' => Employee::whereNotNull('position')
+                ->whereNull('deleted_at')
+                ->distinct()
+                ->pluck('position')
+                ->mapWithKeys(fn($v) => [$v => ucwords(str_replace('_', ' ', $v))])
+                ->toArray(),
+            'projects' => Project::pluck('name', 'id')->toArray(),
+        ]);
+    }
 
     protected function getHeaderActions(): array
     {
@@ -30,23 +67,82 @@ class ListEmployeePerformance extends ListRecords
     }
 
     /**
-     * Compute once per employee per request (list can request ~6 columns/row).
+     * Compute once per employee per request (multiple columns/row).
      */
     protected function metricsFor(Employee $record): object
     {
-        $key = $record->id . '|' . ($this->dateRange['from'] ?? '') . '|' . ($this->dateRange['until'] ?? '');
+        $from = $this->dateRange['from'] ?? ($this->filter_start_date ?? null);
+        $until = $this->dateRange['until'] ?? ($this->filter_end_date ?? null);
 
-        return $this->metricsCache[$key] ??= EmployeePerformanceMetrics::forEmployee(
+        // Apply project-period if set and no explicit date.
+        if ($filterFrom = $this->resolvePeriodFrom()) {
+            $from = $from ?? $filterFrom;
+        }
+        if ($filterUntil = $this->resolvePeriodUntil()) {
+            $until = $until ?? $filterUntil;
+        }
+
+        $cacheKey = $record->id . '|' . ($from ?? '') . '|' . ($until ?? '');
+
+        if (isset(static::$metricsCache[$cacheKey])) {
+            return static::$metricsCache[$cacheKey];
+        }
+
+        return static::$metricsCache[$cacheKey] = EmployeePerformanceMetrics::forEmployee(
             $record,
-            $this->dateRange['from'] ? Carbon::parse($this->dateRange['from']) : null,
-            $this->dateRange['until'] ? Carbon::parse($this->dateRange['until']) : null,
+            $from ? Carbon::parse($from) : null,
+            $until ? Carbon::parse($until) : null,
         );
+    }
+
+    protected static array $metricsCache = [];
+
+    /**
+     * Apply date filter from the selected period (e.g. 30/90/180/365 days).
+     */
+    protected function resolvePeriodFrom(): ?Carbon
+    {
+        if (! $this->filter_period) {
+            return null;
+        }
+
+        return Carbon::now()->subDays((int) $this->filter_period)->startOfDay();
+    }
+
+    protected function resolvePeriodUntil(): ?Carbon
+    {
+        if (! $this->filter_period) {
+            return null;
+        }
+
+        return Carbon::now()->endOfDay();
+    }
+
+    public function applyFilters(): void
+    {
+        $this->dateRange = [
+            'from' => $this->filter_start_date,
+            'until' => $this->filter_end_date,
+        ];
+    }
+
+    public function resetFilters(): void
+    {
+        $this->filter_department_id = null;
+        $this->filter_position = null;
+        $this->filter_project_id = null;
+        $this->filter_project_status = null;
+        $this->filter_start_date = null;
+        $this->filter_end_date = null;
+        $this->filter_period = null;
+        $this->dateRange = null;
+        static::$metricsCache = [];
     }
 
     public function table(Table $table): Table
     {
         return $table
-            ->heading('Karyawan di Bawah Supervizor')
+            ->heading('Karyawan di Bawah Supervisor')
             ->description('Pilih seorang karyawan untuk melihat riwayat project dan kontribusi.')
             ->recordTitleAttribute('full_name')
             ->query(fn() => $this->getSubordinateQuery())
@@ -106,47 +202,54 @@ class ListEmployeePerformance extends ListRecords
                     })
                     ->getStateUsing(fn(Employee $record) => $this->metricsFor($record)->status),
             ])
-            ->filters([
-                Tables\Filters\Filter::make('period')
-                    ->label('Period / Date Range')
-                    ->form([
-                        DatePicker::make('from')
-                            ->label('Dari')
-                            ->required()
-                            ->displayFormat('d M Y')
-                            ->native(false)
-                            ->prefixIcon('heroicon-o-calendar-days'),
-                        DatePicker::make('until')
-                            ->label('Sampai')
-                            ->required()
-                            ->displayFormat('d M Y')
-                            ->native(false)
-                            ->prefixIcon('heroicon-o-calendar-days'),
-                    ])
-                    ->query(function (Builder $query, array $data): Builder {
-                        $this->dateRange = [
-                            'from' => $data['from'] ?? null,
-                            'until' => $data['until'] ?? null,
-                        ];
-
-                        return $query;
-                    }),
-                Tables\Filters\SelectFilter::make('department_id')
-                    ->label('Department')
-                    ->relationship('department', 'name')
-                    ->native(false),
-                Tables\Filters\SelectFilter::make('id')
-                    ->label('Employee')
-                    ->options($this->getEmployeeOptions())
-                    ->native(false),
-            ])
-            ->persistFiltersInSession()
             ->actions([
                 Tables\Actions\ViewAction::make()
                     ->label('Lihat')
                     ->icon('heroicon-o-eye'),
             ])
             ->defaultSort('full_name');
+    }
+
+    /**
+     * Apply filter conditions to subordinate query.
+     */
+    protected function getSubordinateQuery(): Builder
+    {
+        $user = auth()->user();
+
+        $base = $user->hasRole('super_admin')
+            ? Employee::query()
+            : ($user->employee
+                ? Employee::where('supervisor_id', $user->employee->id)
+                : Employee::where('id', 0));
+
+        $base->when($this->filter_department_id, function (Builder $q, $val) {
+            $q->where('department_id', $val);
+        });
+
+        $base->when($this->filter_position, function (Builder $q, $val) {
+            $q->where('position', $val);
+        });
+
+        $base->when($this->filter_project_id, function (Builder $q, $val) {
+            $q->whereHas('projects', fn(Builder $sq) => $sq->where('nx_projects.id', $val));
+        });
+
+        // Project Status filtering is handled per-row via metricsFor.
+        $base->when($this->filter_project_status, function (Builder $q, $val) {
+            $q->whereHas('projects', function (Builder $sq) use ($val) {
+                $completedIds = TicketStatus::where('is_completed', true)->pluck('id');
+                match ($val) {
+                    'active' => $sq->whereNotIn('nx_tickets.ticket_status_id', $completedIds),
+                    'completed' => $sq->whereDoesntHave('tickets', fn(Builder $tq) =>
+                        $tq->whereNotIn('ticket_status_id', $completedIds)),
+                    'on_hold' => $sq->where('status', 'on_hold'),
+                    default => null,
+                };
+            });
+        });
+
+        return $base;
     }
 
     /**
@@ -157,22 +260,5 @@ class ListEmployeePerformance extends ListRecords
         return Employee::whereIn('id', $this->getSubordinateQuery()->pluck('id'))
             ->pluck('full_name', 'id')
             ->toArray();
-    }
-
-    protected function getSubordinateQuery(): Builder
-    {
-        $user = auth()->user();
-
-        if ($user->hasRole('super_admin')) {
-            return Employee::query();
-        }
-
-        $employee = $user->employee;
-
-        if (! $employee) {
-            return Employee::where('id', 0); // empty
-        }
-
-        return Employee::where('supervisor_id', $employee->id);
     }
 }
