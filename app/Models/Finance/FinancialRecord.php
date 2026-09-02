@@ -140,6 +140,7 @@ class FinancialRecord extends Model
         if (blank($model->account_type)) {
             $model->account_type = match (true) {
                 str_contains($category, 'sales revenue') => 'revenue',
+                str_contains($category, 'cost of goods sold') => 'cogs',
                 str_contains($category, 'purchase invoice') => 'cogs',
                 str_contains($category, 'purchase order') => 'cogs',
                 str_contains($category, 'purchase') => 'cogs',

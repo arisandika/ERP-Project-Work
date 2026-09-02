@@ -80,9 +80,19 @@ class Product extends Model
     }
 
     // === ACCESSORS ===
+    public function getAvailableStockAttribute(): int
+    {
+        return (int) $this->productStocks()->sum('qty_available');
+    }
+
+    public function getReservedStockAttribute(): int
+    {
+        return (int) $this->productStocks()->sum('qty_reserved');
+    }
+
     public function getTotalStockAttribute(): int
     {
-        return $this->productStocks()->sum('qty_available');
+        return $this->available_stock + $this->reserved_stock;
     }
 
     // Accessor legacy (tetap ada untuk backward compatibility)
@@ -94,7 +104,7 @@ class Product extends Model
 
     public function getIsLowStockAttribute(): bool
     {
-        return $this->total_stock < 10;
+        return $this->available_stock < 10;
     }
 
     public function getIsOverStockAttribute(): bool
@@ -136,7 +146,7 @@ class Product extends Model
 
     public function getStockStatusLabel(?int $qty = null): string
     {
-        $checkQty = $qty ?? $this->total_stock;
+        $checkQty = $qty ?? $this->available_stock;
         return match (true) {
             $checkQty <= 0  => 'OUT OF STOCK',
             $checkQty <= 5  => 'CRITICAL',
@@ -147,7 +157,7 @@ class Product extends Model
 
     public function getStockStatusColor(?int $qty = null): string
     {
-        $checkQty = $qty ?? $this->total_stock;
+        $checkQty = $qty ?? $this->available_stock;
         return match (true) {
             $checkQty <= 0  => 'danger',
             $checkQty <= 5  => 'danger',
