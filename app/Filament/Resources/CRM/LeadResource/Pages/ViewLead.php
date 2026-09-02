@@ -257,7 +257,7 @@ class ViewLead extends ViewRecord
                     ])
                     ->collapsible(),
                 Section::make('Pengelolaan Data')
-                    ->columns(['default' => 122, 'md' => 2])
+                    ->columns(['default' => 12, 'md' => 2])
                     ->schema([
                         TextEntry::make('created_at')
                             ->label('Dibuat Pada')

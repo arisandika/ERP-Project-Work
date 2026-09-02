@@ -125,7 +125,7 @@ class EpicsRelationManager extends RelationManager
                         Forms\Components\Hidden::make('created_by')
                             ->default(fn() => auth()->user()->employee?->id),
                     ])
-                    ->columns(['default' => 122, 'md' => 2])
+                    ->columns(['default' => 12, 'md' => 2])
             ]);
     }
 
@@ -248,7 +248,7 @@ class EpicsRelationManager extends RelationManager
             ->schema([
                 Section::make('Informasi Epic')
                     ->description('Detail durasi dan urutan pengerjaan Epic.')
-                    ->columns(['default' => 122, 'md' => 2])
+                    ->columns(['default' => 12, 'md' => 2])
                     ->schema([
                         TextEntry::make('name')
                             ->label('Nama Epic')
@@ -283,7 +283,7 @@ class EpicsRelationManager extends RelationManager
                     ]),
                 Section::make('Statistik Ticket')
                     ->description('Ringkasan jumlah ticket yang terhubung dengan Epic ini.')
-                    ->columns(['default' => 122, 'md' => 2])
+                    ->columns(['default' => 12, 'md' => 2])
                     ->schema([
                         TextEntry::make('tickets_count')
                             ->label('Total Ticket')
@@ -305,7 +305,7 @@ class EpicsRelationManager extends RelationManager
                     ])
                     ->collapsible(),
                 Section::make('Pengelolaan Data')
-                    ->columns(['default' => 122, 'md' => 2])
+                    ->columns(['default' => 12, 'md' => 2])
                     ->schema([
                         TextEntry::make('created_at')
                             ->label('Dibuat Pada')

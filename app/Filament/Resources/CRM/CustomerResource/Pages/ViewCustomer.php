@@ -288,7 +288,7 @@ class ViewCustomer extends ViewRecord
                     ])
                     ->visible(fn(Customer $record) => $record && $record->quotations()->withTrashed()->exists()),
                 Section::make('Pengelolaan Data')
-                    ->columns(['default' => 122, 'md' => 2])
+                    ->columns(['default' => 12, 'md' => 2])
                     ->schema([
                         TextEntry::make('created_at')
                             ->label('Masuk Pada')

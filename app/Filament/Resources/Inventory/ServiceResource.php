@@ -166,7 +166,7 @@ class ServiceResource extends Resource
         return $infolist
             ->schema([
                 Section::make('Detail Layanan')
-                    ->columns(['default' => 122, 'md' => 2])
+                    ->columns(['default' => 12, 'md' => 2])
                     ->schema([
                         TextEntry::make('service_name')
                             ->label('Nama Layanan'),
@@ -177,7 +177,7 @@ class ServiceResource extends Resource
                             ->money('IDR', true),
                     ]),
                 Section::make('Waktu Pengelolaan')
-                    ->columns(['default' => 122, 'md' => 2])
+                    ->columns(['default' => 12, 'md' => 2])
                     ->schema([
                         TextEntry::make('created_at')
                             ->label('Dibuat Pada')

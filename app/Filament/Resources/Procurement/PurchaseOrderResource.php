@@ -1,22 +1,19 @@
 <?php
-
 namespace App\Filament\Resources\Procurement;
 
 use App\Enums\Procurement\PurchaseOrderStatus;
 use App\Filament\Concerns\BelongsToModule;
 use App\Filament\Resources\Procurement\PurchaseOrderResource\Pages;
 use App\Mail\Procurement\PurchaseOrderMail;
-use App\Models\Finance\FinancialRecord;
 use App\Models\Inventory\Product;
 use App\Models\Procurement\PurchaseOrder;
 use App\Models\Procurement\PurchaseRequisition;
-use App\Services\Procurement\PurchaseOrderReceiptService;
+use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Notifications\Notification;
 use Filament\Resources\Resource;
-use Filament\Tables\Table;
-use Filament\Forms;
 use Filament\Tables;
+use Filament\Tables\Table;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
 
@@ -24,12 +21,12 @@ class PurchaseOrderResource extends Resource
 {
     use BelongsToModule;
 
-    protected static ?string $module = 'procurement';
-    protected static ?string $model = PurchaseOrder::class;
-    protected static ?string $navigationIcon = 'heroicon-o-shopping-cart';
-    protected static ?string $navigationGroup = 'Manajemen Procurement';
-    protected static ?int $navigationSort = 4;
-    protected static ?string $slug = 'procurement/purchase-orders';
+    protected static ?string $module           = 'procurement';
+    protected static ?string $model            = PurchaseOrder::class;
+    protected static ?string $navigationIcon   = 'heroicon-o-shopping-cart';
+    protected static ?string $navigationGroup  = 'Manajemen Procurement';
+    protected static ?int $navigationSort      = 4;
+    protected static ?string $slug             = 'procurement/purchase-orders';
     protected static ?string $pluralModelLabel = 'Purchase Orders';
 
     public static function getNavigationBadge(): ?string
@@ -40,17 +37,17 @@ class PurchaseOrderResource extends Resource
     public static function updateTotals(Forms\Get $get, Forms\Set $set): void
     {
         $isInsideRepeater = $get('items') === null;
-        $prefix = $isInsideRepeater ? '../../' : '';
+        $prefix           = $isInsideRepeater ? '../../' : '';
 
-        $items = $get($prefix . 'items') ?? [];
+        $items    = $get($prefix . 'items') ?? [];
         $subtotal = 0;
 
         foreach ($items as $item) {
             $subtotal += (float) ($item['total_price'] ?? 0);
         }
 
-        $discount = (float) ($get($prefix . 'discount_amount') ?? 0);
-        $taxRate = (float) ($get($prefix . 'tax_rate') ?? 0);
+        $discount  = (float) ($get($prefix . 'discount_amount') ?? 0);
+        $taxRate   = (float) ($get($prefix . 'tax_rate') ?? 0);
         $taxAmount = ($subtotal - $discount) * ($taxRate / 100);
 
         $set($prefix . 'subtotal', $subtotal);
@@ -62,7 +59,7 @@ class PurchaseOrderResource extends Resource
     {
         return $form
             ->schema([
-                Forms\Components\Group::make()->schema([
+                Forms\Components\Grid::make(['default' => 1, 'md' => 2])->schema([
                     Forms\Components\Section::make('Informasi Dokumen PO')
                         ->disabled(fn(?PurchaseOrder $record) => $record !== null && $record->status !== PurchaseOrderStatus::DRAFT)
                         ->schema([
@@ -94,25 +91,27 @@ class PurchaseOrderResource extends Resource
                                 ->preload()
                                 ->live()
                                 ->afterStateUpdated(function ($state, Forms\Set $set, Forms\Get $get) {
-                                    if (!$state)
+                                    if (! $state) {
                                         return;
+                                    }
 
                                     $pr = PurchaseRequisition::with('items.product')->find($state);
-                                    if (!$pr)
+                                    if (! $pr) {
                                         return;
+                                    }
 
-                                    $poItems = [];
+                                    $poItems  = [];
                                     $subtotal = 0;
 
                                     foreach ($pr->items as $item) {
-                                        $qty = $item->quantity;
-                                        $price = $item->estimated_price > 0 ? $item->estimated_price : ($item->product->purchase_price ?? 0);
+                                        $qty       = $item->quantity;
+                                        $price     = $item->estimated_price > 0 ? $item->estimated_price : ($item->product->purchase_price ?? 0);
                                         $lineTotal = $qty * $price;
 
-                                        $poItems[] = [
-                                            'product_id' => $item->product_id,
-                                            'quantity' => $qty,
-                                            'unit_price' => $price,
+                                        $poItems[]  = [
+                                            'product_id'  => $item->product_id,
+                                            'quantity'    => $qty,
+                                            'unit_price'  => $price,
                                             'total_price' => $lineTotal,
                                         ];
                                         $subtotal += $lineTotal;
@@ -123,7 +122,7 @@ class PurchaseOrderResource extends Resource
                                     self::updateTotals($get, $set);
                                 })
                                 ->disabled(fn(string $operation): bool => $operation === 'edit')
-                                ->helperText('Otomatis mengisi daftar barang.')
+                                ->helperText('Hanya menampilkan yang sudah disetujui (approved).')
                                 ->columnSpan(1),
                             Forms\Components\Select::make('supplier_id')
                                 ->label('Supplier / Vendor')
@@ -149,7 +148,7 @@ class PurchaseOrderResource extends Resource
                                 ->label('Estimasi Tanggal Tiba')
                                 ->columnSpan(1),
                         ])
-                        ->columns(['default' => 122, 'md' => 3]),
+                        ->columns(['default' => 12, 'md' => 3]),
                     Forms\Components\Section::make('Daftar Barang (Order Items)')
                         ->disabled(fn(?PurchaseOrder $record) => $record !== null && $record->status !== PurchaseOrderStatus::DRAFT)
                         ->schema([
@@ -167,8 +166,8 @@ class PurchaseOrderResource extends Resource
                                         ->live(debounce: 500)
                                         ->afterStateUpdated(function ($state, Forms\Set $set, Forms\Get $get) {
                                             $product = Product::find($state);
-                                            $price = $product?->purchase_price ?? 0;
-                                            $qty = (int) ($get('quantity') ?? 1);
+                                            $price   = $product?->purchase_price ?? 0;
+                                            $qty     = (int) ($get('quantity') ?? 1);
 
                                             $set('unit_price', $price);
                                             $set('total_price', $price * $qty);
@@ -206,14 +205,15 @@ class PurchaseOrderResource extends Resource
                                         ->disabled()
                                         ->dehydrated(),
                                 ])
-                                ->columns(['default' => 122, 'md' => 4])
+                                ->columns(['default' => 12, 'md' => 4])
                                 ->addActionLabel('Tambah Barang')
                                 ->live(debounce: 500)
                                 ->afterStateUpdated(function (Forms\Get $get, Forms\Set $set) {
                                     self::updateTotals($get, $set);
-                                })
+                                }),
                         ]),
                 ])->columnSpan(['lg' => 2]),
+
                 Forms\Components\Group::make()->schema([
                     Forms\Components\Section::make('Ringkasan Biaya')
                         ->disabled(fn(?PurchaseOrder $record) => $record !== null && $record->status !== PurchaseOrderStatus::DRAFT)
@@ -231,7 +231,7 @@ class PurchaseOrderResource extends Resource
                                 ->default(11)
                                 ->live(debounce: 500)
                                 ->afterStateHydrated(function (Forms\Components\TextInput $component, $state, Forms\Get $get) {
-                                    $subtotal = (float) $get('subtotal');
+                                    $subtotal  = (float) $get('subtotal');
                                     $taxAmount = (float) $get('tax_amount');
                                     if ($subtotal > 0 && $taxAmount > 0) {
                                         $component->state(round(($taxAmount / $subtotal) * 100, 2));
@@ -267,10 +267,10 @@ class PurchaseOrderResource extends Resource
                             Forms\Components\Textarea::make('notes')
                                 ->label('Catatan untuk Supplier')
                                 ->rows(4),
-                        ])
+                        ]),
                 ])->columnSpan(['lg' => 1]),
             ])
-            ->columns(['default' => 122, 'md' => 3]);
+            ->columns(['default' => 12, 'md' => 3]);
     }
 
     public static function table(Table $table): Table
@@ -320,7 +320,7 @@ class PurchaseOrderResource extends Resource
                     ->action(function (PurchaseOrder $record) {
                         $supplierEmail = $record->supplier?->email ?? null;
 
-                        if (!$supplierEmail) {
+                        if (! $supplierEmail) {
                             Notification::make()
                                 ->title('Email Tidak Dapat Dikirim')
                                 ->body('Supplier tidak memiliki alamat email yang terdaftar.')
@@ -361,7 +361,7 @@ class PurchaseOrderResource extends Resource
                     ->action(function (PurchaseOrder $record) {
                         $supplierEmail = $record->supplier?->email ?? null;
 
-                        if (!$supplierEmail) {
+                        if (! $supplierEmail) {
                             Notification::make()
                                 ->title('Email Tidak Dapat Dikirim')
                                 ->body('Supplier tidak memiliki alamat email yang terdaftar.')
@@ -401,9 +401,9 @@ class PurchaseOrderResource extends Resource
     public static function getPages(): array
     {
         return [
-            'index' => Pages\ListPurchaseOrders::route('/'),
+            'index'  => Pages\ListPurchaseOrders::route('/'),
             'create' => Pages\CreatePurchaseOrder::route('/create'),
-            'edit' => Pages\EditPurchaseOrder::route('/{record}/edit'),
+            'edit'   => Pages\EditPurchaseOrder::route('/{record}/edit'),
         ];
     }
 

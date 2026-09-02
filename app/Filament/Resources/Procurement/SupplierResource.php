@@ -171,7 +171,7 @@ class SupplierResource extends Resource
                     ])
                     ->columnSpan(['lg' => 1]),
             ])
-            ->columns(['default' => 122, 'md' => 3]);
+            ->columns(['default' => 12, 'md' => 3]);
     }
 
     public static function table(Table $table): Table

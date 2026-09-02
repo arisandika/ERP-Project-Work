@@ -126,7 +126,7 @@ class TicketResource extends Resource
                             ->preload()
                             ->nullable(),
                     ])
-                    ->columns(['default' => 122, 'md' => 2]),
+                    ->columns(['default' => 12, 'md' => 2]),
                 Forms\Components\Section::make('Jadwal Pengerjaan')
                     ->description('Timeline target penyelesaian ticket.')
                     ->schema([
@@ -144,7 +144,7 @@ class TicketResource extends Resource
                             ->native(false)
                             ->prefixIcon('heroicon-o-calendar-days'),
                     ])
-                    ->columns(['default' => 122, 'md' => 2]),
+                    ->columns(['default' => 12, 'md' => 2]),
                 Forms\Components\Section::make('Member Ticket')
                     ->schema([
                         Forms\Components\Select::make('assignees')
@@ -183,7 +183,7 @@ class TicketResource extends Resource
                             ->disabled()
                             ->hidden(fn($record) => $record === null),
                     ])
-                    ->columns(['default' => 122, 'md' => 2]),
+                    ->columns(['default' => 12, 'md' => 2]),
                 Forms\Components\Section::make('Deskripsi Ticket')
                     ->schema([
                         Forms\Components\RichEditor::make('description')

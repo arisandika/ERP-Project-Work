@@ -49,14 +49,7 @@ class PurchaseRequisitionResource extends Resource
 
     public static function getEloquentQuery(): Builder
     {
-        $query = parent::getEloquentQuery();
-        $user = auth()->user();
-
-        if ($user && !$user->hasAnyRole(['super_admin', 'admin'])) {
-            return $query->where('requested_by', $user->id);
-        }
-
-        return $query;
+        return parent::getEloquentQuery();
     }
 
     public static function form(Form $form): Form
@@ -109,11 +102,10 @@ class PurchaseRequisitionResource extends Resource
                     ->content(fn(?PurchaseRequisition $record) => strtoupper($record?->status ?? 'draft')),
                 Forms\Components\Textarea::make('purpose')
                     ->label('Tujuan / Alasan Pembelian')
-                    ->required()
                     ->rows(3)
                     ->columnSpanFull(),
             ])
-            ->columns(['default' => 122, 'md' => 3]);
+            ->columns(['default' => 12, 'md' => 3]);
     }
 
     protected static function itemsSection(): Forms\Components\Section
@@ -147,7 +139,7 @@ class PurchaseRequisitionResource extends Resource
                             ->required()
                             ->columnSpan(1),
                     ])
-                    ->columns(['default' => 122, 'md' => 4])
+                    ->columns(['default' => 12, 'md' => 4])
                     ->columnSpanFull()
                     ->addActionLabel('Tambah Item')
                     ->defaultItems(1),
@@ -203,7 +195,10 @@ class PurchaseRequisitionResource extends Resource
                     ->label('Edit')
                     ->icon('heroicon-s-pencil-square')
                     // Menghilangkan iconButton agar label selalu tampil
-                    ->visible(fn($record) => strtolower($record->status) === 'draft'),
+                    ->visible(fn($record) =>
+                        strtolower($record->status) === 'draft' &&
+                        (int) $record->requested_by === (int) auth()->id()
+                    ),
                 // TOMBOL SUBMIT (Solid Icon + Tooltip)
                 Tables\Actions\Action::make('submit_action')
                     ->label('Submit')
@@ -227,16 +222,11 @@ class PurchaseRequisitionResource extends Resource
                     ->visible(
                         fn($record) =>
                             strtolower($record->status) === 'pending' &&
-                            static::canApproveAny() &&
                             $record->requested_by != auth()->id()
                     )
                     ->requiresConfirmation()
                     ->action(function ($record) {
-                        $record->update([
-                            'status' => 'approved',
-                            'approved_by' => auth()->id(),
-                            'approved_at' => now(),
-                        ]);
+                        $record->approve(auth()->id());
                         Notification::make()->title('PR Approved')->success()->send();
                     }),
                 // TOMBOL REJECT (Solid Icon + Tooltip)
@@ -249,16 +239,11 @@ class PurchaseRequisitionResource extends Resource
                     ->visible(
                         fn($record) =>
                             strtolower($record->status) === 'pending' &&
-                            static::canApproveAny() &&
                             $record->requested_by != auth()->id()
                     )
                     ->requiresConfirmation()
                     ->action(function ($record) {
-                        $record->update([
-                            'status' => 'rejected',
-                            'approved_by' => auth()->id(),
-                            'approved_at' => now(),
-                        ]);
+                        $record->reject(auth()->id(), 'PR ditolak oleh approver.');
                         Notification::make()->title('PR Rejected')->danger()->send();
                     }),
             ])
@@ -271,7 +256,7 @@ class PurchaseRequisitionResource extends Resource
 
     public static function canViewAny(): bool
     {
-        return Auth::user()?->hasAnyRole(['super_admin', 'admin']) || Auth::user()?->can('view_any_procurement::purchase::requisition');
+        return Auth::check();
     }
 
     public static function canCreate(): bool
@@ -281,7 +266,7 @@ class PurchaseRequisitionResource extends Resource
 
     protected static function canApproveAny(): bool
     {
-        return Auth::user()?->hasAnyRole(['super_admin', 'admin', 'manager']) || Auth::user()?->can('approve_procurement::purchase::requisition');
+        return Auth::check();
     }
 
     public static function getPages(): array

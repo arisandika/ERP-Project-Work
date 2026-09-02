@@ -157,7 +157,7 @@ class QuotationResource extends Resource
                     ->schema([
                         Repeater::make('items')
                             ->schema(self::getQuotationItemsSchema())
-                            ->columns(['default' => 122, 'md' => 2])
+                            ->columns(['default' => 12, 'md' => 2])
                             ->live()
                             ->afterStateUpdated(fn(Get $get, Set $set) => self::updateTotals($get, $set))
                             ->createItemButtonLabel('Tambah Item')
@@ -234,7 +234,7 @@ class QuotationResource extends Resource
                             ->rows(5),
                     ]),
             ])->columnSpan(['lg' => 1]),  // Menempati 1 dari 3 kolom grid utama
-        ])->columns(['default' => 122, 'md' => 3]);  // Container utama dibagi menjadi 3 kolom
+        ])->columns(['default' => 12, 'md' => 3]);  // Container utama dibagi menjadi 3 kolom
     }
 
     public static function table(Table $table): Table

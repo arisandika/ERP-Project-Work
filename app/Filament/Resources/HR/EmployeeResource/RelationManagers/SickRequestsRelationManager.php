@@ -184,7 +184,7 @@ class SickRequestsRelationManager extends RelationManager
         return $infolist
             ->schema([
                 Section::make('Informasi Pengajuan Sakit')
-                    ->columns(['default' => 122, 'md' => 2])
+                    ->columns(['default' => 12, 'md' => 2])
                     ->schema([
                         TextEntry::make('employee.full_name')
                             ->label('Nama Karyawan')
@@ -216,7 +216,7 @@ class SickRequestsRelationManager extends RelationManager
                             ]),
                     ]),
                 Section::make('Status Persetujuan')
-                    ->columns(['default' => 122, 'md' => 2])
+                    ->columns(['default' => 12, 'md' => 2])
                     ->schema([
                         TextEntry::make('status')
                             ->label('Status')
@@ -257,7 +257,7 @@ class SickRequestsRelationManager extends RelationManager
                             ->columnSpanFull(),
                     ]),
                 Section::make('Pengelolaan Data')
-                    ->columns(['default' => 122, 'md' => 2])
+                    ->columns(['default' => 12, 'md' => 2])
                     ->schema([
                         TextEntry::make('created_at')
                             ->label('Dibuat Pada')

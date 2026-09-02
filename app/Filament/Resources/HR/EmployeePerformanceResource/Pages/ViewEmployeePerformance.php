@@ -91,7 +91,7 @@ class ViewEmployeePerformance extends ViewRecord
                             ->placeholder('—')
                             ->visible(fn(Employee $record) => $record->supervisor_id !== null),
                     ])
-                    ->columns(['default' => 122, 'md' => 2]),
+                    ->columns(['default' => 12, 'md' => 2]),
                 Section::make('Performance Summary')
                     ->description('Score and indicators derived from existing project & task contributions.')
                     ->schema([

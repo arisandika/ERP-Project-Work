@@ -110,7 +110,7 @@ class ProfitAndLossReport extends Page implements HasForms
                     ->native(false),
             ])
             ->statePath('data')
-            ->columns(['default' => 122, 'md' => 4]);
+            ->columns(['default' => 12, 'md' => 4]);
     }
 
     protected function getViewData(): array

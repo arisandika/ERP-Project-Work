@@ -180,7 +180,7 @@ class ViewVisitAssignment extends ViewRecord
                                             ]),
                                         // Detail Lokasi & Jarak
                                         Fieldset::make('Informasi Lokasi & Perjalanan')
-                                            ->columns(['default' => 122, 'md' => 3])
+                                            ->columns(['default' => 12, 'md' => 3])
                                             ->schema([
                                                 TextEntry::make('location_address')
                                                     ->label('Titik Lokasi (Maps)')
@@ -214,7 +214,7 @@ class ViewVisitAssignment extends ViewRecord
                                             ]),
                                         // Laporan Eksekusi
                                         Fieldset::make('Laporan Kunjungan')
-                                            ->columns(['default' => 122, 'md' => 2])
+                                            ->columns(['default' => 12, 'md' => 2])
                                             ->schema([
                                                 TextEntry::make('description')
                                                     ->label('Deskripsi / Notulensi')

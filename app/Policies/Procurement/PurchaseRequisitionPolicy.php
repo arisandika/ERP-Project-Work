@@ -15,7 +15,7 @@ class PurchaseRequisitionPolicy
      */
     public function viewAny(User $user): bool
     {
-        return $user->can('view_any_procurement::purchase::requisition');
+        return true;
     }
 
     /**
@@ -23,7 +23,7 @@ class PurchaseRequisitionPolicy
      */
     public function view(User $user, PurchaseRequisition $purchaseRequisition): bool
     {
-        return $user->can('view_procurement::purchase::requisition');
+        return true;
     }
 
     /**
@@ -39,7 +39,8 @@ class PurchaseRequisitionPolicy
      */
     public function update(User $user, PurchaseRequisition $purchaseRequisition): bool
     {
-        return $user->can('update_procurement::purchase::requisition');
+        return (int) $purchaseRequisition->requested_by === (int) $user->id
+            && $user->can('update_procurement::purchase::requisition');
     }
 
     /**

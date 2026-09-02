@@ -217,7 +217,7 @@ class LeaveRequestResource extends Resource
                             ])
                             ->helperText('Upload bukti seperti surat dokter atau dokumen pendukung (opsional)'),
                     ])
-                    ->columns(['default' => 122, 'md' => 2]),
+                    ->columns(['default' => 12, 'md' => 2]),
             ]);
     }
 
@@ -437,7 +437,7 @@ class LeaveRequestResource extends Resource
             ->schema([
                 Section::make('Informasi Pengajuan Cuti')
                     ->description('Kamu bisa edit pengajuan cuti ini jika masih berstatus pending atau menunggu persetujuan.')
-                    ->columns(['default' => 122, 'md' => 2])
+                    ->columns(['default' => 12, 'md' => 2])
                     ->schema([
                         TextEntry::make('employee.full_name')
                             ->label('Nama Karyawan')
@@ -472,7 +472,7 @@ class LeaveRequestResource extends Resource
                             ]),
                     ]),
                 Section::make('Status Persetujuan')
-                    ->columns(['default' => 122, 'md' => 2])
+                    ->columns(['default' => 12, 'md' => 2])
                     ->schema([
                         TextEntry::make('status')
                             ->label('Status')
@@ -513,7 +513,7 @@ class LeaveRequestResource extends Resource
                             ->columnSpanFull(),
                     ]),
                 Section::make('Pengelolaan Data')
-                    ->columns(['default' => 122, 'md' => 2])
+                    ->columns(['default' => 12, 'md' => 2])
                     ->schema([
                         TextEntry::make('created_at')
                             ->label('Dibuat Pada')

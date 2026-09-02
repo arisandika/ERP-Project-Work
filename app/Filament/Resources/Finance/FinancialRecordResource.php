@@ -391,7 +391,7 @@ class FinancialRecordResource extends Resource
             ->schema([
                 Section::make('Informasi Transaksi Keuangan')
                     ->description('Detail transaksi pemasukan, pengeluaran, hutang, atau piutang.')
-                    ->columns(['default' => 122, 'md' => 2])
+                    ->columns(['default' => 12, 'md' => 2])
                     ->schema([
                         TextEntry::make('transaction_code')
                             ->label('No. Transaksi')
@@ -449,7 +449,7 @@ class FinancialRecordResource extends Resource
                     ]),
                 Section::make('Informasi Dokumen Referensi Sistem')
                     ->description('Transaksi ini dicatat otomatis dari modul lain di ERP.')
-                    ->columns(['default' => 122, 'md' => 2])
+                    ->columns(['default' => 12, 'md' => 2])
                     ->visible(fn($record) => filled($record->reference_id))
                     ->schema([
                         TextEntry::make('reference_number')
@@ -463,7 +463,7 @@ class FinancialRecordResource extends Resource
                     ]),
                 Section::make('Informasi Reimburse')
                     ->description('Transaksi ini berasal dari pengajuan reimburse.')
-                    ->columns(['default' => 122, 'md' => 2])
+                    ->columns(['default' => 12, 'md' => 2])
                     ->visible(fn($record) => filled($record->reimburse_id))
                     ->schema([
                         TextEntry::make('reimbursement.employee.full_name')
@@ -522,7 +522,7 @@ class FinancialRecordResource extends Resource
                                 'class' => 'w-full rounded-2xl',
                             ]),
                     ])
-                    ->columns(['default' => 122, 'md' => 2]),
+                    ->columns(['default' => 12, 'md' => 2]),
             ]);
     }
 

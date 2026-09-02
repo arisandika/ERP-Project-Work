@@ -82,7 +82,7 @@ class PurchaseReturnResource extends Resource
                         ->label('Catatan Tambahan')
                         ->columnSpanFull(),
                 ])
-                ->columns(['default' => 122, 'md' => 3]),  // <-- Diubah menjadi 3 kolom agar rapi
+                ->columns(['default' => 12, 'md' => 3]),  // <-- Diubah menjadi 3 kolom agar rapi
             // 2. DETAIL SECTION (ITEMS)
             Forms\Components\Section::make('Item yang Diretur')
                 ->description('Daftar spesifik barang yang akan dikembalikan beserta alasannya.')
@@ -120,7 +120,7 @@ class PurchaseReturnResource extends Resource
                                 ->prefixIcon('heroicon-o-chat-bubble-bottom-center-text')
                                 ->columnSpan(3),
                         ])
-                        ->columns(['default' => 122, 'md' => 8])
+                        ->columns(['default' => 12, 'md' => 8])
                         ->defaultItems(1)
                         ->mutateRelationshipDataBeforeCreateUsing(function (array $data): array {
                             return $data;

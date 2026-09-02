@@ -102,6 +102,10 @@ class PurchaseRequisition extends Model
             throw new RuntimeException('Hanya PR dengan status pending yang bisa disetujui.');
         }
 
+        if ((int) $this->requested_by === $userId) {
+            throw new RuntimeException('Pengaju PR tidak dapat menyetujui PR sendiri.');
+        }
+
         $this->update([
             'status' => self::STATUS_APPROVED,
             'approved_by' => $userId,
@@ -114,6 +118,10 @@ class PurchaseRequisition extends Model
     {
         if (! $this->isPending()) {
             throw new RuntimeException('Hanya PR dengan status pending yang bisa ditolak.');
+        }
+
+        if ((int) $this->requested_by === $userId) {
+            throw new RuntimeException('Pengaju PR tidak dapat menolak PR sendiri.');
         }
 
         $this->update([

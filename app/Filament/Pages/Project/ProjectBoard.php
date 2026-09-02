@@ -339,7 +339,7 @@ class ProjectBoard extends Page
                     CheckboxList::make('selectedUserIds')
                         ->label('Pilih user untuk difilter')
                         ->options(fn() => $this->projectUsers->pluck('full_name', 'id')->toArray())
-                        ->columns(['default' => 122, 'md' => 2])
+                        ->columns(['default' => 12, 'md' => 2])
                         ->searchable()
                         ->bulkToggleable(),
                 ])

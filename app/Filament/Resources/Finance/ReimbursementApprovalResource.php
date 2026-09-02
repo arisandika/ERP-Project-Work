@@ -106,7 +106,7 @@ class ReimbursementApprovalResource extends Resource
                                 : 'Tidak menyertakan bukti struk'
                         ),
                 ])
-                ->columns(['default' => 122, 'md' => 2]),
+                ->columns(['default' => 12, 'md' => 2]),
             Forms\Components\Section::make('Persetujuan')
                 ->schema([
                     Forms\Components\Select::make('status')
@@ -130,7 +130,7 @@ class ReimbursementApprovalResource extends Resource
                         })
                         ->native(false),
                 ])
-                ->columns(['default' => 122, 'md' => 2])
+                ->columns(['default' => 12, 'md' => 2])
         ]);
     }
 
@@ -296,7 +296,7 @@ class ReimbursementApprovalResource extends Resource
         return $infolist
             ->schema([
                 Section::make('Informasi Pengajuan Reimburse')
-                    ->columns(['default' => 122, 'md' => 2])
+                    ->columns(['default' => 12, 'md' => 2])
                     ->schema([
                         TextEntry::make('employee.full_name')
                             ->label('Nama Karyawan')
@@ -328,7 +328,7 @@ class ReimbursementApprovalResource extends Resource
                             ]),
                     ]),
                 Section::make('Status Persetujuan')
-                    ->columns(['default' => 122, 'md' => 2])
+                    ->columns(['default' => 12, 'md' => 2])
                     ->schema([
                         TextEntry::make('status')
                             ->label('Status')
@@ -362,7 +362,7 @@ class ReimbursementApprovalResource extends Resource
                             ->placeholder('—'),
                     ]),
                 Section::make('Pengelolaan Data')
-                    ->columns(['default' => 122, 'md' => 2])
+                    ->columns(['default' => 12, 'md' => 2])
                     ->schema([
                         TextEntry::make('created_at')
                             ->label('Dibuat Pada')

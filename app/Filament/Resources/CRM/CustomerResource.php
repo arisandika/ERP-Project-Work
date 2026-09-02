@@ -97,7 +97,7 @@ class CustomerResource extends Resource
                             ->prefixIcon('heroicon-o-document-text')
                             ->visible(fn(Forms\Get $get) => $get('customer_type') === 'company'),
                     ])
-                    ->columns(['default' => 122, 'md' => 2]),
+                    ->columns(['default' => 12, 'md' => 2]),
                 Forms\Components\Section::make('Informasi PIC (Person In Charge)')
                     ->description('Data narahubung dari pihak Customer/Perusahaan')
                     ->collapsible()
