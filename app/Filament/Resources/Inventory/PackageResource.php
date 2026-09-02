@@ -68,6 +68,8 @@ class PackageResource extends Resource
                         Forms\Components\Repeater::make('items')
                             ->label('Daftar Product & Layanan')
                             ->relationship('items')
+                            ->minItems(1)
+                            ->required()
                             ->schema([
                                 Forms\Components\Select::make('item_type')
                                     ->label('Tipe Item')
@@ -79,6 +81,9 @@ class PackageResource extends Resource
                                     ->required()
                                     ->afterStateUpdated(function (callable $set, callable $get) use ($recalculateTotal) {
                                         $set('item_id', null);
+                                        if ($get('item_type') === 'service') {
+                                            $set('quantity', 1);
+                                        }
                                         $set('price', 0);
                                         $set('subtotal', 0);
 
@@ -143,7 +148,10 @@ class PackageResource extends Resource
                                     ->label('Qty')
                                     ->numeric()
                                     ->default(1)
-                                    ->minValue(0)
+                                    ->minValue(1)
+                                    ->maxValue(fn (callable $get) => $get('item_type') === 'service' ? 1 : null)
+                                    ->disabled(fn (callable $get) => $get('item_type') === 'service')
+                                    ->dehydrated()
                                     ->reactive()
                                     ->afterStateUpdated(function (callable $set, callable $get) use ($recalculateTotal) {
                                         $price = (float) $get('price');
