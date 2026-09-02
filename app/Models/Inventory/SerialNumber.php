@@ -3,6 +3,7 @@
 namespace App\Models\Inventory;
 
 use Illuminate\Database\Eloquent\Model;
+use App\Models\Inventory\StockTransaction;
 use App\Models\Inventory\Product;
 use App\Models\Inventory\Warehouse;
 use App\Models\Procurement\Supplier;
@@ -84,5 +85,14 @@ class SerialNumber extends Model
     public function purchaseOrder()
     {
         return $this->belongsTo(PurchaseOrder::class, 'purchase_order_id');
+    }
+
+    /**
+     * Semua transaksi stok yang melibatkan SN ini — traceability chain.
+     */
+    public function transactions()
+    {
+        return $this->hasMany(StockTransaction::class, 'serial_number_id')
+            ->orderBy('transaction_date', 'desc');
     }
 }

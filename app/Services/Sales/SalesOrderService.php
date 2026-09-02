@@ -11,6 +11,7 @@ use App\Models\Marketing\PromoCode;
 use App\Models\Inventory\Warehouse;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Arr;
+use Illuminate\Validation\ValidationException;
 
 class SalesOrderService
 {
@@ -142,9 +143,9 @@ class SalesOrderService
             $qty = (float) ($item['qty'] ?? 0);
 
             if ($avail < $qty) {
-                throw new \Exception(
-                    "Stok '{$item['item_name']}' tidak mencukupi! Tersedia: {$avail}, diminta: {$qty}"
-                );
+                throw ValidationException::withMessages([
+                    'items' => "Stok '{$item['item_name']}' tidak mencukupi! Tersedia: {$avail}, diminta: {$qty}",
+                ]);
             }
         }
     }

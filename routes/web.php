@@ -9,6 +9,7 @@ use App\Http\Controllers\Sales\InvoiceVerificationController;
 use App\Livewire\CustomerPortal;
 use App\Livewire\CustomerPortalDashboard;
 use App\Livewire\CustomerPortalReturnCreate;
+use App\Livewire\CustomerPortalReturnDetail;
 use App\Livewire\ExternalDashboard;
 use App\Livewire\ExternalLogin;
 use Illuminate\Support\Facades\Route;
@@ -67,8 +68,13 @@ Route::get('external/{token}/dashboard', ExternalDashboard::class)
 Route::middleware('web')->prefix('customer-portal')->group(function () {
     Route::get('/', CustomerPortal::class)->name('customer-portal.login');
 
+    // public tokenized link from invoice email
+    Route::get('/invoice/{token}', [\App\Http\Controllers\CustomerPortal\InvoiceTokenController::class, 'show'])
+        ->name('customer-portal.invoice.show');
+
     Route::middleware('customer.portal')->group(function () {
         Route::get('/dashboard', CustomerPortalDashboard::class)->name('customer-portal.dashboard');
         Route::get('/return/create', CustomerPortalReturnCreate::class)->name('customer-portal.return.create');
+        Route::get('/return/{rma}', CustomerPortalReturnDetail::class)->name('customer-portal.return.view');
     });
 });

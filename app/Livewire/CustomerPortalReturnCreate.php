@@ -1,11 +1,13 @@
 <?php
 namespace App\Livewire;
 
+use App\Actions\InvoiceGeneratePortalToken;
 use App\Models\AfterSales\ReturnRequest;
 use App\Models\CRM\Customer;
 use App\Models\Inventory\SerialNumber;
 use App\Models\Sales\Invoice;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Route;
 use Livewire\Component;
 use Livewire\WithFileUploads;
 
@@ -22,6 +24,7 @@ class CustomerPortalReturnCreate extends Component
     public string $invoice_number_input = '';
     public ?Invoice $invoice            = null;
     public $invoiceItems                = [];
+    public bool $invoicePrefilled       = false; // prefilled via email link
 
     // ==== STEP 2: Pilih item + keluhan ====
     public ?int $selected_invoice_item_id = null;
@@ -42,6 +45,21 @@ class CustomerPortalReturnCreate extends Component
     public function mount()
     {
         $this->customer = request()->attributes->get('portal_customer');
+
+        // prefill invoice jika datang lewat link email token
+        $invoiceId = request()->query('invoice_id') ?: request()->query('invoice');
+        if ($invoiceId) {
+            $this->invoice = Invoice::where('id', $invoiceId)
+                ->where('nx_customer_id', $this->customer->id)
+                ->with(['items'])
+                ->first();
+
+            if ($this->invoice) {
+                $this->invoice_number_input = $this->invoice->invoice_number;
+                $this->invoiceItems         = $this->invoice->items->where('item_type', 'product')->values();
+                $this->invoicePrefilled     = true;
+            }
+        }
     }
 
     // =========================================================
@@ -49,6 +67,11 @@ class CustomerPortalReturnCreate extends Component
     // =========================================================
     public function findInvoice()
     {
+        if ($this->invoicePrefilled) {
+            $this->step = 2;
+            return;
+        }
+
         $this->resetErrorBag();
         $this->invoice      = null;
         $this->invoiceItems = [];
@@ -95,7 +118,7 @@ class CustomerPortalReturnCreate extends Component
     public function proceedToStep3()
     {
         $this->validate([
-            'warranty_type'     => 'required|in:garansi,berbayar',
+            'warranty_type'     => 'required|in:supplier,store',
             'issue_description' => 'required|string|min:10|max:1000',
         ]);
 

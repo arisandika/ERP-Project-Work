@@ -177,8 +177,10 @@
                         @forelse($returns as $return)
                             @php $badge = $this->getStatusBadgeColor($return->status); @endphp
                             <tr class="hover:bg-secondary-light dark:hover:bg-secondary-dark">
-                                <td class="p-4 text-sm font-medium text-black whitespace-nowrap lg:px-6 dark:text-white">
-                                    {{ $return->rma_number }}
+                                <td class="p-4 text-sm font-medium whitespace-nowrap lg:px-6 dark:text-white">
+                                    <a href="{{ route('customer-portal.return.view', $return->rma_number) }}" class="hover:text-main-primary dark:hover:text-main-primary">
+                                        {{ $return->rma_number }}
+                                    </a>
                                 </td>
                                 <td class="p-4 text-sm lg:px-6">
                                     <div class="font-medium text-black dark:text-white">{{ $return->serialNumber?->product?->name ?? '-' }}</div>
@@ -220,7 +222,9 @@
                         <div class="p-4 border-b border-border-light dark:border-border-dark">
                             <div class="flex items-start justify-between">
                                 <div class="flex-1 min-w-0">
-                                    <h4 class="font-medium text-black truncate dark:text-white">{{ $return->rma_number }}</h4>
+                                    <a href="{{ route('customer-portal.return.view', $return->rma_number) }}" class="block font-medium text-black truncate dark:text-white hover:text-main-primary">
+                                        {{ $return->rma_number }}
+                                    </a>
                                     <p class="text-sm text-gray-600 dark:text-gray-400">
                                         {{ $return->serialNumber?->product?->name ?? '-' }}
                                     </p>

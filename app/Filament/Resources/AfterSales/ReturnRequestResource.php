@@ -126,6 +126,7 @@ class ReturnRequestResource extends Resource
                         'danger' => ReturnRequest::STATUS_INTERNAL_REPAIR,
                         'info' => ReturnRequest::STATUS_READY_FOR_RETURN,
                         'success' => ReturnRequest::STATUS_RETURNED_TO_CLIENT,
+                        'destructive' => ReturnRequest::STATUS_REJECTED,
                     ])
                     ->formatStateUsing(fn(string $state): string => ReturnRequest::getStatusLabels()[$state] ?? $state),
             ])
@@ -159,6 +160,7 @@ class ReturnRequestResource extends Resource
         return [
             'index' => Pages\ListReturnRequests::route('/'),
             'create' => Pages\CreateReturnRequest::route('/create'),
+            'view' => Pages\ViewReturnRequest::route('/{record}'),
             'edit' => Pages\EditReturnRequest::route('/{record}/edit'),
         ];
     }
