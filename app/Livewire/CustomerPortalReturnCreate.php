@@ -1,7 +1,6 @@
 <?php
 namespace App\Livewire;
 
-use App\Actions\InvoiceGeneratePortalToken;
 use App\Models\AfterSales\ReturnRequest;
 use App\Models\CRM\Customer;
 use App\Models\Inventory\SerialNumber;
@@ -227,12 +226,13 @@ class CustomerPortalReturnCreate extends Component
                 'qty'               => $this->productIsSerialized ? 1 : $this->qty,
                 'warranty_type'     => $this->warranty_type,
                 'status'            => ReturnRequest::STATUS_RECEIVED,
+                'received_date'     => now(), // <-- tambahkan ini
                 'issue_description' => $this->issue_description,
                 'evidence_files'    => $paths,
                 'created_by'        => null,
                 'source'            => ReturnRequest::SOURCE_CUSTOMER_PORTAL,
             ]);
-
+            
             DB::commit();
 
             session()->flash('message', 'Pengajuan return berhasil dikirim. Tim kami akan segera memproses.');

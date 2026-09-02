@@ -219,14 +219,32 @@ class ProductResource extends Resource
                     ->color('info')
                     ->placeholder('—')
                     ->icon('heroicon-o-building-office'),
+                Tables\Columns\TextColumn::make('available_stock')
+                    ->label('Stock Tersedia')
+                    ->getStateUsing(fn ($record) => $record->available_stock)
+                    ->numeric()
+                    ->sortable()
+                    ->badge()
+                    ->color(fn ($state) => match (true) {
+                        $state <= 0 => 'danger',
+                        $state <= 5 => 'danger',
+                        $state <= 10 => 'warning',
+                        default => 'success',
+                    })
+                    ->suffix(' Qty')
+                    ->description('Stock yang dapat dijual di Sales Order'),
+                Tables\Columns\TextColumn::make('reserved_stock')
+                    ->label('Reserved Stock')
+                    ->getStateUsing(fn ($record) => $record->reserved_stock)
+                    ->numeric()
+                    ->sortable()
+                    ->badge()
+                    ->color('warning')
+                    ->suffix(' Qty')
+                    ->description('Stock yang sudah dipesan'),
                 Tables\Columns\TextColumn::make('total_stock')
-                    ->label('Total Stock Fisik')
-                    ->getStateUsing(
-                        fn($record) =>
-                            $record->productStocks()->sum('qty_available')
-                            + $record->productStocks()->sum('qty_reserved')
-                            + $record->productStocks()->sum('qty_on_delivery')
-                    )
+                    ->label('Total Stock')
+                    ->getStateUsing(fn ($record) => $record->total_stock)
                     ->numeric()
                     ->sortable()
                     ->badge()

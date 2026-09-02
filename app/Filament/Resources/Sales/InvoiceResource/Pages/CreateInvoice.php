@@ -4,6 +4,7 @@ namespace App\Filament\Resources\Sales\InvoiceResource\Pages;
 
 use App\Filament\Resources\Sales\InvoiceResource;
 use App\Models\Sales\Invoice;
+use App\Services\Sales\InvoiceStockService;
 use Filament\Resources\Pages\CreateRecord;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\DB;
@@ -88,6 +89,8 @@ class CreateInvoice extends CreateRecord
                     'line_total' => round($qty * $price, 2),
                 ]);
             }
+
+            app(InvoiceStockService::class)->process($invoice->load('items'));
 
             return $invoice;
         });
