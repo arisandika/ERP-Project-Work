@@ -178,7 +178,10 @@
         <tr>
             <td class="logo-cell">
                 {{-- Pastikan file ada di public/assets/logo2.png --}}
-                <img src="{{ public_path('assets/logo2.png') }}" alt="Logo">
+                @php($logoPath = public_path('assets/logo2.png'))
+                @if(is_file($logoPath))
+                    <img src="data:image/png;base64,{{ base64_encode(file_get_contents($logoPath)) }}" alt="Logo">
+                @endif
             </td>
             <td class="company-info-cell">
                 <h2 class="company-name">NEXICON</h2>
@@ -249,7 +252,7 @@
                 <tr class="{{ $index % 2 ? 'row-bg' : '' }}">
                     <td class="text-center">{{ $index + 1 }}</td>
                     <td>{{ $trx->transaction_date->format('d M Y H:i') }}</td>
-                    <td style="font-family: monospace;">{{ $trx->product->product_code ?? '-' }}</td>
+                    <td>{{ $trx->product->product_code ?? '-' }}</td>
                     <td><strong>{{ $trx->product->product_name ?? '-' }}</strong></td>
                     <td>{{ $trx->warehouse->warehouse_name ?? '-' }}</td>
                     <td class="text-center">

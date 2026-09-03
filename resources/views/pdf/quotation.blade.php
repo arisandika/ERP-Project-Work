@@ -5,23 +5,24 @@
     <title>Penawaran - {{ $quotation->quotation_number }}</title>
     <style>
         @page {
-            margin: 20px 25px;
+            margin: 25px 30px;
         }
         body {
             font-family: 'Helvetica', sans-serif;
             font-size: 11px;
             color: #333;
+            line-height: 1.3;
         }
 
         .header-table { width: 100%; border-collapse: collapse; margin-bottom: 15px; }
         .header-table .logo-cell { width: 15%; vertical-align: middle; }
         .header-table .logo-cell img { max-width: 80px; }
         .header-table .company-info-cell { vertical-align: middle; padding-left: 20px; }
-        .header-table .company-name { font-size: 28px; font-weight: bold; margin: 0; }
-        .header-table .company-tagline { font-size: 14px; margin: 0; }
-        .header-table .company-address { font-size: 11px; margin: 5px 0 0 0; }
+        .header-table .company-name { font-size: 26px; font-weight: bold; margin: 0; color: #222; }
+        .header-table .company-tagline { font-size: 12px; margin: 2px 0 5px 0; font-weight: bold; color: #555; }
+        .header-table .company-address { font-size: 10px; margin: 0; color: #444; }
 
-        .header-divider { border-bottom: 4px double #000; margin-bottom: 30px; }
+        .header-divider { border-bottom: 3px double #333; margin-bottom: 25px; }
 
         .document-title { text-align: center; margin-bottom: 20px; }
         .document-title h1 { margin: 0; font-size: 22px; text-transform: uppercase; }
@@ -54,7 +55,10 @@
     <table class="header-table">
         <tr>
             <td class="logo-cell">
-                <img src="{{ public_path('assets/logo2.png') }}" alt="Nexicon Logo">
+                @php($logoPath = public_path('assets/logo2.png'))
+                @if(is_file($logoPath))
+                    <img src="data:image/png;base64,{{ base64_encode(file_get_contents($logoPath)) }}" alt="Nexicon Logo">
+                @endif
             </td>
             <td class="company-info-cell">
                 <p class="company-name">NEXICON</p>
