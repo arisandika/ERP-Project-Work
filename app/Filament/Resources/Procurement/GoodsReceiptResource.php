@@ -185,10 +185,7 @@ class GoodsReceiptResource extends Resource
                                         ->minValue(0)
                                         ->maxValue(fn (Forms\Get $get) => (int) ($get('sisa_qty') ?? 0))
                                         ->live(debounce: 300)
-                                        ->suffix('pcs')
-                                        ->afterStateUpdated(function (Forms\Set $set) {
-                                            $set('scanned_sns', null);
-                                        }),
+                                        ->suffix('pcs'),
 
                                     Forms\Components\ViewField::make('camera_sn')
                                         ->label('Scanner Barcode/QR')
@@ -265,6 +262,7 @@ class GoodsReceiptResource extends Resource
                                     Forms\Components\Textarea::make('scanned_sns')
                                         ->label('Daftar Serial Number')
                                         ->visible(fn (Forms\Get $get) => (bool) $get('is_serialized'))
+                                        ->dehydrated(true)
                                         ->required(fn (Forms\Get $get) => (bool) $get('is_serialized') && (int) ($get('quantity_received') ?? 0) > 0)
                                         ->rows(4)
                                         ->helperText('Jumlah serial number harus sama persis dengan qty yang diterima sekarang.')

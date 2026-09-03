@@ -67,7 +67,6 @@ class PackageResource extends Resource
                     ->schema([
                         Forms\Components\Repeater::make('items')
                             ->label('Daftar Product & Layanan')
-                            ->relationship('items')
                             ->minItems(1)
                             ->required()
                             ->schema([
@@ -293,7 +292,6 @@ class PackageResource extends Resource
                     ->native(false),
             ])
             ->actions([
-                Tables\Actions\ViewAction::make(),
                 Tables\Actions\EditAction::make(),
                 Tables\Actions\DeleteAction::make(),
                 Tables\Actions\ForceDeleteAction::make(),

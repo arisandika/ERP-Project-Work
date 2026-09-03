@@ -229,10 +229,10 @@
     <table class="header-table">
         <tr>
             <td class="logo-cell">
-                @php($logoPath = public_path('assets/logo2.png'))
-                @if(is_file($logoPath))
+                <?php $logoPath = public_path('assets/logo2.png'); ?>
+                <?php if (is_file($logoPath)): ?>
                     <img src="data:image/png;base64,{{ base64_encode(file_get_contents($logoPath)) }}" alt="Logo">
-                @endif
+                <?php endif; ?>
             </td>
             <td class="company-info-cell">
                 <h2 class="company-name">NEXICON</h2>
@@ -254,22 +254,23 @@
         <p>No: {{ $purchaseOrder->po_number }}</p>
 
         {{-- Status Badge Logic --}}
-        @php
-            $statusColor = match ($purchaseOrder->status) {
+        <?php
+            $purchaseOrderStatus = $purchaseOrder->status?->value ?? $purchaseOrder->status;
+            $statusColor = match ($purchaseOrderStatus) {
                 'completed' => 'background-color: #dff0d8; color: #3c763d; border-color: #d6e9c6;', // Hijau
                 'cancelled' => 'background-color: #f2dede; color: #a94442; border-color: #ebccd1;', // Merah
                 'partial' => 'background-color: #d9edf7; color: #31708f; border-color: #bce8f1;', // Biru
                 'sent' => 'background-color: #d9edf7; color: #31708f; border-color: #bce8f1;', // Biru
                 default => 'background-color: #fcf8e3; color: #8a6d3b; border-color: #faebcc;', // Kuning (Draft)
             };
-            $statusLabel = match ($purchaseOrder->status) {
+            $statusLabel = match ($purchaseOrderStatus) {
                 'completed' => 'SELESAI',
                 'cancelled' => 'DIBATALKAN',
                 'partial' => 'DITERIMA SEBAGIAN',
                 'sent' => 'DIKIRIM KE SUPPLIER',
                 default => 'DRAFT',
             };
-        @endphp
+        ?>
         <span class="status-badge" style="{{ $statusColor }}">{{ $statusLabel }}</span>
     </div>
 
