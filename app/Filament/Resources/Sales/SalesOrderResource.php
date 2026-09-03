@@ -282,15 +282,8 @@ class SalesOrderResource extends Resource
                         if ($type !== 'product' || !$itemId)
                             return null;
 
-                        $warehouseId = \App\Models\Inventory\Warehouse::where('warehouse_name', 'Gudang Utama')->value('id') ?? 1;
-                        $stock = \App\Models\Inventory\ProductStock::where('product_id', $itemId)
-                            ->where('warehouse_id', $warehouseId)
-                            ->first();
-
-                        if (!$stock)
-                            return '⚠️ Stok tidak ditemukan';
-                        $avail = (float) $stock->qty_available;
-                        return "Stok tersedia: {$avail}";
+                        $avail = (float) \App\Models\Inventory\ProductStock::where('product_id', $itemId)->sum('qty_available');
+                        return $avail > 0 ? "Stok tersedia: {$avail}" : '⚠️ Stok tidak ditemukan';
                     })
                     ->maxValue(function (Get $get) {
                         $type = $get('item_type');
@@ -298,10 +291,7 @@ class SalesOrderResource extends Resource
                         if ($type !== 'product' || !$itemId)
                             return null;
 
-                        $warehouseId = \App\Models\Inventory\Warehouse::where('warehouse_name', 'Gudang Utama')->value('id') ?? 1;
-                        $stock = \App\Models\Inventory\ProductStock::where('product_id', $itemId)
-                            ->where('warehouse_id', $warehouseId)
-                            ->value('qty_available');
+                        $stock = \App\Models\Inventory\ProductStock::where('product_id', $itemId)->sum('qty_available');
 
                         return $stock ? (int) $stock : null;
                     })
