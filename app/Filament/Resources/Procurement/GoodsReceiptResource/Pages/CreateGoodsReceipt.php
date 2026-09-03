@@ -7,6 +7,7 @@ use App\Models\Procurement\GoodsReceipt;
 use App\Services\Procurement\GoodsReceiptService;
 use Filament\Notifications\Notification;
 use Filament\Resources\Pages\CreateRecord;
+use Filament\Support\Exceptions\Halt;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\DB;
 use Throwable;
@@ -71,7 +72,7 @@ class CreateGoodsReceipt extends CreateRecord
                 ->persistent()
                 ->send();
 
-            throw $exception;
+            throw (new Halt)->rollBackDatabaseTransaction();
         }
     }
 
