@@ -16,7 +16,7 @@ class ViewPackage extends ViewRecord
         return [
             Actions\EditAction::make(),
             Action::make('Kembali')
-                ->url(static::getResource()::getUrl()) 
+                ->url(static::getResource()::getUrl())
                 ->button()
                 ->color('gray'),
         ];
@@ -25,5 +25,21 @@ class ViewPackage extends ViewRecord
     public function getTitle(): string
     {
         return 'Lihat Paket';
+    }
+
+    protected function mutateFormDataBeforeFill(array $data): array
+    {
+        $data['items'] = $this->record->items()
+            ->get()
+            ->map(fn ($item) => [
+                'item_type' => $item->item_type,
+                'item_id'   => $item->item_id,
+                'quantity'  => $item->quantity,
+                'price'     => $item->price,
+                'subtotal'  => $item->subtotal,
+            ])
+            ->toArray();
+
+        return $data;
     }
 }

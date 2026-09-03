@@ -378,7 +378,7 @@ class PurchaseOrderResource extends Resource
                         }
 
                         try {
-                            Mail::to($supplierEmail)->queue(new PurchaseOrderMail($record));
+                            Mail::to($supplierEmail)->send(new PurchaseOrderMail($record));
 
                             Notification::make()
                                 ->title('Email Terkirim Ulang')
