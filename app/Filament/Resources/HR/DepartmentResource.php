@@ -45,7 +45,7 @@ class DepartmentResource extends Resource
             ->schema([
                 Forms\Components\Section::make('Informasi Departemen')
                     ->schema([
-                        Forms\Components\Grid::make(2)
+                        Forms\Components\Grid::make(['default' => 1, 'sm' => 2])
                             ->schema([
                                 Forms\Components\TextInput::make('name')
                                     ->label('Nama Departemen')
@@ -210,7 +210,7 @@ class DepartmentResource extends Resource
         return $infolist
             ->schema([
                 Section::make('Informasi Departemen')
-                    ->columns(['default' => 12, 'md' => 2])
+                    ->columns(['default' => 1, 'md' => 2])
                     ->schema([
                         TextEntry::make('name')
                             ->label('Nama Departemen')
@@ -223,7 +223,7 @@ class DepartmentResource extends Resource
                             ->placeholder('—'),
                     ]),
                 Section::make('Pengelolaan Data')
-                    ->columns(['default' => 12, 'md' => 2])
+                    ->columns(['default' => 1, 'md' => 2])
                     ->schema([
                         TextEntry::make('created_at')
                             ->label('Dibuat Pada')

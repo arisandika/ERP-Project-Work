@@ -38,7 +38,7 @@ class OfficeResource extends Resource
         return $form
             ->schema([
                 Forms\Components\Section::make('Informasi Kantor')
-                    ->columns(['default' => 12, 'md' => 2])
+                    ->columns(['default' => 1, 'md' => 2])
                     ->schema([
                         Forms\Components\TextInput::make('name')
                             ->label('Nama Kantor')
@@ -90,7 +90,7 @@ class OfficeResource extends Resource
                                 $set('location', ['lat' => $record?->latitude, 'lng' => $record?->longitude]);
                             }),
                         Forms\Components\Section::make()
-                            ->columns(['default' => 12, 'md' => 2])
+                            ->columns(['default' => 1, 'md' => 2])
                             ->schema([
                                 Forms\Components\TextInput::make('latitude')
                                     ->readOnly(),

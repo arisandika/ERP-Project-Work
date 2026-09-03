@@ -196,7 +196,7 @@ class OvertimeMonitoringResource extends Resource
     {
         return $infolist->schema([
             Section::make('Data Karyawan')
-                ->columns(['default' => 12, 'md' => 2])
+                ->columns(['default' => 1, 'md' => 2])
                 ->schema([
                     TextEntry::make('employee.full_name')
                         ->label('Nama Karyawan')
@@ -235,11 +235,11 @@ class OvertimeMonitoringResource extends Resource
                         ->badge()
                         ->color(fn(Attendance $record) => $record->overtime_minutes > 0 ? 'warning' : 'gray')
                         ->icon('heroicon-m-clock')
-                        ->columnSpan(2),
+                        ->columnSpan(['default' => 'full', 'sm' => 2]),
                     TextEntry::make('overtime_minutes')
                         ->label('Total Menit Lembur')
                         ->getStateUsing(fn(Attendance $record) => $record->overtime_minutes . ' menit')
-                        ->columnSpan(2),
+                        ->columnSpan(['default' => 'full', 'sm' => 2]),
                 ]),
         ]);
     }

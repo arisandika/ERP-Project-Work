@@ -39,7 +39,7 @@ class SupplierResource extends Resource
                                     ->maxLength(255)
                                     ->placeholder('Contoh: PT. Maju Jaya / Toko Makmur Shopee')
                                     ->columnSpanFull(),
-                                Forms\Components\Grid::make(3)
+                                Forms\Components\Grid::make(['default' => 1, 'sm' => 3])
                                     ->schema([
                                         Forms\Components\TextInput::make('supplier_code')
                                             ->label('Kode Supplier')
@@ -82,7 +82,7 @@ class SupplierResource extends Resource
                                     ->rows(3)
                                     ->columnSpanFull(),
                                 // Kontak utama selalu tampil (untuk individu maupun perusahaan)
-                                Forms\Components\Grid::make(2)
+                                Forms\Components\Grid::make(['default' => 1, 'sm' => 2])
                                     ->schema([
                                         Forms\Components\TextInput::make('phone')
                                             ->label('No. Telepon / WhatsApp')
@@ -97,7 +97,7 @@ class SupplierResource extends Resource
                         // SECTION 2: KEUANGAN
                         Forms\Components\Section::make('Informasi Keuangan & Pembayaran')
                             ->schema([
-                                Forms\Components\Grid::make(2)
+                                Forms\Components\Grid::make(['default' => 1, 'sm' => 2])
                                     ->schema([
                                         Forms\Components\TextInput::make('tax_id')
                                             ->label('NPWP / NIK (Jika Individu)'),
@@ -111,7 +111,7 @@ class SupplierResource extends Resource
                                             ])
                                             ->native(false),
                                     ]),
-                                Forms\Components\Grid::make(3)
+                                Forms\Components\Grid::make(['default' => 1, 'sm' => 3])
                                     ->schema([
                                         Forms\Components\TextInput::make('bank_name')
                                             ->label('Nama Bank')
@@ -171,7 +171,7 @@ class SupplierResource extends Resource
                     ])
                     ->columnSpan(['lg' => 1]),
             ])
-            ->columns(['default' => 12, 'md' => 3]);
+            ->columns(['default' => 1, 'md' => 3]);
     }
 
     public static function table(Table $table): Table

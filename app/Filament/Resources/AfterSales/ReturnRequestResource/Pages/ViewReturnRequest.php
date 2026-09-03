@@ -164,7 +164,7 @@ class ViewReturnRequest extends ViewRecord
             ->schema([
                 Section::make('Informasi Return')
                     ->schema([
-                        Grid::make(3)
+                        Grid::make(['default' => 1, 'sm' => 3])
                             ->schema([
                                 TextEntry::make('rma_number')->label('No. RMA'),
                                 TextEntry::make('customer.name')->label('Klien'),
@@ -175,7 +175,7 @@ class ViewReturnRequest extends ViewRecord
                             ->label('Detail Keluhan')
                             ->prose(),
 
-                        Grid::make(4)
+                        Grid::make(['default' => 1, 'sm' => 4])
                             ->schema([
                                 TextEntry::make('warranty_type')
                                     ->label('Rute Garansi')

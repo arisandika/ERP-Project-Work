@@ -207,7 +207,7 @@ class AttendanceHistoryResource extends Resource
         return $infolist
             ->schema([
                 Section::make('Informasi Presensi')
-                    ->columns(['default' => 12, 'md' => 2])
+                    ->columns(['default' => 1, 'md' => 2])
                     ->schema([
                         TextEntry::make('employee.full_name')
                             ->label('Nama Karyawan')
@@ -259,7 +259,7 @@ class AttendanceHistoryResource extends Resource
                             ->columnSpanFull(),
                     ]),
                 Section::make('Pengelolaan Data')
-                    ->columns(['default' => 12, 'md' => 2])
+                    ->columns(['default' => 1, 'md' => 2])
                     ->schema([
                         TextEntry::make('created_at')
                             ->label('Dibuat Pada')

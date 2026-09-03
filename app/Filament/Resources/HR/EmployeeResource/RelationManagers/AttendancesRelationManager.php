@@ -268,7 +268,7 @@ class AttendancesRelationManager extends RelationManager
                                     ->displayFormat('d M Y')
                                     ->required(),
                             ])
-                            ->columns(['default' => 12, 'md' => 2]),
+                            ->columns(['default' => 1, 'md' => 2]),
                         FormSection::make('Pilih Kolom')
                             ->description('Pilih kolom yang ingin disertakan dalam file Excel')
                             ->schema([
@@ -298,7 +298,7 @@ class AttendancesRelationManager extends RelationManager
                                     ])
                                     ->required()
                                     ->minItems(1)
-                                    ->columns(['default' => 12, 'md' => 2])
+                                    ->columns(['default' => 1, 'md' => 2])
                                     ->gridDirection('row'),
                             ]),
                     ])
@@ -313,7 +313,7 @@ class AttendancesRelationManager extends RelationManager
         return $infolist
             ->schema([
                 Section::make('Informasi Presensi')
-                    ->columns(['default' => 12, 'md' => 2])
+                    ->columns(['default' => 1, 'md' => 2])
                     ->schema([
                         TextEntry::make('employee.full_name')
                             ->label('Nama Karyawan')
@@ -358,7 +358,7 @@ class AttendancesRelationManager extends RelationManager
                             ->columnSpanFull(),
                     ]),
                 Section::make('Pengelolaan Data')
-                    ->columns(['default' => 12, 'md' => 2])
+                    ->columns(['default' => 1, 'md' => 2])
                     ->schema([
                         TextEntry::make('created_at')
                             ->label('Dibuat Pada')

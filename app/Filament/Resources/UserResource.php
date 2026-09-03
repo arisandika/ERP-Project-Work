@@ -37,7 +37,7 @@ class UserResource extends Resource
             ->schema([
                 Forms\Components\Section::make('Informasi User')
                     ->schema([
-                        Forms\Components\Grid::make(2)
+                        Forms\Components\Grid::make(['default' => 1, 'sm' => 2])
                             ->schema([
                                 Forms\Components\TextInput::make('name')
                                     ->label('Nama Lengkap')

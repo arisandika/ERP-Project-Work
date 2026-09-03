@@ -111,7 +111,7 @@ class PurchaseInvoiceResource extends Resource
                                 ->default(now()->addDays(14))
                                 ->required(),
                         ])
-                        ->columns(['default' => 12, 'md' => 2]),
+                        ->columns(['default' => 1, 'md' => 2]),
                     Forms\Components\Section::make('Rincian Tagihan')
                         ->schema([
                             Forms\Components\Repeater::make('items')
@@ -123,7 +123,7 @@ class PurchaseInvoiceResource extends Resource
                                         ->label('Nama Barang')
                                         ->disabled()
                                         ->dehydrated(false)
-                                        ->columnSpan(2),
+                                        ->columnSpan(['default' => 'full', 'sm' => 2]),
                                     Forms\Components\TextInput::make('max_qty')
                                         ->label('Max (Sesuai GR Gudang)')
                                         ->disabled()
@@ -157,7 +157,7 @@ class PurchaseInvoiceResource extends Resource
                                         ->disabled()
                                         ->dehydrated(),
                                 ])
-                                ->columns(['default' => 12, 'md' => 3])
+                                ->columns(['default' => 1, 'md' => 3])
                                 ->addable(false)
                                 ->deletable(false),
                         ]),
@@ -191,7 +191,7 @@ class PurchaseInvoiceResource extends Resource
                         ]),
                 ])->columnSpan(['lg' => 1]),
             ])
-            ->columns(['default' => 12, 'md' => 3]);
+            ->columns(['default' => 1, 'md' => 3]);
     }
 
     public static function table(Table $table): Table

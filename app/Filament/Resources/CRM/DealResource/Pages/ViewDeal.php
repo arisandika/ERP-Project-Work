@@ -43,7 +43,7 @@ class ViewDeal extends ViewRecord
         return $infolist
             ->schema([
                 // ── 1. TOP HEADER GRID (Info Cepat) ──────────────────────────────
-                Grid::make(3)
+                Grid::make(['default' => 1, 'sm' => 3])
                     ->schema([
                         // Card 1: Status Utama
                         Section::make('Status & Progress')
@@ -70,7 +70,7 @@ class ViewDeal extends ViewRecord
                                     ->suffix('%')
                                     ->weight(FontWeight::Bold)
                                     ->color(fn(int $state) => $state >= 70 ? 'success' : ($state >= 40 ? 'warning' : 'danger')),
-                            ])->columnSpan(1),
+                            ])->columnSpan(['default' => 'full', 'sm' => 1]),
 
                         // Card 2: Informasi Finansial
                         Section::make('Nilai & Waktu')
@@ -93,7 +93,7 @@ class ViewDeal extends ViewRecord
                                         $end = $record->close_date ? \Carbon\Carbon::parse($record->close_date) : now();
                                         return $start->diffForHumans($end, true, false, 2);
                                     })->icon('heroicon-o-clock'),
-                            ])->columnSpan(1),
+                            ])->columnSpan(['default' => 'full', 'sm' => 1]),
 
                         // Card 3: Penanggung Jawab
                         Section::make('Sales Officer')
@@ -117,7 +117,7 @@ class ViewDeal extends ViewRecord
                                         'lost' => 'danger',
                                         default => 'gray',
                                     }),
-                            ])->columnSpan(1),
+                            ])->columnSpan(['default' => 'full', 'sm' => 1]),
                     ]),
 
                 // ── 2. MAIN CONTENT TABS ──────────────────────────────────────────
@@ -129,7 +129,7 @@ class ViewDeal extends ViewRecord
                         Tab::make('Data Client (Lead)')
                             ->icon('heroicon-o-building-office')
                             ->schema([
-                                Grid::make(2)->schema([
+                                Grid::make(['default' => 1, 'sm' => 2])->schema([
                                     Group::make([
                                         TextEntry::make('lead.name')
                                             ->label('Nama Perusahaan / Lead')
@@ -139,7 +139,7 @@ class ViewDeal extends ViewRecord
                                         TextEntry::make('lead.customer_type')
                                             ->label('Kategori')
                                             ->badge(),
-                                    ])->columnSpan(1),
+                                    ])->columnSpan(['default' => 'full', 'sm' => 1]),
 
                                     Group::make([
                                         TextEntry::make('lead.phone')
@@ -151,7 +151,7 @@ class ViewDeal extends ViewRecord
                                             ->label('Email Official')
                                             ->icon('heroicon-o-envelope')
                                             ->copyable(),
-                                    ])->columnSpan(1),
+                                    ])->columnSpan(['default' => 'full', 'sm' => 1]),
 
                                     TextEntry::make('lead.address')
                                         ->label('Alamat Lengkap')
@@ -162,7 +162,7 @@ class ViewDeal extends ViewRecord
                                 Fieldset::make('Person in Charge (PIC)')
                                     ->visible(fn($record) => $record->lead?->customer_type === 'company')
                                     ->schema([
-                                        Grid::make(4)->schema([
+                                        Grid::make(['default' => 1, 'sm' => 4])->schema([
                                             TextEntry::make('lead.pic_name')->label('Nama PIC'),
                                             TextEntry::make('lead.pic_position')->label('Jabatan'),
                                             TextEntry::make('lead.pic_phone')->label('WA PIC')->color('success'),
@@ -202,7 +202,7 @@ class ViewDeal extends ViewRecord
                         Tab::make('Audit Log')
                             ->icon('heroicon-o-finger-print')
                             ->schema([
-                                Grid::make(2)->schema([
+                                Grid::make(['default' => 1, 'sm' => 2])->schema([
                                     Section::make('Riwayat Konversi Lead')
                                         ->schema([
                                             TextEntry::make('lead.convertedBy.full_name')
@@ -211,7 +211,7 @@ class ViewDeal extends ViewRecord
                                             TextEntry::make('lead.converted_at')
                                                 ->label('Waktu Konversi')
                                                 ->dateTime(),
-                                        ])->columnSpan(1),
+                                        ])->columnSpan(['default' => 'full', 'sm' => 1]),
 
                                     Section::make('Jejak Audit Data')
                                         ->schema([
@@ -221,7 +221,7 @@ class ViewDeal extends ViewRecord
                                             TextEntry::make('updated_at')
                                                 ->label('Pembaruan Terakhir')
                                                 ->dateTime('d M Y, H:i'),
-                                        ])->columnSpan(1),
+                                        ])->columnSpan(['default' => 'full', 'sm' => 1]),
                                 ]),
                             ]),
                     ]),

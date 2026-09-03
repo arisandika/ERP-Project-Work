@@ -39,7 +39,7 @@ class ViewLead extends ViewRecord
             ->schema([
                 Section::make('Informasi Utama Lead')
                     ->schema([
-                        Grid::make(2)
+                        Grid::make(['default' => 1, 'sm' => 2])
                             ->schema([
                                 TextEntry::make('name')
                                     ->label('Nama Lead')
@@ -77,7 +77,7 @@ class ViewLead extends ViewRecord
                     ->description('Data narahubung dari pihak Perusahaan')
                     ->visible(fn($record) => $record?->customer_type === 'company')
                     ->schema([
-                        Grid::make(2)
+                        Grid::make(['default' => 1, 'sm' => 2])
                             ->schema([
                                 TextEntry::make('pic_name')
                                     ->label('Nama PIC')
@@ -102,7 +102,7 @@ class ViewLead extends ViewRecord
                     ]),
                 Section::make('Status & Klasifikasi')
                     ->schema([
-                        Grid::make(4)
+                        Grid::make(['default' => 1, 'sm' => 4])
                             ->schema([
                                 TextEntry::make('status')
                                     ->label('Status Lead')
@@ -157,7 +157,7 @@ class ViewLead extends ViewRecord
                                     ->formatStateUsing(fn(string $state): string => ucwords(str_replace('_', ' ', $state)))
                                     ->placeholder('—'),
                             ]),
-                        Grid::make(3)
+                        Grid::make(['default' => 1, 'sm' => 3])
                             ->visible(fn($record) => $record->status === Lead::STATUS_CONVERTED)
                             ->schema([
                                 // Customer tetap pakai 'name' karena model Customer pakai kolom name
@@ -257,7 +257,7 @@ class ViewLead extends ViewRecord
                     ])
                     ->collapsible(),
                 Section::make('Pengelolaan Data')
-                    ->columns(['default' => 12, 'md' => 2])
+                    ->columns(['default' => 1, 'md' => 2])
                     ->schema([
                         TextEntry::make('created_at')
                             ->label('Dibuat Pada')

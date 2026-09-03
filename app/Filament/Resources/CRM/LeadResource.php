@@ -54,7 +54,7 @@ class LeadResource extends Resource
                 Forms\Components\Section::make('Informasi Lead')
                     ->description('Lengkapi data untuk lead baru')
                     ->schema([
-                        Forms\Components\Grid::make(2)
+                        Forms\Components\Grid::make(['default' => 1, 'sm' => 2])
                             ->schema([
                                 Forms\Components\Select::make('customer_type')
                                     ->label('Tipe')
@@ -99,7 +99,7 @@ class LeadResource extends Resource
                     ->collapsible()
                     ->visible(fn(Forms\Get $get) => $get('customer_type') === 'company')
                     ->schema([
-                        Forms\Components\Grid::make(2)
+                        Forms\Components\Grid::make(['default' => 1, 'sm' => 2])
                             ->schema([
                                 Forms\Components\TextInput::make('pic_name')
                                     ->label('Nama PIC')
@@ -127,7 +127,7 @@ class LeadResource extends Resource
 
                 Forms\Components\Section::make('Status & Klasifikasi')
                     ->schema([
-                        Forms\Components\Grid::make(2)
+                        Forms\Components\Grid::make(['default' => 1, 'sm' => 2])
                             ->schema([
                                 Forms\Components\Select::make('source')
                                     ->label('Sumber dari')
@@ -170,7 +170,7 @@ class LeadResource extends Resource
                                     ->prefixIcon('heroicon-o-user'),
                             ]),
 
-                        Forms\Components\Grid::make(3)
+                        Forms\Components\Grid::make(['default' => 1, 'sm' => 3])
                             ->visible(fn(Forms\Get $get) => $get('status') === Lead::STATUS_CONVERTED)
                             ->schema([
                                 Forms\Components\Select::make('converted_customer_id')

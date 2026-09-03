@@ -57,10 +57,10 @@ class InvoiceResource extends Resource
     public static function form(Form $form): Form
     {
         return $form->schema([
-            Grid::make(3)->schema([
+            Grid::make(['default' => 1, 'sm' => 3])->schema([
                 Group::make()->schema([
                     Section::make('Informasi Invoice')->schema([
-                        Grid::make(2)->schema([
+                        Grid::make(['default' => 1, 'sm' => 2])->schema([
                             TextInput::make('invoice_number')
                                 ->label('No. Invoice')
                                 ->disabled()
@@ -182,7 +182,7 @@ class InvoiceResource extends Resource
                                     Forms\Components\Hidden::make('item_type'),
                                     Forms\Components\Hidden::make('item_id'),
 
-                                    Grid::make(2)->schema([
+                                    Grid::make(['default' => 1, 'sm' => 2])->schema([
                                         TextInput::make('item_code')
                                             ->label('Kode Product')
                                             ->readOnly()

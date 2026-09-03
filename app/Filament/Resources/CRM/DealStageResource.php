@@ -41,7 +41,7 @@ class DealStageResource extends Resource
                 Forms\Components\Section::make('Konfigurasi Stage Deal')
                     ->description('Tentukan urutan dan probabilitas keberhasilan di setiap tahap.')
                     ->schema([
-                        Forms\Components\Grid::make(2)
+                        Forms\Components\Grid::make(['default' => 1, 'sm' => 2])
                             ->schema([
                                 Forms\Components\TextInput::make('name')
                                     ->label('Nama Stage')

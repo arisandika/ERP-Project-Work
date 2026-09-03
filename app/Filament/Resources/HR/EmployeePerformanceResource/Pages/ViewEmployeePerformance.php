@@ -91,7 +91,7 @@ class ViewEmployeePerformance extends ViewRecord
                             ->placeholder('—')
                             ->visible(fn(Employee $record) => $record->supervisor_id !== null),
                     ])
-                    ->columns(['default' => 12, 'md' => 2]),
+                    ->columns(['default' => 1, 'md' => 2]),
                 Section::make('Performance Summary')
                     ->description('Score and indicators derived from existing project & task contributions.')
                     ->schema([
@@ -137,7 +137,7 @@ class ViewEmployeePerformance extends ViewRecord
                             ->label('Evaluation Average')
                             ->state(fn() => $this->metrics?->evaluationAverage !== null ? $this->metrics->evaluationAverage . '/5' : '—'),
                     ])
-                    ->columns(['default' => 12, 'md' => 4]),
+                    ->columns(['default' => 1, 'md' => 4]),
                 Section::make('Performance Trend')
                     ->description('Historical supervisor evaluations (only shown when data exists).')
                     ->visible(fn(Employee $record) => $record->performanceEvaluations()->exists())

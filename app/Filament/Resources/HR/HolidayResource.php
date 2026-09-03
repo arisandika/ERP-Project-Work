@@ -40,7 +40,7 @@ class HolidayResource extends Resource
                             ->maxLength(255)
                             ->columnSpanFull(), // Dibuat penuh 1 baris
 
-                        Forms\Components\Grid::make(2)
+                        Forms\Components\Grid::make(['default' => 1, 'sm' => 2])
                             ->schema([
                                 Forms\Components\DatePicker::make('start_date')
                                     ->label('Dari Tanggal')

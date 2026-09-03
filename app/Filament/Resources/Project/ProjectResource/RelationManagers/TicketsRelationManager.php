@@ -78,7 +78,7 @@ class TicketsRelationManager extends RelationManager
                             ->preload()
                             ->nullable(),
                     ])
-                    ->columns(['default' => 12, 'md' => 2]),
+                    ->columns(['default' => 1, 'md' => 2]),
                 Forms\Components\Section::make('Jadwal Pengerjaan')
                     ->description('Timeline target penyelesaian ticket.')
                     ->schema([
@@ -96,7 +96,7 @@ class TicketsRelationManager extends RelationManager
                             ->native(false)
                             ->prefixIcon('heroicon-o-calendar-days'),
                     ])
-                    ->columns(['default' => 12, 'md' => 2]),
+                    ->columns(['default' => 1, 'md' => 2]),
                 Forms\Components\Section::make('Member Ticket')
                     ->schema([
                         Forms\Components\Select::make('assignees')
@@ -134,7 +134,7 @@ class TicketsRelationManager extends RelationManager
                             ->disabled()
                             ->hiddenOn('create'),
                     ])
-                    ->columns(['default' => 12, 'md' => 2]),
+                    ->columns(['default' => 1, 'md' => 2]),
                 Forms\Components\Section::make('Deskripsi Ticket')
                     ->schema([
                         Forms\Components\RichEditor::make('description')

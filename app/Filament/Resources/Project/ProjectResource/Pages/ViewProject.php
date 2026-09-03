@@ -70,7 +70,7 @@ class ViewProject extends ViewRecord
             ->schema([
                 Section::make('Informasi Project')
                     ->description('Detail informasi mengenai project')
-                    ->columns(['default' => 12, 'md' => 2])
+                    ->columns(['default' => 1, 'md' => 2])
                     ->schema([
                         TextEntry::make('name')
                             ->label('Nama Project')
@@ -116,7 +116,7 @@ class ViewProject extends ViewRecord
                     ]),
                 Section::make('Statistik Project')
                     ->description('Ringkasan aktivitas project.')
-                    ->columns(['default' => 12, 'md' => 4])
+                    ->columns(['default' => 1, 'md' => 4])
                     ->schema([
                         TextEntry::make('members_count')
                             ->label('Total Member')
@@ -151,7 +151,7 @@ class ViewProject extends ViewRecord
                     ]),
                 Section::make('Informasi Kontrak Project')
                     ->description('Project ini berasal dari Sales Order.')
-                    ->columns(['default' => 12, 'md' => 2])
+                    ->columns(['default' => 1, 'md' => 2])
                     ->schema([
                         TextEntry::make('salesOrder.order_number')
                             ->label('No. Sales Order')
@@ -203,7 +203,7 @@ class ViewProject extends ViewRecord
                     ]),
                 Section::make('Estimasi Budget Project')
                     ->description('Perbandingan estimasi biaya dengan pengeluaran aktual.')
-                    ->columns(['default' => 12, 'md' => 3])
+                    ->columns(['default' => 1, 'md' => 3])
                     ->schema([
                         TextEntry::make('estimated_cost')
                             ->label('Estimasi Biaya')
@@ -238,7 +238,7 @@ class ViewProject extends ViewRecord
                             ->columnSpanFull(),
                     ]),
                 Section::make('Pengelolaan Data')
-                    ->columns(['default' => 12, 'md' => 2])
+                    ->columns(['default' => 1, 'md' => 2])
                     ->schema([
                         TextEntry::make('created_at')
                             ->label('Dibuat Pada')

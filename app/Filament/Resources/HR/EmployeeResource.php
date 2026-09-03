@@ -166,7 +166,7 @@ class EmployeeResource extends Resource
                             ->label('Alamat')
                             ->maxLength(500),
                     ])
-                    ->columns(['default' => 12, 'md' => 2]),
+                    ->columns(['default' => 1, 'md' => 2]),
                 Forms\Components\Section::make('Informasi Pekerjaan')
                     ->schema([
                         Forms\Components\Select::make('department_id')
@@ -255,7 +255,7 @@ class EmployeeResource extends Resource
                             ->default(false)
                             ->inline(false),
                     ])
-                    ->columns(['default' => 12, 'md' => 2]),
+                    ->columns(['default' => 1, 'md' => 2]),
             ]);
     }
 
@@ -443,7 +443,7 @@ class EmployeeResource extends Resource
         return $infolist
             ->schema([
                 Section::make('Informasi Pribadi')
-                    ->columns(['default' => 12, 'md' => 2])
+                    ->columns(['default' => 1, 'md' => 2])
                     ->schema([
                         ImageEntry::make('photo')
                             ->label('Foto Profil')
@@ -477,7 +477,7 @@ class EmployeeResource extends Resource
                     ->collapsible()
                     ->persistCollapsed(),
                 Section::make('Informasi Pekerjaan')
-                    ->columns(['default' => 12, 'md' => 2])
+                    ->columns(['default' => 1, 'md' => 2])
                     ->schema([
                         TextEntry::make('status')
                             ->label('Status Karyawan')
@@ -547,7 +547,7 @@ class EmployeeResource extends Resource
                     ->collapsible()
                     ->persistCollapsed(),
                 Section::make('Informasi Tambahan Pribadi')
-                    ->columns(['default' => 12, 'md' => 2])
+                    ->columns(['default' => 1, 'md' => 2])
                     ->schema([
                         TextEntry::make('identity_number')
                             ->label('NIK (KTP)')
@@ -572,7 +572,7 @@ class EmployeeResource extends Resource
                     ->collapsible()
                     ->persistCollapsed(),
                 Section::make('Pengelolaan Data')
-                    ->columns(['default' => 12, 'md' => 2])
+                    ->columns(['default' => 1, 'md' => 2])
                     ->schema([
                         TextEntry::make('created_at')
                             ->label('Dibuat Pada')

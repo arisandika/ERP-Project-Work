@@ -39,7 +39,7 @@ class ViewCustomer extends ViewRecord
             ->schema([
                 Section::make('Informasi Utama Customer')
                     ->schema([
-                        Grid::make(2)
+                        Grid::make(['default' => 1, 'sm' => 2])
                             ->schema([
                                 TextEntry::make('name')
                                     ->label(fn(Customer $record) => $record->customer_type === 'company' ? 'Nama Perusahaan' : 'Nama Lengkap')
@@ -77,7 +77,7 @@ class ViewCustomer extends ViewRecord
                 // SECTION TAMBAHAN UNTUK CUSTOMER (NIK/NPWP)
                 Section::make('Informasi Legalitas')
                     ->schema([
-                        Grid::make(2)
+                        Grid::make(['default' => 1, 'sm' => 2])
                             ->schema([
                                 TextEntry::make('nik')
                                     ->label('NIK (KTP)')
@@ -95,7 +95,7 @@ class ViewCustomer extends ViewRecord
                     ->description('Data narahubung dari pihak Perusahaan')
                     ->visible(fn(Customer $record) => $record->customer_type === 'company')
                     ->schema([
-                        Grid::make(3)  // Dibuat 3 karena tidak ada field pic_email di model customer
+                        Grid::make(['default' => 1, 'sm' => 3])  // Dibuat 3 karena tidak ada field pic_email di model customer
                             ->schema([
                                 TextEntry::make('pic_name')
                                     ->label('Nama PIC')
@@ -113,7 +113,7 @@ class ViewCustomer extends ViewRecord
                     ]),
                 Section::make('Status & Klasifikasi')
                     ->schema([
-                        Grid::make(3)
+                        Grid::make(['default' => 1, 'sm' => 3])
                             ->schema([
                                 TextEntry::make('status')
                                     ->label('Status Customer')
@@ -288,7 +288,7 @@ class ViewCustomer extends ViewRecord
                     ])
                     ->visible(fn(Customer $record) => $record && $record->quotations()->withTrashed()->exists()),
                 Section::make('Pengelolaan Data')
-                    ->columns(['default' => 12, 'md' => 2])
+                    ->columns(['default' => 1, 'md' => 2])
                     ->schema([
                         TextEntry::make('created_at')
                             ->label('Masuk Pada')

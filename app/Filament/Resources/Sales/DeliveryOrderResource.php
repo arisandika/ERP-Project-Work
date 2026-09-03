@@ -53,7 +53,7 @@ class DeliveryOrderResource extends Resource
     {
         return $form->schema([
             Section::make('Informasi Surat Jalan')->schema([
-                Grid::make(3)->schema([
+                Grid::make(['default' => 1, 'sm' => 3])->schema([
                     TextInput::make('do_number')
                         ->label('No. Surat Jalan')
                         ->disabled()
@@ -126,7 +126,7 @@ class DeliveryOrderResource extends Resource
                         ->prefixIcon('heroicon-o-hashtag'),
                 ]),
 
-                Grid::make(2)->schema([
+                Grid::make(['default' => 1, 'sm' => 2])->schema([
                     Select::make('nx_customer_id')
                         ->label('Customer')
                         ->relationship('customer', 'name')
@@ -170,7 +170,7 @@ class DeliveryOrderResource extends Resource
                         Hidden::make('item_type')->default('product'),
                         Hidden::make('item_id'),
 
-                        Grid::make(2)->schema([
+                        Grid::make(['default' => 1, 'sm' => 2])->schema([
                             TextInput::make('item_code')
                                 ->label('Kode Product')
                                 ->disabled()

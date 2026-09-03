@@ -44,7 +44,7 @@ class CustomerResource extends Resource
                 Forms\Components\Section::make('Informasi Customer')
                     ->description('Lengkapi data untuk customer.')
                     ->schema([
-                        Forms\Components\Grid::make(2)
+                        Forms\Components\Grid::make(['default' => 1, 'sm' => 2])
                             ->schema([
                                 Forms\Components\TextInput::make('name')
                                     ->label(fn(Forms\Get $get) => $get('customer_type') === 'company' ? 'Nama Perusahaan' : 'Nama Individu')
@@ -97,13 +97,13 @@ class CustomerResource extends Resource
                             ->prefixIcon('heroicon-o-document-text')
                             ->visible(fn(Forms\Get $get) => $get('customer_type') === 'company'),
                     ])
-                    ->columns(['default' => 12, 'md' => 2]),
+                    ->columns(['default' => 1, 'md' => 2]),
                 Forms\Components\Section::make('Informasi PIC (Person In Charge)')
                     ->description('Data narahubung dari pihak Customer/Perusahaan')
                     ->collapsible()
                     ->visible(fn(Forms\Get $get) => $get('customer_type') === 'company')
                     ->schema([
-                        Forms\Components\Grid::make(2)
+                        Forms\Components\Grid::make(['default' => 1, 'sm' => 2])
                             ->schema([
                                 Forms\Components\TextInput::make('pic_name')
                                     ->label('Nama PIC')
@@ -127,7 +127,7 @@ class CustomerResource extends Resource
                     ]),
                 Forms\Components\Section::make('Status & Klasifikasi')
                     ->schema([
-                        Forms\Components\Grid::make(2)
+                        Forms\Components\Grid::make(['default' => 1, 'sm' => 2])
                             ->schema([
                                 Forms\Components\Select::make('source')
                                     ->label('Sumber dari')
