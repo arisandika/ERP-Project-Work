@@ -50,7 +50,7 @@ class GeneralInformation extends Page
     public function getHeaderWidgetsColumns(): int|string|array
     {
         return [
-            'default' => 122,
+            'default' => 12,
             'xl' => 2,
         ];
     }

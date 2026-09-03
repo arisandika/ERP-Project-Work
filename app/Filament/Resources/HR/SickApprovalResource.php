@@ -84,7 +84,7 @@ class SickApprovalResource extends Resource
                                 : 'Tidak menyertakan bukti sakit'
                         )
                 ])
-                ->columns(['default' => 122, 'md' => 2]),
+                ->columns(['default' => 1, 'md' => 2]),
             Forms\Components\Section::make('Persetujuan')
                 ->schema([
                     Forms\Components\Select::make('status')
@@ -107,7 +107,7 @@ class SickApprovalResource extends Resource
                         ->label('Catatan Admin')
                         ->nullable(),
                 ])
-                ->columns(['default' => 122, 'md' => 2]),
+                ->columns(['default' => 1, 'md' => 2]),
         ]);
     }
 
@@ -268,7 +268,7 @@ class SickApprovalResource extends Resource
         return $infolist
             ->schema([
                 Section::make('Informasi Pengajuan Sakit')
-                    ->columns(['default' => 122, 'md' => 2])
+                    ->columns(['default' => 1, 'md' => 2])
                     ->schema([
                         TextEntry::make('employee.full_name')
                             ->label('Nama Karyawan')
@@ -300,7 +300,7 @@ class SickApprovalResource extends Resource
                             ]),
                     ]),
                 Section::make('Status Persetujuan')
-                    ->columns(['default' => 122, 'md' => 2])
+                    ->columns(['default' => 1, 'md' => 2])
                     ->schema([
                         TextEntry::make('status')
                             ->label('Status')
@@ -341,7 +341,7 @@ class SickApprovalResource extends Resource
                             ->columnSpanFull(),
                     ]),
                 Section::make('Pengelolaan Data')
-                    ->columns(['default' => 122, 'md' => 2])
+                    ->columns(['default' => 1, 'md' => 2])
                     ->schema([
                         TextEntry::make('created_at')
                             ->label('Dibuat Pada')

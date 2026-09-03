@@ -262,11 +262,11 @@ class SerialNumberResource extends Resource
     {
         return $infolist
             ->schema([
-                Grid::make(3)->schema([
+                Grid::make(['default' => 1, 'sm' => 3])->schema([
                     // BLOK 1: INFORMASI UNIT UTAMA
                     Section::make('Informasi Unit')
                         ->icon('heroicon-o-cube')
-                        ->columnSpan(1)
+                        ->columnSpan(['default' => 'full', 'sm' => 1])
                         ->schema([
                             TextEntry::make('serial_number')
                                 ->label('Serial Number')
@@ -296,7 +296,7 @@ class SerialNumberResource extends Resource
                     // BLOK 2: RIWAYAT MASUK (INBOUND)
                     Section::make('Riwayat Masuk (Hulu)')
                         ->icon('heroicon-o-arrow-down-tray')
-                        ->columnSpan(1)
+                        ->columnSpan(['default' => 'full', 'sm' => 1])
                         ->schema([
                             TextEntry::make('inbound_date')
                                 ->label('Tanggal Masuk (Inbound)')
@@ -312,7 +312,7 @@ class SerialNumberResource extends Resource
                     // BLOK 3: RIWAYAT KELUAR (OUTBOUND) & GARANSI
                     Section::make('Riwayat Keluar (Hilir)')
                         ->icon('heroicon-o-arrow-up-tray')
-                        ->columnSpan(1)
+                        ->columnSpan(['default' => 'full', 'sm' => 1])
                         ->schema([
                             TextEntry::make('outbound_date')
                                 ->label('Tanggal Keluar (Outbound)')
@@ -331,7 +331,7 @@ class SerialNumberResource extends Resource
                 ]),
                 Section::make('Audit Trail Sistem')
                     ->collapsed()
-                    ->columns(['default' => 122, 'md' => 2])
+                    ->columns(['default' => 1, 'md' => 2])
                     ->schema([
                         TextEntry::make('created_at')
                             ->label('Data Dibuat')

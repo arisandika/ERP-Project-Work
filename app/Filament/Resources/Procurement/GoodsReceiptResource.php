@@ -42,14 +42,14 @@ class GoodsReceiptResource extends Resource
                                 ->afterStateHydrated(function (Forms\Components\TextInput $component, ?GoodsReceipt $record) {
                                     $component->state($record?->gr_number ?? GoodsReceipt::generateGRNumber());
                                 })
-                                ->columnSpan(1),
+                                ->columnSpan(['default' => 'full', 'sm' => 1]),
 
                             Forms\Components\TextInput::make('title')
                                 ->label('Nama / Judul Penerimaan')
                                 ->placeholder('Contoh: Penerimaan Laptop Batch 1')
                                 ->required()
                                 ->maxLength(255)
-                                ->columnSpan(2) // Agar inputan membentang
+                                ->columnSpan(['default' => 'full', 'sm' => 2]) // Agar inputan membentang
                                 ->extraInputAttributes(['class' => 'text-xl font-normal border-t-0 border-l-0 border-r-0 border-b-2 border-gray-300 focus:ring-0 px-0 bg-transparent']),
 
                             // Baris 2: Pemilihan PO, Supplier, & Gudang
@@ -113,7 +113,7 @@ class GoodsReceiptResource extends Resource
                                     $set('items', $grItems);
                                 })
                                 ->disabled(fn (string $operation): bool => $operation === 'edit')
-                                ->columnSpan(1),
+                                ->columnSpan(['default' => 'full', 'sm' => 1]),
 
                             Forms\Components\Hidden::make('supplier_id'),
 
@@ -121,7 +121,7 @@ class GoodsReceiptResource extends Resource
                                 ->label('Supplier')
                                 ->disabled()
                                 ->dehydrated(false)
-                                ->columnSpan(1),
+                                ->columnSpan(['default' => 'full', 'sm' => 1]),
 
                             Forms\Components\Select::make('warehouse_id')
                                 ->label('Masuk ke Gudang')
@@ -131,7 +131,7 @@ class GoodsReceiptResource extends Resource
                                         ->pluck('warehouse_name', 'id')
                                 )
                                 ->required()
-                                ->columnSpan(1),
+                                ->columnSpan(['default' => 'full', 'sm' => 1]),
 
                             // Baris 3: Tanggal & Surat Jalan
                             Forms\Components\DatePicker::make('receipt_date')
@@ -140,12 +140,12 @@ class GoodsReceiptResource extends Resource
                                 ->required()
                                 ->native(false)
                                 ->displayFormat('d M Y')
-                                ->columnSpan(1),
+                                ->columnSpan(['default' => 'full', 'sm' => 1]),
 
                             Forms\Components\TextInput::make('delivery_note_number')
                                 ->label('No. Surat Jalan Supplier')
                                 ->placeholder('Misal: SJ-12345')
-                                ->columnSpan(2), // Mengisi sisa kolom agar rapi
+                                ->columnSpan(['default' => 'full', 'sm' => 2]), // Mengisi sisa kolom agar rapi
                         ])
                         ->columns(['default' => 1, 'md' => 3]), // <-- Diubah menjadi 3 kolom
 

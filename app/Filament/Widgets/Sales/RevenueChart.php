@@ -18,7 +18,7 @@ class RevenueChart extends ChartWidget
     protected static bool $isLazy = true;
 
     protected int|string|array $columnSpan = [
-        'default' => 122,
+        'default' => 12,
         'xl' => 12,
     ];
 

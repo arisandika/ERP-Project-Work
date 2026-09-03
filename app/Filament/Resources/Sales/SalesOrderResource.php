@@ -53,7 +53,7 @@ class SalesOrderResource extends Resource
             // === KOLOM KIRI (Lebar 2/3) ===
             Group::make()->schema([
                 Section::make('Informasi Pesanan')->schema([
-                    Grid::make(2)->schema([
+                    Grid::make(['default' => 1, 'sm' => 2])->schema([
                         TextInput::make('order_number')
                             ->label('No. Pesanan')
                             ->disabled()
@@ -187,7 +187,7 @@ class SalesOrderResource extends Resource
                         Textarea::make('notes')->label('Catatan Pesanan')->rows(3),
                     ]),
             ])->columnSpan(['lg' => 1]),
-        ])->columns(['default' => 122, 'md' => 3]);
+        ])->columns(['default' => 1, 'md' => 3]);
     }
 
     // === LOGIC FUNCTIONS ===
@@ -195,7 +195,7 @@ class SalesOrderResource extends Resource
     public static function getOrderItemsSchema(): array
     {
         return [
-            Grid::make(4)->schema([
+            Grid::make(['default' => 1, 'sm' => 4])->schema([
                 Select::make('item_type')
                     ->label('Tipe')
                     ->options(['product' => 'Product', 'service' => 'Service', 'package' => 'Package'])
@@ -321,7 +321,7 @@ class SalesOrderResource extends Resource
                     ->reactive()
                     ->afterStateUpdated(fn(Set $set, Get $get) => self::updateItemTotal($get, $set)),
             ]),
-            Grid::make(3)->schema([
+            Grid::make(['default' => 1, 'sm' => 3])->schema([
                 TextInput::make('item_code')
                     ->label('Kode Item')
                     ->disabled()

@@ -124,7 +124,7 @@ class SickRequestResource extends Resource
                             ->helperText('Upload surat dokter atau dokumen pendukung (opsional)')
                             ->columnSpanFull(),
                     ])
-                    ->columns(['default' => 122, 'md' => 2]),
+                    ->columns(['default' => 1, 'md' => 2]),
             ]);
     }
 
@@ -296,7 +296,7 @@ class SickRequestResource extends Resource
             ->schema([
                 Section::make('Informasi Pengajuan Sakit')
                     ->description('Kamu bisa edit pengajuan sakit ini jika masih berstatus pending.')
-                    ->columns(['default' => 122, 'md' => 2])
+                    ->columns(['default' => 1, 'md' => 2])
                     ->schema([
                         TextEntry::make('employee.full_name')
                             ->label('Nama Karyawan')
@@ -329,7 +329,7 @@ class SickRequestResource extends Resource
                             ]),
                     ]),
                 Section::make('Status Persetujuan')
-                    ->columns(['default' => 122, 'md' => 2])
+                    ->columns(['default' => 1, 'md' => 2])
                     ->schema([
                         TextEntry::make('status')
                             ->label('Status')
@@ -364,7 +364,7 @@ class SickRequestResource extends Resource
                             ->placeholder('—'),
                     ]),
                 Section::make('Pengelolaan Data')
-                    ->columns(['default' => 122, 'md' => 2])
+                    ->columns(['default' => 1, 'md' => 2])
                     ->schema([
                         TextEntry::make('created_at')->label('Dibuat Pada')->dateTime('d M Y H:i'),
                         TextEntry::make('updated_at')->label('Diperbarui Pada')->dateTime('d M Y H:i'),

@@ -46,7 +46,7 @@ class DealsRelationManager extends RelationManager
                 Forms\Components\Section::make('Informasi Utama Deal')
                     ->description('Pilih sumber Deal (Lead/Customer) dan tentukan Stage Deal.')
                     ->schema([
-                        Forms\Components\Grid::make(2)
+                        Forms\Components\Grid::make(['default' => 1, 'sm' => 2])
                             ->schema([
                                 Forms\Components\TextInput::make('deal_number')
                                     ->label('No. Deal')
@@ -199,7 +199,7 @@ class DealsRelationManager extends RelationManager
 
                 Forms\Components\Section::make('Nilai Transaksi & Status Penutupan')
                     ->schema([
-                        Forms\Components\Grid::make(2)
+                        Forms\Components\Grid::make(['default' => 1, 'sm' => 2])
                             ->schema([
                                 Forms\Components\TextInput::make('estimated_value')
                                     ->label('Estimasi Nilai')

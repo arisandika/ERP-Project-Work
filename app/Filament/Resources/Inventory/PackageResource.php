@@ -50,7 +50,7 @@ class PackageResource extends Resource
             ->schema([
                 Forms\Components\Section::make('Informasi Paket')
                     ->schema([
-                        Forms\Components\Grid::make(2)
+                        Forms\Components\Grid::make(['default' => 1, 'sm' => 2])
                             ->schema([
                                 Forms\Components\TextInput::make('package_name')
                                     ->label('Nama Paket')
@@ -179,7 +179,7 @@ class PackageResource extends Resource
                                     ->disabled()
                                     ->dehydrated(),
                             ])
-                            ->columns(['default' => 122, 'md' => 3])
+                            ->columns(['default' => 1, 'md' => 3])
                             ->createItemButtonLabel('Tambah Item')
                             ->reactive()
                             ->afterStateUpdated(function ($state, callable $set) {

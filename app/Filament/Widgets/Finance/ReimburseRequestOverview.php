@@ -10,14 +10,14 @@ class ReimburseRequestOverview extends BaseWidget
     protected static ?int $sort = 4;
 
     protected int|string|array $columnSpan = [
-        'default' => 122,
+        'default' => 12,
         'xl' => 12,
     ];
 
     protected function getColumns(): int
     {
         return [
-            'default' => 122,
+            'default' => 12,
             'md' => 4,
         ];
     }

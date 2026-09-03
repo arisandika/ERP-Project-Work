@@ -43,13 +43,13 @@ class PurchaseReturnResource extends Resource
                         ->prefixIcon('heroicon-o-hashtag')
                         ->helperText('Sistem akan mengunci nomor final saat disimpan.')
                         ->required()
-                        ->columnSpan(1),
+                        ->columnSpan(['default' => 'full', 'sm' => 1]),
                     Forms\Components\TextInput::make('title')
                         ->label('Nama / Judul Retur')
                         ->placeholder('Contoh: Retur Laptop Rusak Layar Batch 1')
                         ->required()
                         ->maxLength(255)
-                        ->columnSpan(2)
+                        ->columnSpan(['default' => 'full', 'sm' => 2])
                         ->extraInputAttributes(['class' => 'text-xl font-bold border-t-0 border-l-0 border-r-0 border-b-2 border-gray-300 focus:ring-0 px-0 bg-transparent']),
                     // Baris 2: Supplier, Tanggal, & Penyelesaian
                     Forms\Components\Select::make('supplier_id')
@@ -59,14 +59,14 @@ class PurchaseReturnResource extends Resource
                         ->preload()
                         ->prefixIcon('heroicon-o-building-storefront')
                         ->required()
-                        ->columnSpan(1),
+                        ->columnSpan(['default' => 'full', 'sm' => 1]),
                     Forms\Components\DatePicker::make('return_date')
                         ->label('Tanggal Retur')
                         ->default(now())
                         ->required()
                         ->prefixIcon('heroicon-o-calendar-days')
                         ->native(false)
-                        ->columnSpan(1),
+                        ->columnSpan(['default' => 'full', 'sm' => 1]),
                     Forms\Components\Select::make('resolution_type')
                         ->label('Tipe Penyelesaian')
                         ->options([
@@ -76,13 +76,13 @@ class PurchaseReturnResource extends Resource
                         ->required()
                         ->prefixIcon('heroicon-o-arrow-path-rounded-square')
                         ->helperText('Cara supplier mengganti retur ini.')
-                        ->columnSpan(1),
+                        ->columnSpan(['default' => 'full', 'sm' => 1]),
                     // Baris 3: Catatan
                     Forms\Components\Textarea::make('notes')
                         ->label('Catatan Tambahan')
                         ->columnSpanFull(),
                 ])
-                ->columns(['default' => 122, 'md' => 3]),  // <-- Diubah menjadi 3 kolom agar rapi
+                ->columns(['default' => 1, 'md' => 3]),  // <-- Diubah menjadi 3 kolom agar rapi
             // 2. DETAIL SECTION (ITEMS)
             Forms\Components\Section::make('Item yang Diretur')
                 ->description('Daftar spesifik barang yang akan dikembalikan beserta alasannya.')
@@ -99,28 +99,28 @@ class PurchaseReturnResource extends Resource
                                 ->preload()
                                 ->prefixIcon('heroicon-o-cube')
                                 ->required()
-                                ->columnSpan(2),
+                                ->columnSpan(['default' => 'full', 'sm' => 2]),
                             Forms\Components\TextInput::make('quantity')
                                 ->label('Qty')
                                 ->numeric()
                                 ->required()
                                 ->minValue(1)
                                 ->prefixIcon('heroicon-o-scale')
-                                ->columnSpan(1),
+                                ->columnSpan(['default' => 'full', 'sm' => 1]),
                             Forms\Components\TextInput::make('unit_price')
                                 ->label('Harga Satuan')
                                 ->numeric()
                                 ->required()
                                 ->prefix('Rp')
-                                ->columnSpan(2),
+                                ->columnSpan(['default' => 'full', 'sm' => 2]),
                             Forms\Components\TextInput::make('reason')
                                 ->label('Alasan Retur')
                                 ->required()
                                 ->maxLength(255)
                                 ->prefixIcon('heroicon-o-chat-bubble-bottom-center-text')
-                                ->columnSpan(3),
+                                ->columnSpan(['default' => 'full', 'sm' => 3]),
                         ])
-                        ->columns(['default' => 122, 'md' => 8])
+                        ->columns(['default' => 1, 'md' => 8])
                         ->defaultItems(1)
                         ->mutateRelationshipDataBeforeCreateUsing(function (array $data): array {
                             return $data;

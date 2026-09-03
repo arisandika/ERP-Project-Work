@@ -29,7 +29,7 @@ class ProductStocksRelationManager extends RelationManager
                     ->disabled(fn ($context) => $context === 'edit'),
 
                 // REVISI: Mengganti qty dan status menjadi 3 kolom metric
-                Forms\Components\Grid::make(3) // Menggunakan Grid agar sejajar
+                Forms\Components\Grid::make(['default' => 1, 'sm' => 3]) // Menggunakan Grid agar sejajar
                     ->schema([
                         Forms\Components\TextInput::make('qty_available')
                             ->label('Stock Tersedia')

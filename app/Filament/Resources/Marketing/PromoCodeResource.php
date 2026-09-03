@@ -42,7 +42,7 @@ class PromoCodeResource extends Resource
                 Forms\Components\Section::make('Informasi Kode Promo')
                     ->description('Tentukan kode dan nilai potongannya.')
                     ->schema([
-                        Forms\Components\Grid::make(3)->schema([
+                        Forms\Components\Grid::make(['default' => 1, 'sm' => 3])->schema([
                             Forms\Components\TextInput::make('code')
                                 ->label('Kode Promo')
                                 ->required()
@@ -72,7 +72,7 @@ class PromoCodeResource extends Resource
                 Forms\Components\Section::make('Informasi Masa Berlaku')
                     ->description('Atur masa berlaku dan batas kuota pemakaian.')
                     ->schema([
-                        Forms\Components\Grid::make(2)->schema([
+                        Forms\Components\Grid::make(['default' => 1, 'sm' => 2])->schema([
                             Forms\Components\Toggle::make('is_active')
                                 ->label('Status Aktif')
                                 ->helperText('Jika dimatikan, kode tidak bisa digunakan meskipun tanggal masih berlaku.')
@@ -225,7 +225,7 @@ class PromoCodeResource extends Resource
             ->schema([
                 Section::make('Informasi Kode Promo')
                     ->description('Detail kode dan nilai potongannya.')
-                    ->columns(['default' => 122, 'md' => 3])
+                    ->columns(['default' => 1, 'md' => 3])
                     ->schema([
                         TextEntry::make('code')
                             ->label('Kode Promo')
@@ -258,7 +258,7 @@ class PromoCodeResource extends Resource
                             ->placeholder('—'),
                     ]),
                 Section::make('Informasi Masa Berlaku & Kuota Pemakaian')
-                    ->columns(['default' => 122, 'md' => 2])
+                    ->columns(['default' => 1, 'md' => 2])
                     ->schema([
                         TextEntry::make('is_active')
                             ->label('Status Aktif')
@@ -284,7 +284,7 @@ class PromoCodeResource extends Resource
                             ->placeholder('0 Kali'),
                     ]),
                 Section::make('Pengelolaan Data')
-                    ->columns(['default' => 122, 'md' => 2])
+                    ->columns(['default' => 1, 'md' => 2])
                     ->schema([
                         TextEntry::make('created_at')
                             ->label('Dibuat Pada')

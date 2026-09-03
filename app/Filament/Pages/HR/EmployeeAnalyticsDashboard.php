@@ -80,7 +80,7 @@ class EmployeeAnalyticsDashboard extends Page
                             ->native(false)
                             ->live(),
                     ])
-                    ->columns(['default' => 122, 'md' => 2]),
+                    ->columns(['default' => 12, 'md' => 2]),
             ]);
     }
 

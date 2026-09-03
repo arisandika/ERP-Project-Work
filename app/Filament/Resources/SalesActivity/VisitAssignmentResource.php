@@ -90,7 +90,7 @@ class VisitAssignmentResource extends Resource
                 Forms\Components\Section::make('Penugasan')
                     ->description('Tentukan siapa yang akan melakukan kunjungan.')
                     ->schema([
-                        Forms\Components\Grid::make(2)
+                        Forms\Components\Grid::make(['default' => 1, 'sm' => 2])
                             ->schema([
                                 Forms\Components\Select::make('assigned_to_type')
                                     ->label('Tipe Assignee')
@@ -139,7 +139,7 @@ class VisitAssignmentResource extends Resource
 
                 Forms\Components\Section::make('Detail Kunjungan')
                     ->schema([
-                        Forms\Components\Grid::make(2)
+                        Forms\Components\Grid::make(['default' => 1, 'sm' => 2])
                             ->schema([
                                 Forms\Components\Select::make('purpose')
                                     ->label('Tujuan Kunjungan')

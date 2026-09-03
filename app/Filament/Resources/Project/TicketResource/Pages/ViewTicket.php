@@ -44,7 +44,7 @@ class ViewTicket extends ViewRecord
             ->schema([
                 Section::make('Informasi Ticket')
                     ->description('Detail project, epic, status dan informasi ticket.')
-                    ->columns(['default' => 122, 'md' => 2])
+                    ->columns(['default' => 1, 'md' => 2])
                     ->schema([
                         TextEntry::make('name')
                             ->label('Nama Ticket')
@@ -85,7 +85,7 @@ class ViewTicket extends ViewRecord
                     ]),
                 Section::make('Jadwal Pengerjaan')
                     ->description('Timeline target penyelesaian ticket.')
-                    ->columns(['default' => 122, 'md' => 3])
+                    ->columns(['default' => 1, 'md' => 3])
                     ->schema([
                         TextEntry::make('start_date')
                             ->label('Tanggal Mulai')
@@ -105,7 +105,7 @@ class ViewTicket extends ViewRecord
                             ->color(fn($state) => str_contains($state, 'terlambat') ? 'danger' : 'success'),
                     ]),
                 Section::make('Member Ticket')
-                    ->columns(['default' => 122, 'md' => 2])
+                    ->columns(['default' => 1, 'md' => 2])
                     ->schema([
                         TextEntry::make('assignees.full_name')
                             ->label('Ditugaskan Kepada')
@@ -160,7 +160,7 @@ class ViewTicket extends ViewRecord
                             ->view('filament.infolists.components.ticket-history'),
                     ]),
                 Section::make('Pengelolaan Data')
-                    ->columns(['default' => 122, 'md' => 2])
+                    ->columns(['default' => 1, 'md' => 2])
                     ->schema([
                         TextEntry::make('created_at')
                             ->label('Dibuat Pada')

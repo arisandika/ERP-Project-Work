@@ -124,7 +124,7 @@ class ReimbursementRequestResource extends Resource
                         ])
                         ->helperText('Upload bukti seperti struk (2MB)'),
                 ])
-                ->columns(['default' => 122, 'md' => 2])
+                ->columns(['default' => 1, 'md' => 2])
         ]);
     }
 
@@ -342,7 +342,7 @@ class ReimbursementRequestResource extends Resource
             ->schema([
                 Section::make('Informasi Pengajuan Reimburse')
                     ->description('Kamu bisa edit pengajuan reimburse ini jika masih berstatus pending atau menunggu persetujuan.')
-                    ->columns(['default' => 122, 'md' => 2])
+                    ->columns(['default' => 1, 'md' => 2])
                     ->schema([
                         TextEntry::make('employee.full_name')
                             ->label('Nama Karyawan')
@@ -374,7 +374,7 @@ class ReimbursementRequestResource extends Resource
                             ]),
                     ]),
                 Section::make('Status Persetujuan')
-                    ->columns(['default' => 122, 'md' => 2])
+                    ->columns(['default' => 1, 'md' => 2])
                     ->schema([
                         TextEntry::make('status')
                             ->label('Status')
@@ -408,7 +408,7 @@ class ReimbursementRequestResource extends Resource
                             ->placeholder('—'),
                     ]),
                 Section::make('Pengelolaan Data')
-                    ->columns(['default' => 122, 'md' => 2])
+                    ->columns(['default' => 1, 'md' => 2])
                     ->schema([
                         TextEntry::make('created_at')
                             ->label('Dibuat Pada')

@@ -108,7 +108,7 @@ class ProjectResource extends Resource
                             ->visible(fn($get) => $get('is_pinned'))
                             ->dehydrated(true),
                     ])
-                    ->columns(['default' => 122, 'md' => 2]),
+                    ->columns(['default' => 1, 'md' => 2]),
                 Forms\Components\Section::make('Deskripsi Project')
                     ->description('Penjelasan lengkap mengenai project.')
                     ->schema([
@@ -182,7 +182,7 @@ class ProjectResource extends Resource
                             ->formatStateUsing(fn($record) => $record?->salesOrder?->grand_total)
                             ->placeholder('Belum ada Sales Order'),
                     ])
-                    ->columns(['default' => 122, 'md' => 2]),
+                    ->columns(['default' => 1, 'md' => 2]),
                 Forms\Components\Section::make('Estimasi Budget Project')
                     ->schema([
                         Forms\Components\TextInput::make('estimated_cost')
@@ -199,7 +199,7 @@ class ProjectResource extends Resource
                             ->minValue(0)
                             ->helperText('Total pengeluaran aktual project'),
                     ])
-                    ->columns(['default' => 122, 'md' => 2]),
+                    ->columns(['default' => 1, 'md' => 2]),
                 Forms\Components\Section::make('Dokumen Project')
                     ->description('Dokumen kontrak, BAST, dan file teknis project.')
                     ->schema([
@@ -225,7 +225,7 @@ class ProjectResource extends Resource
                                     ->disk('public')
                                     ->directory('project-documents'),
                             ])
-                            ->columns(['default' => 122, 'md' => 2])
+                            ->columns(['default' => 1, 'md' => 2])
                             ->addActionLabel('Tambah Dokumen')
                             ->columnSpanFull(),
                     ]),

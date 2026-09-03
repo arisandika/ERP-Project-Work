@@ -94,7 +94,7 @@ class ReturnRequestResource extends Resource
                             ->required()
                             ->columnSpanFull(),
                     ])
-                    ->columns(['default' => 122, 'md' => 2]),
+                    ->columns(['default' => 1, 'md' => 2]),
             ]);
     }
 

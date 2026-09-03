@@ -1,16 +1,13 @@
 <?php
-
 namespace App\Filament\Resources\Procurement;
 
 use App\Enums\Procurement\PurchaseOrderStatus;
 use App\Filament\Concerns\BelongsToModule;
 use App\Filament\Resources\Procurement\PurchaseOrderResource\Pages;
 use App\Mail\Procurement\PurchaseOrderMail;
-use App\Models\Finance\FinancialRecord;
 use App\Models\Inventory\Product;
 use App\Models\Procurement\PurchaseOrder;
 use App\Models\Procurement\PurchaseRequisition;
-use App\Services\Procurement\PurchaseOrderReceiptService;
 use Filament\Forms\Form;
 use Filament\Notifications\Notification;
 use Filament\Resources\Resource;
@@ -62,7 +59,7 @@ class PurchaseOrderResource extends Resource
     {
         return $form
             ->schema([
-                Forms\Components\Group::make()->schema([
+                Forms\Components\Grid::make(['default' => 1, 'md' => 2])->schema([
                     Forms\Components\Section::make('Informasi Dokumen PO')
                         ->disabled(fn(?PurchaseOrder $record) => $record !== null && $record->status !== PurchaseOrderStatus::DRAFT)
                         ->schema([
@@ -74,13 +71,13 @@ class PurchaseOrderResource extends Resource
                                 ->dehydrated()
                                 ->required()
                                 ->maxLength(255)
-                                ->columnSpan(1),
+                                ->columnSpan(['default' => 'full', 'sm' => 1]),
                             Forms\Components\TextInput::make('title')
                                 ->label('Nama / Judul PO')
                                 ->placeholder('Contoh: PO Pengadaan Laptop Baru')
                                 ->required()
                                 ->maxLength(255)
-                                ->columnSpan(2)
+                                ->columnSpan(['default' => 'full', 'sm' => 2])
                                 ->extraInputAttributes(['class' => 'text-xl font-normal border-t-0 border-l-0 border-r-0 border-b-2 border-gray-300 focus:ring-0 px-0 bg-transparent']),
                             // Baris 2: PR, Supplier, Status
                             Forms\Components\Select::make('purchase_requisition_id')
@@ -94,12 +91,14 @@ class PurchaseOrderResource extends Resource
                                 ->preload()
                                 ->live()
                                 ->afterStateUpdated(function ($state, Forms\Set $set, Forms\Get $get) {
-                                    if (!$state)
+                                    if (!$state) {
                                         return;
+                                    }
 
                                     $pr = PurchaseRequisition::with('items.product')->find($state);
-                                    if (!$pr)
+                                    if (!$pr) {
                                         return;
+                                    }
 
                                     $poItems = [];
                                     $subtotal = 0;
@@ -123,33 +122,33 @@ class PurchaseOrderResource extends Resource
                                     self::updateTotals($get, $set);
                                 })
                                 ->disabled(fn(string $operation): bool => $operation === 'edit')
-                                ->helperText('Otomatis mengisi daftar barang.')
-                                ->columnSpan(1),
+                                ->helperText('Hanya menampilkan yang sudah disetujui (approved).')
+                                ->columnSpan(['default' => 'full', 'sm' => 1]),
                             Forms\Components\Select::make('supplier_id')
                                 ->label('Supplier / Vendor')
                                 ->relationship('supplier', 'name')
                                 ->searchable()
                                 ->preload()
                                 ->required()
-                                ->columnSpan(1),
+                                ->columnSpan(['default' => 'full', 'sm' => 1]),
                             Forms\Components\Select::make('status')
                                 ->label('Status PO')
                                 ->options(PurchaseOrderStatus::class)
                                 ->default(PurchaseOrderStatus::DRAFT)
                                 ->required()
                                 ->disabled(fn(string $operation): bool => $operation === 'create')
-                                ->columnSpan(1),
+                                ->columnSpan(['default' => 'full', 'sm' => 1]),
                             // Baris 3: Tanggal
                             Forms\Components\DatePicker::make('order_date')
                                 ->label('Tanggal Pemesanan')
                                 ->default(now())
                                 ->required()
-                                ->columnSpan(1),
+                                ->columnSpan(['default' => 'full', 'sm' => 1]),
                             Forms\Components\DatePicker::make('expected_delivery_date')
                                 ->label('Estimasi Tanggal Tiba')
-                                ->columnSpan(1),
+                                ->columnSpan(['default' => 'full', 'sm' => 1]),
                         ])
-                        ->columns(['default' => 122, 'md' => 3]),
+                        ->columns(['default' => 1, 'md' => 3]),
                     Forms\Components\Section::make('Daftar Barang (Order Items)')
                         ->disabled(fn(?PurchaseOrder $record) => $record !== null && $record->status !== PurchaseOrderStatus::DRAFT)
                         ->schema([
@@ -206,71 +205,78 @@ class PurchaseOrderResource extends Resource
                                         ->disabled()
                                         ->dehydrated(),
                                 ])
-                                ->columns(['default' => 122, 'md' => 4])
+                                ->columns(['default' => 1, 'md' => 4])
                                 ->addActionLabel('Tambah Barang')
                                 ->live(debounce: 500)
                                 ->afterStateUpdated(function (Forms\Get $get, Forms\Set $set) {
                                     self::updateTotals($get, $set);
-                                })
+                                }),
                         ]),
                 ])->columnSpan(['lg' => 2]),
-                Forms\Components\Group::make()->schema([
-                    Forms\Components\Section::make('Ringkasan Biaya')
-                        ->disabled(fn(?PurchaseOrder $record) => $record !== null && $record->status !== PurchaseOrderStatus::DRAFT)
-                        ->schema([
-                            Forms\Components\TextInput::make('subtotal')
-                                ->label('Subtotal')
-                                ->numeric()
-                                ->default(0)
-                                ->disabled()
-                                ->dehydrated()
-                                ->prefix('Rp'),
-                            Forms\Components\TextInput::make('tax_rate')
-                                ->label('Pajak PPN (%)')
-                                ->numeric()
-                                ->default(11)
-                                ->live(debounce: 500)
-                                ->afterStateHydrated(function (Forms\Components\TextInput $component, $state, Forms\Get $get) {
-                                    $subtotal = (float) $get('subtotal');
-                                    $taxAmount = (float) $get('tax_amount');
-                                    if ($subtotal > 0 && $taxAmount > 0) {
-                                        $component->state(round(($taxAmount / $subtotal) * 100, 2));
-                                    }
-                                })
-                                ->afterStateUpdated(function (Forms\Get $get, Forms\Set $set) {
-                                    self::updateTotals($get, $set);
-                                })
-                                ->suffix('%')
-                                ->dehydrated(false),
-                            Forms\Components\Hidden::make('tax_amount'),
-                            Forms\Components\TextInput::make('discount_amount')
-                                ->label('Diskon')
-                                ->numeric()
-                                ->default(0)
-                                ->live(debounce: 500)
-                                ->afterStateUpdated(function (Forms\Get $get, Forms\Set $set) {
-                                    self::updateTotals($get, $set);
-                                })
-                                ->prefix('Rp'),
-                            Forms\Components\TextInput::make('grand_total')
-                                ->label('Grand Total')
-                                ->numeric()
-                                ->default(0)
-                                ->disabled()
-                                ->dehydrated()
-                                ->prefix('Rp')
-                                ->extraInputAttributes(['style' => 'font-size: 1.5rem; font-weight: bold; color: green;']),
-                        ]),
-                    Forms\Components\Section::make('Catatan Tambahan')
-                        ->disabled(fn(?PurchaseOrder $record) => $record !== null && $record->status !== PurchaseOrderStatus::DRAFT)
-                        ->schema([
-                            Forms\Components\Textarea::make('notes')
-                                ->label('Catatan untuk Supplier')
-                                ->rows(4),
-                        ])
-                ])->columnSpan(['lg' => 1]),
+                Forms\Components\Group::make()
+                    ->schema([
+                        Forms\Components\Grid::make(['default' => 1, 'lg' => 2])
+                            ->schema([
+                                Forms\Components\Section::make('Ringkasan Biaya')
+                                    ->columnSpan(1)
+                                    ->disabled(fn(?PurchaseOrder $record) => $record !== null && $record->status !== PurchaseOrderStatus::DRAFT)
+                                    ->schema([
+                                        Forms\Components\TextInput::make('subtotal')
+                                            ->label('Subtotal')
+                                            ->numeric()
+                                            ->default(0)
+                                            ->disabled()
+                                            ->dehydrated()
+                                            ->prefix('Rp'),
+                                        Forms\Components\TextInput::make('tax_rate')
+                                            ->label('Pajak PPN (%)')
+                                            ->numeric()
+                                            ->default(11)
+                                            ->live(debounce: 500)
+                                            ->afterStateHydrated(function (Forms\Components\TextInput $component, $state, Forms\Get $get) {
+                                                $subtotal = (float) $get('subtotal');
+                                                $taxAmount = (float) $get('tax_amount');
+                                                if ($subtotal > 0 && $taxAmount > 0) {
+                                                    $component->state(round(($taxAmount / $subtotal) * 100, 2));
+                                                }
+                                            })
+                                            ->afterStateUpdated(function (Forms\Get $get, Forms\Set $set) {
+                                                self::updateTotals($get, $set);
+                                            })
+                                            ->suffix('%')
+                                            ->dehydrated(false),
+                                        Forms\Components\Hidden::make('tax_amount'),
+                                        Forms\Components\TextInput::make('discount_amount')
+                                            ->label('Diskon')
+                                            ->numeric()
+                                            ->default(0)
+                                            ->live(debounce: 500)
+                                            ->afterStateUpdated(function (Forms\Get $get, Forms\Set $set) {
+                                                self::updateTotals($get, $set);
+                                            })
+                                            ->prefix('Rp'),
+                                        Forms\Components\TextInput::make('grand_total')
+                                            ->label('Grand Total')
+                                            ->numeric()
+                                            ->default(0)
+                                            ->disabled()
+                                            ->dehydrated()
+                                            ->prefix('Rp')
+                                            ->extraInputAttributes(['style' => 'font-size: 1.5rem; font-weight: bold; color: green;']),
+                                    ]),
+                                Forms\Components\Section::make('Catatan Tambahan')
+                                    ->columnSpan(1)
+                                    ->disabled(fn(?PurchaseOrder $record) => $record !== null && $record->status !== PurchaseOrderStatus::DRAFT)
+                                    ->schema([
+                                        Forms\Components\Textarea::make('notes')
+                                            ->label('Catatan untuk Supplier')
+                                            ->rows(4),
+                                    ]),
+                            ]),
+                    ])
+                    ->columnSpan(['default' => 1, 'lg' => 2]),
             ])
-            ->columns(['default' => 122, 'md' => 3]);
+            ->columns(['default' => 1, 'md' => 3]);
     }
 
     public static function table(Table $table): Table

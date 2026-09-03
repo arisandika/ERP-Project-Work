@@ -49,7 +49,7 @@ class ViewVisitAssignment extends ViewRecord
         return $infolist
             ->schema([
                 // ── 1. HEADER INFO (DIKATEGORIKAN DENGAN GRID & SECTION) ──────────
-                Grid::make(3)
+                Grid::make(['default' => 1, 'sm' => 3])
                     ->schema([
                         // Kolom 1: Info Deal
                         Section::make('Informasi Deal')
@@ -69,7 +69,7 @@ class ViewVisitAssignment extends ViewRecord
                                     )
                                     ->icon('heroicon-o-building-office'),
                             ])
-                            ->columnSpan(1),
+                            ->columnSpan(['default' => 'full', 'sm' => 1]),
                         // Kolom 2: Penugasan
                         Section::make('Target Kunjungan')
                             ->schema([
@@ -101,7 +101,7 @@ class ViewVisitAssignment extends ViewRecord
                                         default => 'gray',
                                     }),
                             ])
-                            ->columnSpan(1),
+                            ->columnSpan(['default' => 'full', 'sm' => 1]),
                         // Kolom 3: Jadwal
                         Section::make('Jadwal & Tenggat Waktu')
                             ->schema([
@@ -120,7 +120,7 @@ class ViewVisitAssignment extends ViewRecord
                                     ->placeholder('-')
                                     ->icon('heroicon-o-exclamation-circle'),
                             ])
-                            ->columnSpan(1),
+                            ->columnSpan(['default' => 'full', 'sm' => 1]),
                     ]),
                 // Bagian Catatan (Full Width)
                 Section::make('Briefing / Catatan Tugas')
@@ -161,7 +161,7 @@ class ViewVisitAssignment extends ViewRecord
                                     ->label('')
                                     ->schema([
                                         // Header tiap record kunjungan
-                                        Grid::make(3)
+                                        Grid::make(['default' => 1, 'sm' => 3])
                                             ->schema([
                                                 TextEntry::make('visit_order')
                                                     ->label('Kunjungan Ke')
@@ -180,7 +180,7 @@ class ViewVisitAssignment extends ViewRecord
                                             ]),
                                         // Detail Lokasi & Jarak
                                         Fieldset::make('Informasi Lokasi & Perjalanan')
-                                            ->columns(['default' => 122, 'md' => 3])
+                                            ->columns(['default' => 1, 'md' => 3])
                                             ->schema([
                                                 TextEntry::make('location_address')
                                                     ->label('Titik Lokasi (Maps)')
@@ -188,7 +188,7 @@ class ViewVisitAssignment extends ViewRecord
                                                     ->icon('heroicon-o-map-pin')
                                                     ->url(fn(VisitRecord $record) => $record->googleMapsUrl())
                                                     ->openUrlInNewTab()
-                                                    ->columnSpan(1),
+                                                    ->columnSpan(['default' => 'full', 'sm' => 1]),
                                                 TextEntry::make('distance_from_prev')
                                                     ->label('Jarak dari Sblmnya')
                                                     ->state(function (VisitRecord $record): string {
@@ -214,12 +214,12 @@ class ViewVisitAssignment extends ViewRecord
                                             ]),
                                         // Laporan Eksekusi
                                         Fieldset::make('Laporan Kunjungan')
-                                            ->columns(['default' => 122, 'md' => 2])
+                                            ->columns(['default' => 1, 'md' => 2])
                                             ->schema([
                                                 TextEntry::make('description')
                                                     ->label('Deskripsi / Notulensi')
                                                     ->placeholder('Tidak ada deskripsi.')
-                                                    ->columnSpan(1),
+                                                    ->columnSpan(['default' => 'full', 'sm' => 1]),
                                                 Group::make([
                                                     TextEntry::make('followup_notes')
                                                         ->label('Catatan Follow Up')
@@ -229,7 +229,7 @@ class ViewVisitAssignment extends ViewRecord
                                                         ->date('d M Y')
                                                         ->placeholder('Tidak dijadwalkan')
                                                         ->icon('heroicon-o-calendar'),
-                                                ])->columnSpan(1),
+                                                ])->columnSpan(['default' => 'full', 'sm' => 1]),
                                             ]),
                                     ]),
                             ]),

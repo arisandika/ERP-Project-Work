@@ -13,7 +13,7 @@ class RecentTicketsTable extends BaseWidget
     protected static ?int $sort = 5;
 
     protected int|string|array $columnSpan = [
-        'default' => 122,
+        'default' => 12,
         'xl' => 12,
     ];
 

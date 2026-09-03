@@ -55,7 +55,7 @@ class DashboardFinance extends BaseDashboard
                             ->default(now()->year)
                             ->selectablePlaceholder(false),
                     ])
-                    ->columns(['default' => 122, 'md' => 4])  // Menjaga form tetap ramping di atas
+                    ->columns(['default' => 12, 'md' => 4])  // Menjaga form tetap ramping di atas
             ]);
     }
 

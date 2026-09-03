@@ -16,7 +16,7 @@ class TicketStatusChart extends ChartWidget
     protected static ?string $maxHeight = '300px';
 
     protected int|string|array $columnSpan = [
-        'default' => 122,
+        'default' => 12,
         'xl' => 12,
     ];
 
