@@ -165,10 +165,13 @@ class AttendanceController extends Controller
             return redirect()->back();
         }
 
-        // Tentukan status (late / present)
-        $status = $now->greaterThan($shiftStart->copy()->addMinutes((int) $tolerance))
-            ? 'terlambat'
-            : 'hadir';
+        $hasFlexibleAttendancePermission = $employee->can_wfa == 1
+            && $employee->can_unlock_shift == 1;
+
+        $status = $hasFlexibleAttendancePermission
+            || ! $now->greaterThan($shiftStart->copy()->addMinutes((int) $tolerance))
+            ? 'hadir'
+            : 'terlambat';
 
         try {
             $photoInPath = $this->saveBase64Image(
