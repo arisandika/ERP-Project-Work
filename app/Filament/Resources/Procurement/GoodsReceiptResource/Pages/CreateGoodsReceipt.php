@@ -5,9 +5,11 @@ namespace App\Filament\Resources\Procurement\GoodsReceiptResource\Pages;
 use App\Filament\Resources\Procurement\GoodsReceiptResource;
 use App\Models\Procurement\GoodsReceipt;
 use App\Services\Procurement\GoodsReceiptService;
+use Filament\Notifications\Notification;
 use Filament\Resources\Pages\CreateRecord;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\DB;
+use Throwable;
 
 class CreateGoodsReceipt extends CreateRecord
 {
@@ -15,51 +17,71 @@ class CreateGoodsReceipt extends CreateRecord
 
     protected function handleRecordCreation(array $data): Model
     {
-        return DB::transaction(function () use ($data) {
-            $items = $data['items'] ?? [];
-            unset($data['items']);
+        try {
+            return DB::transaction(function () use ($data) {
+                $items = $data['items'] ?? [];
+                unset($data['items']);
 
-            /** @var GoodsReceipt $record */
-            $record = static::getModel()::create($data);
+                /** @var GoodsReceipt $record */
+                $record = static::getModel()::create($data);
 
-            $hasValidItem = false;
+                $hasValidItem = false;
 
-            foreach ($items as $item) {
-                $qtyReceived = (int) ($item['quantity_received'] ?? 0);
+                foreach ($items as $item) {
+                    $qtyReceived = (int) ($item['quantity_received'] ?? 0);
 
-                if ($qtyReceived <= 0) {
-                    continue;
+                    if ($qtyReceived <= 0) {
+                        continue;
+                    }
+
+                    $purchaseOrderItemId = $item['purchase_order_item_id'] ?? null;
+                    $productId = $item['product_id'] ?? null;
+
+                    if (blank($purchaseOrderItemId) || blank($productId)) {
+                        continue;
+                    }
+
+                    $hasValidItem = true;
+
+                    $record->items()->create([
+                        'purchase_order_item_id' => $purchaseOrderItemId,
+                        'product_id' => $productId,
+                        'quantity_received' => $qtyReceived,
+                        'scanned_sns' => $item['scanned_sns'] ?? null,
+                        'notes' => $item['notes'] ?? null,
+                    ]);
                 }
 
-                $purchaseOrderItemId = $item['purchase_order_item_id'] ?? null;
-                $productId = $item['product_id'] ?? null;
-
-                if (blank($purchaseOrderItemId) || blank($productId)) {
-                    continue;
+                if (! $hasValidItem) {
+                    throw new \Exception('Minimal harus ada satu item dengan qty diterima lebih dari 0. Pastikan PO sudah dipilih dan item sudah termuat.');
                 }
 
-                $hasValidItem = true;
+                $record->load('items');
 
-                $record->items()->create([
-                    'purchase_order_item_id' => $purchaseOrderItemId,
-                    'product_id' => $productId,
-                    'quantity_received' => $qtyReceived,
-                    'scanned_sns' => $item['scanned_sns'] ?? null,
-                    'notes' => $item['notes'] ?? null,
-                ]);
-            }
+                $service = app(GoodsReceiptService::class);
+                $service->processAfterCreation($record);
 
-            if (! $hasValidItem) {
-                throw new \Exception('Minimal harus ada satu item dengan qty diterima lebih dari 0. Pastikan PO sudah dipilih dan item sudah termuat.');
-            }
+                return $record;
+            });
+        } catch (Throwable $exception) {
+            Notification::make()
+                ->title('Goods Receipt gagal diproses')
+                ->body($exception->getMessage())
+                ->danger()
+                ->persistent()
+                ->send();
 
-            $record->load('items');
+            throw $exception;
+        }
+    }
 
-            $service = app(GoodsReceiptService::class);
-            $service->processAfterCreation($record);
-
-            return $record;
-        });
+    protected function afterCreate(): void
+    {
+        Notification::make()
+            ->title('Goods Receipt berhasil dibuat')
+            ->body("Penerimaan {$this->record->gr_number} berhasil diproses dan stok telah diperbarui.")
+            ->success()
+            ->send();
     }
 
     protected function getRedirectUrl(): string
