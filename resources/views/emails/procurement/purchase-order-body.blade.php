@@ -7,10 +7,6 @@ Bersama email ini, kami lampirkan dokumen Purchase Order (PO) dengan nomor **{{ 
 
 Mohon untuk memeriksa detail pesanan pada lampiran PDF. Jika ada pertanyaan atau ketidaksesuaian, silakan hubungi kami.
 
-<x-mail::button :url="''">
-Lihat Detail
-</x-mail::button>
-
 Terima kasih atas kerja samanya,<br>
-{{ config('app.name') }}
+PT. Next Generation Solutions
 </x-mail::message>
