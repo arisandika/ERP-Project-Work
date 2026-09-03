@@ -238,7 +238,10 @@
         <tr>
             <td class="logo-cell">
                 {{-- Pastikan file ada di public/assets/logo2.png --}}
-                <img src="{{ public_path('assets/logo2.png') }}" alt="Logo">
+                @php($logoPath = public_path('assets/logo2.png'))
+                @if(is_file($logoPath))
+                    <img src="data:image/png;base64,{{ base64_encode(file_get_contents($logoPath)) }}" alt="Logo">
+                @endif
             </td>
             <td class="company-info-cell">
                 <h2 class="company-name">NEXICON</h2>
