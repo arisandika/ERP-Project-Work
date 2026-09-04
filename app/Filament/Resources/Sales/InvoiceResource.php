@@ -177,6 +177,8 @@ class InvoiceResource extends Resource
 
                     Section::make('Daftar Item Invoice')->schema([
                             Repeater::make('items')
+                                ->relationship()
+                                ->disabled()
                                 ->schema([
                                     Forms\Components\Hidden::make('id'),
                                     Forms\Components\Hidden::make('item_type'),
@@ -502,6 +504,7 @@ class InvoiceResource extends Resource
     {
         return [
             RelationManagers\PaymentsRelationManager::class,
+            // RelationManagers\ItemsRelationManager::class,
         ];
     }
 
