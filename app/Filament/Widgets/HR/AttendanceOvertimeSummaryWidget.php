@@ -53,8 +53,8 @@ class AttendanceOvertimeSummaryWidget extends BaseWidget
         $totalHours = intdiv($totalMinutes, 60);
         $totalMins = $totalMinutes % 60;
         $totalLabel = $totalMinutes > 0
-            ? ($totalHours > 0 ? "{$totalHours}j {$totalMins}m" : "{$totalMins}m")
-            : '0j';
+            ? ($totalHours > 0 ? "{$totalHours} j {$totalMins} m" : "{$totalMins} m")
+            : '0 j';
 
         $avgMinutes = $overtimeSessions > 0 ? intdiv($totalMinutes, $overtimeSessions) : 0;
         $avgHours = intdiv($avgMinutes, 60);
@@ -75,19 +75,15 @@ class AttendanceOvertimeSummaryWidget extends BaseWidget
         return [
             Stat::make('Total Lembur Bulan Ini', $totalLabel)
                 ->description(Carbon::now()->translatedFormat('F Y'))
-                ->descriptionIcon('heroicon-m-clock')
                 ->color($totalMinutes > 0 ? 'warning' : 'gray'),
             Stat::make('Rata-rata Lembur / Sesi', $avgLabel)
                 ->description("{$overtimeSessions} sesi lembur bulan ini")
-                ->descriptionIcon('heroicon-m-calculator')
                 ->color($avgMinutes > 0 ? 'info' : 'gray'),
             Stat::make('Sesi Lembur Terpanjang', $maxLabel)
                 ->description($maxDateLabel)
-                ->descriptionIcon('heroicon-m-fire')
                 ->color($maxMinutes > 0 ? 'danger' : 'gray'),
             Stat::make('Total Sesi Lembur', $overtimeSessions)
                 ->description('Hari dengan lembur bulan ini')
-                ->descriptionIcon('heroicon-m-calendar-days')
                 ->color($overtimeSessions > 0 ? 'warning' : 'gray'),
         ];
     }

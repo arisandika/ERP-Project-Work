@@ -11,7 +11,7 @@
         body {
             font-family: 'Helvetica', sans-serif;
             font-size: 11px;
-            color: #333;
+            color: #374151;
             line-height: 1.3;
         }
 
@@ -40,24 +40,24 @@
             font-size: 26px;
             font-weight: bold;
             margin: 0;
-            color: #222;
+            color: #111827;
         }
 
         .header-table .company-tagline {
             font-size: 12px;
             margin: 2px 0 5px 0;
             font-weight: bold;
-            color: #555;
+            color: #4b5563;
         }
 
         .header-table .company-address {
             font-size: 10px;
             margin: 0;
-            color: #444;
+            color: #4b5563;
         }
 
         .header-divider {
-            border-bottom: 3px double #333;
+            border-bottom: 3px double #1f2937;
             margin-bottom: 25px;
         }
 
@@ -72,6 +72,7 @@
             text-transform: uppercase;
             letter-spacing: 3px;
             font-weight: 800;
+            color: #111827;
         }
 
         .document-title p {
@@ -83,7 +84,7 @@
         .status-badge {
             font-size: 9px;
             padding: 4px 10px;
-            border: 1px solid #333;
+            border: 1px solid #d1d5db;
             border-radius: 12px;
             display: inline-block;
             margin-top: 8px;
@@ -103,7 +104,7 @@
         }
 
         .client-box {
-            border-left: 3px solid #ddd;
+            border-left: 3px solid #d1d5db;
             padding-left: 10px;
         }
 
@@ -115,15 +116,16 @@
         }
 
         .items-table th {
-            background-color: #f4f4f4;
-            border: 1px solid #ccc;
+            background-color: #f3f4f6;
+            border: 1px solid #d1d5db;
             padding: 8px;
             text-align: left;
             font-weight: bold;
+            color: #111827;
         }
 
         .items-table td {
-            border: 1px solid #ccc;
+            border: 1px solid #d1d5db;
             padding: 8px;
         }
 
@@ -136,7 +138,7 @@
         }
 
         .items-table .row-bg {
-            background-color: #fafafa;
+            background-color: #f9fafb;
         }
 
         .totals-section {
@@ -147,9 +149,9 @@
         .payment-info {
             width: 55%;
             float: left;
-            border: 1px dashed #aaa;
+            border: 1px dashed #d1d5db;
             padding: 12px;
-            background: #fdfdfd;
+            background: #f9fafb;
             border-radius: 4px;
         }
 
@@ -157,6 +159,7 @@
             margin: 0 0 8px 0;
             font-size: 12px;
             text-decoration: underline;
+            color: #111827;
         }
 
         .totals-table {
@@ -180,20 +183,20 @@
         }
 
         .totals-table .grand-total-row td {
-            border-top: 2px solid #333;
-            border-bottom: 2px solid #333;
+            border-top: 2px solid #1f2937;
+            border-bottom: 2px solid #1f2937;
             padding: 8px 0;
             font-size: 14px;
             font-weight: bold;
-            background-color: #f4f4f4;
+            background-color: #f3f4f6;
         }
 
         .notes-section {
             margin-top: 30px;
             font-style: italic;
-            color: #555;
+            color: #4b5563;
             font-size: 10px;
-            border-top: 1px solid #eee;
+            border-top: 1px solid #e5e7eb;
             padding-top: 10px;
         }
 
@@ -210,7 +213,7 @@
 
         .sign-line {
             margin-top: 50px;
-            border-top: 1px solid #333;
+            border-top: 1px solid #1f2937;
             width: 80%;
             margin-left: auto;
             margin-right: auto;
@@ -257,11 +260,11 @@
         <?php
             $purchaseOrderStatus = $purchaseOrder->status?->value ?? $purchaseOrder->status;
             $statusColor = match ($purchaseOrderStatus) {
-                'completed' => 'background-color: #dff0d8; color: #3c763d; border-color: #d6e9c6;', // Hijau
-                'cancelled' => 'background-color: #f2dede; color: #a94442; border-color: #ebccd1;', // Merah
-                'partial' => 'background-color: #d9edf7; color: #31708f; border-color: #bce8f1;', // Biru
-                'sent' => 'background-color: #d9edf7; color: #31708f; border-color: #bce8f1;', // Biru
-                default => 'background-color: #fcf8e3; color: #8a6d3b; border-color: #faebcc;', // Kuning (Draft)
+                'completed' => 'background-color: #dcfce7; color: #15803d;', // Hijau
+                'cancelled' => 'background-color: #fee2e2; color: #b91c1c;', // Merah
+                'partial' => 'background-color: #dbeafe; color: #1d4ed8;', // Biru
+                'sent' => 'background-color: #dbeafe; color: #1d4ed8;', // Biru
+                default => 'background-color: #fef9c3; color: #a16207;', // Kuning (Draft)
             };
             $statusLabel = match ($purchaseOrderStatus) {
                 'completed' => 'SELESAI',
@@ -280,9 +283,9 @@
             <!-- Kiri: Info Supplier -->
             <td style="width: 55%;">
                 <div class="client-box">
-                    <span style="color: #666; font-size: 10px; text-transform: uppercase;">Kepada Yth. / Vendor:</span><br>
+                    <span style="color: #6b7280; font-size: 10px; text-transform: uppercase;">Kepada Yth. / Vendor:</span><br>
                     <strong style="font-size: 14px;">{{ $purchaseOrder->supplier?->name ?? 'Supplier' }}</strong><br>
-                    <div style="margin-top: 5px; color: #444;">
+                    <div style="margin-top: 5px; color: #4b5563;">
                         {{ $purchaseOrder->supplier?->address ?? 'Alamat tidak tersedia' }}<br>
                         @if(!empty($purchaseOrder->supplier?->email)) Email: {{ $purchaseOrder->supplier?->email }} <br>@endif
                         @if(!empty($purchaseOrder->supplier?->phone)) Telp: {{ $purchaseOrder->supplier?->phone }} @endif
@@ -293,12 +296,12 @@
             <td style="width: 45%; padding-left: 20px;">
                 <table style="width: 100%; font-size: 11px;">
                     <tr>
-                        <td style="width: 40%; color: #666;">Tanggal Pesan:</td>
+                        <td style="width: 40%; color: #6b7280;">Tanggal Pesan:</td>
                         <td style="font-weight: bold;">{{ \Carbon\Carbon::parse($purchaseOrder->order_date)->format('d F Y') }}</td>
                     </tr>
                     <tr>
-                        <td style="color: #666;">Estimasi Tiba:</td>
-                        <td style="font-weight: bold; color: #c00;">{{ $purchaseOrder->expected_delivery_date ? \Carbon\Carbon::parse($purchaseOrder->expected_delivery_date)->format('d F Y') : '-' }}</td>
+                        <td style="color: #6b7280;">Estimasi Tiba:</td>
+                        <td style="font-weight: bold; color: #b91c1c;">{{ $purchaseOrder->expected_delivery_date ? \Carbon\Carbon::parse($purchaseOrder->expected_delivery_date)->format('d F Y') : '-' }}</td>
                     </tr>
                 </table>
             </td>
@@ -323,7 +326,7 @@
                     <td>
                         <strong>{{ $item->product?->product_name ?? 'Produk' }}</strong>
                         @if(!empty($item->product?->sku))
-                            <br><small style="color: #666;">SKU: {{ $item->product?->sku }}</small>
+                            <br><small style="color: #6b7280;">SKU: {{ $item->product?->sku }}</small>
                         @endif
                     </td>
                     <td class="text-center">{{ $item->quantity }}</td>
@@ -346,7 +349,7 @@
                 Jl. Lingkar Selatan Sengkol No. 18, Setu<br>
                 Tangerang Selatan<br>
                 <br>
-                <em style="font-size: 10px; color: #666;">*Mohon cantumkan No. PO ({{ $purchaseOrder->po_number }})
+                <em style="font-size: 10px; color: #6b7280;">*Mohon cantumkan No. PO ({{ $purchaseOrder->po_number }})
                     pada Surat Jalan / Invoice Anda.</em>
             </p>
         </div>
@@ -360,8 +363,8 @@
 
             @if($purchaseOrder->discount_amount > 0)
                 <tr>
-                    <td class="label" style="color: #c00;">Diskon:</td>
-                    <td class="amount" style="color: #c00;">
+                    <td class="label" style="color: #b91c1c;">Diskon:</td>
+                    <td class="amount" style="color: #b91c1c;">
                         - IDR {{ number_format((float) ($purchaseOrder->discount_amount ?? 0), 0, ',', '.') }}
                     </td>
                 </tr>

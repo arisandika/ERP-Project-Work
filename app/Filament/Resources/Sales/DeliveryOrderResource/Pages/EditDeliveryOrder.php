@@ -7,7 +7,6 @@ use App\Models\Sales\DeliveryOrder;
 use App\Models\Sales\SalesOrder;
 use App\Models\Inventory\ProductStock;
 use App\Models\Inventory\StockTransaction;
-use App\Models\Inventory\Warehouse;
 use App\Models\Inventory\SerialNumber;
 use Filament\Actions;
 use Filament\Resources\Pages\EditRecord;
@@ -61,9 +60,7 @@ class EditDeliveryOrder extends EditRecord
     {
         $oldStatus = $record->status;
         $newStatus = $data['status'];
-        $warehouseUtamaId = Warehouse::where('warehouse_name', 'Gudang Utama')->value('id') ?? 1;
-
-        return DB::transaction(function () use ($record, $data, $oldStatus, $newStatus, $warehouseUtamaId) {
+        return DB::transaction(function () use ($record, $data, $oldStatus, $newStatus) {
             $record->update($data);
 
             if ($newStatus === 'on_delivery' && $oldStatus !== 'on_delivery') {
@@ -72,39 +69,48 @@ class EditDeliveryOrder extends EditRecord
                 foreach ($record->items as $item) {
                     if ($item->item_type === 'product' && $item->qty > 0) {
 
-                        $stockUtama = ProductStock::where('product_id', $item->item_id)
-                            ->where('warehouse_id', $warehouseUtamaId)
+                        $stocks = ProductStock::where('product_id', $item->item_id)
+                            ->where('qty_reserved', '>', 0)
+                            ->orderBy('warehouse_id')
                             ->lockForUpdate()
-                            ->first();
+                            ->get();
 
-                        if (!$stockUtama || $stockUtama->qty_reserved < $item->qty) {
+                        if ($stocks->sum('qty_reserved') < $item->qty) {
                             throw new \Exception("Stok Reserved untuk {$item->item_name} tidak mencukupi di gudang!");
                         }
 
-                        // A. PINDAH STOK DARI RESERVED KE ON DELIVERY
-                        $stockReservedBefore = $stockUtama->qty_reserved;
-                        $stockUtama->decrement('qty_reserved', $item->qty);
-                        $stockUtama->increment('qty_on_delivery', $item->qty);
+                        $remaining = (float) $item->qty;
+                        foreach ($stocks as $stock) {
+                            if ($remaining <= 0) {
+                                break;
+                            }
 
-                        // B. CATAT HISTORY TRANSAKSI (KELUAR)
-                        StockTransaction::create([
-                            'transaction_code' => $this->generateTransactionCode(),
-                            'transaction_date' => now(),
-                            'product_id'       => $item->item_id,
-                            'warehouse_id'     => $warehouseUtamaId,
-                            'mutation_type'    => 'delivery',
-                            'type'             => 'keluar',
-                            'quantity'         => $item->qty,
-                            'stock_before'     => $stockReservedBefore,
-                            'stock_after'      => $stockReservedBefore - $item->qty,
-                            'price'            => 0,
-                            'total_price'      => 0,
-                            'reference_id'     => $record->id,
-                            'reference_type'   => DeliveryOrder::class,
-                            'reference_number' => $record->do_number,
-                            'notes'            => 'Pengiriman Fisik Keluar Gudang',
-                            'created_by'       => auth()->id() ?? 1,
-                        ]);
+                            $qtyDelivered = min((float) $stock->qty_reserved, $remaining);
+                            $stockReservedBefore = (float) $stock->qty_reserved;
+                            $stock->decrement('qty_reserved', $qtyDelivered);
+                            $stock->increment('sold_stock', $qtyDelivered);
+
+                            StockTransaction::create([
+                                'transaction_code' => $this->generateTransactionCode(),
+                                'transaction_date' => now(),
+                                'product_id'       => $item->item_id,
+                                'warehouse_id'     => $stock->warehouse_id,
+                                'mutation_type'    => 'delivery',
+                                'type'             => 'keluar',
+                                'quantity'         => $qtyDelivered,
+                                'stock_before'     => $stockReservedBefore,
+                                'stock_after'      => $stockReservedBefore - $qtyDelivered,
+                                'price'            => 0,
+                                'total_price'      => 0,
+                                'reference_id'     => $record->id,
+                                'reference_type'   => DeliveryOrder::class,
+                                'reference_number' => $record->do_number,
+                                'notes'            => 'Pengiriman Fisik Keluar Gudang',
+                                'created_by'       => auth()->id() ?? 1,
+                            ]);
+
+                            $remaining -= $qtyDelivered;
+                        }
                     }
                 }
                 StockTransaction::$autoUpdateStock = true;

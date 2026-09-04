@@ -17,6 +17,7 @@ class ProductStock extends Model
         'qty_available',
         'qty_reserved',
         'qty_on_delivery',
+        'sold_stock',
     ];
 
     // Relasi BelongsTo: Product

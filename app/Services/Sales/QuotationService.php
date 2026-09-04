@@ -11,10 +11,12 @@ use App\Models\Inventory\Product;
 use App\Models\Inventory\Service;
 use App\Models\Sales\Quotation;
 use App\Models\Marketing\PromoCode;
+use App\Models\Inventory\ProductStock;
 use App\Mail\QuotationSent;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\DB;
 use Filament\Notifications\Notification;
+use Illuminate\Validation\ValidationException;
 
 class QuotationService
 {
@@ -26,7 +28,7 @@ class QuotationService
             return false;
         }
 
-        Mail::to($emailTarget)->queue(new QuotationSent($quotation));
+        Mail::to($emailTarget)->send(new QuotationSent($quotation));
         $quotation->update(['status' => 'sent']);
 
         return true;
@@ -101,6 +103,7 @@ class QuotationService
     {
         return DB::transaction(function () use ($data) {
             $data = $this->recalculateFormData($data);
+            $this->validateProductStock($data['items'] ?? []);
 
             $items = $data['items'] ?? [];
             $quotationData = \Illuminate\Support\Arr::except($data, ['items', 'promo_code_input', 'temp_discount_type', 'temp_discount_value']);
@@ -121,6 +124,7 @@ class QuotationService
     {
         return DB::transaction(function () use ($quotation, $data) {
             $data = $this->recalculateFormData($data);
+            $this->validateProductStock($data['items'] ?? []);
 
             $items = $data['items'] ?? [];
             $quotationData = \Illuminate\Support\Arr::except($data, ['items', 'promo_code_input', 'temp_discount_type', 'temp_discount_value']);
@@ -146,6 +150,32 @@ class QuotationService
 
             return $quotation;
         });
+    }
+
+    private function validateProductStock(array $items): void
+    {
+        $requiredByProduct = collect($items)
+            ->filter(fn (array $item): bool => ($item['item_type'] ?? null) === 'product')
+            ->groupBy(fn (array $item): int => (int) ($item['item_id'] ?? 0))
+            ->map(fn ($productItems): float => $productItems->sum(fn (array $item): float => (float) ($item['qty'] ?? 0)))
+            ->filter(fn (float $quantity, int $productId): bool => $productId > 0 && $quantity > 0);
+
+        foreach ($requiredByProduct as $productId => $requiredQuantity) {
+            $product = Product::find($productId);
+            $availableQuantity = (float) ProductStock::query()
+                ->where('product_id', $productId)
+                ->sum('qty_available');
+
+            if (! $product || $availableQuantity < $requiredQuantity) {
+                $productName = $product?->product_name ?? "Product ID {$productId}";
+                $available = number_format($availableQuantity, 0, ',', '.');
+                $required = number_format($requiredQuantity, 0, ',', '.');
+
+                throw ValidationException::withMessages([
+                    'items' => "Stock product '{$productName}' tidak mencukupi. Hanya tersedia: {$available}",
+                ]);
+            }
+        }
     }
 
     public function syncDealAfterCreation(Quotation $quotation): void

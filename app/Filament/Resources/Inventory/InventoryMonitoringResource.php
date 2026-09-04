@@ -89,6 +89,14 @@ class InventoryMonitoringResource extends Resource
                     ->color('info')
                     ->suffix(' Unit'),
 
+                Tables\Columns\TextColumn::make('sold_stock')
+                    ->label('Terjual')
+                    ->numeric()
+                    ->sortable()
+                    ->badge()
+                    ->color('success')
+                    ->suffix(' Unit'),
+
                 Tables\Columns\TextColumn::make('total_fisik')
                     ->label('Total Fisik')
                     ->getStateUsing(fn($record) => $record->qty_available + $record->qty_reserved + $record->qty_on_delivery)
