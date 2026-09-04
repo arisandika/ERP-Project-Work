@@ -113,6 +113,14 @@ class ProductStocksRelationManager extends RelationManager
                     ->color('indigo')
                     ->suffix(fn ($record) => ' ' . ($record->product->unit->symbol ?? $record->product->unit->unit_name ?? '')),
 
+                Tables\Columns\TextColumn::make('sold_stock')
+                    ->label('Terjual')
+                    ->numeric()
+                    ->sortable()
+                    ->badge()
+                    ->color('success')
+                    ->suffix(fn ($record) => ' ' . ($record->product->unit->symbol ?? $record->product->unit->unit_name ?? '')),
+
                 // Tambahan Arsitektur: Total Stock Fisik di gudang tersebut
                 Tables\Columns\TextColumn::make('total_physical')
                     ->label('Total Fisik')

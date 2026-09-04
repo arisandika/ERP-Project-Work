@@ -444,7 +444,7 @@ class InvoiceResource extends Resource
                     ->action(function (Invoice $record) {
                         try {
                             DB::transaction(function () use ($record) {
-                                Mail::to($record->customer->email)->queue(new InvoiceSent($record));
+                                Mail::to($record->customer->email)->send(new InvoiceSent($record));
 
                                 if ($record->status === 'draft') {
                                     $record->update(['status' => 'sent']);

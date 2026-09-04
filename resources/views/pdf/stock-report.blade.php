@@ -11,7 +11,7 @@
         body {
             font-family: 'Helvetica', sans-serif;
             font-size: 11px;
-            color: #333;
+            color: #374151;
             line-height: 1.3;
         }
 
@@ -40,24 +40,24 @@
             font-size: 26px;
             font-weight: bold;
             margin: 0;
-            color: #222;
+            color: #111827;
         }
 
         .header-table .company-tagline {
             font-size: 12px;
             margin: 2px 0 5px 0;
             font-weight: bold;
-            color: #555;
+            color: #4b5563;
         }
 
         .header-table .company-address {
             font-size: 10px;
             margin: 0;
-            color: #444;
+            color: #4b5563;
         }
 
         .header-divider {
-            border-bottom: 3px double #333;
+            border-bottom: 3px double #1f2937;
             margin-bottom: 25px;
         }
 
@@ -72,11 +72,12 @@
             letter-spacing: 3px;
             font-weight: 800;
             text-transform: uppercase;
+            color: #111827;
         }
 
         .document-title p {
             margin: 5px 0 0;
-            font-size: 12px;
+            font-size: 13px;
             font-weight: bold;
         }
 
@@ -84,14 +85,14 @@
             font-size: 9px;
             padding: 4px 10px;
             border-radius: 12px;
-            border: 1px solid #333;
+            border: 1px solid #d1d5db;
             display: inline-block;
             margin-top: 8px;
             letter-spacing: 1px;
             font-weight: bold;
             text-transform: uppercase;
-            background-color: #d9edf7;
-            color: #31708f;
+            background-color: #dbeafe;
+            color: #1d4ed8;
         }
 
         .items-table {
@@ -102,15 +103,16 @@
         }
 
         .items-table th {
-            background-color: #f4f4f4;
-            border: 1px solid #ccc;
+            background-color: #f3f4f6;
+            border: 1px solid #d1d5db;
             padding: 8px;
             text-align: left;
             font-weight: bold;
+            color: #111827;
         }
 
         .items-table td {
-            border: 1px solid #ccc;
+            border: 1px solid #d1d5db;
             padding: 8px;
         }
 
@@ -123,7 +125,7 @@
         }
 
         .items-table .row-bg {
-            background-color: #fafafa;
+            background-color: #f9fafb;
         }
 
         .stock-badge {
@@ -136,22 +138,22 @@
         }
 
         .stock-success {
-            background: #5cb85c;
+            background: #16a34a;
         }
 
         .stock-warning {
-            background: #f0ad4e;
+            background: #d97706;
         }
 
         .stock-danger {
-            background: #d9534f;
+            background: #dc2626;
         }
 
         .notes-section {
             margin-top: 30px;
             font-size: 10px;
-            color: #555;
-            border-top: 1px solid #eee;
+            color: #4b5563;
+            border-top: 1px solid #e5e7eb;
             padding-top: 10px;
             font-style: italic;
         }
@@ -167,12 +169,13 @@
 
         .summary-table th, .summary-table td {
             padding: 6px;
-            border: 1px solid #ccc;
+            border: 1px solid #d1d5db;
         }
 
         .summary-table th {
-            background-color: #f4f4f4;
+            background-color: #f3f4f6;
             text-align: left;
+            color: #111827;
         }
     </style>
 </head>

@@ -76,7 +76,7 @@ class PackageStockValidationService
 
             $availableQuantity = (int) ProductStock::query()
                 ->where('product_id', $productId)
-                ->selectRaw('SUM(qty_available - qty_reserved) as total')
+                ->selectRaw('COALESCE(SUM(qty_available), 0) as total')
                 ->value('total');
 
             if ($package) {

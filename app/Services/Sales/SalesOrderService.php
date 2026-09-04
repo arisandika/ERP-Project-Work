@@ -8,7 +8,6 @@ use App\Models\Sales\DeliveryOrderItem;
 use App\Models\Inventory\ProductStock;
 use App\Models\Inventory\StockTransaction;
 use App\Models\Marketing\PromoCode;
-use App\Models\Inventory\Warehouse;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Arr;
 use Illuminate\Validation\ValidationException;
@@ -128,18 +127,13 @@ class SalesOrderService
      */
     private function validateStock(array $items): void
     {
-        $warehouseUtamaId = Warehouse::where('warehouse_name', 'Gudang Utama')->value('id') ?? 1;
-
         foreach ($items as $item) {
             if (($item['item_type'] ?? 'product') !== 'product') {
                 continue;
             }
 
-            $stock = ProductStock::where('product_id', $item['item_id'])
-                ->where('warehouse_id', $warehouseUtamaId)
-                ->first();
-
-            $avail = $stock ? (float) $stock->qty_available : 0;
+            $avail = (float) ProductStock::where('product_id', $item['item_id'])
+                ->sum('qty_available');
             $qty = (float) ($item['qty'] ?? 0);
 
             if ($avail < $qty) {
@@ -156,54 +150,74 @@ class SalesOrderService
     public function processConfirmation(SalesOrder $record, int $userId): void
     {
         DB::transaction(function () use ($record, $userId) {
-            $warehouseUtamaId = Warehouse::where('warehouse_name', 'Gudang Utama')->value('id') ?? 1;
+            $record = SalesOrder::query()
+                ->with('items')
+                ->lockForUpdate()
+                ->findOrFail($record->id);
 
             StockTransaction::$autoUpdateStock = false;
 
             try {
-                // A. BOOKING STOK
-                foreach ($record->items as $item) {
-                    if ($item->item_type !== 'product') {
-                        continue;
+                $alreadyReserved = StockTransaction::query()
+                    ->where('reference_type', SalesOrder::class)
+                    ->where('reference_id', $record->id)
+                    ->where('mutation_type', 'reserve')
+                    ->exists();
+
+                if (! $alreadyReserved) {
+                    foreach ($record->items as $item) {
+                        if ($item->item_type !== 'product') {
+                            continue;
+                        }
+
+                        $remaining = (float) $item->qty;
+                        $stocks = ProductStock::where('product_id', $item->item_id)
+                            ->where('qty_available', '>', 0)
+                            ->orderBy('warehouse_id')
+                            ->lockForUpdate()
+                            ->get();
+
+                        foreach ($stocks as $stockUtama) {
+                            if ($remaining <= 0) {
+                                break;
+                            }
+
+                            $qty = min((float) $stockUtama->qty_available, $remaining);
+                            $stockAvailableBefore = (float) $stockUtama->qty_available;
+
+                            $stockUtama->decrement('qty_available', $qty);
+                            $stockUtama->increment('qty_reserved', $qty);
+
+                            StockTransaction::create([
+                                'transaction_code'  => $this->generateTransactionCode(),
+                                'transaction_date'  => now(),
+                                'product_id'        => $item->item_id,
+                                'warehouse_id'      => $stockUtama->warehouse_id,
+                                'mutation_type'     => 'reserve',
+                                'type'              => 'keluar',
+                                'quantity'          => $qty,
+                                'stock_before'      => $stockAvailableBefore,
+                                'stock_after'       => $stockAvailableBefore - $qty,
+                                'price'             => 0,
+                                'total_price'       => 0,
+                                'reference_id'      => $record->id,
+                                'reference_type'    => SalesOrder::class,
+                                'reference_number'  => $record->order_number,
+                                'notes'              => 'Booking Stok (SO Confirmed)',
+                                'created_by'        => $userId,
+                            ]);
+
+                            $remaining -= $qty;
+                        }
+
+                        if ($remaining > 0) {
+                            throw new \Exception("Stok Siap Jual untuk '{$item->item_name}' tidak mencukupi!");
+                        }
                     }
-
-                    $stockUtama = ProductStock::where('product_id', $item->item_id)
-                        ->where('warehouse_id', $warehouseUtamaId)
-                        ->lockForUpdate()
-                        ->first();
-
-                    if (!$stockUtama || (float) $stockUtama->qty_available < (float) $item->qty) {
-                        throw new \Exception("Stok Siap Jual untuk '{$item->item_name}' tidak mencukupi!");
-                    }
-
-                    $qty = (float) $item->qty;
-                    $stockAvailableBefore = (float) $stockUtama->qty_available;
-
-                    $stockUtama->decrement('qty_available', $qty);
-                    $stockUtama->increment('qty_reserved', $qty);
-
-                    StockTransaction::create([
-                        'transaction_code'  => $this->generateTransactionCode(),
-                        'transaction_date'  => now(),
-                        'product_id'        => $item->item_id,
-                        'warehouse_id'      => $warehouseUtamaId,
-                        'mutation_type'     => 'reserve',
-                        'type'              => 'keluar',
-                        'quantity'          => $item->qty,
-                        'stock_before'      => $stockAvailableBefore,
-                        'stock_after'       => $stockAvailableBefore - $item->qty,
-                        'price'             => 0,
-                        'total_price'       => 0,
-                        'reference_id'      => $record->id,
-                        'reference_type'    => SalesOrder::class,
-                        'reference_number'  => $record->order_number,
-                        'notes'             => 'Booking Stok (SO Confirmed)',
-                        'created_by'        => $userId,
-                    ]);
                 }
 
                 // B. UPDATE PENGGUNAAN PROMO
-                if ($record->promo_code_id) {
+                if (! $alreadyReserved && $record->promo_code_id) {
                     PromoCode::find($record->promo_code_id)?->increment('times_used');
                 }
 
@@ -220,7 +234,9 @@ class SalesOrderService
                         'do_date'           => now(),
                         'status'            => 'draft',
                     ]);
+                }
 
+                if ($do->items()->doesntExist()) {
                     foreach ($record->items as $item) {
                         DeliveryOrderItem::create([
                             'nx_delivery_order_id' => $do->id,
@@ -233,13 +249,12 @@ class SalesOrderService
                             'qty_remaining'        => 0,
                         ]);
                     }
-                } else {
-                    // Revisi: kalau DO lama sudah ada tapi nomor kosong, isi nomor
-                    if (blank($do->do_number)) {
-                        $do->update([
-                            'do_number' => DeliveryOrder::generateDoNumber(),
-                        ]);
-                    }
+                }
+
+                if (blank($do->do_number)) {
+                    $do->update([
+                        'do_number' => DeliveryOrder::generateDoNumber(),
+                    ]);
                 }
             } finally {
                 StockTransaction::$autoUpdateStock = true;

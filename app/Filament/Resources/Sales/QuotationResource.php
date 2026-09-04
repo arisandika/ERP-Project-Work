@@ -1,5 +1,4 @@
 <?php
-
 namespace App\Filament\Resources\Sales;
 
 use App\Filament\Concerns\BelongsToModule;
@@ -9,7 +8,6 @@ use App\Models\Inventory\Product;
 use App\Models\Inventory\Service;
 use App\Models\Marketing\PromoCode;
 use App\Models\Sales\Quotation;
-use App\Models\Sales\SalesPerson;
 use App\Services\Sales\QuotationService;
 use Filament\Forms\Components\Actions\Action as FormAction;
 use Filament\Forms\Components\DatePicker;
@@ -26,8 +24,8 @@ use Filament\Forms\Get;
 use Filament\Forms\Set;
 use Filament\Notifications\Notification;
 use Filament\Resources\Resource;
-use Filament\Tables\Table;
 use Filament\Tables;
+use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
@@ -38,12 +36,12 @@ class QuotationResource extends Resource
 {
     use BelongsToModule;
 
-    protected static ?string $module = 'sales';
-    protected static ?string $model = Quotation::class;
-    protected static ?string $navigationIcon = 'heroicon-o-document-text';
-    protected static ?string $navigationGroup = 'Manajemen Sales';
-    protected static ?int $navigationSort = 2;
-    protected static ?string $slug = 'sales/quotations';
+    protected static ?string $module           = 'sales';
+    protected static ?string $model            = Quotation::class;
+    protected static ?string $navigationIcon   = 'heroicon-o-document-text';
+    protected static ?string $navigationGroup  = 'Manajemen Sales';
+    protected static ?int $navigationSort      = 2;
+    protected static ?string $slug             = 'sales/quotations';
     protected static ?string $pluralModelLabel = 'Penawaran';
 
     public static function getNavigationBadge(): ?string
@@ -85,13 +83,17 @@ class QuotationResource extends Resource
                                     ->disabled(fn($record) => $record !== null || request()->has('nx_deal_id'))
                                     ->dehydrated()
                                     ->getOptionLabelFromRecordUsing(function ($record) {
-                                        $lead = $record->lead()->withTrashed()->first();
+                                        $lead       = $record->lead()->withTrashed()->first();
                                         $clientName = $record->customer?->name ?? $lead?->name ?? 'Tanpa Klien';
-                                        $label = "{$record->deal_number} - {$clientName}";
-                                        if ($record->trashed())
+                                        $label      = "{$record->deal_number} - {$clientName}";
+                                        if ($record->trashed()) {
                                             return "{$label} (Deal Terhapus)";
-                                        if ($lead && $lead->trashed())
+                                        }
+
+                                        if ($lead && $lead->trashed()) {
                                             return "{$label} (Lead Terhapus)";
+                                        }
+
                                         return $label;
                                     }),
                                 DatePicker::make('quotation_date')
@@ -133,12 +135,12 @@ class QuotationResource extends Resource
                                 Select::make('status')
                                     ->options(function (string $operation): array {
                                         $allStatuses = [
-                                            'new' => 'Baru',
-                                            'sent' => 'Terkirim',
+                                            'new'         => 'Baru',
+                                            'sent'        => 'Terkirim',
                                             'negotiation' => 'Negosiasi',
-                                            'accepted' => 'Diterima',
-                                            'rejected' => 'Ditolak',
-                                            'expired' => 'Expired',
+                                            'accepted'    => 'Diterima',
+                                            'rejected'    => 'Ditolak',
+                                            'expired'     => 'Expired',
                                         ];
 
                                         if ($operation === 'create') {
@@ -168,73 +170,78 @@ class QuotationResource extends Resource
                     ])
                     ->collapsible(),
             ])->columnSpan(['lg' => 2]),
-            Group::make()->schema([
-                Section::make('Ringkasan Harga')
-                    ->schema([
-                        TextInput::make('promo_code_input')
-                            ->label('Kode Promo')
-                            ->placeholder('Masukkan kode promo')
-                            ->dehydrated(false)
-                            ->formatStateUsing(fn($record) => $record?->promoCode?->code)
-                            ->suffixAction(
-                                FormAction::make('apply_promo')
-                                    ->icon('heroicon-m-ticket')
-                                    ->color('success')
-                                    ->label('Apply')
-                                    ->action(fn($state, Set $set, Get $get) => self::applyPromo($state, $set, $get))
-                            )
-                            ->formatStateUsing(function ($state) {
-                                return strtoupper($state ?? '');
-                            })
-                            ->afterStateUpdated(fn(Set $set, $state) => $set('promo_code_input', strtoupper($state ?? ''))),
-                        Hidden::make('promo_code_id'),
-                        Hidden::make('temp_discount_type')->dehydrated(false),
-                        Hidden::make('temp_discount_value')->dehydrated(false),
-                        TextInput::make('subtotal')
-                            ->label('Subtotal')
-                            ->numeric()
-                            ->prefix('IDR')
-                            ->required()
-                            ->minValue(0)
-                            ->disabled()
-                            ->dehydrated()
-                            ->formatStateUsing(fn($state) => (int) $state),
-                        TextInput::make('discount_amount')
-                            ->label('Potongan / Diskon')
-                            ->numeric()
-                            ->prefix('IDR')
-                            ->minValue(0)
-                            ->disabled()
-                            ->dehydrated()
-                            ->formatStateUsing(fn($state) => (int) $state),
-                        TextInput::make('tax')
-                            ->label('Pajak PPN (%)')
-                            ->numeric()
-                            ->default(11)
-                            ->minValue(0)
-                            ->live(debounce: 500)
-                            ->afterStateUpdated(fn($state, Set $set, Get $get) => self::updateTotals($get, $set))
-                            ->formatStateUsing(fn($state) => (float) $state)
-                            ->prefixIcon('heroicon-o-receipt-percent'),
-                        TextInput::make('grand_total')
-                            ->label('Grand Total')
-                            ->numeric()
-                            ->prefix('IDR')
-                            ->required()
-                            ->minValue(0)
-                            ->disabled()
-                            ->dehydrated()
-                            ->extraInputAttributes(['style' => 'font-size: 1rem; font-weight: bold; color: green;'])
-                            ->formatStateUsing(fn($state) => (int) $state),
-                    ]),
-                Section::make('Catatan')
-                    ->schema([
-                        Textarea::make('notes')
-                            ->label('Catatan Tambahan / Syarat Ketentuan')
-                            ->rows(5),
-                    ]),
-            ])->columnSpan(['lg' => 1]),  // Menempati 1 dari 3 kolom grid utama
-        ])->columns(['default' => 1, 'md' => 3]);  // Container utama dibagi menjadi 3 kolom
+            Group::make()
+                ->columns(['default' => 2]) // langsung di sini
+                ->schema([
+                    Section::make('Catatan')
+                        ->columnSpan(1)
+                        ->schema([
+                            Textarea::make('notes')
+                                ->label('Catatan Tambahan / Syarat Ketentuan')
+                                ->rows(5),
+                        ]),
+                        Section::make('Ringkasan Harga')
+                        ->columnSpan(1)
+                        ->schema([
+                            TextInput::make('promo_code_input')
+                                ->label('Kode Promo')
+                                ->placeholder('Masukkan kode promo')
+                                ->dehydrated(false)
+                                ->formatStateUsing(fn($record) => $record?->promoCode?->code)
+                                ->suffixAction(
+                                    FormAction::make('apply_promo')
+                                        ->icon('heroicon-m-ticket')
+                                        ->color('success')
+                                        ->label('Apply')
+                                        ->action(fn($state, Set $set, Get $get) => self::applyPromo($state, $set, $get))
+                                )
+                                ->formatStateUsing(function ($state) {
+                                    return strtoupper($state ?? '');
+                                })
+                                ->afterStateUpdated(fn(Set $set, $state) => $set('promo_code_input', strtoupper($state ?? ''))),
+                            Hidden::make('promo_code_id'),
+                            Hidden::make('temp_discount_type')->dehydrated(false),
+                            Hidden::make('temp_discount_value')->dehydrated(false),
+                            TextInput::make('subtotal')
+                                ->label('Subtotal')
+                                ->numeric()
+                                ->prefix('IDR')
+                                ->required()
+                                ->minValue(0)
+                                ->disabled()
+                                ->dehydrated()
+                                ->formatStateUsing(fn($state) => (int) $state),
+                            TextInput::make('discount_amount')
+                                ->label('Potongan / Diskon')
+                                ->numeric()
+                                ->prefix('IDR')
+                                ->minValue(0)
+                                ->disabled()
+                                ->dehydrated()
+                                ->formatStateUsing(fn($state) => (int) $state),
+                            TextInput::make('tax')
+                                ->label('Pajak PPN (%)')
+                                ->numeric()
+                                ->default(11)
+                                ->minValue(0)
+                                ->live(debounce: 500)
+                                ->afterStateUpdated(fn($state, Set $set, Get $get) => self::updateTotals($get, $set))
+                                ->formatStateUsing(fn($state) => (float) $state)
+                                ->prefixIcon('heroicon-o-receipt-percent'),
+                            TextInput::make('grand_total')
+                                ->label('Grand Total')
+                                ->numeric()
+                                ->prefix('IDR')
+                                ->required()
+                                ->minValue(0)
+                                ->disabled()
+                                ->dehydrated()
+                                ->extraInputAttributes(['style' => 'font-size: 1rem; font-weight: bold; color: green;'])
+                                ->formatStateUsing(fn($state) => (int) $state),
+                        ]),
+                ])
+                ->columnSpan(['lg' => 2]),
+        ])->columns(['default' => 1, 'md' => 3]);
     }
 
     public static function table(Table $table): Table
@@ -251,8 +258,9 @@ class QuotationResource extends Resource
                     ->state(function (Quotation $record) {
                         $deal = $record->deal()->withTrashed()->first();
 
-                        if (!$deal)
+                        if (! $deal) {
                             return '-';
+                        }
 
                         if ($deal->nx_customer_id) {
                             return $deal->customer?->name . ' (Customer)';
@@ -268,12 +276,13 @@ class QuotationResource extends Resource
                     })
                     ->description(function (Quotation $record) {
                         $deal = $record->deal()->withTrashed()->first();
-                        if (!$deal)
+                        if (! $deal) {
                             return '-';
+                        }
 
                         $lead = $deal->lead()->withTrashed()->first();
 
-                        $infoParts = [];
+                        $infoParts   = [];
                         $infoParts[] = "Deal: {$deal->deal_number}";
 
                         if ($deal->trashed()) {
@@ -310,24 +319,24 @@ class QuotationResource extends Resource
                     ->label('Status Penawaran')
                     ->badge()
                     ->color(fn(string $state): string => match ($state) {
-                        'new' => 'gray',
-                        'sent' => 'warning',
+                        'new'         => 'gray',
+                        'sent'        => 'warning',
                         'negotiation' => 'info',
-                        'accepted' => 'success',
-                        'rejected' => 'danger',
-                        'expired' => 'danger',
+                        'accepted'    => 'success',
+                        'rejected'    => 'danger',
+                        'expired'     => 'danger',
 
-                        default => 'gray'
+                        default       => 'gray'
                     })
                     ->formatStateUsing(fn(string $state): string => match ($state) {
-                        'new' => 'Baru',
-                        'sent' => 'Terkirim',
+                        'new'         => 'Baru',
+                        'sent'        => 'Terkirim',
                         'negotiation' => 'Negosiasi',
-                        'accepted' => 'Diterima',
-                        'rejected' => 'Ditolak',
-                        'expired' => 'Expired',
+                        'accepted'    => 'Diterima',
+                        'rejected'    => 'Ditolak',
+                        'expired'     => 'Expired',
 
-                        default => ucfirst($state),
+                        default       => ucfirst($state),
                     }),
                 Tables\Columns\TextColumn::make('internalPic.full_name')
                     ->label('PIC Internal')
@@ -364,37 +373,42 @@ class QuotationResource extends Resource
                         return 'success';
                     })
                     ->description(function (Quotation $record) {
-                        if (in_array($record->status, ['accepted', 'rejected']))
+                        if (in_array($record->status, ['accepted', 'rejected'])) {
                             return null;
+                        }
 
                         $days = now()->diffInDays(\Carbon\Carbon::parse($record->valid_until), false);
-                        if ($days < 0)
+                        if ($days < 0) {
                             return 'Expired ' . abs(intval($days)) . ' Hari lalu';
-                        if ($days == 0)
+                        }
+
+                        if ($days == 0) {
                             return 'Hari ini terakhir';
+                        }
+
                         return 'Sisa ' . intval($days) . ' Hari';
                     }),
                 Tables\Columns\TextColumn::make('status')
                     ->badge()
                     ->color(fn(string $state): string => match ($state) {
-                        'new' => 'gray',
-                        'sent' => 'warning',
+                        'new'         => 'gray',
+                        'sent'        => 'warning',
                         'negotiation' => 'warning',
-                        'accepted' => 'success',
-                        'rejected' => 'danger',
-                        'expired' => 'danger',
+                        'accepted'    => 'success',
+                        'rejected'    => 'danger',
+                        'expired'     => 'danger',
 
-                        default => 'gray'
+                        default       => 'gray'
                     })
                     ->formatStateUsing(fn(string $state): string => match ($state) {
-                        'new' => 'Baru',
-                        'sent' => 'Terkirim',
+                        'new'         => 'Baru',
+                        'sent'        => 'Terkirim',
                         'negotiation' => 'Negosiasi',
-                        'accepted' => 'Diterima',
-                        'rejected' => 'Ditolak',
-                        'expired' => 'Expired',
+                        'accepted'    => 'Diterima',
+                        'rejected'    => 'Ditolak',
+                        'expired'     => 'Expired',
 
-                        default => ucfirst($state),
+                        default       => ucfirst($state),
                     }),
                 Tables\Columns\TextColumn::make('grand_total')
                     ->label('Total')
@@ -435,12 +449,12 @@ class QuotationResource extends Resource
                 Tables\Filters\SelectFilter::make('status')
                     ->label('Status')
                     ->options([
-                        'new' => 'Baru',
-                        'sent' => 'Terkirim',
+                        'new'         => 'Baru',
+                        'sent'        => 'Terkirim',
                         'negotiation' => 'Negosiasi',
-                        'accepted' => 'Diterima',
-                        'rejected' => 'Ditolak',
-                        'expired' => 'Expired',
+                        'accepted'    => 'Diterima',
+                        'rejected'    => 'Ditolak',
+                        'expired'     => 'Expired',
                     ]),
                 Tables\Filters\SelectFilter::make('internal_pic_id')
                     ->label('PIC (Internal Sales)')
@@ -463,7 +477,7 @@ class QuotationResource extends Resource
                     ->trueLabel('Sudah Expired')
                     ->falseLabel('Masih Berlaku')
                     ->queries(
-                        true: fn(Builder $query) => $query->whereDate('valid_until', '<', now())->whereIn('status', ['new', 'sent']),
+                        true: fn(Builder $query)  => $query->whereDate('valid_until', '<', now())->whereIn('status', ['new', 'sent']),
                         false: fn(Builder $query) => $query->whereDate('valid_until', '>=', now())->orWhereNotIn('status', ['new', 'sent']),
                     ),
                 Tables\Filters\Filter::make('created_at')
@@ -516,12 +530,31 @@ class QuotationResource extends Resource
                     ->color('warning')
                     ->requiresConfirmation()
                     ->action(function (Quotation $record, QuotationService $service) {
-                        $isSent = $service->sendQuotationEmail($record);
+                        try {
+                            $isSent = $service->sendQuotationEmail($record);
+                        } catch (\Throwable $exception) {
+                            Notification::make()
+                                ->title('Gagal Mengirim Quotation')
+                                ->body('Email tidak dapat dikirim. Silakan periksa konfigurasi SMTP atau coba lagi.')
+                                ->danger()
+                                ->persistent()
+                                ->send();
+
+                            return;
+                        }
 
                         if ($isSent) {
-                            Notification::make()->title('Terkirim!')->success()->send();
+                            Notification::make()
+                                ->title('Quotation Terkirim')
+                                ->body('Quotation berhasil dikirim ke email customer atau lead.')
+                                ->success()
+                                ->send();
                         } else {
-                            Notification::make()->title('Gagal: Email Klien tidak tersedia!')->danger()->send();
+                            Notification::make()
+                                ->title('Email Klien Tidak Tersedia')
+                                ->body('Customer atau lead belum memiliki alamat email.')
+                                ->danger()
+                                ->send();
                         }
                     }),
                 Tables\Actions\EditAction::make(),
@@ -578,9 +611,9 @@ class QuotationResource extends Resource
     public static function getPages(): array
     {
         return [
-            'index' => Pages\ListQuotations::route('/'),
+            'index'  => Pages\ListQuotations::route('/'),
             'create' => Pages\CreateQuotation::route('/create'),
-            'edit' => Pages\EditQuotation::route('/{record}/edit'),
+            'edit'   => Pages\EditQuotation::route('/{record}/edit'),
         ];
     }
 
@@ -617,70 +650,83 @@ class QuotationResource extends Resource
                 ->options(function (Get $get) {
                     $type = $get('item_type');
 
-                    if ($type === 'App\Models\Inventory\Product' || $type === Product::class)
+                    if ($type === 'App\Models\Inventory\Product' || $type === Product::class) {
                         $type = 'product';
-                    if ($type === 'App\Models\Inventory\Service' || $type === Service::class)
+                    }
+
+                    if ($type === 'App\Models\Inventory\Service' || $type === Service::class) {
                         $type = 'service';
-                    if ($type === 'App\Models\Inventory\Package' || $type === Package::class)
+                    }
+
+                    if ($type === 'App\Models\Inventory\Package' || $type === Package::class) {
                         $type = 'package';
+                    }
 
                     return match ($type) {
                         'product' => Product::query()->pluck('product_name', 'id'),
                         'service' => Service::query()->pluck('service_name', 'id'),
                         'package' => Package::query()->pluck('package_name', 'id'),
-                        default => [],
+                        default   => [],
                     };
                 })
                 ->getOptionLabelUsing(function ($value, Get $get) {
                     $type = $get('item_type');
 
-                    if ($type === 'App\Models\Inventory\Product' || $type === Product::class)
+                    if ($type === 'App\Models\Inventory\Product' || $type === Product::class) {
                         $type = 'product';
-                    if ($type === 'App\Models\Inventory\Service' || $type === Service::class)
+                    }
+
+                    if ($type === 'App\Models\Inventory\Service' || $type === Service::class) {
                         $type = 'service';
-                    if ($type === 'App\Models\Inventory\Package' || $type === Package::class)
+                    }
+
+                    if ($type === 'App\Models\Inventory\Package' || $type === Package::class) {
                         $type = 'package';
+                    }
 
                     $modelClass = match ($type) {
                         'product' => Product::class,
                         'service' => Service::class,
                         'package' => Package::class,
-                        default => null
+                        default   => null
                     };
 
-                    if (!$modelClass || !$value)
+                    if (! $modelClass || ! $value) {
                         return null;
+                    }
 
                     $record = $modelClass::find($value);
 
-                    return $record?->product_name
-                        ?? $record?->service_name
-                        ?? $record?->package_name
-                        ?? $record?->name;
+                    return $record?->product_name ?? $record?->service_name ?? $record?->package_name ?? $record?->name;
                 })
-                ->visible(fn(Get $get) => !empty($get('item_type')))
+                ->visible(fn(Get $get) => ! empty($get('item_type')))
                 ->searchable()
                 ->preload()
                 ->reactive()
                 ->afterStateUpdated(function ($state, Set $set, Get $get) {
-                    if (!$state) {
+                    if (! $state) {
                         return;
                     }
 
                     $type = $get('item_type');
 
-                    if ($type === 'App\Models\Inventory\Product' || $type === Product::class)
+                    if ($type === 'App\Models\Inventory\Product' || $type === Product::class) {
                         $type = 'product';
-                    if ($type === 'App\Models\Inventory\Service' || $type === Service::class)
+                    }
+
+                    if ($type === 'App\Models\Inventory\Service' || $type === Service::class) {
                         $type = 'service';
-                    if ($type === 'App\Models\Inventory\Package' || $type === Package::class)
+                    }
+
+                    if ($type === 'App\Models\Inventory\Package' || $type === Package::class) {
                         $type = 'package';
+                    }
 
                     $model = match ($type) {
                         'product' => Product::find($state),
                         'service' => Service::find($state),
                         'package' => Package::find($state),
-                        default => null
+                        default   => null
                     };
 
                     if ($model) {
@@ -691,11 +737,11 @@ class QuotationResource extends Resource
                             'product' => (float) ($model->selling_price ?? $model->price ?? 0),
                             'service' => (float) ($model->price ?? 0),
                             'package' => (float) ($model->total_price ?? 0),
-                            default => 0
+                            default   => 0
                         };
                         $buyPrice = match ($type) {
                             'product' => (float) ($model->purchase_price ?? 0),
-                            default => 0
+                            default   => 0
                         };
 
                         $set('item_name', $name);
@@ -758,7 +804,7 @@ class QuotationResource extends Resource
 
     public static function updateItemTotal(Get $get, Set $set): void
     {
-        $qty = (float) ($get('qty') ?? 0);
+        $qty   = (float) ($get('qty') ?? 0);
         $price = (float) ($get('unit_price') ?? 0);
         $set('line_total', $qty * $price);
 
@@ -767,11 +813,11 @@ class QuotationResource extends Resource
 
     public static function updateTotals(Get $get, Set $set): void
     {
-        $items = $get('items');
+        $items      = $get('items');
         $pathPrefix = '';
 
         if ($items === null) {
-            $items = $get('../../items');
+            $items      = $get('../../items');
             $pathPrefix = '../../';
         }
 
@@ -782,13 +828,13 @@ class QuotationResource extends Resource
 
         $set($pathPrefix . 'subtotal', $subtotal);
 
-        $discountType = $get($pathPrefix . 'temp_discount_type');
+        $discountType  = $get($pathPrefix . 'temp_discount_type');
         $discountValue = (float) $get($pathPrefix . 'temp_discount_value');
 
-        if (!$discountType && $promoId = $get($pathPrefix . 'promo_code_id')) {
+        if (! $discountType && $promoId = $get($pathPrefix . 'promo_code_id')) {
             $promo = PromoCode::find($promoId);
             if ($promo) {
-                $discountType = $promo->type;
+                $discountType  = $promo->type;
                 $discountValue = (float) $promo->value;
                 $set($pathPrefix . 'temp_discount_type', $discountType);
                 $set($pathPrefix . 'temp_discount_value', $discountValue);
@@ -806,9 +852,9 @@ class QuotationResource extends Resource
         $totalDiscount = min($totalDiscount, $subtotal);
         $set($pathPrefix . 'discount_amount', $totalDiscount);
 
-        $taxPercent = (float) ($get($pathPrefix . 'tax') ?? 0);
+        $taxPercent    = (float) ($get($pathPrefix . 'tax') ?? 0);
         $afterDiscount = $subtotal - $totalDiscount;
-        $taxAmount = $afterDiscount * ($taxPercent / 100);
+        $taxAmount     = $afterDiscount * ($taxPercent / 100);
 
         $set($pathPrefix . 'grand_total', $afterDiscount + $taxAmount);
     }
@@ -824,9 +870,9 @@ class QuotationResource extends Resource
         }
 
         $service = app(\App\Services\Sales\QuotationService::class);
-        $promo = $service->validatePromoCode($code);
+        $promo   = $service->validatePromoCode($code);
 
-        if (!$promo) {
+        if (! $promo) {
             Notification::make()->title('Kode tidak valid atau kadaluwarsa!')->danger()->send();
             $set('promo_code_id', null);
             $set('temp_discount_type', null);

@@ -155,7 +155,7 @@
                                         <span class="text-sm font-medium leading-6 text-black dark:text-white">
                                             Masukkan <span class="font-bold text-main-primary">4 digit
                                                 terakhir</span> No. Whatsapp
-                                            Anda
+                                            PIC/Perusahaan
                                         </span>
                                     </label>
 
