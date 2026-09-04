@@ -89,6 +89,12 @@ class ReturnRequestResource extends Resource
                             ->required()
                             ->native(false)
                             ->columnSpanFull(),
+                        Forms\Components\Select::make('issue_type')
+                            ->label('Jenis Kendala')
+                            ->options(ReturnRequest::getIssueTypeLabels())
+                            ->nullable()
+                            ->native(false)
+                            ->columnSpanFull(),
                         Forms\Components\Textarea::make('issue_description')
                             ->label('Detail Kerusakan (Keluhan)')
                             ->required()
@@ -109,6 +115,10 @@ class ReturnRequestResource extends Resource
                 Tables\Columns\TextColumn::make('customer.name')
                     ->label('Klien')
                     ->searchable(),
+                Tables\Columns\TextColumn::make('issue_type')
+                    ->label('Jenis Kendala')
+                    ->badge()
+                    ->formatStateUsing(fn ($state) => ReturnRequest::getIssueTypeLabels()[$state] ?? $state),
                 Tables\Columns\TextColumn::make('warranty_type')
                     ->label('Rute Garansi')
                     ->badge()

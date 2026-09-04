@@ -199,17 +199,21 @@
                         <div class="fi-fo-field-wrp">
                             <div class="grid gap-y-2">
                                 <label class="text-sm font-medium leading-6 text-black dark:text-white">
-                                    Jenis Klaim <sup class="text-red-600 dark:text-red-400">*</sup>
+                                    Jenis Kendala <sup class="text-red-600 dark:text-red-400">*</sup>
                                 </label>
                                 <div class="fi-input-wrp py-1.5 flex rounded-2xl shadow-sm ring-1 transition duration-75 bg-white dark:bg-white/5 ring-gray-950/10 dark:ring-white/20 focus-within:ring-2 focus-within:ring-blue-600 dark:focus-within:ring-blue-500 overflow-hidden">
-                                    <select wire:model="warranty_type"
+                                    <select wire:model="issue_type"
                                         class="fi-input block w-full border-none py-1.5 text-base text-black transition duration-75 focus:ring-0 outline-none dark:text-white sm:text-sm sm:leading-6 bg-white/0 ps-3 pe-3 dark:bg-transparent">
-                                        <option value="">-- Pilih jenis klaim --</option>
-                                        <option value="supplier">Garansi Supplier / Distributor</option>
-                                        <option value="store">Garansi Toko (Service Internal)</option>
+                                        <option value="">-- Pilih jenis kendala --</option>
+                                        <option value="damaged">Barang rusak / cacat</option>
+                                        <option value="not_working">Barang tidak berfungsi</option>
+                                        <option value="wrong_item">Barang yang diterima tidak sesuai</option>
+                                        <option value="incomplete">Barang kurang / tidak lengkap</option>
+                                        <option value="shipping_damage">Kerusakan saat pengiriman</option>
+                                        <option value="other">Lainnya</option>
                                     </select>
                                 </div>
-                                @error('warranty_type') <p class="text-sm text-red-600 dark:text-red-400">{{ $message }}</p> @enderror
+                                @error('issue_type') <p class="mt-2 text-sm text-red-600 dark:text-red-400">{{ $message }}</p> @enderror
                             </div>
                         </div>
 
@@ -222,7 +226,7 @@
                                     <textarea wire:model="issue_description" rows="4" placeholder="Jelaskan kendala pada produk Anda secara detail..."
                                         class="fi-input block w-full border-none py-1.5 text-base text-black transition duration-75 placeholder:text-gray-400 focus:ring-0 outline-none dark:text-white dark:placeholder:text-gray-500 sm:text-sm sm:leading-6 bg-white/0 ps-3 pe-3"></textarea>
                                 </div>
-                                @error('issue_description') <p class="text-sm text-red-600 dark:text-red-400">{{ $message }}</p> @enderror
+                                @error('issue_description') <p class="mt-2 text-sm text-red-600 dark:text-red-400">{{ $message }}</p> @enderror
                             </div>
                         </div>
 
@@ -286,7 +290,7 @@
                                     <input type="number" wire:model="qty" min="1" max="{{ $selectedItem->qty }}"
                                         class="fi-input block w-full border-none py-1.5 text-base text-black transition duration-75 focus:ring-0 outline-none dark:text-white sm:text-sm sm:leading-6 bg-white/0 ps-3 pe-3" />
                                 </div>
-                                @error('qty') <p class="text-sm text-red-600 dark:text-red-400">{{ $message }}</p> @enderror
+                                @error('qty') <p class="mt-2 text-sm text-red-600 dark:text-red-400">{{ $message }}</p> @enderror
                             </div>
                         </div>
                     @endif
@@ -360,7 +364,7 @@
                             <span>Produk</span><span class="font-medium text-black dark:text-white">{{ $selectedItem?->item_name }}</span>
                         </div>
                         <div class="flex justify-between text-gray-600 dark:text-gray-400">
-                            <span>Jenis Klaim</span><span class="font-medium text-black capitalize dark:text-white">{{ $warranty_type }}</span>
+                            <span>Jenis Kendala</span><span class="font-medium text-black capitalize dark:text-white">{{ \App\Models\AfterSales\ReturnRequest::getIssueTypeLabels()[$issue_type] ?? $issue_type }}</span>
                         </div>
                         @if ($productIsSerialized)
                             <div class="flex justify-between text-gray-600 dark:text-gray-400">

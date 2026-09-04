@@ -20,6 +20,7 @@ class ReturnRequest extends Model
         'product_id',
         'qty',
         'warranty_type',
+        'issue_type',
         'status',
         'issue_description',
         'evidence_files',
@@ -35,6 +36,26 @@ class ReturnRequest extends Model
         'created_by',
         'source',
     ];
+
+    // Issue types for customer-facing problem selection
+    public const ISSUE_DAMAGED       = 'damaged';
+    public const ISSUE_NOT_WORKING   = 'not_working';
+    public const ISSUE_WRONG_ITEM    = 'wrong_item';
+    public const ISSUE_INCOMPLETE    = 'incomplete';
+    public const ISSUE_SHIPPING_DAMAGE = 'shipping_damage';
+    public const ISSUE_OTHER         = 'other';
+
+    public static function getIssueTypeLabels(): array
+    {
+        return [
+            self::ISSUE_DAMAGED         => 'Barang rusak / cacat',
+            self::ISSUE_NOT_WORKING     => 'Barang tidak berfungsi',
+            self::ISSUE_WRONG_ITEM      => 'Barang yang diterima tidak sesuai',
+            self::ISSUE_INCOMPLETE      => 'Barang kurang / tidak lengkap',
+            self::ISSUE_SHIPPING_DAMAGE => 'Kerusakan saat pengiriman',
+            self::ISSUE_OTHER           => 'Lainnya',
+        ];
+    }
 
     protected $casts = [
         'sent_to_vendor_date'     => 'datetime',
@@ -105,6 +126,23 @@ class ReturnRequest extends Model
     public function procurementClaim()
     {
         return $this->belongsTo(\App\Models\Procurement\PurchaseOrder::class, 'procurement_claim_id');
+    }
+
+    /**
+     * Auto-determine warranty_type based on serial number's supplier.
+     * If the sold serial number has a supplier_id (came from a supplier/distributor PO),
+     * the claim route is 'supplier' (vendor warranty).
+     * Otherwise it falls to 'store' (internal service).
+     *
+     * @param SerialNumber|null $serial
+     * @return string 'supplier' | 'store'
+     */
+    public static function resolveWarrantyType(?SerialNumber $serial): string
+    {
+        if ($serial && $serial->supplier_id) {
+            return 'supplier';
+        }
+        return 'store';
     }
 
     protected static function booted(): void

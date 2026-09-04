@@ -28,7 +28,7 @@ class CustomerPortalReturnCreate extends Component
     // ==== STEP 2: Pilih item + keluhan ====
     public ?int $selected_invoice_item_id = null;
     public $selectedItem                  = null; // InvoiceItem model, dipilih dari invoiceItems
-    public string $warranty_type          = '';
+    public string $issue_type             = '';
     public string $issue_description      = '';
 
     // ==== STEP 3: SN scan / qty ====
@@ -117,7 +117,7 @@ class CustomerPortalReturnCreate extends Component
     public function proceedToStep3()
     {
         $this->validate([
-            'warranty_type'     => 'required|in:supplier,store',
+            'issue_type'        => 'required|in:' . ReturnRequest::ISSUE_DAMAGED . ',' . ReturnRequest::ISSUE_NOT_WORKING . ',' . ReturnRequest::ISSUE_WRONG_ITEM . ',' . ReturnRequest::ISSUE_INCOMPLETE . ',' . ReturnRequest::ISSUE_SHIPPING_DAMAGE . ',' . ReturnRequest::ISSUE_OTHER,
             'issue_description' => 'required|string|min:10|max:1000',
         ]);
 
@@ -216,6 +216,13 @@ class CustomerPortalReturnCreate extends Component
                 $paths[] = $file->store('rma-evidence/' . $this->customer->id, 'public');
             }
 
+            // Auto-determine warranty route (supplier vs store) from serial number supplier
+            $serial = $this->productIsSerialized
+                ? \App\Models\Inventory\SerialNumber::find($this->matchedSerialNumberId)
+                : null;
+
+            $warrantyType = ReturnRequest::resolveWarrantyType($serial);
+
             ReturnRequest::create([
                 'rma_number'        => ReturnRequest::generateRmaNumber(),
                 'customer_id'       => $this->customer->id,
@@ -224,9 +231,10 @@ class CustomerPortalReturnCreate extends Component
                 'serial_number_id'  => $this->productIsSerialized ? $this->matchedSerialNumberId : null,
                 'product_id'        => $this->productIsSerialized ? null : $this->selectedItem->item_id,
                 'qty'               => $this->productIsSerialized ? 1 : $this->qty,
-                'warranty_type'     => $this->warranty_type,
+                'warranty_type'     => $warrantyType,
+                'issue_type'        => $this->issue_type,
                 'status'            => ReturnRequest::STATUS_RECEIVED,
-                'received_date'     => now(), // <-- tambahkan ini
+                'received_date'     => now(),
                 'issue_description' => $this->issue_description,
                 'evidence_files'    => $paths,
                 'created_by'        => null,

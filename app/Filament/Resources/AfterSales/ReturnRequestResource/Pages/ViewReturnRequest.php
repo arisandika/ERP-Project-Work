@@ -171,6 +171,11 @@ class ViewReturnRequest extends ViewRecord
                                 TextEntry::make('invoice.invoice_number')->label('Invoice'),
                             ]),
 
+                        TextEntry::make('issue_type')
+                            ->label('Jenis Kendala')
+                            ->badge()
+                            ->formatStateUsing(fn ($state) => ReturnRequest::getIssueTypeLabels()[$state] ?? $state),
+
                         TextEntry::make('issue_description')
                             ->label('Detail Keluhan')
                             ->prose(),
