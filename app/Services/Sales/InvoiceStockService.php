@@ -25,7 +25,20 @@ class InvoiceStockService
 
         $warehouseId = Warehouse::query()
             ->where('warehouse_name', 'Gudang Utama')
-            ->value('id') ?? 1;
+            ->value('id');
+
+        if (! $warehouseId) {
+            $warehouseId = Warehouse::query()
+                ->where('is_active', true)
+                ->orderBy('id')
+                ->value('id');
+        }
+
+        if (! $warehouseId) {
+            throw ValidationException::withMessages([
+                'items' => 'Tidak ada warehouse aktif yang tersedia untuk transaksi stok.',
+            ]);
+        }
         $totalCost = 0;
         $productItemProcessed = false;
 

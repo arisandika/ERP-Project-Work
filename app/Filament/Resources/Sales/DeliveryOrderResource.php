@@ -8,7 +8,6 @@ use App\Models\Sales\SalesOrder;
 use App\Models\Inventory\SerialNumber;
 use App\Models\Inventory\ProductStock;
 use App\Models\Inventory\StockTransaction;
-use App\Models\Inventory\Warehouse;
 use Filament\Notifications\Notification;
 use Filament\Forms\Components\FileUpload;
 use Filament\Forms;
@@ -458,7 +457,6 @@ class DeliveryOrderResource extends Resource
         DB::beginTransaction();
 
         try {
-            $warehouseUtamaId = Warehouse::where('warehouse_name', 'Gudang Utama')->value('id') ?? 1;
             $now = now();
 
             StockTransaction::$autoUpdateStock = false;
@@ -468,7 +466,7 @@ class DeliveryOrderResource extends Resource
                     continue;
                 }
 
-                static::processDeliveryItem($record, $item, $data, $warehouseUtamaId, $now);
+                static::processDeliveryItem($record, $item, $data, $now);
             }
 
             $record->update([
@@ -494,17 +492,13 @@ class DeliveryOrderResource extends Resource
         DeliveryOrder $record,
         $item,
         array $data,
-        int $warehouseUtamaId,
         $now
     ): void {
-        $stockUtama = ProductStock::where('product_id', $item->item_id)
-            ->where('warehouse_id', $warehouseUtamaId)
+        $stocks = ProductStock::where('product_id', $item->item_id)
+            ->where('qty_reserved', '>', 0)
+            ->orderBy('warehouse_id')
             ->lockForUpdate()
-            ->first();
-
-        if (!$stockUtama) {
-            throw new \Exception("Stok tidak ditemukan.");
-        }
+            ->get();
 
         $qtyKirim = (float) $item->qty;
 
@@ -512,74 +506,49 @@ class DeliveryOrderResource extends Resource
             return;
         }
 
-        $totalAvailable = $stockUtama->qty_available + $stockUtama->qty_reserved;
+        $totalReserved = (float) $stocks->sum('qty_reserved');
 
-        if ($totalAvailable < $qtyKirim) {
-            throw new \Exception("Stok tidak mencukupi untuk {$item->item_name}");
+        if ($totalReserved < $qtyKirim) {
+            throw new \Exception("Stok reserved tidak mencukupi untuk {$item->item_name}");
         }
-
-        $stockBefore = $totalAvailable;
-
-        // ===== POTONG STOK =====
-        $potongReserved = min($stockUtama->qty_reserved, $qtyKirim);
-        $sisa = $qtyKirim - $potongReserved;
-
-        if ($potongReserved > 0) {
-            $stockUtama->decrement('qty_reserved', $potongReserved);
-        }
-
-        if ($sisa > 0) {
-            $stockUtama->decrement('qty_available', $sisa);
-        }
-
-        $stockUtama->increment('qty_on_delivery', $qtyKirim);
 
         // ===== HANDLE SN =====
         $snsArray = static::handleSerializedProduct($record, $item, $data, $now);
 
-        // ===== CREATE TRANSACTION =====
-        if (!empty($snsArray)) {
-            foreach ($snsArray as $sn) {
-                $snModel = SerialNumber::where('serial_number', $sn)->lockForUpdate()->first();
-
-                StockTransaction::create([
-                    'product_id'       => $item->item_id,
-                    'warehouse_id'     => $warehouseUtamaId,
-                    'serial_number_id' => $snModel->id,
-                    'transaction_code' => static::generateStockTransactionCode($now),
-                    'mutation_type'    => 'delivery',
-                    'transaction_date' => $now,
-                    'quantity'         => 1,
-                    'stock_before'     => $stockBefore,
-                    'stock_after'      => $stockBefore - 1,
-                    'type'             => 'keluar',
-                    'reference_id'     => $record->id,
-                    'reference_type'   => DeliveryOrder::class,
-                    'reference_number' => $record->do_number,
-                    'notes'            => "DO {$record->do_number} - SN {$sn}",
-                    'created_by'       => auth()->id(),
-                ]);
-
-                $stockBefore--;
+        $remaining = $qtyKirim;
+        foreach ($stocks as $stock) {
+            if ($remaining <= 0) {
+                break;
             }
-        } else {
-            // non-serialized
+
+            $qtyDelivered = min((float) $stock->qty_reserved, $remaining);
+            $stockBefore = (float) $stock->qty_reserved;
+
+            $stock->decrement('qty_reserved', $qtyDelivered);
+            $stock->increment('sold_stock', $qtyDelivered);
+
             StockTransaction::create([
                 'product_id'       => $item->item_id,
-                'warehouse_id'     => $warehouseUtamaId,
+                'warehouse_id'     => $stock->warehouse_id,
                 'transaction_code' => static::generateStockTransactionCode($now),
                 'mutation_type'    => 'delivery',
                 'transaction_date' => $now,
-                'quantity'         => $qtyKirim,
+                'quantity'         => $qtyDelivered,
                 'stock_before'     => $stockBefore,
-                'stock_after'      => $stockBefore - $qtyKirim,
+                'stock_after'      => $stockBefore - $qtyDelivered,
                 'type'             => 'keluar',
                 'reference_id'     => $record->id,
                 'reference_type'   => DeliveryOrder::class,
                 'reference_number' => $record->do_number,
-                'notes'            => "DO {$record->do_number}",
+                'notes'            => "DO {$record->do_number} - Reserved ke Sold",
                 'created_by'       => auth()->id(),
             ]);
+
+            $remaining -= $qtyDelivered;
+        }
+
+        if ($remaining > 0) {
+            throw new \Exception("Stok reserved tidak mencukupi untuk {$item->item_name}");
         }
     }
 

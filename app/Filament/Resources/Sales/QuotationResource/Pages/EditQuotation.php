@@ -8,8 +8,10 @@ use Filament\Actions;
 use Filament\Actions\Action;
 use Filament\Forms;
 use Filament\Resources\Pages\EditRecord;
+use Filament\Support\Exceptions\Halt;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Validation\ValidationException;
 
 class EditQuotation extends EditRecord
 {
@@ -77,6 +79,17 @@ class EditQuotation extends EditRecord
             $data['approved_at'] = now();
         }
 
-        return app(QuotationService::class)->updateQuotation($record, $data);
+        try {
+            return app(QuotationService::class)->updateQuotation($record, $data);
+        } catch (ValidationException $exception) {
+            \Filament\Notifications\Notification::make()
+                ->title('Quotation tidak dapat diperbarui')
+                ->body(implode(' ', $exception->validator->errors()->all()))
+                ->danger()
+                ->persistent()
+                ->send();
+
+            throw (new Halt)->rollBackDatabaseTransaction();
+        }
     }
 }

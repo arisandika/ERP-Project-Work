@@ -9,8 +9,10 @@ use App\Models\CRM\Lead;
 use App\Services\Sales\QuotationService;
 use Filament\Notifications\Notification;
 use Filament\Resources\Pages\CreateRecord;
+use Filament\Support\Exceptions\Halt;
 use Illuminate\Support\Carbon;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Validation\ValidationException;
 
 class CreateQuotation extends CreateRecord
 {
@@ -60,7 +62,18 @@ class CreateQuotation extends CreateRecord
             $data['created_by'] = auth()->user()->employee->id;
         }
 
-        return app(QuotationService::class)->createQuotation($data);
+        try {
+            return app(QuotationService::class)->createQuotation($data);
+        } catch (ValidationException $exception) {
+            Notification::make()
+                ->title('Quotation tidak dapat dibuat')
+                ->body(implode(' ', $exception->validator->errors()->all()))
+                ->danger()
+                ->persistent()
+                ->send();
+
+            throw (new Halt)->rollBackDatabaseTransaction();
+        }
     }
 
     protected function afterCreate(): void

@@ -162,6 +162,12 @@ class ProductResource extends Resource
                                     ->default(0)
                                     ->disabled()
                                     ->dehydrated(true),
+                                Forms\Components\TextInput::make('sold_stock')
+                                    ->label('Terjual')
+                                    ->numeric()
+                                    ->default(0)
+                                    ->disabled()
+                                    ->dehydrated(true),
                             ])
                             ->columns(['default' => 1, 'md' => 4])
                             ->defaultItems(1)

@@ -11,7 +11,7 @@
         body {
             font-family: 'Helvetica', sans-serif;
             font-size: 11px;
-            color: #333;
+            color: #374151;
             line-height: 1.3;
         }
 
@@ -40,24 +40,24 @@
             font-size: 26px;
             font-weight: bold;
             margin: 0;
-            color: #222;
+            color: #111827;
         }
 
         .header-table .company-tagline {
             font-size: 12px;
             margin: 2px 0 5px 0;
             font-weight: bold;
-            color: #555;
+            color: #4b5563;
         }
 
         .header-table .company-address {
             font-size: 10px;
             margin: 0;
-            color: #444;
+            color: #4b5563;
         }
 
         .header-divider {
-            border-bottom: 3px double #333;
+            border-bottom: 3px double #1f2937;
             margin-bottom: 25px;
         }
 
@@ -72,6 +72,7 @@
             text-transform: uppercase;
             letter-spacing: 3px;
             font-weight: 800;
+            color: #111827;
         }
 
         .document-title p {
@@ -83,7 +84,7 @@
         .status-badge {
             font-size: 9px;
             padding: 4px 10px;
-            border: 1px solid #333;
+            border: 1px solid #d1d5db;
             border-radius: 12px;
             display: inline-block;
             margin-top: 8px;
@@ -103,7 +104,7 @@
         }
 
         .client-box {
-            border-left: 3px solid #ddd;
+            border-left: 3px solid #d1d5db;
             padding-left: 10px;
         }
 
@@ -115,15 +116,16 @@
         }
 
         .items-table th {
-            background-color: #f4f4f4;
-            border: 1px solid #ccc;
+            background-color: #f3f4f6;
+            border: 1px solid #d1d5db;
             padding: 8px;
             text-align: left;
             font-weight: bold;
+            color: #111827;
         }
 
         .items-table td {
-            border: 1px solid #ccc;
+            border: 1px solid #d1d5db;
             padding: 8px;
         }
 
@@ -136,7 +138,7 @@
         }
 
         .items-table .row-bg {
-            background-color: #fafafa;
+            background-color: #f9fafb;
         }
 
         .totals-section {
@@ -147,9 +149,9 @@
         .payment-info {
             width: 55%;
             float: left;
-            border: 1px dashed #aaa;
+            border: 1px dashed #d1d5db;
             padding: 12px;
-            background: #fdfdfd;
+            background: #f9fafb;
             border-radius: 4px;
         }
 
@@ -157,6 +159,7 @@
             margin: 0 0 8px 0;
             font-size: 12px;
             text-decoration: underline;
+            color: #111827;
         }
 
         .totals-table {
@@ -180,20 +183,20 @@
         }
 
         .totals-table .grand-total-row td {
-            border-top: 2px solid #333;
-            border-bottom: 2px solid #333;
+            border-top: 2px solid #1f2937;
+            border-bottom: 2px solid #1f2937;
             padding: 8px 0;
             font-size: 14px;
             font-weight: bold;
-            background-color: #f4f4f4;
+            background-color: #f3f4f6;
         }
 
         .notes-section {
             margin-top: 30px;
             font-style: italic;
-            color: #555;
+            color: #4b5563;
             font-size: 10px;
-            border-top: 1px solid #eee;
+            border-top: 1px solid #e5e7eb;
             padding-top: 10px;
         }
 
@@ -213,12 +216,12 @@
             padding: 5px;
             background: #fff;
             display: inline-block;
-            border: 1px solid #eee;
+            border: 1px solid #e5e7eb;
         }
 
         .sign-line {
             margin-top: 50px;
-            border-top: 1px solid #333;
+            border-top: 1px solid #1f2937;
             width: 80%;
             margin-left: auto;
             margin-right: auto;
@@ -237,11 +240,10 @@
     <table class="header-table">
         <tr>
             <td class="logo-cell">
-                {{-- Pastikan file ada di public/assets/logo2.png --}}
-                @php($logoPath = public_path('assets/logo2.png'))
-                @if(is_file($logoPath))
+                <?php $logoPath = public_path('assets/logo2.png'); ?>
+                <?php if (is_file($logoPath)): ?>
                     <img src="data:image/png;base64,{{ base64_encode(file_get_contents($logoPath)) }}" alt="Logo">
-                @endif
+                <?php endif; ?>
             </td>
             <td class="company-info-cell">
                 <h2 class="company-name">NEXICON</h2>
@@ -257,27 +259,30 @@
 
     <div class="header-divider"></div>
 
+    <!-- Status lookup: array + string key, tidak pernah throw apa pun bentuk $invoice->status -->
+    <?php
+        $statusMap = [
+            'paid'      => ['label' => 'LUNAS',        'style' => 'background-color: #dcfce7; color: #15803d;'],
+            'cancelled' => ['label' => 'DIBATALKAN',   'style' => 'background-color: #fee2e2; color: #b91c1c;'],
+            'partial'   => ['label' => 'SEBAGIAN',     'style' => 'background-color: #dbeafe; color: #1d4ed8;'],
+            'sent'      => ['label' => 'TERKIRIM',     'style' => 'background-color: #dbeafe; color: #1d4ed8;'],
+            'unpaid'    => ['label' => 'BELUM LUNAS',  'style' => 'background-color: #fef9c3; color: #a16207;'],
+        ];
+
+        $rawInvoiceStatus = $invoice->status ?? 'unpaid';
+        $invoiceStatusKey = is_object($rawInvoiceStatus)
+            ? (string) ($rawInvoiceStatus->value ?? $rawInvoiceStatus->name ?? '')
+            : (string) $rawInvoiceStatus;
+
+        $currentInvoiceStatus = $statusMap[$invoiceStatusKey] ?? $statusMap['unpaid'];
+        $statusLabel = $currentInvoiceStatus['label'];
+        $statusColor = $currentInvoiceStatus['style'];
+    ?>
+
     <!-- 2. JUDUL DOKUMEN -->
     <div class="document-title">
         <h1>INVOICE</h1>
         <p>No: {{ $invoice->invoice_number }}</p>
-
-        {{-- Status Badge Logic --}}
-        @php
-            $statusColor = match ($invoice->status) {
-                'paid' => 'background-color: #dff0d8; color: #3c763d; border-color: #d6e9c6;', // Hijau
-                'cancelled' => 'background-color: #f2dede; color: #a94442; border-color: #ebccd1;', // Merah
-                'partial' => 'background-color: #d9edf7; color: #31708f; border-color: #bce8f1;', // Biru
-                default => 'background-color: #fcf8e3; color: #8a6d3b; border-color: #faebcc;', // Kuning (Unpaid/Sent)
-            };
-            $statusLabel = match ($invoice->status) {
-                'paid' => 'LUNAS',
-                'cancelled' => 'DIBATALKAN',
-                'partial' => 'SEBAGIAN',
-                'sent' => 'TERKIRIM',
-                default => 'BELUM LUNAS',
-            };
-        @endphp
         <span class="status-badge" style="{{ $statusColor }}">{{ $statusLabel }}</span>
     </div>
 
@@ -287,9 +292,9 @@
             <!-- Kiri: Info Client -->
             <td style="width: 55%;">
                 <div class="client-box">
-                    <span style="color: #666; font-size: 10px; text-transform: uppercase;">Ditagihkan Kepada:</span><br>
+                    <span style="color: #6b7280; font-size: 10px; text-transform: uppercase;">Ditagihkan Kepada:</span><br>
                     <strong style="font-size: 14px;">{{ $invoice->customer->name }}</strong><br>
-                    <div style="margin-top: 5px; color: #444;">
+                    <div style="margin-top: 5px; color: #4b5563;">
                         {{ $invoice->customer->address ?? 'Alamat tidak tersedia' }}<br>
                         @if($invoice->customer->email) Email: {{ $invoice->customer->email }} @endif
                     </div>
@@ -299,29 +304,29 @@
             <td style="width: 45%; padding-left: 20px;">
                 <table style="width: 100%; font-size: 11px;">
                     <tr>
-                        <td style="width: 40%; color: #666;">Tanggal Invoice:</td>
+                        <td style="width: 40%; color: #6b7280;">Tanggal Invoice:</td>
                         <td style="font-weight: bold;">{{ $invoice->invoice_date->format('d F Y') }}</td>
                     </tr>
                     <tr>
-                        <td style="color: #666;">Jatuh Tempo:</td>
-                        <td style="font-weight: bold; color: #c00;">{{ $invoice->due_date->format('d F Y') }}</td>
+                        <td style="color: #6b7280;">Jatuh Tempo:</td>
+                        <td style="font-weight: bold; color: #b91c1c;">{{ $invoice->due_date->format('d F Y') }}</td>
                     </tr>
 
                     <!-- LOGIC DINAMIS: Cek PO Customer -->
                     @if(!empty($invoice->salesOrder->customer_po_number))
                         <tr>
-                            <td style="color: #666;">No. PO Klien:</td>
+                            <td style="color: #6b7280;">No. PO Klien:</td>
                             <td style="font-weight: bold;">{{ $invoice->salesOrder->customer_po_number }}</td>
                         </tr>
                         <!-- Tampilkan SO Internal sebagai info tambahan (opsional) -->
                         <tr>
-                            <td style="color: #666;">Ref. Internal:</td>
+                            <td style="color: #6b7280;">Ref. Internal:</td>
                             <td style="font-size: 10px;">{{ $invoice->salesOrder->order_number }}</td>
                         </tr>
                     @else
                         <!-- Jika tidak ada PO (Order WA), tampilkan SO sebagai referensi utama -->
                         <tr>
-                            <td style="color: #666;">Ref. Order:</td>
+                            <td style="color: #6b7280;">Ref. Order:</td>
                             <td>{{ $invoice->salesOrder->order_number ?? '-' }}</td>
                         </tr>
                     @endif
@@ -349,7 +354,7 @@
                     <td>
                         <strong>{{ $item->item_name }}</strong>
                         @if($item->item_code)
-                            <br><small style="color: #666;">Kode: {{ $item->item_code }}</small>
+                            <br><small style="color: #6b7280;">Kode: {{ $item->item_code }}</small>
                         @endif
                     </td>
                     {{-- Menggunakan logic fallback Qty --}}
@@ -373,7 +378,7 @@
                 No. Rek: <strong>555-000-1234</strong><br>
                 A/N: <strong>PT. NEXT GENERATION SOLUTIONS</strong><br>
                 <br>
-                <em style="font-size: 10px; color: #666;">*Mohon cantumkan No. Invoice ({{ $invoice->invoice_number }})
+                <em style="font-size: 10px; color: #6b7280;">*Mohon cantumkan No. Invoice ({{ $invoice->invoice_number }})
                     pada berita transfer.</em>
             </p>
         </div>
@@ -385,24 +390,24 @@
                 <td class="amount">IDR {{ number_format($invoice->subtotal, 0, ',', '.') }}</td>
             </tr>
 
+            <?php $discAmount = $invoice->subtotal * (($invoice->discount ?? 0) / 100); ?>
             @if($invoice->discount > 0)
                 <tr>
-                    <td class="label" style="color: #c00;">Diskon ({{ $invoice->discount }}%):</td>
-                    <td class="amount" style="color: #c00;">
-                        @php $discAmount = $invoice->subtotal * ($invoice->discount / 100); @endphp
+                    <td class="label" style="color: #b91c1c;">Diskon ({{ $invoice->discount }}%):</td>
+                    <td class="amount" style="color: #b91c1c;">
                         - IDR {{ number_format($discAmount, 0, ',', '.') }}
                     </td>
                 </tr>
             @endif
 
+            <?php
+                $afterDisc = $invoice->subtotal * (1 - (($invoice->discount ?? 0) / 100));
+                $taxAmount = $afterDisc * (($invoice->tax ?? 0) / 100);
+            ?>
             @if($invoice->tax > 0)
                 <tr>
                     <td class="label">PPN ({{ $invoice->tax }}%):</td>
                     <td class="amount">
-                        @php
-                            $afterDisc = $invoice->subtotal * (1 - ($invoice->discount / 100));
-                            $taxAmount = $afterDisc * ($invoice->tax / 100);
-                        @endphp
                         IDR {{ number_format($taxAmount, 0, ',', '.') }}
                     </td>
                 </tr>
