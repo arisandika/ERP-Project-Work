@@ -30,6 +30,7 @@ class CustomerPortalReturnCreate extends Component
     public $selectedItem                  = null; // InvoiceItem model, dipilih dari invoiceItems
     public string $issue_type             = '';
     public string $issue_description      = '';
+    public bool $has_serial               = true; // customer konfirmasi apakah produk ada SN
 
     // ==== STEP 3: SN scan / qty ====
     public bool $productIsSerialized        = false;
@@ -119,11 +120,20 @@ class CustomerPortalReturnCreate extends Component
         $this->validate([
             'issue_type'        => 'required|in:' . ReturnRequest::ISSUE_DAMAGED . ',' . ReturnRequest::ISSUE_NOT_WORKING . ',' . ReturnRequest::ISSUE_WRONG_ITEM . ',' . ReturnRequest::ISSUE_INCOMPLETE . ',' . ReturnRequest::ISSUE_SHIPPING_DAMAGE . ',' . ReturnRequest::ISSUE_OTHER,
             'issue_description' => 'required|string|min:10|max:1000',
+            'has_serial'        => 'boolean',
         ]);
 
         // cek apakah produk ini serialized
         $product                   = \App\Models\Inventory\Product::find($this->selectedItem->item_id);
         $this->productIsSerialized = (bool) ($product->is_serialized ?? false);
+
+        // Jika customer bilang tidak ada SN (atau produk non-serialized), langsung ke step 4 qty
+        if (!$this->has_serial || !$this->productIsSerialized) {
+            $this->productIsSerialized = false;
+            $this->qty = $this->selectedItem->qty;
+            $this->step = 4;
+            return;
+        }
 
         $this->step = 3;
     }

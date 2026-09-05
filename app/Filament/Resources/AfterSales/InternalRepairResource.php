@@ -76,7 +76,11 @@ class InternalRepairResource extends Resource
                         Forms\Components\Select::make('new_serial_number_id')
                             ->label('Pilih SN Unit Pengganti')
                             ->options(function (ReturnRequest $record) {
-                                return SerialNumber::where('product_id', $record->serialNumber->product_id)
+                                $productId = $record->serialNumber?->product_id ?? $record->product_id;
+                                if (!$productId) {
+                                    return [];
+                                }
+                                return SerialNumber::where('product_id', $productId)
                                     ->where('status', SerialNumber::STATUS_AVAILABLE)
                                     ->pluck('serial_number', 'id');
                             })

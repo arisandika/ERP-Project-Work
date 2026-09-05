@@ -230,6 +230,19 @@
                             </div>
                         </div>
 
+                        {{-- Checkbox: apakah produk ini memiliki Nomor Seri (SN)? --}}
+                        <div class="fi-fo-field-wrp">
+                            <div class="flex items-start gap-3">
+                                <div class="flex items-center pt-0.5 h-5 shrink-0">
+                                    <input type="checkbox" wire:model="has_serial" value="1"
+                                        class="w-4 h-4 text-main-primary border-gray-300 rounded focus:ring-main-primary dark:bg-white/10 dark:border-gray-600">
+                                </div>
+                                <label class="text-sm leading-5 text-black dark:text-white">
+                                    Produk ini memiliki Nomor Seri (SN). Saya akan scan/masukkan SN unit yang rusak.
+                                </label>
+                            </div>
+                        </div>
+
                         <button type="submit"
                             class="w-full px-4 py-2.5 text-sm font-semibold text-white rounded-full bg-main-primary hover:bg-main-primary/90">
                             Lanjut
@@ -249,8 +262,8 @@
                     </button>
 
                     @if ($productIsSerialized)
-                        <h3 class="text-lg font-semibold text-black dark:text-white">Scan Serial Number Barang</h3>
-                        <p class="mt-1 text-sm text-gray-600 dark:text-gray-400">Produk ini memiliki SN unik. Silakan scan barcode/QR SN yang tertera pada unit fisik.</p>
+                        <h3 class="text-lg font-semibold text-black dark:text-white">Identifikasi Barang (Scan SN)</h3>
+                        <p class="mt-1 text-sm text-gray-600 dark:text-gray-400">Produk ini memiliki SN. Scan barcode/QR atau masukkan SN secara manual.</p>
 
                         <div class="mt-5">
                             @if ($matchedSerialNumberId)
@@ -271,10 +284,27 @@
                                     </button>
                                 </div>
                             @else
-                                @include('livewire.partials.sn-scanner', ['wireModel' => 'scannedSerialNumber'])
-                                @error('scannedSerialNumber')
-                                    <p class="mt-3 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
-                                @enderror
+                                <div x-data="{ showManual: false }">
+                                    @include('livewire.partials.sn-scanner', ['wireModel' => 'scannedSerialNumber'])
+                                    @error('scannedSerialNumber')
+                                        <p class="mt-3 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
+                                    @enderror
+
+                                    <div class="mt-4 text-center">
+                                        <button type="button" @click="showManual = true"
+                                            class="text-sm text-gray-500 hover:text-black dark:hover:text-white underline decoration-gray-400 dark:decoration-gray-500">
+                                            Masukkan SN secara manual
+                                        </button>
+                                    </div>
+
+                                    <div x-show="showManual" class="mt-3" x-cloak>
+                                        <div class="fi-input-wrp py-1.5 flex rounded-2xl shadow-sm ring-1 transition duration-75 bg-white dark:bg-white/5 ring-gray-950/10 dark:ring-white/20 focus-within:ring-2 focus-within:ring-blue-600 dark:focus-within:ring-blue-500 overflow-hidden">
+                                            <input type="text" wire:model="scannedSerialNumber"
+                                                placeholder="Masukkan SN di sini..."
+                                                class="fi-input block w-full border-none py-1.5 text-base text-black transition duration-75 placeholder:text-gray-400 focus:ring-0 outline-none dark:text-white dark:placeholder:text-gray-500 sm:text-sm sm:leading-6 bg-white/0 ps-3 pe-3" />
+                                        </div>
+                                    </div>
+                                </div>
                             @endif
                         </div>
                     @else
