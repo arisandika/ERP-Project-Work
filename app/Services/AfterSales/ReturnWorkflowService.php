@@ -15,40 +15,48 @@ class ReturnWorkflowService
             $newSnId = null;
 
             if ($data['resolution_type'] === 'replaced') {
-                // 1. Tandai SN lama sebagai barang rusak (defective) — hanya jika ada SN
-                $oldSn = $record->serialNumber;
-                if ($oldSn) {
-                    $oldSn->update([
-                        'status' => SerialNumber::STATUS_DEFECTIVE,
-                        'outbound_date' => null, // Reset tanggal keluar jika ada
+                $newSn = null;
+
+                // Serialized unit: tandai SN lama defective + alokasikan SN pengganti dari gudang.
+                if ($record->serial_number_id) {
+                    // 1. Tandai SN lama sebagai barang rusak (defective)
+                    $oldSn = $record->serialNumber;
+                    if ($oldSn) {
+                        $oldSn->update([
+                            'status' => SerialNumber::STATUS_DEFECTIVE,
+                            'outbound_date' => null, // Reset tanggal keluar jika ada
+                        ]);
+                    }
+
+                    // 2. Alokasikan SN baru dari gudang ke klien
+                    // Menggunakan Pessimistic Locking implisit (update langsung) untuk menghindari Race Condition
+                    $newSn = SerialNumber::findOrFail($data['new_serial_number_id']);
+                    $newSn->update([
+                        'status' => SerialNumber::STATUS_SOLD,
+                        'customer_id' => $record->customer_id,
+                        'outbound_date' => now(),
                     ]);
+
+                    $newSnId = $newSn->id;
                 }
 
-                // 2. Alokasikan SN baru dari gudang ke klien
-                // Menggunakan Pessimistic Locking implisit (update langsung) untuk menghindari Race Condition
-                $newSn = SerialNumber::findOrFail($data['new_serial_number_id']);
-                $newSn->update([
-                    'status' => SerialNumber::STATUS_SOLD,
-                    'customer_id' => $record->customer_id,
-                    'outbound_date' => now(),
-                ]);
-
-                $newSnId = $newSn->id;
-
-                // 3. Kurangi stok global pada produk (Penting untuk konsistensi inventaris)
+                // 3. Kurangi stok global produk (serialized: SN punya product_id;
+                //    non-serialized: unit asli dicatat lewat product_id di RMA)
                 DB::table('nx_products')
-                    ->where('id', $newSn->product_id)
-                    ->decrement('stock', 1);
+                    ->where('id', $newSn?->product_id ?? $record->product_id)
+                    ->decrement('stock', $record->qty ?? 1);
 
-                // 4. Catat transaksi barang keluar (Delivery)
-                $this->logStockTransaction(
-                    rma: $record,
-                    sn: $newSn,
-                    mutationType: 'delivery',
-                    type: 'keluar',
-                    prefix: 'RMA-OUT-',
-                    notes: "Ganti unit Return Internal untuk No: {$record->rma_number}"
-                );
+                // 4. Catat transaksi barang keluar (Delivery) — hanya jika ada SN
+                if ($newSn) {
+                    $this->logStockTransaction(
+                        rma: $record,
+                        sn: $newSn,
+                        mutationType: 'delivery',
+                        type: 'keluar',
+                        prefix: 'RMA-OUT-',
+                        notes: "Ganti unit Return Internal untuk No: {$record->rma_number}"
+                    );
+                }
             }
 
             // 5. Perbarui status dokumen ReturnRequest

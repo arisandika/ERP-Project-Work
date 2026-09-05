@@ -115,13 +115,13 @@ class ViewReturnRequest extends ViewRecord
                         ->options(['repaired' => 'Berhasil Diperbaiki', 'replaced' => 'Ganti Unit Baru (Dari Gudang)'])
                         ->inline()->live()->required(),
                     Forms\Components\Select::make('new_serial_number_id')
-                        ->options(fn (ReturnRequest $record) => SerialNumber::where('product_id', $record->serialNumber->product_id)
+                        ->options(fn (ReturnRequest $record) => SerialNumber::where('product_id', $record->serialNumber?->product_id ?? $record->product_id)
                             ->where('status', 'available')
                             ->pluck('serial_number', 'id')
                         )
                         ->searchable()->preload()
-                        ->visible(fn (Forms\Get $get) => $get('resolution_type') === 'replaced')
-                        ->required(fn (Forms\Get $get) => $get('resolution_type') === 'replaced'),
+                        ->visible(fn (Forms\Get $get, ReturnRequest $record) => $get('resolution_type') === 'replaced' && $record->serial_number_id)
+                        ->required(fn (Forms\Get $get, ReturnRequest $record) => $get('resolution_type') === 'replaced' && $record->serial_number_id),
                     Forms\Components\Textarea::make('internal_notes')->required(),
                 ])
                 ->action(function (ReturnRequest $record, array $data, ReturnService $service) {

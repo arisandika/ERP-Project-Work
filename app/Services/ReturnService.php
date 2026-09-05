@@ -323,7 +323,7 @@ class ReturnService
     public function processInternal(ReturnRequest $returnRequest, array $data): void
     {
         DB::transaction(function () use ($returnRequest, $data) {
-            /** @var SerialNumber $serial */
+            /** @var SerialNumber|null $serial */
             $serial = $returnRequest->serialNumber;
 
             $returnRequest->update([
@@ -333,46 +333,66 @@ class ReturnService
             ]);
 
             if ($data['resolution_type'] === 'repaired') {
-                // SN goes back to available after repair
-                $serial->update(['status' => SerialNumber::STATUS_RETURNED]);
+                // Repaired: SN goes back to available after repair (hanya untuk unit berseri)
+                if ($serial) {
+                    $serial->update(['status' => SerialNumber::STATUS_RETURNED]);
 
-                StockTransaction::create([
-                    'product_id'       => $serial->product_id,
-                    'warehouse_id'     => $serial->warehouse_id,
-                    'serial_number_id' => $serial->id,
-                    'transaction_code' => 'RMA-INTERNAL-' . $returnRequest->rma_number,
-                    'mutation_type'    => 'stock_in',
-                    'transaction_date' => now(),
-                    'quantity'         => 1,
-                    'reference_id'     => $returnRequest->id,
-                    'reference_type'   => ReturnRequest::class,
-                    'notes'            => 'Returned from internal repair',
-                ]);
-            } elseif ($data['resolution_type'] === 'replaced') {
-                // New SN from available stock → transferred to customer
-                $newSerial = SerialNumber::find($data['new_serial_number_id']);
-                if ($newSerial) {
-                    $newSerial->update([
-                        'status'     => SerialNumber::STATUS_SOLD,
-                        'customer_id' => $serial->customer_id,
+                    StockTransaction::create([
+                        'product_id'       => $serial->product_id,
+                        'warehouse_id'     => $serial->warehouse_id,
+                        'serial_number_id' => $serial->id,
+                        'transaction_code' => 'RMA-INTERNAL-' . $returnRequest->rma_number,
+                        'mutation_type'    => 'stock_in',
+                        'transaction_date' => now(),
+                        'quantity'         => 1,
+                        'reference_id'     => $returnRequest->id,
+                        'reference_type'   => ReturnRequest::class,
+                        'notes'            => 'Returned from internal repair',
                     ]);
                 }
+            } elseif ($data['resolution_type'] === 'replaced') {
+                $newSerial = $returnRequest->serial_number_id
+                    ? SerialNumber::find($data['new_serial_number_id'])
+                    : null;
 
-                // Old SN → RETURNED
-                $serial->update(['status' => SerialNumber::STATUS_RETURNED]);
+                if ($serial) {
+                    // Old SN → RETURNED (unit berseri lama dikembalikan ke stok terpisah)
+                    $serial->update(['status' => SerialNumber::STATUS_RETURNED]);
+                }
 
-                StockTransaction::create([
-                    'product_id'       => $newSerial?->product_id ?? $serial->product_id,
-                    'warehouse_id'     => $newSerial?->warehouse_id ?? $serial->warehouse_id,
-                    'serial_number_id' => $newSerial?->id ?? $serial->id,
-                    'transaction_code' => 'RMA-REPLACE-' . $returnRequest->rma_number,
-                    'mutation_type'    => 'delivery',
-                    'transaction_date' => now(),
-                    'quantity'         => 1,
-                    'reference_id'     => $returnRequest->id,
-                    'reference_type'   => ReturnRequest::class,
-                    'notes'            => 'Replacement unit shipped to customer (internal warranty)',
-                ]);
+                if ($newSerial) {
+                    // New SN from available stock → transferred to customer
+                    $newSerial->update([
+                        'status'     => SerialNumber::STATUS_SOLD,
+                        'customer_id' => $returnRequest->customer_id,
+                    ]);
+
+                    StockTransaction::create([
+                        'product_id'       => $newSerial->product_id,
+                        'warehouse_id'     => $newSerial->warehouse_id,
+                        'serial_number_id' => $newSerial->id,
+                        'transaction_code' => 'RMA-REPLACE-' . $returnRequest->rma_number,
+                        'mutation_type'    => 'delivery',
+                        'transaction_date' => now(),
+                        'quantity'         => 1,
+                        'reference_id'     => $returnRequest->id,
+                        'reference_type'   => ReturnRequest::class,
+                        'notes'            => 'Replacement unit shipped to customer (internal warranty)',
+                    ]);
+                } else {
+                    // Non-serialized: cukup catat transaksi penggantian dengan qty RMA
+                    // (stok global dikurangi saat klaim diterima; catat audit stock transaction)
+                    StockTransaction::create([
+                        'product_id'       => $returnRequest->product_id,
+                        'transaction_code' => 'RMA-REPLACE-' . $returnRequest->rma_number,
+                        'mutation_type'    => 'delivery',
+                        'transaction_date' => now(),
+                        'quantity'         => (int) ($returnRequest->qty ?? 1),
+                        'reference_id'     => $returnRequest->id,
+                        'reference_type'   => ReturnRequest::class,
+                        'notes'            => 'Replacement non-serialized unit shipped to customer (internal warranty)',
+                    ]);
+                }
             }
 
             $returnRequest->update(['status' => ReturnRequest::STATUS_READY_FOR_RETURN]);

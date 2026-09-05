@@ -82,8 +82,8 @@ class InternalRepairResource extends Resource
                             })
                             ->searchable()
                             ->preload()
-                            ->visible(fn (Forms\Get $get) => $get('resolution_type') === 'replaced')
-                            ->required(fn (Forms\Get $get) => $get('resolution_type') === 'replaced'),
+                            ->visible(fn (Forms\Get $get, ReturnRequest $record) => $get('resolution_type') === 'replaced' && $record->serial_number_id)
+                            ->required(fn (Forms\Get $get, ReturnRequest $record) => $get('resolution_type') === 'replaced' && $record->serial_number_id),
 
                         Forms\Components\Textarea::make('internal_notes')
                             ->label('Catatan Teknisi')
