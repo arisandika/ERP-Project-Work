@@ -21,8 +21,6 @@ class ViewReturnRequest extends ViewRecord
     protected function getHeaderActions(): array
     {
         return [
-            Actions\EditAction::make(),
-
             // 0. TERIMA BARANG DARI KLIEN (submitted -> received)
             Actions\Action::make('receive_from_client')
                 ->label('Terima Barang')
