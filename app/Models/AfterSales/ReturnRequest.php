@@ -26,6 +26,8 @@ class ReturnRequest extends Model
         'evidence_files',
         'vendor_notes',
         'internal_notes',
+        'inspection_result',
+        'warranty_decision',
         'resolution_type',
         'new_serial_number_id',
         'procurement_claim_id',
@@ -69,24 +71,78 @@ class ReturnRequest extends Model
 
     // Ganti Enum dengan Class Constants
     public const STATUS_SUBMITTED          = 'submitted';
+    public const STATUS_UNDER_REVIEW       = 'under_review';
+    public const STATUS_APPROVED           = 'approved';
+    public const STATUS_WAITING_FOR_RETURN = 'waiting_for_return';
     public const STATUS_RECEIVED           = 'received';
     public const STATUS_SENT_TO_VENDOR     = 'sent_to_vendor';
     public const STATUS_INTERNAL_REPAIR    = 'internal_repair';
     public const STATUS_READY_FOR_RETURN   = 'ready_for_return';
     public const STATUS_RETURNED_TO_CLIENT = 'returned_to_client';
     public const STATUS_REJECTED           = 'rejected';
+    public const STATUS_WARRANTY_REJECTED  = 'warranty_rejected';
+
+    // ==== INSPECTION RESULT (hasil pemeriksaan teknisi) ====
+    public const INSPECTION_DAMAGED        = 'damaged';
+    public const INSPECTION_NO_FAULT_FOUND = 'no_fault_found';
+    public const INSPECTION_USER_ERROR     = 'user_error';
+    public const INSPECTION_PHYSICAL_DAMAGE = 'physical_damage';
+
+    public static function getInspectionResultLabels(): array
+    {
+        return [
+            self::INSPECTION_DAMAGED        => 'Rusak / Cacat',
+            self::INSPECTION_NO_FAULT_FOUND => 'Tidak Ditemukan Kerusakan',
+            self::INSPECTION_USER_ERROR     => 'Kesalahan Penggunaan',
+            self::INSPECTION_PHYSICAL_DAMAGE => 'Kerusakan Fisik',
+        ];
+    }
+
+    // ==== WARRANTY DECISION (keputusan garansi, terpisah dari inspection) ====
+    public const WARRANTY_PENDING  = 'pending';
+    public const WARRANTY_APPROVED = 'approved';
+    public const WARRANTY_REJECTED = 'rejected';
+
+    public static function getWarrantyDecisionLabels(): array
+    {
+        return [
+            self::WARRANTY_PENDING  => 'Belum Ditentukan',
+            self::WARRANTY_APPROVED => 'Disetujui',
+            self::WARRANTY_REJECTED => 'Ditolak',
+        ];
+    }
+
+    // ==== RESOLUTION TYPE (penyelesaian final) ====
+    public const RESOLUTION_REPAIR_AND_RETURN = 'repair_and_return';
+    public const RESOLUTION_REPLACEMENT       = 'replacement';
+    public const RESOLUTION_REFUND            = 'refund';
+    public const RESOLUTION_NO_FAULT_FOUND    = 'no_fault_found';
+
+    public static function getResolutionTypeLabels(): array
+    {
+        return [
+            self::RESOLUTION_REPAIR_AND_RETURN => 'Perbaikan & Kembalikan',
+            self::RESOLUTION_REPLACEMENT       => 'Penggantian Unit',
+            self::RESOLUTION_REFUND            => 'Pengembalian Dana',
+            self::RESOLUTION_NO_FAULT_FOUND    => 'Tidak Ditemukan Kerusakan',
+        ];
+    }
 
     // Helper untuk label status di Filament
     public static function getStatusLabels(): array
     {
         return [
             self::STATUS_SUBMITTED          => 'Pengajuan Diterima',
+            self::STATUS_UNDER_REVIEW       => 'Sedang Ditinjau',
+            self::STATUS_APPROVED           => 'Pengajuan Disetujui',
+            self::STATUS_WAITING_FOR_RETURN => 'Menunggu Barang Dikirim',
             self::STATUS_RECEIVED           => 'Barang Diterima',
             self::STATUS_SENT_TO_VENDOR     => 'Di Vendor',
             self::STATUS_INTERNAL_REPAIR    => 'Proses Internal',
             self::STATUS_READY_FOR_RETURN   => 'Siap Dikembalikan',
             self::STATUS_RETURNED_TO_CLIENT => 'Dikembalikan ke Klien',
             self::STATUS_REJECTED           => 'Ditolak',
+            self::STATUS_WARRANTY_REJECTED  => 'Garansi Ditolak',
         ];
     }
 
@@ -99,13 +155,38 @@ class ReturnRequest extends Model
     {
         return [
             self::STATUS_SUBMITTED          => 'Dalam Antrian',
+            self::STATUS_UNDER_REVIEW       => 'Sedang Ditinjau',
+            self::STATUS_APPROVED           => 'Pengajuan Disetujui',
+            self::STATUS_WAITING_FOR_RETURN => 'Menunggu Konfirmasi Pengiriman',
             self::STATUS_RECEIVED           => 'Barang Diterima',
             self::STATUS_SENT_TO_VENDOR     => 'Sedang Ditangani Supplier',
             self::STATUS_INTERNAL_REPAIR    => 'Sedang Diproses',
             self::STATUS_READY_FOR_RETURN   => 'Siap Dikembalikan',
             self::STATUS_RETURNED_TO_CLIENT => 'Selesai',
             self::STATUS_REJECTED           => 'Ditolak',
+            self::STATUS_WARRANTY_REJECTED  => 'Garansi Ditolak',
         ];
+    }
+
+    /**
+     * Warna badge status untuk Customer Portal (Tailwind classes + hex dot).
+     */
+    public static function getCustomerStatusBadge(string $status): array
+    {
+        return match ($status) {
+            self::STATUS_SUBMITTED          => ['bg' => 'bg-slate-100 dark:bg-slate-900/20', 'text' => 'text-slate-600 dark:text-slate-400', 'dot' => '#64748b'],
+            self::STATUS_UNDER_REVIEW       => ['bg' => 'bg-amber-100 dark:bg-amber-900/20', 'text' => 'text-amber-600 dark:text-amber-400', 'dot' => '#d97706'],
+            self::STATUS_APPROVED           => ['bg' => 'bg-sky-100 dark:bg-sky-900/20', 'text' => 'text-sky-600 dark:text-sky-400', 'dot' => '#0284c7'],
+            self::STATUS_WAITING_FOR_RETURN => ['bg' => 'bg-indigo-100 dark:bg-indigo-900/20', 'text' => 'text-indigo-600 dark:text-indigo-400', 'dot' => '#4f46e5'],
+            self::STATUS_RECEIVED           => ['bg' => 'bg-blue-100 dark:bg-blue-900/20', 'text' => 'text-blue-600 dark:text-blue-400', 'dot' => '#2563eb'],
+            self::STATUS_SENT_TO_VENDOR     => ['bg' => 'bg-purple-100 dark:bg-purple-900/20', 'text' => 'text-purple-600 dark:text-purple-400', 'dot' => '#9333ea'],
+            self::STATUS_INTERNAL_REPAIR    => ['bg' => 'bg-yellow-100 dark:bg-yellow-900/20', 'text' => 'text-yellow-600 dark:text-yellow-400', 'dot' => '#ca8a04'],
+            self::STATUS_READY_FOR_RETURN   => ['bg' => 'bg-cyan-100 dark:bg-cyan-900/20', 'text' => 'text-cyan-600 dark:text-cyan-400', 'dot' => '#0891b2'],
+            self::STATUS_RETURNED_TO_CLIENT => ['bg' => 'bg-green-100 dark:bg-green-900/20', 'text' => 'text-green-600 dark:text-green-400', 'dot' => '#16a34a'],
+            self::STATUS_REJECTED           => ['bg' => 'bg-red-100 dark:bg-red-900/20', 'text' => 'text-red-600 dark:text-red-400', 'dot' => '#dc2626'],
+            self::STATUS_WARRANTY_REJECTED  => ['bg' => 'bg-rose-100 dark:bg-rose-900/20', 'text' => 'text-rose-600 dark:text-rose-400', 'dot' => '#e11d48'],
+            default                         => ['bg' => 'bg-gray-100 dark:bg-gray-900/20', 'text' => 'text-gray-600 dark:text-gray-400', 'dot' => '#6b7280'],
+        };
     }
 
     public function serialNumber()

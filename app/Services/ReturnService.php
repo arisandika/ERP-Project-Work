@@ -28,13 +28,17 @@ class ReturnService
             /** @var SerialNumber $serial */
             $serial = $returnRequest->serialNumber;
             $supplier = $serial->supplier;
-            $resolution = $data['resolution_type'] ?? 'repaired';
+            $resolution = $data['resolution_type'] ?? ReturnRequest::RESOLUTION_REPAIR_AND_RETURN;
 
             $purchaseReturn = null;
             $snUnitPrice = 0;
 
-            // ---- Create PurchaseReturn only for repaired / replaced / refund ----
-            if (in_array($resolution, ['repaired', 'replaced', 'refund'], true)) {
+            // ---- Create PurchaseReturn only for repair / replacement / refund ----
+            if (in_array($resolution, [
+                ReturnRequest::RESOLUTION_REPAIR_AND_RETURN,
+                ReturnRequest::RESOLUTION_REPLACEMENT,
+                ReturnRequest::RESOLUTION_REFUND,
+            ], true)) {
                 // Use SN's purchase order item unit_price if available, else 0
                 $snUnitPrice = $this->resolveSnUnitPrice($serial);
 
@@ -59,7 +63,7 @@ class ReturnService
             }
 
             // ---- Handle SN status + stock transaction per resolution ----
-            if ($resolution === 'repaired') {
+            if ($resolution === ReturnRequest::RESOLUTION_REPAIR_AND_RETURN) {
                 // SN back from vendor, repaired — goes to RETURNED (ready for customer pickup)
                 $serial->update(['status' => SerialNumber::STATUS_RETURNED]);
 
@@ -75,7 +79,7 @@ class ReturnService
                     'reference_type'    => ReturnRequest::class,
                     'notes'             => 'Return from vendor after warranty repair',
                 ]);
-            } elseif ($resolution === 'replaced') {
+            } elseif ($resolution === ReturnRequest::RESOLUTION_REPLACEMENT) {
                 // New SN shipped to customer; old SN → RETURNED
                 $serial->update(['status' => SerialNumber::STATUS_RETURNED]);
 
@@ -115,7 +119,7 @@ class ReturnService
                         ]);
                     }
                 }
-            } elseif ($resolution === 'refund') {
+            } elseif ($resolution === ReturnRequest::RESOLUTION_REFUND) {
                 // Supplier refunds cash — SN stays with customer; create stock transaction audit only
                 StockTransaction::create([
                     'product_id'        => $serial->product_id,
@@ -132,7 +136,7 @@ class ReturnService
 
                 // Process customer refund (financial + AR)
                 $this->processRefund($returnRequest, $snUnitPrice);
-            } elseif ($resolution === 'rejected') {
+            } elseif ($data['warranty_decision'] === ReturnRequest::WARRANTY_REJECTED) {
                 // Warranty denied — revert SN to SOLD (customer keeps item)
                 if (in_array($serial->status, [SerialNumber::STATUS_DEFECTIVE, SerialNumber::STATUS_RETURNED], true)) {
                     $serial->update(['status' => SerialNumber::STATUS_SOLD]);
@@ -161,9 +165,9 @@ class ReturnService
                 'back_from_vendor_date' => now()->toDateString(),
             ]);
 
-            // Rejected items don't go to "ready for return" — they're closed as rejected
-            if ($resolution === 'rejected') {
-                $returnRequest->update(['status' => ReturnRequest::STATUS_REJECTED]);
+            // Warranty rejected items don't go to "ready for return" — closed as warranty_rejected
+            if (($data['warranty_decision'] ?? null) === ReturnRequest::WARRANTY_REJECTED) {
+                $returnRequest->update(['status' => ReturnRequest::STATUS_WARRANTY_REJECTED]);
             } else {
                 $returnRequest->update(['status' => ReturnRequest::STATUS_READY_FOR_RETURN]);
             }
@@ -316,98 +320,4 @@ class ReturnService
         });
     }
 
-    /**
-     * Process internal (store) warranty return.
-     * Handles repair/replace within own warehouse.
-     */
-    public function processInternal(ReturnRequest $returnRequest, array $data): void
-    {
-        DB::transaction(function () use ($returnRequest, $data) {
-            /** @var SerialNumber|null $serial */
-            $serial = $returnRequest->serialNumber;
-
-            $returnRequest->update([
-                'resolution_type'      => $data['resolution_type'],
-                'new_serial_number_id' => $data['new_serial_number_id'] ?? null,
-                'internal_notes'       => $data['internal_notes'] ?? null,
-            ]);
-
-            if ($data['resolution_type'] === 'repaired') {
-                // Repaired: SN goes back to available after repair (hanya untuk unit berseri)
-                if ($serial) {
-                    $serial->update(['status' => SerialNumber::STATUS_RETURNED]);
-
-                    StockTransaction::create([
-                        'product_id'       => $serial->product_id,
-                        'warehouse_id'     => $serial->warehouse_id,
-                        'serial_number_id' => $serial->id,
-                        'transaction_code' => 'RMA-INTERNAL-' . $returnRequest->rma_number,
-                        'mutation_type'    => 'stock_in',
-                        'transaction_date' => now(),
-                        'quantity'         => 1,
-                        'reference_id'     => $returnRequest->id,
-                        'reference_type'   => ReturnRequest::class,
-                        'notes'            => 'Returned from internal repair',
-                    ]);
-                }
-            } elseif ($data['resolution_type'] === 'replaced') {
-                $newSerial = $returnRequest->serial_number_id
-                    ? SerialNumber::find($data['new_serial_number_id'])
-                    : null;
-
-                if ($serial) {
-                    // Old SN → RETURNED (unit berseri lama dikembalikan ke stok terpisah)
-                    $serial->update(['status' => SerialNumber::STATUS_RETURNED]);
-                }
-
-                if ($newSerial) {
-                    // New SN from available stock → transferred to customer
-                    $newSerial->update([
-                        'status'     => SerialNumber::STATUS_SOLD,
-                        'customer_id' => $returnRequest->customer_id,
-                    ]);
-
-                    StockTransaction::create([
-                        'product_id'       => $newSerial->product_id,
-                        'warehouse_id'     => $newSerial->warehouse_id,
-                        'serial_number_id' => $newSerial->id,
-                        'transaction_code' => 'RMA-REPLACE-' . $returnRequest->rma_number,
-                        'mutation_type'    => 'delivery',
-                        'transaction_date' => now(),
-                        'quantity'         => 1,
-                        'reference_id'     => $returnRequest->id,
-                        'reference_type'   => ReturnRequest::class,
-                        'notes'            => 'Replacement unit shipped to customer (internal warranty)',
-                    ]);
-                } else {
-                    // Non-serialized: cukup catat transaksi penggantian dengan qty RMA
-                    // (stok global dikurangi saat klaim diterima; catat audit stock transaction)
-                    StockTransaction::create([
-                        'product_id'       => $returnRequest->product_id,
-                        'transaction_code' => 'RMA-REPLACE-' . $returnRequest->rma_number,
-                        'mutation_type'    => 'delivery',
-                        'transaction_date' => now(),
-                        'quantity'         => (int) ($returnRequest->qty ?? 1),
-                        'reference_id'     => $returnRequest->id,
-                        'reference_type'   => ReturnRequest::class,
-                        'notes'            => 'Replacement non-serialized unit shipped to customer (internal warranty)',
-                    ]);
-                }
-            }
-
-            $returnRequest->update(['status' => ReturnRequest::STATUS_READY_FOR_RETURN]);
-
-            // Internal warranty: create financial record for audit (expense tracking)
-            \App\Models\Finance\FinancialRecord::create([
-                'transaction_date'   => now(),
-                'description'        => "Retur internal RMA {$returnRequest->rma_number} - {$data['resolution_type']}",
-                'type'               => 'pengeluaran',
-                'amount'             => 0,
-                'category'           => 'service',
-                'reference_id'       => $returnRequest->id,
-                'reference_type'     => ReturnRequest::class,
-                'reimburse_id'       => null,
-            ]);
-        });
     }
-}

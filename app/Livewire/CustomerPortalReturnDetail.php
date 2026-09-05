@@ -30,16 +30,7 @@ class CustomerPortalReturnDetail extends Component
 
     public function getStatusBadgeColor(string $status): array
     {
-        return match ($status) {
-            ReturnRequest::STATUS_SUBMITTED          => ['bg' => 'bg-slate-100 dark:bg-slate-900/20', 'text' => 'text-slate-600 dark:text-slate-400', 'dot' => '#64748b'],
-            ReturnRequest::STATUS_RECEIVED           => ['bg' => 'bg-blue-100 dark:bg-blue-900/20', 'text' => 'text-blue-600 dark:text-blue-400', 'dot' => '#2563eb'],
-            ReturnRequest::STATUS_SENT_TO_VENDOR     => ['bg' => 'bg-purple-100 dark:bg-purple-900/20', 'text' => 'text-purple-600 dark:text-purple-400', 'dot' => '#9333ea'],
-            ReturnRequest::STATUS_INTERNAL_REPAIR    => ['bg' => 'bg-yellow-100 dark:bg-yellow-900/20', 'text' => 'text-yellow-600 dark:text-yellow-400', 'dot' => '#ca8a04'],
-            ReturnRequest::STATUS_READY_FOR_RETURN   => ['bg' => 'bg-cyan-100 dark:bg-cyan-900/20', 'text' => 'text-cyan-600 dark:text-cyan-400', 'dot' => '#0891b2'],
-            ReturnRequest::STATUS_RETURNED_TO_CLIENT => ['bg' => 'bg-green-100 dark:bg-green-900/20', 'text' => 'text-green-600 dark:text-green-400', 'dot' => '#16a34a'],
-            ReturnRequest::STATUS_REJECTED           => ['bg' => 'bg-red-100 dark:bg-red-900/20', 'text' => 'text-red-600 dark:text-red-400', 'dot' => '#dc2626'],
-            default                                  => ['bg' => 'bg-gray-100 dark:bg-gray-900/20', 'text' => 'text-gray-600 dark:text-gray-400', 'dot' => '#6b7280'],
-        };
+        return ReturnRequest::getCustomerStatusBadge($status);
     }
 
     public function render()

@@ -26,11 +26,19 @@ class InternalRepairResource extends Resource
     protected static ?string $slug = 'after-sales/internal-repairs';
     protected static ?int $navigationSort = 22;
 
+    /**
+     * Antrean servis toko (warranty_type=store):
+     *  - status RECEIVED        : menunggu dimulai servis
+     *  - status INTERNAL_REPAIR : sedang dikerjakan teknisi
+     */
     public static function getEloquentQuery(): Builder
     {
         return parent::getEloquentQuery()
             ->where('warranty_type', 'store')
-            ->where('status', ReturnRequest::STATUS_RECEIVED);
+            ->whereIn('status', [
+                ReturnRequest::STATUS_RECEIVED,
+                ReturnRequest::STATUS_INTERNAL_REPAIR,
+            ]);
     }
 
     public static function table(Table $table): Table
@@ -49,22 +57,49 @@ class InternalRepairResource extends Resource
                 Tables\Columns\TextColumn::make('status')
                     ->label('Status')
                     ->badge()
-                    ->color('danger')
-                    ->formatStateUsing(fn () => 'Menunggu Servis'),
+                    ->color(fn (string $state): string => match ($state) {
+                        ReturnRequest::STATUS_RECEIVED        => 'info',
+                        ReturnRequest::STATUS_INTERNAL_REPAIR  => 'warning',
+                        default                               => 'gray',
+                    })
+                    ->formatStateUsing(fn (string $state): string => match ($state) {
+                        ReturnRequest::STATUS_RECEIVED        => 'Menunggu Servis',
+                        ReturnRequest::STATUS_INTERNAL_REPAIR  => 'Sedang Dikerjakan',
+                        default                               => ReturnRequest::getStatusLabels()[$state] ?? $state,
+                    }),
             ])
             ->actions([
-                // Aksi Khusus Teknisi Internal
-                Tables\Actions\Action::make('process_internal')
-                    ->label('Proses Perbaikan')
-                    ->icon('heroicon-o-cog-8-tooth')
+                // 1. MULAI SERVIS (received -> internal_repair)
+                Tables\Actions\Action::make('start_repair')
+                    ->label('Mulai Servis')
+                    ->icon('heroicon-o-play')
                     ->color('primary')
+                    ->visible(fn (ReturnRequest $record) => $record->status === ReturnRequest::STATUS_RECEIVED)
+                    ->form([
+                        Forms\Components\Textarea::make('notes')
+                            ->label('Catatan Kerja')
+                            ->placeholder('Diagnosa awal, rencana perbaikan, dll.')
+                            ->rows(3),
+                    ])
+                    ->action(function (ReturnRequest $record, array $data) {
+                        app(ReturnWorkflowService::class)->startInternalRepair($record, $data['notes'] ?? null);
+
+                        \Filament\Notifications\Notification::make()
+                            ->title('Servis Dimulai')
+                            ->body("RMA {$record->rma_number} sedang dikerjakan.")
+                            ->success()->send();
+                    }),
+
+                // 2. SELESAI SERVIS (internal_repair -> ready_for_return)
+                Tables\Actions\Action::make('complete_repair')
+                    ->label('Selesaikan Servis')
+                    ->icon('heroicon-o-check-badge')
+                    ->color('success')
+                    ->visible(fn (ReturnRequest $record) => $record->status === ReturnRequest::STATUS_INTERNAL_REPAIR)
                     ->form([
                         Forms\Components\Radio::make('resolution_type')
-                            ->label('Hasil Perbaikan')
-                            ->options([
-                                'repaired' => 'Berhasil Diperbaiki (Unit Lama Tetap)',
-                                'replaced' => 'Ganti Unit Baru (Ambil dari Gudang)'
-                            ])
+                            ->label('Hasil Pengerjaan')
+                            ->options(ReturnRequest::getResolutionTypeLabels())
                             ->inline()
                             ->live()
                             ->required(),
@@ -73,7 +108,7 @@ class InternalRepairResource extends Resource
                             ->label('Pilih SN Unit Pengganti')
                             ->options(function (ReturnRequest $record) {
                                 $productId = $record->serialNumber?->product_id ?? $record->product_id;
-                                if (!$productId) {
+                                if (! $productId) {
                                     return [];
                                 }
                                 return SerialNumber::where('product_id', $productId)
@@ -82,20 +117,23 @@ class InternalRepairResource extends Resource
                             })
                             ->searchable()
                             ->preload()
-                            ->visible(fn (Forms\Get $get, ReturnRequest $record) => $get('resolution_type') === 'replaced' && $record->serial_number_id)
-                            ->required(fn (Forms\Get $get, ReturnRequest $record) => $get('resolution_type') === 'replaced' && $record->serial_number_id),
+                            ->visible(fn (Forms\Get $get) => $get('resolution_type') === ReturnRequest::RESOLUTION_REPLACEMENT)
+                            ->required(fn (Forms\Get $get) => $get('resolution_type') === ReturnRequest::RESOLUTION_REPLACEMENT),
 
                         Forms\Components\Textarea::make('internal_notes')
                             ->label('Catatan Teknisi')
-                            ->required(),
+                            ->rows(3),
                     ])
                     ->action(function (ReturnRequest $record, array $data) {
-                        // Memanggil Service Pattern agar logika database tidak menumpuk di UI
-                        $service = app(ReturnWorkflowService::class);
-                        $service->processInternalRepair($record, $data);
+                        app(ReturnWorkflowService::class)->completeInternalRepair($record, $data);
+
+                        \Filament\Notifications\Notification::make()
+                            ->title('Servis Selesai')
+                            ->body("RMA {$record->rma_number} siap dikembalikan ke klien.")
+                            ->success()->send();
                     })
                     ->requiresConfirmation()
-                    ->modalHeading('Proses Unit Servis Internal'),
+                    ->modalHeading('Selesaikan Servis Unit'),
             ])
             ->emptyStateHeading('Tidak ada antrean servis internal');
     }

@@ -6,7 +6,6 @@ use App\Models\CRM\Customer;
 use App\Models\Inventory\SerialNumber;
 use App\Models\Sales\Invoice;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Route;
 use Livewire\Component;
 use Livewire\WithFileUploads;
 
@@ -221,6 +220,42 @@ class CustomerPortalReturnCreate extends Component
         DB::beginTransaction();
 
         try {
+            if ($this->productIsSerialized && ! $this->matchedSerialNumberId) {
+                $this->addError('evidenceUploads', 'Silakan scan SN produk terlebih dahulu.');
+                return;
+            }
+
+            // DUPLICATE GUARD (server-side, fokus race/tab ganda — bukan cuma livewire listener).
+            // Dijalankan SEBELUM upload file biar gak ninggal evidence orphan kalau ditolak.
+            $activeStatuses = [
+                ReturnRequest::STATUS_SUBMITTED,
+                ReturnRequest::STATUS_UNDER_REVIEW,
+                ReturnRequest::STATUS_APPROVED,
+                ReturnRequest::STATUS_WAITING_FOR_RETURN,
+                ReturnRequest::STATUS_RECEIVED,
+                ReturnRequest::STATUS_SENT_TO_VENDOR,
+                ReturnRequest::STATUS_INTERNAL_REPAIR,
+                ReturnRequest::STATUS_READY_FOR_RETURN,
+            ];
+
+            if ($this->productIsSerialized) {
+                $alreadyClaimed = ReturnRequest::where('customer_id', $this->customer->id)
+                    ->where('serial_number_id', $this->matchedSerialNumberId)
+                    ->whereIn('status', $activeStatuses)
+                    ->exists();
+            } else {
+                $alreadyClaimed = ReturnRequest::where('customer_id', $this->customer->id)
+                    ->where('invoice_item_id', $this->selectedItem->id)
+                    ->whereIn('status', $activeStatuses)
+                    ->exists();
+            }
+
+            if ($alreadyClaimed) {
+                DB::rollBack();
+                $this->addError('evidenceUploads', 'Produk ini sudah memiliki pengajuan return yang sedang berjalan. Tunggu proses selesai untuk mengajukan ulang.');
+                return;
+            }
+
             $paths = [];
             foreach ($this->evidenceUploads as $file) {
                 $paths[] = $file->store('rma-evidence/' . $this->customer->id, 'public');

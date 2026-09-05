@@ -9,54 +9,52 @@ use Illuminate\Support\Facades\Auth;
 
 class ReturnWorkflowService
 {
-    public function processInternalRepair(ReturnRequest $record, array $data): void
+    /**
+     * Mulai servis internal — tandai RMA sedang dikerjakan teknisi.
+     * Hanya berlaku dari status RECEIVED.
+     */
+    public function startInternalRepair(ReturnRequest $record, ?string $notes = null): void
+    {
+        DB::transaction(function () use ($record, $notes) {
+            $record->update([
+                'status'         => ReturnRequest::STATUS_INTERNAL_REPAIR,
+                'internal_notes' => $notes
+                    ? (($record->internal_notes ?? '') . "\n[MULAI SERVIS] " . $notes)
+                    : $record->internal_notes,
+            ]);
+        });
+    }
+
+    /**
+     * Selesaikan servis internal setelah pengerjaan.
+     * Hanya berlaku dari status INTERNAL_REPAIR.
+     *
+     * Resolution:
+     *  - repair_and_return : unit diperbaiki, SN kembali ke customer
+     *  - replacement       : unit diganti dari gudang (SN baru) atau stok non-series
+     *  - no_fault_found    : tidak ditemukan kerusakan, unit kembali apa adanya
+     */
+    public function completeInternalRepair(ReturnRequest $record, array $data): void
     {
         DB::transaction(function () use ($record, $data) {
+            $resolution = $data['resolution_type'];
             $newSnId = null;
 
-            if ($data['resolution_type'] === 'replaced') {
-                $newSn = null;
+            if ($resolution === ReturnRequest::RESOLUTION_REPAIR_AND_RETURN) {
+                $this->restoreToCustomer($record);
+            }
 
-                // Serialized unit: tandai SN lama defective + alokasikan SN pengganti dari gudang.
-                if ($record->serial_number_id) {
-                    // 1. Tandai SN lama sebagai barang rusak (defective)
-                    $oldSn = $record->serialNumber;
-                    if ($oldSn) {
-                        $oldSn->update([
-                            'status' => SerialNumber::STATUS_DEFECTIVE,
-                            'outbound_date' => null, // Reset tanggal keluar jika ada
-                        ]);
-                    }
+            if ($resolution === ReturnRequest::RESOLUTION_REPLACEMENT) {
+                $newSnId = $this->allocateReplacement($record, $data['new_serial_number_id'] ?? null);
+            }
 
-                    // 2. Alokasikan SN baru dari gudang ke klien
-                    // Menggunakan Pessimistic Locking implisit (update langsung) untuk menghindari Race Condition
-                    $newSn = SerialNumber::findOrFail($data['new_serial_number_id']);
-                    $newSn->update([
-                        'status' => SerialNumber::STATUS_SOLD,
-                        'customer_id' => $record->customer_id,
-                        'outbound_date' => now(),
-                    ]);
+            if ($resolution === ReturnRequest::RESOLUTION_NO_FAULT_FOUND) {
+                $this->restoreToCustomer($record);
+            }
 
-                    $newSnId = $newSn->id;
-                }
-
-                // 3. Unit berseri: alokasi SN pengganti sudah cukup (SN barunya di-SOLD,
-                //    stok 'available' produk dihitung dari jumlah SN berstatus AVAILABLE).
-                //    Unit non-seri: kurangi stok gudang lewat ProductStock (qty_available).
-                if (! $record->serial_number_id && $record->product_id) {
-                    $stock = \App\Models\Inventory\ProductStock::where('product_id', $record->product_id)
-                        ->where('qty_available', '>', 0)
-                        ->orderByDesc('qty_available')
-                        ->first();
-
-                    if ($stock) {
-                        $qty = (int) ($record->qty ?? 1);
-                        $stock->decrement('qty_available', $qty);
-                        $stock->increment('sold_stock', $qty);
-                    }
-                }
-
-                // 4. Catat transaksi barang keluar (Delivery) — hanya jika ada SN
+            // Catat transaksi stok untuk replacement (unit serialized keluar ke customer)
+            if ($newSnId) {
+                $newSn = SerialNumber::find($newSnId);
                 if ($newSn) {
                     $this->logStockTransaction(
                         rma: $record,
@@ -69,14 +67,69 @@ class ReturnWorkflowService
                 }
             }
 
-            // 5. Perbarui status dokumen ReturnRequest
             $record->update([
-                'status' => ReturnRequest::STATUS_READY_FOR_RETURN,
-                'resolution_type' => $data['resolution_type'],
+                'status'               => ReturnRequest::STATUS_READY_FOR_RETURN,
+                'resolution_type'      => $resolution,
                 'new_serial_number_id' => $newSnId,
-                'internal_notes' => $data['internal_notes'],
+                'internal_notes'       => $data['internal_notes'] ?? null,
+                'warranty_decision'    => $data['warranty_decision'] ?? null,
             ]);
         });
+    }
+
+    /**
+     * Kembalikan unit SN ke status SOLD (milik customer).
+     * Dipakai untuk repair selesai atau no-fault-found.
+     */
+    private function restoreToCustomer(ReturnRequest $record): void
+    {
+        $serial = $record->serialNumber;
+        if ($serial) {
+            $serial->update(['status' => SerialNumber::STATUS_SOLD]);
+        }
+    }
+
+    /**
+     * Alokasikan unit pengganti dari stok gudang.
+     * Serialized: SN baru dari AVAILABLE → SOLD ke customer.
+     * Non-serialized: kurangi stok gudang lewat ProductStock.
+     * @return int|null id SN pengganti (jika serialized)
+     */
+    private function allocateReplacement(ReturnRequest $record, $newSerialNumberId): ?int
+    {
+        if ($record->serial_number_id) {
+            $oldSn = $record->serialNumber;
+            if ($oldSn) {
+                $oldSn->update([
+                    'status' => SerialNumber::STATUS_DEFECTIVE,
+                    'outbound_date' => null,
+                ]);
+            }
+
+            $newSn = SerialNumber::findOrFail($newSerialNumberId);
+            $newSn->update([
+                'status'        => SerialNumber::STATUS_SOLD,
+                'customer_id'   => $record->customer_id,
+                'outbound_date' => now(),
+            ]);
+
+            return $newSn->id;
+        }
+
+        if ($record->product_id) {
+            $stock = \App\Models\Inventory\ProductStock::where('product_id', $record->product_id)
+                ->where('qty_available', '>', 0)
+                ->orderByDesc('qty_available')
+                ->first();
+
+            if ($stock) {
+                $qty = (int) ($record->qty ?? 1);
+                $stock->decrement('qty_available', $qty);
+                $stock->increment('sold_stock', $qty);
+            }
+        }
+
+        return null;
     }
 
     /**
@@ -88,7 +141,7 @@ class ReturnWorkflowService
         DB::transaction(function () use ($record, $data) {
             $newSnId = null;
 
-            if ($data['resolution_type'] === 'replaced') {
+            if ($data['resolution_type'] === ReturnRequest::RESOLUTION_REPLACEMENT) {
                 // 1. Tandai SN lama telah dikembalikan ke vendor
                 $record->serialNumber->update([
                     'status' => SerialNumber::STATUS_RETURNED

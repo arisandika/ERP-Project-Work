@@ -56,15 +56,20 @@ class ReturnRequestResource extends Resource
                 Tables\Columns\TextColumn::make('status')
                     ->label('Status')
                     ->badge()
-                    ->colors([
-                        'gray' => ReturnRequest::STATUS_SUBMITTED,
-                        'blue' => ReturnRequest::STATUS_RECEIVED,
-                        'warning' => ReturnRequest::STATUS_SENT_TO_VENDOR,
-                        'info' => ReturnRequest::STATUS_INTERNAL_REPAIR,
-                        'success' => ReturnRequest::STATUS_READY_FOR_RETURN,
-                        'primary' => ReturnRequest::STATUS_RETURNED_TO_CLIENT,
-                        'danger' => ReturnRequest::STATUS_REJECTED,
-                    ])
+                    ->color(fn (string $state): string => match ($state) {
+                        ReturnRequest::STATUS_SUBMITTED          => 'gray',
+                        ReturnRequest::STATUS_UNDER_REVIEW       => 'warning',
+                        ReturnRequest::STATUS_APPROVED           => 'info',
+                        ReturnRequest::STATUS_WAITING_FOR_RETURN => 'primary',
+                        ReturnRequest::STATUS_RECEIVED           => 'success',
+                        ReturnRequest::STATUS_SENT_TO_VENDOR     => 'warning',
+                        ReturnRequest::STATUS_INTERNAL_REPAIR    => 'info',
+                        ReturnRequest::STATUS_READY_FOR_RETURN   => 'primary',
+                        ReturnRequest::STATUS_RETURNED_TO_CLIENT => 'success',
+                        ReturnRequest::STATUS_REJECTED           => 'danger',
+                        ReturnRequest::STATUS_WARRANTY_REJECTED  => 'danger',
+                        default                                  => 'gray',
+                    })
                     ->formatStateUsing(fn (string $state): string => ReturnRequest::getStatusLabels()[$state] ?? $state),
             ])
             ->actions([
