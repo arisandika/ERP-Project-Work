@@ -67,7 +67,30 @@ class ReturnRequestResource extends Resource
                     ])
                     ->formatStateUsing(fn (string $state): string => ReturnRequest::getStatusLabels()[$state] ?? $state),
             ])
-            ->actions([]);
+            ->actions([
+                // Konfirmasi barang benar-benar sudah masuk ke toko / service center
+                // (customer biasanya ngajuin dulu, barang nyusul dikirim)
+                Tables\Actions\Action::make('mark_received')
+                    ->label('Barang Masuk')
+                    ->icon('heroicon-o-arrow-down-tray')
+                    ->color('primary')
+                    ->visible(fn (ReturnRequest $record) => $record->status === ReturnRequest::STATUS_SUBMITTED)
+                    ->requiresConfirmation()
+                    ->modalHeading('Konfirmasi Barang Masuk')
+                    ->modalDescription('Konfirmasi bahwa barang return sudah benar-benar diterima di toko / service center dari klien.')
+                    ->action(function (ReturnRequest $record) {
+                        $record->update([
+                            'status' => ReturnRequest::STATUS_RECEIVED,
+                            'received_date' => now(),
+                        ]);
+
+                        \Filament\Notifications\Notification::make()
+                            ->title('Barang Diterima')
+                            ->body("RMA {$record->rma_number} diterima. Masuk antrean pengecekan (servis/pengembalian).")
+                            ->success()
+                            ->send();
+                    }),
+            ]);
     }
 
     public static function canViewAny(): bool

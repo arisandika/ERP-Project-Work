@@ -228,7 +228,7 @@ class CustomerPortalReturnCreate extends Component
 
             // Auto-determine warranty route (supplier vs store) from serial number supplier
             $serial = $this->productIsSerialized
-                ? \App\Models\Inventory\SerialNumber::find($this->matchedSerialNumberId)
+                ? SerialNumber::find($this->matchedSerialNumberId)
                 : null;
 
             $warrantyType = ReturnRequest::resolveWarrantyType($serial);
@@ -250,7 +250,7 @@ class CustomerPortalReturnCreate extends Component
                 'created_by'        => null,
                 'source'            => ReturnRequest::SOURCE_CUSTOMER_PORTAL,
             ]);
-            
+
             DB::commit();
 
             session()->flash('message', 'Pengajuan return berhasil dikirim. Tim kami akan segera memproses.');

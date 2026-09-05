@@ -12,7 +12,6 @@ use Filament\Forms;
 use Filament\Infolists\Components\Section;
 use Filament\Infolists\Components\TextEntry;
 use Filament\Infolists\Components\Grid;
-use Filament\Infolists\Components\ListEntry;
 
 class ViewReturnRequest extends ViewRecord
 {
@@ -21,15 +20,17 @@ class ViewReturnRequest extends ViewRecord
     protected function getHeaderActions(): array
     {
         return [
-            // 0. TERIMA BARANG DARI KLIEN (submitted -> received)
+            // 0. KONFIRMASI BARANG SUDAH MASUK (submitted -> received)
+            //    Customer ngajuin dulu, barang bisa nyusul dikirim — konfirmasi saat unit benar-benar
+            //    sudah sampai di toko / service center.
             Actions\Action::make('receive_from_client')
-                ->label('Terima Barang')
+                ->label('Barang Masuk')
                 ->icon('heroicon-o-arrow-down-tray')
                 ->color('primary')
                 ->visible(fn (ReturnRequest $record) => $record->status === ReturnRequest::STATUS_SUBMITTED)
                 ->requiresConfirmation()
-                ->modalHeading('Terima Barang Return')
-                ->modalDescription('Konfirmasi barang sudah diterima dan diperiksa dari klien.')
+                ->modalHeading('Konfirmasi Barang Masuk')
+                ->modalDescription('Konfirmasi bahwa barang return sudah benar-benar diterima di toko / service center dari klien.')
                 ->action(function (ReturnRequest $record) {
                     $record->update([
                         'status' => ReturnRequest::STATUS_RECEIVED,
@@ -252,8 +253,7 @@ class ViewReturnRequest extends ViewRecord
                             ->color('warning')
                             ->url(fn ($record) => $record->procurementClaim
                                 ? route('filament.procurement.resources.purchase-orders.edit', ['record' => $record->procurementClaim->id])
-                                : null)
-                            ->openInNewTab()
+                                : null, shouldOpenInNewTab: true)
                             ->visible(fn ($record) => $record->procurementClaim),
 
                         TextEntry::make('purchaseReturn.return_number')
@@ -262,8 +262,7 @@ class ViewReturnRequest extends ViewRecord
                             ->color('info')
                             ->url(fn ($record) => $record->purchaseReturn
                                 ? route('filament.procurement.resources.purchase-returns.view', ['record' => $record->purchaseReturn->id])
-                                : null)
-                            ->openInNewTab()
+                                : null, shouldOpenInNewTab: true)
                             ->visible(fn ($record) => $record->purchaseReturn),
                     ])
                     ->columnSpanFull(),
@@ -271,8 +270,9 @@ class ViewReturnRequest extends ViewRecord
                 Section::make('Riwayat Stock Transaction (Traceability)')
                     ->description('Audit trail semua gerak stok untuk SN ini, termasuk transaksi RMA ke vendor')
                     ->schema([
-                        ListEntry::make('transactions')
+                        TextEntry::make('transactions')
                             ->hiddenLabel(true)
+                            ->listWithLineBreaks()
                             ->columnSpanFull(),
                     ])
                     ->hidden($stockTransactions->isEmpty())
