@@ -15,12 +15,14 @@ class ReturnWorkflowService
             $newSnId = null;
 
             if ($data['resolution_type'] === 'replaced') {
-                // 1. Tandai SN lama sebagai barang rusak (defective)
+                // 1. Tandai SN lama sebagai barang rusak (defective) — hanya jika ada SN
                 $oldSn = $record->serialNumber;
-                $oldSn->update([
-                    'status' => SerialNumber::STATUS_DEFECTIVE,
-                    'outbound_date' => null, // Reset tanggal keluar jika ada
-                ]);
+                if ($oldSn) {
+                    $oldSn->update([
+                        'status' => SerialNumber::STATUS_DEFECTIVE,
+                        'outbound_date' => null, // Reset tanggal keluar jika ada
+                    ]);
+                }
 
                 // 2. Alokasikan SN baru dari gudang ke klien
                 // Menggunakan Pessimistic Locking implisit (update langsung) untuk menghindari Race Condition
