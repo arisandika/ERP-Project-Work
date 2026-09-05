@@ -3,6 +3,7 @@
 namespace App\Filament\Resources\AfterSales;
 
 use App\Filament\Resources\AfterSales\InternalRepairResource\Pages;
+use App\Models\AfterSales\InternalRepair;
 use App\Models\AfterSales\ReturnRequest;
 use App\Models\Inventory\SerialNumber;
 use App\Services\AfterSales\ReturnWorkflowService;
@@ -17,7 +18,7 @@ class InternalRepairResource extends Resource
 {
     use BelongsToModule;
     protected static ?string $module = 'inventory';
-    protected static ?string $model = ReturnRequest::class;
+    protected static ?string $model = InternalRepair::class;
     protected static ?string $modelLabel = 'Servis Internal';
     protected static ?string $pluralModelLabel = 'Daftar Servis Internal';
     protected static ?string $navigationIcon = 'heroicon-o-wrench';
@@ -26,76 +27,74 @@ class InternalRepairResource extends Resource
     protected static ?string $slug = 'after-sales/internal-repairs';
     protected static ?int $navigationSort = 22;
 
-    /**
-     * Antrean servis toko (warranty_type=store):
-     *  - status RECEIVED        : menunggu dimulai servis
-     *  - status INTERNAL_REPAIR : sedang dikerjakan teknisi
-     */
-    public static function getEloquentQuery(): Builder
-    {
-        return parent::getEloquentQuery()
-            ->where('warranty_type', 'store')
-            ->whereIn('status', [
-                ReturnRequest::STATUS_RECEIVED,
-                ReturnRequest::STATUS_INTERNAL_REPAIR,
-            ]);
-    }
-
     public static function table(Table $table): Table
     {
         return $table
             ->columns([
-                Tables\Columns\TextColumn::make('rma_number')
+                Tables\Columns\TextColumn::make('rma.rma_number')
                     ->label('No. RMA')
                     ->weight('bold')
                     ->searchable(),
 
-                Tables\Columns\TextColumn::make('issue_description')
+                Tables\Columns\TextColumn::make('rma.issue_description')
                     ->label('Keluhan')
                     ->limit(50),
+
+                Tables\Columns\TextColumn::make('resolution_type')
+                    ->label('Jenis Servis')
+                    ->badge()
+                    ->formatStateUsing(fn (?string $state) => $state
+                        ? (ReturnRequest::getResolutionTypeLabels()[$state] ?? $state)
+                        : '—'),
+
+                Tables\Columns\TextColumn::make('technician.name')
+                    ->label('Teknisi')
+                    ->placeholder('Belum ditugaskan'),
 
                 Tables\Columns\TextColumn::make('status')
                     ->label('Status')
                     ->badge()
                     ->color(fn (string $state): string => match ($state) {
-                        ReturnRequest::STATUS_RECEIVED        => 'info',
-                        ReturnRequest::STATUS_INTERNAL_REPAIR  => 'warning',
-                        default                               => 'gray',
+                        InternalRepair::STATUS_PENDING    => 'info',
+                        InternalRepair::STATUS_IN_PROGRESS => 'warning',
+                        InternalRepair::STATUS_COMPLETED  => 'success',
+                        default                           => 'gray',
                     })
-                    ->formatStateUsing(fn (string $state): string => match ($state) {
-                        ReturnRequest::STATUS_RECEIVED        => 'Menunggu Servis',
-                        ReturnRequest::STATUS_INTERNAL_REPAIR  => 'Sedang Dikerjakan',
-                        default                               => ReturnRequest::getStatusLabels()[$state] ?? $state,
-                    }),
+                    ->formatStateUsing(fn (string $state): string => InternalRepair::getStatusLabels()[$state] ?? $state),
             ])
             ->actions([
-                // 1. MULAI SERVIS (received -> internal_repair)
+                // 1. MULAI SERVIS (pending -> in_progress)
                 Tables\Actions\Action::make('start_repair')
                     ->label('Mulai Servis')
                     ->icon('heroicon-o-play')
                     ->color('primary')
-                    ->visible(fn (ReturnRequest $record) => $record->status === ReturnRequest::STATUS_RECEIVED)
+                    ->visible(fn (InternalRepair $record) => $record->status === InternalRepair::STATUS_PENDING)
                     ->form([
                         Forms\Components\Textarea::make('notes')
                             ->label('Catatan Kerja')
                             ->placeholder('Diagnosa awal, rencana perbaikan, dll.')
                             ->rows(3),
                     ])
-                    ->action(function (ReturnRequest $record, array $data) {
-                        app(ReturnWorkflowService::class)->startInternalRepair($record, $data['notes'] ?? null);
+                    ->action(function (InternalRepair $record, array $data) {
+                        $record->update([
+                            'status'            => InternalRepair::STATUS_IN_PROGRESS,
+                            'technician_user_id' => auth()->id(),
+                            'started_at'        => now(),
+                            'notes'             => $data['notes'] ?? $record->notes,
+                        ]);
 
                         \Filament\Notifications\Notification::make()
                             ->title('Servis Dimulai')
-                            ->body("RMA {$record->rma_number} sedang dikerjakan.")
+                            ->body("RMA {$record->rma->rma_number} sedang dikerjakan.")
                             ->success()->send();
                     }),
 
-                // 2. SELESAI SERVIS (internal_repair -> ready_for_return)
+                // 2. SELESAI SERVIS (in_progress -> completed) — via service agar SN + RMA ikut update
                 Tables\Actions\Action::make('complete_repair')
                     ->label('Selesaikan Servis')
                     ->icon('heroicon-o-check-badge')
                     ->color('success')
-                    ->visible(fn (ReturnRequest $record) => $record->status === ReturnRequest::STATUS_INTERNAL_REPAIR)
+                    ->visible(fn (InternalRepair $record) => $record->status === InternalRepair::STATUS_IN_PROGRESS)
                     ->form([
                         Forms\Components\Radio::make('resolution_type')
                             ->label('Hasil Pengerjaan')
@@ -106,8 +105,8 @@ class InternalRepairResource extends Resource
 
                         Forms\Components\Select::make('new_serial_number_id')
                             ->label('Pilih SN Unit Pengganti')
-                            ->options(function (ReturnRequest $record) {
-                                $productId = $record->serialNumber?->product_id ?? $record->product_id;
+                            ->options(function (InternalRepair $record) {
+                                $productId = $record->rma?->serialNumber?->product_id ?? $record->rma?->product_id;
                                 if (! $productId) {
                                     return [];
                                 }
@@ -124,12 +123,12 @@ class InternalRepairResource extends Resource
                             ->label('Catatan Teknisi')
                             ->rows(3),
                     ])
-                    ->action(function (ReturnRequest $record, array $data) {
-                        app(ReturnWorkflowService::class)->completeInternalRepair($record, $data);
+                    ->action(function (InternalRepair $record, array $data) {
+                        app(ReturnWorkflowService::class)->completeInternalRepair($record->rma, $data);
 
                         \Filament\Notifications\Notification::make()
                             ->title('Servis Selesai')
-                            ->body("RMA {$record->rma_number} siap dikembalikan ke klien.")
+                            ->body("RMA {$record->rma->rma_number} siap dikembalikan ke klien.")
                             ->success()->send();
                     })
                     ->requiresConfirmation()

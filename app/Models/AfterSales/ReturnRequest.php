@@ -81,6 +81,7 @@ class ReturnRequest extends Model
     public const STATUS_RETURNED_TO_CLIENT = 'returned_to_client';
     public const STATUS_REJECTED           = 'rejected';
     public const STATUS_WARRANTY_REJECTED  = 'warranty_rejected';
+    public const STATUS_REFUND_PENDING     = 'refund_pending';
 
     // ==== INSPECTION RESULT (hasil pemeriksaan teknisi) ====
     public const INSPECTION_DAMAGED        = 'damaged';
@@ -102,6 +103,7 @@ class ReturnRequest extends Model
     public const WARRANTY_PENDING  = 'pending';
     public const WARRANTY_APPROVED = 'approved';
     public const WARRANTY_REJECTED = 'rejected';
+    public const WARRANTY_NA       = 'not_applicable';
 
     public static function getWarrantyDecisionLabels(): array
     {
@@ -109,8 +111,13 @@ class ReturnRequest extends Model
             self::WARRANTY_PENDING  => 'Belum Ditentukan',
             self::WARRANTY_APPROVED => 'Disetujui',
             self::WARRANTY_REJECTED => 'Ditolak',
+            self::WARRANTY_NA       => 'Garansi Tidak Berlaku',
         ];
     }
+
+    // ==== REFUND STATUS (lifecycle refund di ReturnRequest) ====
+    public const REFUND_PENDING   = 'pending';
+    public const REFUND_COMPLETED = 'completed';
 
     // ==== RESOLUTION TYPE (penyelesaian final) ====
     public const RESOLUTION_REPAIR_AND_RETURN = 'repair_and_return';
@@ -143,6 +150,7 @@ class ReturnRequest extends Model
             self::STATUS_RETURNED_TO_CLIENT => 'Dikembalikan ke Klien',
             self::STATUS_REJECTED           => 'Ditolak',
             self::STATUS_WARRANTY_REJECTED  => 'Garansi Ditolak',
+            self::STATUS_REFUND_PENDING     => 'Menunggu Refund Diproses',
         ];
     }
 
@@ -165,6 +173,7 @@ class ReturnRequest extends Model
             self::STATUS_RETURNED_TO_CLIENT => 'Selesai',
             self::STATUS_REJECTED           => 'Ditolak',
             self::STATUS_WARRANTY_REJECTED  => 'Garansi Ditolak',
+            self::STATUS_REFUND_PENDING     => 'Refund Diproses',
         ];
     }
 
@@ -185,6 +194,7 @@ class ReturnRequest extends Model
             self::STATUS_RETURNED_TO_CLIENT => ['bg' => 'bg-green-100 dark:bg-green-900/20', 'text' => 'text-green-600 dark:text-green-400', 'dot' => '#16a34a'],
             self::STATUS_REJECTED           => ['bg' => 'bg-red-100 dark:bg-red-900/20', 'text' => 'text-red-600 dark:text-red-400', 'dot' => '#dc2626'],
             self::STATUS_WARRANTY_REJECTED  => ['bg' => 'bg-rose-100 dark:bg-rose-900/20', 'text' => 'text-rose-600 dark:text-rose-400', 'dot' => '#e11d48'],
+            self::STATUS_REFUND_PENDING     => ['bg' => 'bg-teal-100 dark:bg-teal-900/20', 'text' => 'text-teal-600 dark:text-teal-400', 'dot' => '#0d9488'],
             default                         => ['bg' => 'bg-gray-100 dark:bg-gray-900/20', 'text' => 'text-gray-600 dark:text-gray-400', 'dot' => '#6b7280'],
         };
     }
@@ -227,6 +237,16 @@ class ReturnRequest extends Model
     public function procurementClaim()
     {
         return $this->belongsTo(\App\Models\Procurement\PurchaseOrder::class, 'procurement_claim_id');
+    }
+
+    public function internalRepair()
+    {
+        return $this->hasOne(InternalRepair::class, 'rma_id');
+    }
+
+    public function vendorClaim()
+    {
+        return $this->hasOne(VendorClaim::class, 'rma_id');
     }
 
     /**

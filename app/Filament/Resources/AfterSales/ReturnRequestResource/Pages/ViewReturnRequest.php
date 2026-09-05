@@ -21,9 +21,16 @@ class ViewReturnRequest extends ViewRecord
     /**
      * Actions staged mengikuti business flow RMA:
      *   SUBMITTED → UNDER_REVIEW → APPROVED / REJECTED
-     *             → WAITING_FOR_RETURN → RECEIVED
-     *             → inspection + warranty decision → resolution routing
-     *             → READY_FOR_RETURN → RETURNED_TO_CLIENT
+     *   → WAITING_FOR_RETURN → RECEIVED
+     *   → inspection + warranty decision → resolution routing (internal / vendor / refund)
+     *   → READY_FOR_RETURN → RETURNED_TO_CLIENT
+     *
+     * Refinement:
+     *   - request_shipment (APPROVED → WAITING_FOR_RETURN): status menunggu pengiriman
+     *     dipakai eksplisit, approve ≠ terima barang.
+     *   - record_inspection: no_fault_found → WARRANTY_NA (bukan approved).
+     *   - set_resolution: route ke entity InternalRepair / VendorClaim + refund_status=pending.
+     *   - confirm_refund: refund selesai Finance → READY_FOR_RETURN.
      */
     protected function getHeaderActions(): array
     {
@@ -65,7 +72,7 @@ class ViewReturnRequest extends ViewRecord
                 ->modalDescription('Pengajuan diterima untuk dilanjutkan. Customer akan diminta mengirim barang.')
                 ->action(function (ReturnRequest $record) {
                     $record->update([
-                        'status'         => ReturnRequest::STATUS_APPROVED,
+                        'status'            => ReturnRequest::STATUS_APPROVED,
                         'warranty_decision' => ReturnRequest::WARRANTY_PENDING,
                     ]);
 
@@ -99,25 +106,43 @@ class ViewReturnRequest extends ViewRecord
                         ->success()->send();
                 }),
 
-            // 4. BARANG MASUK (approved/waiting_for_return -> received)
+            // 4. MINTA PENGIRIMAN (approved -> waiting_for_return)
+            //    Customer diminta kirim barang. Status ini menandakan belum ada fisik barang masuk.
+            Actions\Action::make('request_shipment')
+                ->label('Minta Pengiriman Barang')
+                ->icon('heroicon-o-paper-airplane')
+                ->color('info')
+                ->visible(fn (ReturnRequest $record) => $record->status === ReturnRequest::STATUS_APPROVED)
+                ->requiresConfirmation()
+                ->modalHeading('Minta Pengiriman Barang')
+                ->modalDescription('Customer akan diminta mengirim unit return ke toko / service center.')
+                ->action(function (ReturnRequest $record) {
+                    $record->update([
+                        'status' => ReturnRequest::STATUS_WAITING_FOR_RETURN,
+                    ]);
+
+                    \Filament\Notifications\Notification::make()
+                        ->title('Menunggu Pengiriman')
+                        ->body("RMA {$record->rma_number} menunggu barang dikirim customer.")
+                        ->success()->send();
+                }),
+
+            // 5. BARANG MASUK (waiting_for_return -> received) — fisik barang diterima
             Actions\Action::make('receive_from_client')
                 ->label('Barang Masuk')
                 ->icon('heroicon-o-arrow-down-tray')
                 ->color('primary')
-                ->visible(fn (ReturnRequest $record) => in_array($record->status, [
-                    ReturnRequest::STATUS_APPROVED,
-                    ReturnRequest::STATUS_WAITING_FOR_RETURN,
-                ]))
+                ->visible(fn (ReturnRequest $record) => $record->status === ReturnRequest::STATUS_WAITING_FOR_RETURN)
                 ->requiresConfirmation()
                 ->modalHeading('Konfirmasi Barang Masuk')
                 ->modalDescription('Konfirmasi bahwa barang return sudah benar-benar diterima di toko / service center dari klien.')
                 ->action(function (ReturnRequest $record) {
                     $record->update([
-                        'status'                  => ReturnRequest::STATUS_RECEIVED,
-                        'received_date'           => now(),
-                        'inspection_result'       => null,
-                        'warranty_decision'       => ReturnRequest::WARRANTY_PENDING,
-                        'resolution_type'         => null,
+                        'status'            => ReturnRequest::STATUS_RECEIVED,
+                        'received_date'     => now(),
+                        'inspection_result' => null,
+                        'warranty_decision' => ReturnRequest::WARRANTY_PENDING,
+                        'resolution_type'   => null,
                     ]);
 
                     \Filament\Notifications\Notification::make()
@@ -126,7 +151,7 @@ class ViewReturnRequest extends ViewRecord
                         ->success()->send();
                 }),
 
-            // 5. HASIL INSPEKSI + KEPUTUSAN GARANSI (received)
+            // 6. HASIL INSPEKSI + KEPUTUSAN GARANSI (received)
             Actions\Action::make('record_inspection')
                 ->label('Hasil Inspeksi & Garansi')
                 ->icon('heroicon-o-magnifying-glass')
@@ -136,20 +161,27 @@ class ViewReturnRequest extends ViewRecord
                     Forms\Components\Radio::make('inspection_result')
                         ->label('Hasil Pemeriksaan')
                         ->options(ReturnRequest::getInspectionResultLabels())
-                        ->inline()->required(),
+                        ->inline()->live()->required(),
                     Forms\Components\Radio::make('warranty_decision')
                         ->label('Keputusan Garansi')
                         ->options([
                             ReturnRequest::WARRANTY_APPROVED => 'Disetujui',
                             ReturnRequest::WARRANTY_REJECTED => 'Ditolak',
+                            ReturnRequest::WARRANTY_NA       => 'Garansi Tidak Berlaku',
                         ])
-                        ->inline()->required(),
+                        ->inline()->required()
+                        ->visible(fn (Forms\Get $get) => $get('inspection_result') !== ReturnRequest::INSPECTION_NO_FAULT_FOUND),
                     Forms\Components\Textarea::make('internal_notes')
                         ->label('Catatan Teknisi / Admin')
                         ->rows(3),
                 ])
                 ->action(function (ReturnRequest $record, array $data) {
-                    // Jika garansi ditolak, RMA langsung close sebagai warranty_rejected.
+                    // tidak ditemukan kerusakan → WARRANTY_NA (bukan klaim garansi)
+                    if (($data['inspection_result'] ?? null) === ReturnRequest::INSPECTION_NO_FAULT_FOUND) {
+                        $data['warranty_decision'] = ReturnRequest::WARRANTY_NA;
+                    }
+
+                    // Jika garansi ditolak, RMA langsung close sebagai warranty_rejected (terminal).
                     if (($data['warranty_decision'] ?? null) === ReturnRequest::WARRANTY_REJECTED) {
                         $record->update([
                             'inspection_result' => $data['inspection_result'] ?? null,
@@ -167,7 +199,7 @@ class ViewReturnRequest extends ViewRecord
 
                     $record->update([
                         'inspection_result' => $data['inspection_result'] ?? null,
-                        'warranty_decision' => ReturnRequest::WARRANTY_APPROVED,
+                        'warranty_decision' => $data['warranty_decision'] ?? ReturnRequest::WARRANTY_APPROVED,
                         'internal_notes'    => $data['internal_notes'] ?? null,
                     ]);
 
@@ -177,20 +209,22 @@ class ViewReturnRequest extends ViewRecord
                         ->success()->send();
                 }),
 
-            // 6. TENTUKAN PENYELESAIAN + ROUTING (received, warranty approved)
-            //    Routed ke internal service / vendor claim / refund.
+            // 7. TENTUKAN PENYELESAIAN + ROUTING (received, warranty approved/na)
+            //    Route ke entity InternalRepair / VendorClaim / refund.
             Actions\Action::make('set_resolution')
                 ->label('Tentukan Penyelesaian')
                 ->icon('heroicon-o-arrow-path')
                 ->color('primary')
                 ->visible(fn (ReturnRequest $record) => $record->status === ReturnRequest::STATUS_RECEIVED
-                    && $record->warranty_decision === ReturnRequest::WARRANTY_APPROVED)
+                    && in_array($record->warranty_decision, [
+                        ReturnRequest::WARRANTY_APPROVED,
+                        ReturnRequest::WARRANTY_NA,
+                    ], true))
                 ->form([
                     Forms\Components\Radio::make('resolution_type')
                         ->label('Jenis Penyelesaian')
                         ->options(ReturnRequest::getResolutionTypeLabels())
                         ->inline()->live()->required(),
-                    // NO_FAULT_FOUND: unit dikembalikan apa adanya (rustak internal via servis)
                     Forms\Components\Select::make('new_serial_number_id')
                         ->label('SN Unit Pengganti')
                         ->options(fn (ReturnRequest $record) => SerialNumber::where('product_id', $record->serialNumber?->product_id ?? $record->product_id)
@@ -203,11 +237,13 @@ class ViewReturnRequest extends ViewRecord
                 ->action(function (ReturnRequest $record, array $data) {
                     $resolution = $data['resolution_type'];
 
+                    // SEBAGIAN PENYELESAIAN DIPINDAH KE SERVICE UNTUK ENTITY SEPARATE.
+
                     // NO_FAULT_FOUND: resolve tanpa repair — langsung ready_for_return.
                     if ($resolution === ReturnRequest::RESOLUTION_NO_FAULT_FOUND) {
                         $record->update([
-                            'resolution_type'   => ReturnRequest::RESOLUTION_NO_FAULT_FOUND,
-                            'status'            => ReturnRequest::STATUS_READY_FOR_RETURN,
+                            'resolution_type' => ReturnRequest::RESOLUTION_NO_FAULT_FOUND,
+                            'status'          => ReturnRequest::STATUS_READY_FOR_RETURN,
                         ]);
                         \Filament\Notifications\Notification::make()
                             ->title('Selesai')
@@ -216,48 +252,63 @@ class ViewReturnRequest extends ViewRecord
                         return;
                     }
 
-                    // REFUND: proses refund finance langsung (ReturnService::processRefund).
+                    // REFUND: proses refund finance → refund_status=pending, RMA=REFUND_PENDING.
                     if ($resolution === ReturnRequest::RESOLUTION_REFUND) {
                         app(ReturnService::class)->processRefund($record);
                         $record->update([
-                            'resolution_type'   => ReturnRequest::RESOLUTION_REFUND,
-                            'status'            => ReturnRequest::STATUS_READY_FOR_RETURN,
+                            'status' => ReturnRequest::STATUS_REFUND_PENDING,
                         ]);
                         \Filament\Notifications\Notification::make()
                             ->title('Refund Diproses')
-                            ->body('Refund dicatat ke modul Finance. RMA siap penutupan.')
+                            ->body('Refund dicatat ke modul Finance. Tunggu konfirmasi Finance untuk menutup RMA.')
                             ->success()->send();
                         return;
                     }
 
                     // REPAIR_AND_RETURN / REPLACEMENT: simpan resolusi + route.
+                    $record->update([
+                        'resolution_type'       => $resolution,
+                        'new_serial_number_id'  => $data['new_serial_number_id'] ?? null,
+                    ]);
+
                     if ($record->warranty_type === 'supplier') {
-                        // Vendor claim path — belum ada aksi "Kirim ke Vendor" di page ini;
-                        // dinavigasi via Klaim Vendor resource.
-                        $record->update([
-                            'resolution_type' => $resolution,
-                            'new_serial_number_id' => $data['new_serial_number_id'] ?? null,
-                        ]);
+                        // JALUR VENDOR: create PO claim + VendorClaim, status SENT_TO_VENDOR.
+                        app(ReturnService::class)->sendToVendor($record, now());
                         \Filament\Notifications\Notification::make()
                             ->title('Rute Vendor')
-                            ->body("RMA {$record->rma_number} siap diproses via Klaim Vendor.")
+                            ->body("RMA {$record->rma_number} terkirim ke supplier (klaim vendor terbentuk).")
                             ->success()->send();
                         return;
                     }
 
-                    // Internal: mulakan servis.
-                    $record->update([
-                        'resolution_type' => $resolution,
-                        'new_serial_number_id' => $data['new_serial_number_id'] ?? null,
-                        'status'          => ReturnRequest::STATUS_INTERNAL_REPAIR,
-                    ]);
+                    // JALUR INTERNAL (store): mulai servis + buat InternalRepair row.
+                    app(ReturnWorkflowService::class)->startInternalRepair($record);
                     \Filament\Notifications\Notification::make()
                         ->title('Rute Internal')
                         ->body("RMA {$record->rma_number} masuk antrean Servis Internal.")
                         ->success()->send();
                 }),
 
-            // 7. KEMBALIKAN KE KLIEN (ready_for_return -> returned_to_client) — penutupan
+            // 8. KONFIRMASI REFUND (refund_pending -> finance selesai -> ready_for_return)
+            Actions\Action::make('confirm_refund')
+                ->label('Konfirmasi Refund Finance')
+                ->icon('heroicon-o-banknotes')
+                ->color('warning')
+                ->visible(fn (ReturnRequest $record) => $record->status === ReturnRequest::STATUS_REFUND_PENDING
+                    && $record->refund_status === ReturnRequest::REFUND_PENDING)
+                ->requiresConfirmation()
+                ->modalHeading('Konfirmasi Refund Selesai')
+                ->modalDescription('Finance sudah menyelesaikan refund. RMA siap ditutup.')
+                ->action(function (ReturnRequest $record) {
+                    app(ReturnWorkflowService::class)->markRefundCompleted($record);
+
+                    \Filament\Notifications\Notification::make()
+                        ->title('Refund Selesai')
+                        ->body("RMA {$record->rma_number} refund selesai. Siap dikembalikan ke klien.")
+                        ->success()->send();
+                }),
+
+            // 9. KEMBALIKAN KE KLIEN (ready_for_return -> returned_to_client) — penutupan
             Actions\Action::make('return_to_client')
                 ->label('Kembalikan ke Klien')
                 ->icon('heroicon-o-paper-airplane')
@@ -268,7 +319,7 @@ class ViewReturnRequest extends ViewRecord
                 ->modalDescription('Konfirmasi bahwa unit (perbaikan / pengganti / refund) sudah diserahkan kembali ke klien.')
                 ->action(function (ReturnRequest $record) {
                     $record->update([
-                        'status'                 => ReturnRequest::STATUS_RETURNED_TO_CLIENT,
+                        'status'                  => ReturnRequest::STATUS_RETURNED_TO_CLIENT,
                         'returned_to_client_date' => now(),
                     ]);
 
@@ -342,6 +393,27 @@ class ViewReturnRequest extends ViewRecord
                                     ->formatStateUsing(fn ($state) => ReturnRequest::getResolutionTypeLabels()[$state] ?? $state),
                             ]),
                     ]),
+
+                Section::make('Refund')
+                    ->schema([
+                        Grid::make(['default' => 1, 'sm' => 2])
+                            ->schema([
+                                TextEntry::make('refund_status')
+                                    ->label('Status Refund')
+                                    ->badge()
+                                    ->formatStateUsing(fn ($state) => match ($state) {
+                                        ReturnRequest::REFUND_PENDING   => 'Menunggu Finance',
+                                        ReturnRequest::REFUND_COMPLETED => 'Selesai',
+                                        default                        => '—',
+                                    })
+                                    ->color(fn ($state) => match ($state) {
+                                        ReturnRequest::REFUND_PENDING   => 'warning',
+                                        ReturnRequest::REFUND_COMPLETED => 'success',
+                                        default                        => 'gray',
+                                    }),
+                            ]),
+                    ])
+                    ->visible(fn (ReturnRequest $record) => $record->resolution_type === ReturnRequest::RESOLUTION_REFUND),
 
                 Section::make('Asal Serial Number')
                     ->description('Tracing asal SN — supplier, PO, inbound/outbound, warehouse')

@@ -2,7 +2,9 @@
 
 namespace App\Services\AfterSales;
 
+use App\Models\AfterSales\InternalRepair;
 use App\Models\AfterSales\ReturnRequest;
+use App\Models\AfterSales\VendorClaim;
 use App\Models\Inventory\SerialNumber;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
@@ -10,8 +12,8 @@ use Illuminate\Support\Facades\Auth;
 class ReturnWorkflowService
 {
     /**
-     * Mulai servis internal — tandai RMA sedang dikerjakan teknisi.
-     * Hanya berlaku dari status RECEIVED.
+     * Mulai servis internal — tandai RMA + buat entri InternalRepair.
+     * Hanya berlaku dari status RECEIVED (routing sudah memilih jalur store).
      */
     public function startInternalRepair(ReturnRequest $record, ?string $notes = null): void
     {
@@ -21,6 +23,15 @@ class ReturnWorkflowService
                 'internal_notes' => $notes
                     ? (($record->internal_notes ?? '') . "\n[MULAI SERVIS] " . $notes)
                     : $record->internal_notes,
+            ]);
+
+            // Buat entitas InternalRepair terpisah — lifecycle servis dipantau di tabel baru.
+            InternalRepair::create([
+                'rma_id'            => $record->id,
+                'status'            => InternalRepair::STATUS_PENDING,
+                'resolution_type'   => $record->resolution_type,
+                'notes'             => $notes,
+                'created_by'        => Auth::id(),
             ]);
         });
     }
@@ -74,6 +85,13 @@ class ReturnWorkflowService
                 'internal_notes'       => $data['internal_notes'] ?? null,
                 'warranty_decision'    => $data['warranty_decision'] ?? null,
             ]);
+
+            // Tutup entri InternalRepair terkait.
+            $record->internalRepair?->update([
+                'status'          => InternalRepair::STATUS_COMPLETED,
+                'resolution_type' => $resolution,
+                'completed_at'    => now(),
+            ]);
         });
     }
 
@@ -84,8 +102,10 @@ class ReturnWorkflowService
     private function restoreToCustomer(ReturnRequest $record): void
     {
         $serial = $record->serialNumber;
-        if ($serial) {
-            $serial->update(['status' => SerialNumber::STATUS_SOLD]);
+        // SN yang tak pernah dipindah dari SOLD (repair_and_return / no_fault_found)
+        // tidak perlu transisi — sudah benar milik customer.
+        if ($serial && $serial->status !== SerialNumber::STATUS_SOLD) {
+            SerialNumber::transitionTo($serial, SerialNumber::STATUS_SOLD);
         }
     }
 
@@ -100,15 +120,13 @@ class ReturnWorkflowService
         if ($record->serial_number_id) {
             $oldSn = $record->serialNumber;
             if ($oldSn) {
-                $oldSn->update([
-                    'status' => SerialNumber::STATUS_DEFECTIVE,
+                SerialNumber::transitionTo($oldSn, SerialNumber::STATUS_DEFECTIVE, [
                     'outbound_date' => null,
                 ]);
             }
 
             $newSn = SerialNumber::findOrFail($newSerialNumberId);
-            $newSn->update([
-                'status'        => SerialNumber::STATUS_SOLD,
+            SerialNumber::transitionTo($newSn, SerialNumber::STATUS_SOLD, [
                 'customer_id'   => $record->customer_id,
                 'outbound_date' => now(),
             ]);
@@ -142,19 +160,22 @@ class ReturnWorkflowService
             $newSnId = null;
 
             if ($data['resolution_type'] === ReturnRequest::RESOLUTION_REPLACEMENT) {
-                // 1. Tandai SN lama telah dikembalikan ke vendor
-                $record->serialNumber->update([
-                    'status' => SerialNumber::STATUS_RETURNED
+                // 1. Tandai SN lama telah dikembalikan ke vendor (SOLD → RETURNED)
+                SerialNumber::transitionTo($record->serialNumber, SerialNumber::STATUS_RETURNED);
+
+                // 2. Daftarkan SN baru yang diterima dari vendor.
+                //    SN baru diciptakan sebagai AVAILABLE dulu, lalu di-transition ke SOLD
+                //    (klaim vendor = vendor kirim unit pengganti, langsung milik customer).
+                $newSn = SerialNumber::create([
+                    'product_id'     => $record->serialNumber->product_id,
+                    'warehouse_id'   => $record->serialNumber->warehouse_id,
+                    'serial_number'  => $data['new_serial_number'],
+                    'status'         => SerialNumber::STATUS_AVAILABLE,
+                    'customer_id'    => $record->customer_id,
+                    'inbound_date'   => now(),
                 ]);
 
-                // 2. Daftarkan SN baru yang diterima dari vendor
-                $newSn = SerialNumber::create([
-                    'product_id' => $record->serialNumber->product_id,
-                    'warehouse_id' => $record->serialNumber->warehouse_id,
-                    'serial_number' => $data['new_serial_number'],
-                    'status' => SerialNumber::STATUS_SOLD, // Langsung dialokasikan untuk klien
-                    'customer_id' => $record->customer_id,
-                    'inbound_date' => now(),
+                SerialNumber::transitionTo($newSn, SerialNumber::STATUS_SOLD, [
                     'outbound_date' => now(),
                 ]);
 
@@ -172,13 +193,36 @@ class ReturnWorkflowService
 
             }
 
-            // 4. Perbarui status dokumen ReturnRequest
+            // 4. Tutup klaim vendor terkait.
+            $record->vendorClaim?->update([
+                'status'        => VendorClaim::STATUS_COMPLETED,
+                'received_at'   => now(),
+            ]);
+
+            // 5. Perbarui status dokumen ReturnRequest
             $record->update([
                 'status' => ReturnRequest::STATUS_READY_FOR_RETURN,
                 'back_from_vendor_date' => now(),
                 'resolution_type' => $data['resolution_type'],
                 'new_serial_number_id' => $newSnId,
                 'vendor_notes' => $data['vendor_notes'],
+            ]);
+        });
+    }
+
+    /**
+     * Konfirmasi refund yang sudah diselesaikan Finance.
+     * Refund mengikuti lifecycle Finance: FinancialRecord (piutang) dibuat saat
+     * set_resolution (REFUND_PENDING), lalu markRefundCompleted() menutupnya.
+     *
+     * refund_status: pending → completed, RMA: REFUND_PENDING → READY_FOR_RETURN.
+     */
+    public function markRefundCompleted(ReturnRequest $record): void
+    {
+        DB::transaction(function () use ($record) {
+            $record->update([
+                'refund_status' => ReturnRequest::REFUND_COMPLETED,
+                'status'        => ReturnRequest::STATUS_READY_FOR_RETURN,
             ]);
         });
     }
