@@ -43,7 +43,7 @@ class SupplierWarrantyResource extends Resource
     {
         return $table
             ->columns([
-                Tables\Columns\TextColumn::make('Return_number')->label('No. RMA')->weight('bold'),
+                Tables\Columns\TextColumn::make('rma_number')->label('No. RMA')->weight('bold'),
                 Tables\Columns\TextColumn::make('serialNumber.serial_number')->label('SN Unit'),
                 Tables\Columns\TextColumn::make('status')->badge(),
             ])
@@ -66,11 +66,14 @@ class SupplierWarrantyResource extends Resource
                     ->visible(fn ($record) => $record->status === ReturnRequest::STATUS_SENT_TO_VENDOR)
                     ->form([
                         Forms\Components\Radio::make('resolution_type')
-                            ->options(['repaired' => 'Repair (SN Tetap)', 'replaced' => 'Replace (SN Baru)'])
+                            ->options([
+                                ReturnRequest::RESOLUTION_REPAIR_AND_RETURN => 'Repair (SN Tetap)',
+                                ReturnRequest::RESOLUTION_REPLACEMENT       => 'Replace (SN Baru)',
+                            ])
                             ->inline()->live()->required(),
                         Forms\Components\TextInput::make('new_serial_number')
-                            ->visible(fn (Forms\Get $get) => $get('resolution_type') === 'replaced')
-                            ->required(fn (Forms\Get $get) => $get('resolution_type') === 'replaced')
+                            ->visible(fn (Forms\Get $get) => $get('resolution_type') === ReturnRequest::RESOLUTION_REPLACEMENT)
+                            ->required(fn (Forms\Get $get) => $get('resolution_type') === ReturnRequest::RESOLUTION_REPLACEMENT)
                             ->unique('nx_serial_number', 'serial_number'),
                         Forms\Components\Textarea::make('vendor_notes')->required(),
                     ])

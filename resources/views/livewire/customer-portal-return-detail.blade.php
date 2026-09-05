@@ -81,28 +81,15 @@
                 </p>
             </div>
 
-            {{-- Warranty --}}
+            {{-- Issue Type --}}
             <div class="p-6 border rounded-2xl bg-secondary-light ring-1 ring-border-light dark:bg-secondary-dark dark:ring-border-dark">
-                <p class="text-xs text-gray-500 dark:text-gray-400">Jenis Garansi</p>
+                <p class="text-xs text-gray-500 dark:text-gray-400">Jenis Kendala</p>
                 <p class="mt-1 font-semibold text-black dark:text-white capitalize">
-                    {{ $returnRequest->warranty_type === 'supplier' ? 'Garansi Supplier' : 'Garansi Toko' }}
+                    {{ \App\Models\AfterSales\ReturnRequest::getIssueTypeLabels()[$returnRequest->issue_type] ?? '-' }}
                 </p>
                 @if($returnRequest->resolution_type)
                     <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">
                         Penyelesaian: <span class="font-medium text-black dark:text-white">{{ ucfirst($returnRequest->resolution_type) }}</span>
-                    </p>
-                @endif
-            </div>
-
-            {{-- Supplier --}}
-            <div class="p-6 border rounded-2xl bg-secondary-light ring-1 ring-border-light dark:bg-secondary-dark dark:ring-border-dark">
-                <p class="text-xs text-gray-500 dark:text-gray-400">Supplier / Distributor</p>
-                <p class="mt-1 font-semibold text-black dark:text-white">
-                    {{ $returnRequest->serialNumber?->supplier?->name ?? 'N/A' }}
-                </p>
-                @if($returnRequest->procurementClaim)
-                    <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">
-                        No. PO: <span class="font-mono text-black dark:text-white">{{ $returnRequest->procurementClaim->po_number }}</span>
                     </p>
                 @endif
             </div>

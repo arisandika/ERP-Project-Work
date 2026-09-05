@@ -31,7 +31,10 @@ class PurchaseOrderResource extends Resource
 
     public static function getNavigationBadge(): ?string
     {
-        return static::getModel()::count();
+        return static::getModel()::whereNotIn('status', [
+            PurchaseOrderStatus::COMPLETED->value,
+            PurchaseOrderStatus::CANCELLED->value,
+        ])->count();
     }
 
     public static function updateTotals(Forms\Get $get, Forms\Set $set): void

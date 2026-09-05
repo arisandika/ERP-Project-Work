@@ -199,17 +199,21 @@
                         <div class="fi-fo-field-wrp">
                             <div class="grid gap-y-2">
                                 <label class="text-sm font-medium leading-6 text-black dark:text-white">
-                                    Jenis Klaim <sup class="text-red-600 dark:text-red-400">*</sup>
+                                    Jenis Kendala <sup class="text-red-600 dark:text-red-400">*</sup>
                                 </label>
                                 <div class="fi-input-wrp py-1.5 flex rounded-2xl shadow-sm ring-1 transition duration-75 bg-white dark:bg-white/5 ring-gray-950/10 dark:ring-white/20 focus-within:ring-2 focus-within:ring-blue-600 dark:focus-within:ring-blue-500 overflow-hidden">
-                                    <select wire:model="warranty_type"
+                                    <select wire:model="issue_type"
                                         class="fi-input block w-full border-none py-1.5 text-base text-black transition duration-75 focus:ring-0 outline-none dark:text-white sm:text-sm sm:leading-6 bg-white/0 ps-3 pe-3 dark:bg-transparent">
-                                        <option value="">-- Pilih jenis klaim --</option>
-                                        <option value="supplier">Garansi Supplier / Distributor</option>
-                                        <option value="store">Garansi Toko (Service Internal)</option>
+                                        <option value="">-- Pilih jenis kendala --</option>
+                                        <option value="damaged">Barang rusak / cacat</option>
+                                        <option value="not_working">Barang tidak berfungsi</option>
+                                        <option value="wrong_item">Barang yang diterima tidak sesuai</option>
+                                        <option value="incomplete">Barang kurang / tidak lengkap</option>
+                                        <option value="shipping_damage">Kerusakan saat pengiriman</option>
+                                        <option value="other">Lainnya</option>
                                     </select>
                                 </div>
-                                @error('warranty_type') <p class="text-sm text-red-600 dark:text-red-400">{{ $message }}</p> @enderror
+                                @error('issue_type') <p class="mt-2 text-sm text-red-600 dark:text-red-400">{{ $message }}</p> @enderror
                             </div>
                         </div>
 
@@ -222,7 +226,20 @@
                                     <textarea wire:model="issue_description" rows="4" placeholder="Jelaskan kendala pada produk Anda secara detail..."
                                         class="fi-input block w-full border-none py-1.5 text-base text-black transition duration-75 placeholder:text-gray-400 focus:ring-0 outline-none dark:text-white dark:placeholder:text-gray-500 sm:text-sm sm:leading-6 bg-white/0 ps-3 pe-3"></textarea>
                                 </div>
-                                @error('issue_description') <p class="text-sm text-red-600 dark:text-red-400">{{ $message }}</p> @enderror
+                                @error('issue_description') <p class="mt-2 text-sm text-red-600 dark:text-red-400">{{ $message }}</p> @enderror
+                            </div>
+                        </div>
+
+                        {{-- Checkbox: apakah produk ini memiliki Nomor Seri (SN)? --}}
+                        <div class="fi-fo-field-wrp">
+                            <div class="flex items-start gap-3">
+                                <div class="flex items-center pt-0.5 h-5 shrink-0">
+                                    <input type="checkbox" wire:model="has_serial" value="1"
+                                        class="w-4 h-4 text-main-primary border-gray-300 rounded focus:ring-main-primary dark:bg-white/10 dark:border-gray-600">
+                                </div>
+                                <label class="text-sm leading-5 text-black dark:text-white">
+                                    Produk ini memiliki Nomor Seri (SN). Saya akan scan/masukkan SN unit yang rusak.
+                                </label>
                             </div>
                         </div>
 
@@ -245,8 +262,8 @@
                     </button>
 
                     @if ($productIsSerialized)
-                        <h3 class="text-lg font-semibold text-black dark:text-white">Scan Serial Number Barang</h3>
-                        <p class="mt-1 text-sm text-gray-600 dark:text-gray-400">Produk ini memiliki SN unik. Silakan scan barcode/QR SN yang tertera pada unit fisik.</p>
+                        <h3 class="text-lg font-semibold text-black dark:text-white">Identifikasi Barang (Scan SN)</h3>
+                        <p class="mt-1 text-sm text-gray-600 dark:text-gray-400">Produk ini memiliki SN. Scan barcode/QR atau masukkan SN secara manual.</p>
 
                         <div class="mt-5">
                             @if ($matchedSerialNumberId)
@@ -267,10 +284,27 @@
                                     </button>
                                 </div>
                             @else
-                                @include('livewire.partials.sn-scanner', ['wireModel' => 'scannedSerialNumber'])
-                                @error('scannedSerialNumber')
-                                    <p class="mt-3 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
-                                @enderror
+                                <div x-data="{ showManual: false }">
+                                    @include('livewire.partials.sn-scanner', ['wireModel' => 'scannedSerialNumber'])
+                                    @error('scannedSerialNumber')
+                                        <p class="mt-3 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
+                                    @enderror
+
+                                    <div class="mt-4 text-center">
+                                        <button type="button" @click="showManual = true"
+                                            class="text-sm text-gray-500 hover:text-black dark:hover:text-white underline decoration-gray-400 dark:decoration-gray-500">
+                                            Masukkan SN secara manual
+                                        </button>
+                                    </div>
+
+                                    <div x-show="showManual" class="mt-3" x-cloak>
+                                        <div class="fi-input-wrp py-1.5 flex rounded-2xl shadow-sm ring-1 transition duration-75 bg-white dark:bg-white/5 ring-gray-950/10 dark:ring-white/20 focus-within:ring-2 focus-within:ring-blue-600 dark:focus-within:ring-blue-500 overflow-hidden">
+                                            <input type="text" wire:model="scannedSerialNumber"
+                                                placeholder="Masukkan SN di sini..."
+                                                class="fi-input block w-full border-none py-1.5 text-base text-black transition duration-75 placeholder:text-gray-400 focus:ring-0 outline-none dark:text-white dark:placeholder:text-gray-500 sm:text-sm sm:leading-6 bg-white/0 ps-3 pe-3" />
+                                        </div>
+                                    </div>
+                                </div>
                             @endif
                         </div>
                     @else
@@ -286,7 +320,7 @@
                                     <input type="number" wire:model="qty" min="1" max="{{ $selectedItem->qty }}"
                                         class="fi-input block w-full border-none py-1.5 text-base text-black transition duration-75 focus:ring-0 outline-none dark:text-white sm:text-sm sm:leading-6 bg-white/0 ps-3 pe-3" />
                                 </div>
-                                @error('qty') <p class="text-sm text-red-600 dark:text-red-400">{{ $message }}</p> @enderror
+                                @error('qty') <p class="mt-2 text-sm text-red-600 dark:text-red-400">{{ $message }}</p> @enderror
                             </div>
                         </div>
                     @endif
@@ -360,7 +394,7 @@
                             <span>Produk</span><span class="font-medium text-black dark:text-white">{{ $selectedItem?->item_name }}</span>
                         </div>
                         <div class="flex justify-between text-gray-600 dark:text-gray-400">
-                            <span>Jenis Klaim</span><span class="font-medium text-black capitalize dark:text-white">{{ $warranty_type }}</span>
+                            <span>Jenis Kendala</span><span class="font-medium text-black capitalize dark:text-white">{{ \App\Models\AfterSales\ReturnRequest::getIssueTypeLabels()[$issue_type] ?? $issue_type }}</span>
                         </div>
                         @if ($productIsSerialized)
                             <div class="flex justify-between text-gray-600 dark:text-gray-400">

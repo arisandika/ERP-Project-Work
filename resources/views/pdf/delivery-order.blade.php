@@ -4,7 +4,7 @@
 <head>
     <title>Surat Jalan - {{ $record->do_number }}</title>
     <style>
-        @page {
+        @@page {
             margin: 25px 30px;
         }
 

@@ -6,7 +6,6 @@ use App\Models\CRM\Customer;
 use App\Models\Inventory\SerialNumber;
 use App\Models\Sales\Invoice;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Route;
 use Livewire\Component;
 use Livewire\WithFileUploads;
 
@@ -28,8 +27,9 @@ class CustomerPortalReturnCreate extends Component
     // ==== STEP 2: Pilih item + keluhan ====
     public ?int $selected_invoice_item_id = null;
     public $selectedItem                  = null; // InvoiceItem model, dipilih dari invoiceItems
-    public string $warranty_type          = '';
+    public string $issue_type             = '';
     public string $issue_description      = '';
+    public bool $has_serial               = true; // customer konfirmasi apakah produk ada SN
 
     // ==== STEP 3: SN scan / qty ====
     public bool $productIsSerialized        = false;
@@ -117,13 +117,22 @@ class CustomerPortalReturnCreate extends Component
     public function proceedToStep3()
     {
         $this->validate([
-            'warranty_type'     => 'required|in:supplier,store',
+            'issue_type'        => 'required|in:' . ReturnRequest::ISSUE_DAMAGED . ',' . ReturnRequest::ISSUE_NOT_WORKING . ',' . ReturnRequest::ISSUE_WRONG_ITEM . ',' . ReturnRequest::ISSUE_INCOMPLETE . ',' . ReturnRequest::ISSUE_SHIPPING_DAMAGE . ',' . ReturnRequest::ISSUE_OTHER,
             'issue_description' => 'required|string|min:10|max:1000',
+            'has_serial'        => 'boolean',
         ]);
 
         // cek apakah produk ini serialized
         $product                   = \App\Models\Inventory\Product::find($this->selectedItem->item_id);
         $this->productIsSerialized = (bool) ($product->is_serialized ?? false);
+
+        // Jika customer bilang tidak ada SN (atau produk non-serialized), langsung ke step 4 qty
+        if (!$this->has_serial || !$this->productIsSerialized) {
+            $this->productIsSerialized = false;
+            $this->qty = $this->selectedItem->qty;
+            $this->step = 4;
+            return;
+        }
 
         $this->step = 3;
     }
@@ -211,10 +220,53 @@ class CustomerPortalReturnCreate extends Component
         DB::beginTransaction();
 
         try {
+            if ($this->productIsSerialized && ! $this->matchedSerialNumberId) {
+                $this->addError('evidenceUploads', 'Silakan scan SN produk terlebih dahulu.');
+                return;
+            }
+
+            // DUPLICATE GUARD (server-side, fokus race/tab ganda — bukan cuma livewire listener).
+            // Dijalankan SEBELUM upload file biar gak ninggal evidence orphan kalau ditolak.
+            $activeStatuses = [
+                ReturnRequest::STATUS_SUBMITTED,
+                ReturnRequest::STATUS_UNDER_REVIEW,
+                ReturnRequest::STATUS_APPROVED,
+                ReturnRequest::STATUS_WAITING_FOR_RETURN,
+                ReturnRequest::STATUS_RECEIVED,
+                ReturnRequest::STATUS_SENT_TO_VENDOR,
+                ReturnRequest::STATUS_INTERNAL_REPAIR,
+                ReturnRequest::STATUS_READY_FOR_RETURN,
+            ];
+
+            if ($this->productIsSerialized) {
+                $alreadyClaimed = ReturnRequest::where('customer_id', $this->customer->id)
+                    ->where('serial_number_id', $this->matchedSerialNumberId)
+                    ->whereIn('status', $activeStatuses)
+                    ->exists();
+            } else {
+                $alreadyClaimed = ReturnRequest::where('customer_id', $this->customer->id)
+                    ->where('invoice_item_id', $this->selectedItem->id)
+                    ->whereIn('status', $activeStatuses)
+                    ->exists();
+            }
+
+            if ($alreadyClaimed) {
+                DB::rollBack();
+                $this->addError('evidenceUploads', 'Produk ini sudah memiliki pengajuan return yang sedang berjalan. Tunggu proses selesai untuk mengajukan ulang.');
+                return;
+            }
+
             $paths = [];
             foreach ($this->evidenceUploads as $file) {
                 $paths[] = $file->store('rma-evidence/' . $this->customer->id, 'public');
             }
+
+            // Auto-determine warranty route (supplier vs store) from serial number supplier
+            $serial = $this->productIsSerialized
+                ? SerialNumber::find($this->matchedSerialNumberId)
+                : null;
+
+            $warrantyType = ReturnRequest::resolveWarrantyType($serial);
 
             ReturnRequest::create([
                 'rma_number'        => ReturnRequest::generateRmaNumber(),
@@ -224,15 +276,16 @@ class CustomerPortalReturnCreate extends Component
                 'serial_number_id'  => $this->productIsSerialized ? $this->matchedSerialNumberId : null,
                 'product_id'        => $this->productIsSerialized ? null : $this->selectedItem->item_id,
                 'qty'               => $this->productIsSerialized ? 1 : $this->qty,
-                'warranty_type'     => $this->warranty_type,
-                'status'            => ReturnRequest::STATUS_RECEIVED,
-                'received_date'     => now(), // <-- tambahkan ini
+                'warranty_type'     => $warrantyType,
+                'issue_type'        => $this->issue_type,
+                'status'            => ReturnRequest::STATUS_SUBMITTED,
+                'received_date'     => null,
                 'issue_description' => $this->issue_description,
                 'evidence_files'    => $paths,
                 'created_by'        => null,
                 'source'            => ReturnRequest::SOURCE_CUSTOMER_PORTAL,
             ]);
-            
+
             DB::commit();
 
             session()->flash('message', 'Pengajuan return berhasil dikirim. Tim kami akan segera memproses.');
