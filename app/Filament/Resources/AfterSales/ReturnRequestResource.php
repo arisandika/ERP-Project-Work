@@ -131,7 +131,8 @@ class ReturnRequestResource extends Resource
                     ->label('Status')
                     ->badge()
                     ->colors([
-                        'gray' => ReturnRequest::STATUS_RECEIVED,
+                        'gray' => ReturnRequest::STATUS_SUBMITTED,
+                        'blue' => ReturnRequest::STATUS_RECEIVED,
                         'warning' => ReturnRequest::STATUS_SENT_TO_VENDOR,
                         'danger' => ReturnRequest::STATUS_INTERNAL_REPAIR,
                         'info' => ReturnRequest::STATUS_READY_FOR_RETURN,
@@ -142,6 +143,17 @@ class ReturnRequestResource extends Resource
             ])
             ->actions([
                 Tables\Actions\EditAction::make(),
+                // Terima barang dari klien (submitted -> received)
+                Tables\Actions\Action::make('receive_from_client')
+                    ->label('Terima Barang')
+                    ->icon('heroicon-o-arrow-down-tray')
+                    ->color('primary')
+                    ->visible(fn($record) => $record->status === ReturnRequest::STATUS_SUBMITTED)
+                    ->requiresConfirmation()
+                    ->action(fn($record) => $record->update([
+                        'status' => ReturnRequest::STATUS_RECEIVED,
+                        'received_date' => now(),
+                    ])),
                 // Tombol "Serahkan ke Klien" berada di pintu masuk (CS)
                 Tables\Actions\Action::make('return_to_client')
                     ->label('Selesaikan (Serahkan ke Klien)')

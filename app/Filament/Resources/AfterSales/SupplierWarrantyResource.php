@@ -43,7 +43,7 @@ class SupplierWarrantyResource extends Resource
     {
         return $table
             ->columns([
-                Tables\Columns\TextColumn::make('Return_number')->label('No. RMA')->weight('bold'),
+                Tables\Columns\TextColumn::make('rma_number')->label('No. RMA')->weight('bold'),
                 Tables\Columns\TextColumn::make('serialNumber.serial_number')->label('SN Unit'),
                 Tables\Columns\TextColumn::make('status')->badge(),
             ])

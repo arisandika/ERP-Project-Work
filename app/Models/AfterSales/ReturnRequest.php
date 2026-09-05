@@ -68,6 +68,7 @@ class ReturnRequest extends Model
     public const SOURCE_CUSTOMER_PORTAL = 'customer_portal';
 
     // Ganti Enum dengan Class Constants
+    public const STATUS_SUBMITTED          = 'submitted';
     public const STATUS_RECEIVED           = 'received';
     public const STATUS_SENT_TO_VENDOR     = 'sent_to_vendor';
     public const STATUS_INTERNAL_REPAIR    = 'internal_repair';
@@ -79,11 +80,12 @@ class ReturnRequest extends Model
     public static function getStatusLabels(): array
     {
         return [
-            self::STATUS_RECEIVED           => 'Di Gudang',
+            self::STATUS_SUBMITTED          => 'Pengajuan Diterima',
+            self::STATUS_RECEIVED           => 'Barang Diterima',
             self::STATUS_SENT_TO_VENDOR     => 'Di Vendor',
             self::STATUS_INTERNAL_REPAIR    => 'Proses Internal',
-            self::STATUS_READY_FOR_RETURN   => 'Siap Diambil Klien',
-            self::STATUS_RETURNED_TO_CLIENT => 'Selesai',
+            self::STATUS_READY_FOR_RETURN   => 'Siap Dikembalikan',
+            self::STATUS_RETURNED_TO_CLIENT => 'Dikembalikan ke Klien',
             self::STATUS_REJECTED           => 'Ditolak',
         ];
     }

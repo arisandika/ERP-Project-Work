@@ -37,13 +37,9 @@ class InternalRepairResource extends Resource
     {
         return $table
             ->columns([
-                Tables\Columns\TextColumn::make('Return_number')
-                    ->label('No. Return')
+                Tables\Columns\TextColumn::make('rma_number')
+                    ->label('No. RMA')
                     ->weight('bold')
-                    ->searchable(),
-
-                Tables\Columns\TextColumn::make('serialNumber.serial_number')
-                    ->label('SN Unit Rusak')
                     ->searchable(),
 
                 Tables\Columns\TextColumn::make('issue_description')

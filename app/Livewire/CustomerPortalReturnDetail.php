@@ -31,6 +31,7 @@ class CustomerPortalReturnDetail extends Component
     public function getStatusBadgeColor(string $status): array
     {
         return match ($status) {
+            ReturnRequest::STATUS_SUBMITTED          => ['bg' => 'bg-slate-100 dark:bg-slate-900/20', 'text' => 'text-slate-600 dark:text-slate-400', 'dot' => '#64748b'],
             ReturnRequest::STATUS_RECEIVED           => ['bg' => 'bg-blue-100 dark:bg-blue-900/20', 'text' => 'text-blue-600 dark:text-blue-400', 'dot' => '#2563eb'],
             ReturnRequest::STATUS_SENT_TO_VENDOR     => ['bg' => 'bg-purple-100 dark:bg-purple-900/20', 'text' => 'text-purple-600 dark:text-purple-400', 'dot' => '#9333ea'],
             ReturnRequest::STATUS_INTERNAL_REPAIR    => ['bg' => 'bg-yellow-100 dark:bg-yellow-900/20', 'text' => 'text-yellow-600 dark:text-yellow-400', 'dot' => '#ca8a04'],

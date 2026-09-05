@@ -23,6 +23,28 @@ class ViewReturnRequest extends ViewRecord
         return [
             Actions\EditAction::make(),
 
+            // 0. TERIMA BARANG DARI KLIEN (submitted -> received)
+            Actions\Action::make('receive_from_client')
+                ->label('Terima Barang')
+                ->icon('heroicon-o-arrow-down-tray')
+                ->color('primary')
+                ->visible(fn (ReturnRequest $record) => $record->status === ReturnRequest::STATUS_SUBMITTED)
+                ->requiresConfirmation()
+                ->modalHeading('Terima Barang Return')
+                ->modalDescription('Konfirmasi barang sudah diterima dan diperiksa dari klien.')
+                ->action(function (ReturnRequest $record) {
+                    $record->update([
+                        'status' => ReturnRequest::STATUS_RECEIVED,
+                        'received_date' => now(),
+                    ]);
+
+                    \Filament\Notifications\Notification::make()
+                        ->title('Barang Diterima')
+                        ->body("RMA {$record->rma_number} diterima. Siap dilakukan pengecekan.")
+                        ->success()
+                        ->send();
+                }),
+
             // 1. KIRIM KE VENDOR
             Actions\Action::make('send_to_vendor')
                 ->label('Kirim ke Vendor')
@@ -119,6 +141,7 @@ class ViewReturnRequest extends ViewRecord
                 ->label('Tolak Garansi')
                 ->color('danger')
                 ->visible(fn (ReturnRequest $record) => in_array($record->status, [
+                    ReturnRequest::STATUS_SUBMITTED,
                     ReturnRequest::STATUS_RECEIVED,
                     ReturnRequest::STATUS_SENT_TO_VENDOR,
                 ]))
