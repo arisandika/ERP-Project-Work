@@ -156,7 +156,7 @@ class ReturnRequestResource extends Resource
                     ])),
                 // Tombol "Serahkan ke Klien" berada di pintu masuk (CS)
                 Tables\Actions\Action::make('return_to_client')
-                    ->label('Selesaikan (Serahkan ke Klien)')
+                    ->label('Serahkan ke Klien')
                     ->icon('heroicon-o-check-circle')
                     ->color('success')
                     ->visible(fn($record) => $record->status === ReturnRequest::STATUS_READY_FOR_RETURN)
@@ -172,7 +172,6 @@ class ReturnRequestResource extends Resource
 
     public static function canViewAny(): bool
     {
-        // TODO: Refactor RBAC for production.
         // Ganti dengan otorisasi granular (misal: 'customer_service') saat akan rilis.
         return auth()->user()->hasRole(['super_admin', 'inventory_employees']);
     }

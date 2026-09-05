@@ -40,11 +40,21 @@ class ReturnWorkflowService
                     $newSnId = $newSn->id;
                 }
 
-                // 3. Kurangi stok global produk (serialized: SN punya product_id;
-                //    non-serialized: unit asli dicatat lewat product_id di RMA)
-                DB::table('nx_products')
-                    ->where('id', $newSn?->product_id ?? $record->product_id)
-                    ->decrement('stock', $record->qty ?? 1);
+                // 3. Unit berseri: alokasi SN pengganti sudah cukup (SN barunya di-SOLD,
+                //    stok 'available' produk dihitung dari jumlah SN berstatus AVAILABLE).
+                //    Unit non-seri: kurangi stok gudang lewat ProductStock (qty_available).
+                if (! $record->serial_number_id && $record->product_id) {
+                    $stock = \App\Models\Inventory\ProductStock::where('product_id', $record->product_id)
+                        ->where('qty_available', '>', 0)
+                        ->orderByDesc('qty_available')
+                        ->first();
+
+                    if ($stock) {
+                        $qty = (int) ($record->qty ?? 1);
+                        $stock->decrement('qty_available', $qty);
+                        $stock->increment('sold_stock', $qty);
+                    }
+                }
 
                 // 4. Catat transaksi barang keluar (Delivery) — hanya jika ada SN
                 if ($newSn) {
