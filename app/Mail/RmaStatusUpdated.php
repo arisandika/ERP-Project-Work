@@ -22,7 +22,7 @@ class RmaStatusUpdated extends Mailable
 
     public function envelope(): Envelope
     {
-        $statusLabel = ReturnRequest::getStatusLabels()[$this->returnRequest->status] ?? $this->returnRequest->status;
+        $statusLabel = ReturnRequest::getCustomerStatusLabels()[$this->returnRequest->status] ?? $this->returnRequest->status;
 
         return new Envelope(
             subject: "Update Status RMA {$this->returnRequest->rma_number} — {$statusLabel}",
@@ -31,7 +31,7 @@ class RmaStatusUpdated extends Mailable
 
     public function content(): Content
     {
-        $statusLabel = ReturnRequest::getStatusLabels()[$this->returnRequest->status] ?? $this->returnRequest->status;
+        $statusLabel = ReturnRequest::getCustomerStatusLabels()[$this->returnRequest->status] ?? $this->returnRequest->status;
         $portalUrl = route('customer-portal.return.view', $this->returnRequest->rma_number);
 
         return new Content(

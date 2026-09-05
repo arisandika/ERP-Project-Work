@@ -45,7 +45,7 @@ class CustomerPortalReturnDetail extends Component
     public function render()
     {
         return view('livewire.customer-portal-return-detail', [
-            'statusLabels' => ReturnRequest::getStatusLabels(),
+            'statusLabels' => ReturnRequest::getCustomerStatusLabels(),
         ])->layout('layouts.external');
     }
 }

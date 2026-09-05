@@ -90,6 +90,24 @@ class ReturnRequest extends Model
         ];
     }
 
+    /**
+     * Label status untuk Customer Portal.
+     * Bahasa/hal yang ditampilkan ke customer berbeda dari label internal:
+     * di sini status 'returned_to_client' ditampilkan sebagai 'Selesai'.
+     */
+    public static function getCustomerStatusLabels(): array
+    {
+        return [
+            self::STATUS_SUBMITTED          => 'Dalam Antrian',
+            self::STATUS_RECEIVED           => 'Barang Diterima',
+            self::STATUS_SENT_TO_VENDOR     => 'Sedang Ditangani Supplier',
+            self::STATUS_INTERNAL_REPAIR    => 'Sedang Diproses',
+            self::STATUS_READY_FOR_RETURN   => 'Siap Dikembalikan',
+            self::STATUS_RETURNED_TO_CLIENT => 'Selesai',
+            self::STATUS_REJECTED           => 'Ditolak',
+        ];
+    }
+
     public function serialNumber()
     {
         return $this->belongsTo(SerialNumber::class, 'serial_number_id');

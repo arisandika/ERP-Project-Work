@@ -60,7 +60,7 @@ class CustomerPortalDashboard extends Component
         return view('livewire.customer-portal-dashboard', [
             'returns'      => $returns,
             'stats'        => $stats,
-            'statusLabels' => ReturnRequest::getStatusLabels(),
+            'statusLabels' => ReturnRequest::getCustomerStatusLabels(),
         ])->layout('layouts.external'); // <- tambahkan ini
     }
 }
