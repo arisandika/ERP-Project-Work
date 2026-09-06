@@ -77,8 +77,8 @@ class ReturnRequestResource extends Resource
 
     public static function canViewAny(): bool
     {
-        // Ganti dengan otorisasi granular (misal: 'customer_service') saat akan rilis.
-        return auth()->user()->hasRole(['super_admin', 'inventory_employees']);
+        // Otorisasi role: warehouse_employees adalah tim yang memproses after-sales.
+        return auth()->user()->hasRole(['super_admin', 'warehouse_employees']);
     }
 
     public static function getPages(): array

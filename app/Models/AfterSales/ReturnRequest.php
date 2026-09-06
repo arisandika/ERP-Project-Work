@@ -35,6 +35,7 @@ class ReturnRequest extends Model
         'sent_to_vendor_date',
         'back_from_vendor_date',
         'returned_to_client_date',
+        'refund_status',
         'created_by',
         'source',
     ];

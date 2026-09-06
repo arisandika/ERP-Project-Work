@@ -139,7 +139,7 @@ class InternalRepairResource extends Resource
 
     public static function canViewAny(): bool
     {
-        return auth()->user()->hasRole(['super_admin', 'inventory_employees']);
+        return auth()->user()->hasRole(['super_admin', 'warehouse_employees']);
     }
 
     public static function getPages(): array

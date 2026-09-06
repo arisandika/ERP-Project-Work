@@ -31,6 +31,8 @@ class ViewReturnRequest extends ViewRecord
      *   - record_inspection: no_fault_found → WARRANTY_NA (bukan approved).
      *   - set_resolution: route ke entity InternalRepair / VendorClaim + refund_status=pending.
      *   - confirm_refund: refund selesai Finance → READY_FOR_RETURN.
+     *   - confirm_warranty_rejected: WARRANTY_REJECTED bukan terminal — unit fisik
+     *     sudah diterima, tetap harus kembali ke klien (→ READY_FOR_RETURN).
      */
     protected function getHeaderActions(): array
     {
@@ -181,7 +183,8 @@ class ViewReturnRequest extends ViewRecord
                         $data['warranty_decision'] = ReturnRequest::WARRANTY_NA;
                     }
 
-                    // Jika garansi ditolak, RMA langsung close sebagai warranty_rejected (terminal).
+                    // Garansi ditolak → WARRANTY_REJECTED (unit tetap dikembalikan ke klien,
+                    // status bukan terminal — lanjut via confirm_warranty_rejected → READY_FOR_RETURN).
                     if (($data['warranty_decision'] ?? null) === ReturnRequest::WARRANTY_REJECTED) {
                         $record->update([
                             'inspection_result' => $data['inspection_result'] ?? null,
@@ -239,12 +242,9 @@ class ViewReturnRequest extends ViewRecord
 
                     // SEBAGIAN PENYELESAIAN DIPINDAH KE SERVICE UNTUK ENTITY SEPARATE.
 
-                    // NO_FAULT_FOUND: resolve tanpa repair — langsung ready_for_return.
+                    // NO_FAULT_FOUND: resolve lewat service (guard + post-state SN aktif).
                     if ($resolution === ReturnRequest::RESOLUTION_NO_FAULT_FOUND) {
-                        $record->update([
-                            'resolution_type' => ReturnRequest::RESOLUTION_NO_FAULT_FOUND,
-                            'status'          => ReturnRequest::STATUS_READY_FOR_RETURN,
-                        ]);
+                        app(ReturnWorkflowService::class)->resolveNoFaultFound($record);
                         \Filament\Notifications\Notification::make()
                             ->title('Selesai')
                             ->body('Tidak ditemukan kerusakan. Unit dikembalikan ke klien.')
@@ -308,7 +308,26 @@ class ViewReturnRequest extends ViewRecord
                         ->success()->send();
                 }),
 
-            // 9. KEMBALIKAN KE KLIEN (ready_for_return -> returned_to_client) — penutupan
+            // 9. GARANSI DITOLAK → SIAP KEMBALI (warranty_rejected -> ready_for_return)
+            //    Unit fisik sudah diterima, tetap wajib dikembalikan ke klien.
+            Actions\Action::make('confirm_warranty_rejected')
+                ->label('Siap Dikembalikan (Garansi Ditolak)')
+                ->icon('heroicon-o-arrow-left-circle')
+                ->color('warning')
+                ->visible(fn (ReturnRequest $record) => $record->status === ReturnRequest::STATUS_WARRANTY_REJECTED)
+                ->requiresConfirmation()
+                ->modalHeading('Kembalikan Unit ke Klien')
+                ->modalDescription('Garansi ditolak tetapi unit fisik ada di toko. Konfirmasi untuk mengembalikannya ke klien.')
+                ->action(function (ReturnRequest $record) {
+                    app(ReturnWorkflowService::class)->confirmWarrantyRejected($record);
+
+                    \Filament\Notifications\Notification::make()
+                        ->title('Unit Siap Dikembalikan')
+                        ->body("RMA {$record->rma_number} siap dikembalikan ke klien.")
+                        ->success()->send();
+                }),
+
+            // 10. KEMBALIKAN KE KLIEN (ready_for_return -> returned_to_client) — penutupan
             Actions\Action::make('return_to_client')
                 ->label('Kembalikan ke Klien')
                 ->icon('heroicon-o-paper-airplane')

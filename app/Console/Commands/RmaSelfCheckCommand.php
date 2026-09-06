@@ -4,6 +4,7 @@ namespace App\Console\Commands;
 
 use App\Models\AfterSales\ReturnRequest;
 use App\Models\Inventory\SerialNumber;
+use App\Services\AfterSales\ReturnWorkflowService;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\DB;
 
@@ -92,20 +93,113 @@ class RmaSelfCheckCommand extends Command
             }
             $check('status tak dikenal throw', $threw, '(tidak throw)');
 
-            // 2. Relasi InternalRepair ↔ ReturnRequest
+            // 2. Relasi InternalRepair ↔ ReturnRequest (SN melekat, status SOLD dari langkah 1e)
             $rma = ReturnRequest::create([
                 'rma_number'       => 'RMA-SELFCHECK-' . uniqid(),
                 'status'           => ReturnRequest::STATUS_APPROVED,
                 'warranty_type'    => 'store',
                 'issue_type'       => ReturnRequest::ISSUE_OTHER,
                 'issue_description'=> 'Self-check dummy.',
+                'serial_number_id' => $sn->id,
+                'product_id'       => $sn->product_id,
             ]);
             $rma->internalRepair()->create(['status' => 'pending']);
             $check('InternalRepair terhubung ke RMA', $rma->internalRepair->rma_id === $rma->id, "got " . $rma->internalRepair?->rma_id);
 
             // 3. Relasi VendorClaim ↔ ReturnRequest
-            $rma->vendorClaim()->create([]);
+            $rma->vendorClaim()->create([
+                'status' => \App\Models\AfterSales\VendorClaim::STATUS_SENT,
+            ]);
             $check('VendorClaim terhubung ke RMA', $rma->vendorClaim->rma_id === $rma->id, "got " . $rma->vendorClaim?->rma_id);
+
+            $svc = app(ReturnWorkflowService::class);
+            $threw = false;
+
+            // 4. Guard: markRefundCompleted throw kalau status bukan REFUND_PENDING
+            $threw = false;
+            try {
+                $svc->markRefundCompleted($rma);
+            } catch (\InvalidArgumentException $e) {
+                $threw = true;
+            }
+            $check('guard: markRefundCompleted throw pada status salah', $threw, '(tidak throw)');
+
+            // 5. VENDOR SEQUENCE: kirim → tolak klaim (unit tetap di vendor) → unit kembali → READY
+            app(\App\Services\ReturnService::class)->sendToVendor($rma, now());
+            $check('sendToVendor → SENT_TO_VENDOR', $rma->status === ReturnRequest::STATUS_SENT_TO_VENDOR, "got {$rma->status}");
+
+            // 5a. TOLAK klaim BELUM berarti unit kembali: RMA harus tetap SENT_TO_VENDOR
+            $svc->rejectVendorClaim($rma, 'Garansi tidak ditanggung supplier.');
+            $check('rejectVendorClaim → klaim rejected', $rma->vendorClaim->status === \App\Models\AfterSales\VendorClaim::STATUS_REJECTED, "got {$rma->vendorClaim->status}");
+            $check('rejectVendorClaim TIDAK pindahkan RMA (fisik di vendor)',
+                $rma->status === ReturnRequest::STATUS_SENT_TO_VENDOR, "got {$rma->status}");
+            $check('rejectVendorClaim TIDAK ubah SN status', $sn->status === SerialNumber::STATUS_SOLD, "got {$sn->status}");
+
+            // 5b. ANTARA: returnRejectedUnit SEBELUM claim rejected harus throw
+            $threw = false;
+            $rma->vendorClaim->update(['status' => \App\Models\AfterSales\VendorClaim::STATUS_SENT]);
+            try {
+                $svc->returnRejectedUnit($rma);
+            } catch (\InvalidArgumentException $e) {
+                $threw = true;
+            }
+            $rma->vendorClaim->update(['status' => \App\Models\AfterSales\VendorClaim::STATUS_REJECTED]);
+            $check('guard: returnRejectedUnit throw bila klaim belum rejected', $threw, '(tidak throw)');
+
+            // 5c. UNIT FISIK KEMBALI → READY_FOR_RETURN (baru di titik ini RMA pindah)
+            $svc->returnRejectedUnit($rma, 'Unit diterima kembali, tanpa penyelesaian.');
+            $check('returnRejectedUnit → klaim rejected → READY_FOR_RETURN',
+                $rma->status === ReturnRequest::STATUS_READY_FOR_RETURN, "got {$rma->status}");
+
+            // 6. WARRANTY_REJECTED non-terminal (kasus store/inspeksi): → READY_FOR_RETURN
+            $rma->update([
+                'status'           => ReturnRequest::STATUS_WARRANTY_REJECTED,
+                'warranty_decision'=> ReturnRequest::WARRANTY_REJECTED,
+            ]);
+            $svc->confirmWarrantyRejected($rma);
+            $check('WARRANTY_REJECTED → READY_FOR_RETURN (non-terminal)',
+                $rma->status === ReturnRequest::STATUS_READY_FOR_RETURN, "got {$rma->status}");
+
+            // 6b. Guard: confirmWarrantyRejected throw kalau status bukan WARRANTY_REJECTED
+            $threw = false;
+            try {
+                $svc->confirmWarrantyRejected($rma);
+            } catch (\InvalidArgumentException $e) {
+                $threw = true;
+            }
+            $check('guard: confirmWarrantyRejected throw pada status salah', $threw, '(tidak throw)');
+
+            // 7. SN post-state via transitionTo: RETURNED → SOLD valid (state-machine-guarded)
+            SerialNumber::transitionTo($sn, SerialNumber::STATUS_RETURNED);
+            SerialNumber::transitionTo($sn, SerialNumber::STATUS_SOLD);
+            $check('SN kembali ke klien via transitionTo (RETURNED→SOLD)',
+                $sn->status === SerialNumber::STATUS_SOLD, "got {$sn->status}");
+
+            // 8. NO_FAULT_FOUND revisit — pakai RMA kedua agar alur no-fault utuh
+            $rma2 = ReturnRequest::create([
+                'rma_number'        => 'RMA-SELFCHECK-2-' . uniqid(),
+                'status'            => ReturnRequest::STATUS_RECEIVED,
+                'warranty_type'     => 'store',
+                'issue_type'        => ReturnRequest::ISSUE_OTHER,
+                'issue_description' => 'Self-check no-fault.',
+                'serial_number_id'  => $sn->id,
+                'product_id'        => $sn->product_id,
+                'warranty_decision' => ReturnRequest::WARRANTY_NA,
+                'inspection_result' => ReturnRequest::INSPECTION_NO_FAULT_FOUND,
+                'resolution_type'   => ReturnRequest::RESOLUTION_NO_FAULT_FOUND,
+            ]);
+            $svc->resolveNoFaultFound($rma2);
+            $check('no_fault_found → READY_FOR_RETURN', $rma2->status === ReturnRequest::STATUS_READY_FOR_RETURN, "got {$rma2->status}");
+
+            // 8b. Guard: resolveNoFaultFound throw bila warranty belum approved/na
+            $threw = false;
+            $rma2->update(['status' => ReturnRequest::STATUS_RECEIVED, 'warranty_decision' => ReturnRequest::WARRANTY_PENDING]);
+            try {
+                $svc->resolveNoFaultFound($rma2);
+            } catch (\InvalidArgumentException $e) {
+                $threw = true;
+            }
+            $check('guard: no_fault throw bila warranty belum approved/na', $threw, '(tidak throw)');
 
             throw new \Exception('rollback');
         } catch (\Throwable $e) {
