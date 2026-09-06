@@ -64,6 +64,7 @@ class ReturnRequestResource extends Resource
                         ReturnRequest::STATUS_RECEIVED           => 'success',
                         ReturnRequest::STATUS_SENT_TO_VENDOR     => 'warning',
                         ReturnRequest::STATUS_INTERNAL_REPAIR    => 'info',
+                        ReturnRequest::STATUS_REFUND_PENDING     => 'warning',
                         ReturnRequest::STATUS_READY_FOR_RETURN   => 'primary',
                         ReturnRequest::STATUS_RETURNED_TO_CLIENT => 'success',
                         ReturnRequest::STATUS_REJECTED           => 'danger',
@@ -71,37 +72,13 @@ class ReturnRequestResource extends Resource
                         default                                  => 'gray',
                     })
                     ->formatStateUsing(fn (string $state): string => ReturnRequest::getStatusLabels()[$state] ?? $state),
-            ])
-            ->actions([
-                // Konfirmasi barang benar-benar sudah masuk ke toko / service center
-                // (customer biasanya ngajuin dulu, barang nyusul dikirim)
-                Tables\Actions\Action::make('mark_received')
-                    ->label('Barang Masuk')
-                    ->icon('heroicon-o-arrow-down-tray')
-                    ->color('primary')
-                    ->visible(fn (ReturnRequest $record) => $record->status === ReturnRequest::STATUS_SUBMITTED)
-                    ->requiresConfirmation()
-                    ->modalHeading('Konfirmasi Barang Masuk')
-                    ->modalDescription('Konfirmasi bahwa barang return sudah benar-benar diterima di toko / service center dari klien.')
-                    ->action(function (ReturnRequest $record) {
-                        $record->update([
-                            'status' => ReturnRequest::STATUS_RECEIVED,
-                            'received_date' => now(),
-                        ]);
-
-                        \Filament\Notifications\Notification::make()
-                            ->title('Barang Diterima')
-                            ->body("RMA {$record->rma_number} diterima. Masuk antrean pengecekan (servis/pengembalian).")
-                            ->success()
-                            ->send();
-                    }),
             ]);
     }
 
     public static function canViewAny(): bool
     {
-        // Ganti dengan otorisasi granular (misal: 'customer_service') saat akan rilis.
-        return auth()->user()->hasRole(['super_admin', 'inventory_employees']);
+        // Otorisasi role: warehouse_employees adalah tim yang memproses after-sales.
+        return auth()->user()->hasRole(['super_admin', 'warehouse_employees']);
     }
 
     public static function getPages(): array

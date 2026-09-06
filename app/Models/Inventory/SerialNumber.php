@@ -95,4 +95,57 @@ class SerialNumber extends Model
         return $this->hasMany(StockTransaction::class, 'serial_number_id')
             ->orderBy('transaction_date', 'desc');
     }
+
+    /**
+     * Central transition guard untuk status Serial Number.
+     *
+     * @param  self  $sn
+     * @param  string  $newStatus
+     * @param  array|null  $extra  Additional fields to update (customer_id, outbound_date, warehouse_id, etc.)
+     * @throws \InvalidArgumentException  When transition is not in whitelist
+     * @return void
+     */
+    public static function transitionTo(self $sn, string $newStatus, ?array $extra = []): void
+    {
+        $from = strtoupper($sn->status);
+        $to   = strtoupper($newStatus);
+
+        $allowed = [
+            self::STATUS_AVAILABLE   => [
+                self::STATUS_RESERVED,
+                self::STATUS_ON_DELIVERY,
+                self::STATUS_SOLD,
+                self::STATUS_DEFECTIVE,
+                self::STATUS_LOST,
+            ],
+            self::STATUS_RESERVED    => [
+                self::STATUS_SOLD,
+                self::STATUS_ON_DELIVERY,
+            ],
+            self::STATUS_ON_DELIVERY => [
+                self::STATUS_SOLD,
+            ],
+            self::STATUS_SOLD        => [
+                self::STATUS_DEFECTIVE,
+                self::STATUS_RETURNED,
+            ],
+            self::STATUS_DEFECTIVE   => [
+                self::STATUS_AVAILABLE,
+                self::STATUS_SOLD,       // reject/claim ditolak — unit tetap milik customer
+            ],
+            self::STATUS_RETURNED    => [
+                self::STATUS_SOLD,       // reject/claim ditolak — unit kembali ke customer
+            ],
+        ];
+
+        if (! isset($allowed[$from])) {
+            throw new \InvalidArgumentException("Status asal '$from' tidak memiliki transisi keluar yang valid.");
+        }
+
+        if (! in_array($to, $allowed[$from], true)) {
+            throw new \InvalidArgumentException("Transisi status SN tidak valid: '$from' → '$to'.");
+        }
+
+        $sn->update(array_merge(['status' => $to], $extra ?? []));
+    }
 }
