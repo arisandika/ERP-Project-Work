@@ -294,7 +294,7 @@ class AttendanceHistoryResource extends Resource
     {
         $query = parent::getEloquentQuery()->withoutGlobalScopes([
             SoftDeletingScope::class,
-        ])->with('shift');
+        ])->forAttendanceReporting()->with('shift');
 
         $user = auth()->user();
 

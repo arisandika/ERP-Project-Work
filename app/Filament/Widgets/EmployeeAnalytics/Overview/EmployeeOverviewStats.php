@@ -32,7 +32,8 @@ class EmployeeOverviewStats extends BaseWidget
         // ── Semua query dalam 1 batch, tidak N+1 ──────────────────────────
 
         // Attendance periode
-        $attendances = Attendance::where('employee_id', $employeeId)
+        $attendances = Attendance::forAttendanceReporting()
+            ->where('employee_id', $employeeId)
             ->whereBetween('date', [$start, $end])
             ->get(['status', 'clock_in', 'clock_out']);
 
@@ -120,7 +121,8 @@ class EmployeeOverviewStats extends BaseWidget
     private function getAttendanceMiniChart(int $employeeId, Carbon $start, Carbon $end): array
     {
         // Query per minggu, group by week number
-        $data = Attendance::where('employee_id', $employeeId)
+            $data = Attendance::forAttendanceReporting()
+                ->where('employee_id', $employeeId)
             ->whereBetween('date', [$start, $end])
             ->whereIn('status', ['hadir', 'terlambat'])
             ->selectRaw('WEEK(date) as week, COUNT(*) as count')

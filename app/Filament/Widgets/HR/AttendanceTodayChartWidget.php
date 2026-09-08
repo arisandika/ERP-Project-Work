@@ -18,8 +18,12 @@ class AttendanceTodayChartWidget extends ChartWidget
 
     protected function getData(): array
     {
-        $today = Attendance::whereDate('date', now())->get();
-        $totalEmployees = Employee::where('status', 'active')->count();
+        $today = Attendance::forAttendanceReporting()
+            ->whereDate('date', now())
+            ->get();
+        $totalEmployees = Employee::forAttendanceReporting()
+            ->where('status', 'active')
+            ->count();
 
         $hadir = $today->where('status', 'hadir')->count();
         $terlambat = $today->where('status', 'terlambat')->count();

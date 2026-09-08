@@ -28,7 +28,8 @@ class AttendanceStatusDonutChart extends ApexChartWidget
         $series = [];
 
         foreach ($statuses as $status) {
-            $series[] = Attendance::where('employee_id', $employee->id)
+            $series[] = Attendance::forAttendanceReporting()
+                ->where('employee_id', $employee->id)
                 ->whereBetween('date', [$start, $end])
                 ->where('status', $status)
                 ->count();

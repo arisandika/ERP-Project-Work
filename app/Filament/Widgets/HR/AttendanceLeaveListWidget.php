@@ -35,6 +35,10 @@ class AttendanceLeaveListWidget extends Widget
             'leave'
         ])
             ->where('status', 'approved')
+            ->whereDoesntHave(
+                'employee.user.roles',
+                fn ($query) => $query->where('name', 'super_admin')
+            )
             ->whereDate('start_date', '<=', $today)
             ->whereDate('end_date', '>=', $today)
             ->orderBy('start_date', 'desc')
@@ -67,7 +71,7 @@ class AttendanceLeaveListWidget extends Widget
 
     public function showEmployeeDetail($employeeId): void
     {
-        $employee = Employee::with([
+        $employee = Employee::forAttendanceReporting()->with([
             'department',
             'office',
             'shift',

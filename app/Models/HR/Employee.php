@@ -19,6 +19,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\MorphMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Database\Eloquent\Builder;
 use Spatie\Permission\Traits\HasRoles;
 
 class Employee extends Model
@@ -74,6 +75,19 @@ class Employee extends Model
     public function attendances(): HasMany
     {
         return $this->hasMany(Attendance::class, 'employee_id');
+    }
+
+    public function scopeForAttendanceReporting(Builder $query): Builder
+    {
+        return $query
+            ->whereDoesntHave(
+                'roles',
+                fn (Builder $roleQuery) => $roleQuery->where('name', 'super_admin')
+            )
+            ->whereDoesntHave(
+                'user.roles',
+                fn (Builder $roleQuery) => $roleQuery->where('name', 'super_admin')
+            );
     }
 
     public function leaves(): HasMany

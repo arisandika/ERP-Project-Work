@@ -76,7 +76,7 @@
                                                     this.map = L.map(el).setView(center, 16);
 
                                                     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-                                                        maxZoom: 14,
+                                                        maxZoom: 19,
                                                         attribution: '© OpenStreetMap'
                                                     }).addTo(this.map);
 

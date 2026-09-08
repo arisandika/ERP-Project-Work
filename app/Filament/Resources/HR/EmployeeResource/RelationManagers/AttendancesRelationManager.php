@@ -51,7 +51,8 @@ class AttendancesRelationManager extends RelationManager
         }
 
         // Scope ke employee yang sedang dibuka di relation manager
-        $query = Attendance::with(['employee', 'shift'])
+        $query = Attendance::forAttendanceReporting()
+            ->with(['employee', 'shift'])
             ->where('employee_id', $this->getOwnerRecord()->id)
             ->orderBy('date', 'desc');
 
@@ -113,6 +114,7 @@ class AttendancesRelationManager extends RelationManager
     public function table(Table $table): Table
     {
         return $table
+            ->modifyQueryUsing(fn (Builder $query): Builder => $query->forAttendanceReporting())
             ->recordTitleAttribute('full_name')
             ->columns([
                 Tables\Columns\TextColumn::make('employee.full_name')

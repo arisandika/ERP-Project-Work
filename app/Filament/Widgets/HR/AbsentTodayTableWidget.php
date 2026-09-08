@@ -23,6 +23,7 @@ class AbsentTodayTableWidget extends BaseWidget
         return $table
             ->query(
                 Employee::query()
+                    ->forAttendanceReporting()
                     ->where('status', 'active')
                     ->whereDoesntHave('attendances', function ($query) {
                         $query->whereDate('date', now());

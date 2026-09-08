@@ -17,9 +17,10 @@ class EmployeeStatusChartWidget extends ChartWidget
 
     protected function getData(): array
     {
-        $active = Employee::where('status', 'active')->count();
-        $resigned = Employee::where('status', 'resigned')->count();
-        $terminated = Employee::where('status', 'terminated')->count();
+        $employees = Employee::forAttendanceReporting();
+        $active = (clone $employees)->where('status', 'active')->count();
+        $resigned = (clone $employees)->where('status', 'resigned')->count();
+        $terminated = (clone $employees)->where('status', 'terminated')->count();
 
         return [
             'datasets' => [

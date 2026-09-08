@@ -25,7 +25,8 @@ class AttendanceHeatmapChart extends ApexChartWidget
         $start = $this->getStartDate();
         $end = $this->getEndDate();
 
-        $attendances = Attendance::where('employee_id', $employee->id)
+        $attendances = Attendance::forAttendanceReporting()
+            ->where('employee_id', $employee->id)
             ->whereBetween('date', [$start, $end])
             ->selectRaw('DAYOFWEEK(date) as day, HOUR(clock_in) as hour, COUNT(*) as count')
             ->whereNotNull('clock_in')

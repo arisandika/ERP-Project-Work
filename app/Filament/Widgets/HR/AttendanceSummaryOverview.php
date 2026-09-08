@@ -23,10 +23,13 @@ class AttendanceSummaryOverview extends BaseWidget
         $today = Carbon::today();
 
         // Total karyawan
-        $totalEmployees = Employee::where('status', 'active')->count();
+        $totalEmployees = Employee::forAttendanceReporting()
+            ->where('status', 'active')
+            ->count();
 
         // Hitung semua status presensi langsung di query
-        $attendanceStats = Attendance::whereDate('date', $today)
+        $attendanceStats = Attendance::forAttendanceReporting()
+            ->whereDate('date', $today)
             ->selectRaw("
             COUNT(CASE WHEN status = 'Hadir' THEN 1 END) as present_count,
             COUNT(CASE WHEN status = 'Terlambat' THEN 1 END) as late_count

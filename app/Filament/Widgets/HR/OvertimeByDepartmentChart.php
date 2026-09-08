@@ -24,6 +24,7 @@ class OvertimeByDepartmentChart extends ChartWidget
 
         $departments = Department::with(['employees.attendances' => function ($q) use ($startOfMonth, $endOfMonth) {
             $q
+                ->forAttendanceReporting()
                 ->whereBetween('date', [$startOfMonth, $endOfMonth])
                 ->whereNotNull('clock_out')
                 ->whereNotNull('shift_id')

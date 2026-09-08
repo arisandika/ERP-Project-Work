@@ -26,7 +26,9 @@ class AttendanceTrendChartWidget extends ChartWidget
             $date = now()->subDays($i);
             $labels[] = $date->format('d M');
 
-            $dayData = Attendance::whereDate('date', $date)->get();
+            $dayData = Attendance::forAttendanceReporting()
+                ->whereDate('date', $date)
+                ->get();
             $hadirData[] = $dayData->where('status', 'hadir')->count();
             $terlambatData[] = $dayData->where('status', 'terlambat')->count();
             $absenData[] = $dayData->where('status', 'absen')->count();
