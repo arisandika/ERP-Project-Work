@@ -263,38 +263,29 @@ class OvertimeMonitoringResource extends Resource
             ->whereNotNull('clock_in')
             ->whereNotNull('clock_out')
             ->whereNotNull('shift_id')
+            ->join('nx_shifts', 'nx_shifts.id', '=', 'nx_attendances.shift_id')
             ->with(['shift', 'employee.department'])
             ->whereHas('shift')
             ->whereRaw('
-            TIMESTAMPDIFF(MINUTE, clock_in, clock_out)
-            -
-            (
-                SELECT
+                TIMESTAMPDIFF(
+                    MINUTE,
                     CASE
                         WHEN TIME_TO_SEC(nx_shifts.end_time) <= TIME_TO_SEC(nx_shifts.start_time)
-                        THEN (TIME_TO_SEC(nx_shifts.end_time) + 86400 - TIME_TO_SEC(nx_shifts.start_time)) / 60
-                        ELSE (TIME_TO_SEC(nx_shifts.end_time) - TIME_TO_SEC(nx_shifts.start_time)) / 60
-                    END
-                FROM nx_shifts
-                WHERE nx_shifts.id = nx_attendances.shift_id
-            )
-            > 0
-        ')
-            ->whereRaw('
-            TIMESTAMPDIFF(MINUTE, clock_in, clock_out)
-            -
-            (
-                SELECT
+                        THEN DATE_ADD(TIMESTAMP(DATE(clock_in), nx_shifts.end_time), INTERVAL 1 DAY)
+                        ELSE TIMESTAMP(DATE(clock_in), nx_shifts.end_time)
+                    END,
+                    clock_out
+                ) > 30
+                AND TIMESTAMPDIFF(
+                    MINUTE,
                     CASE
                         WHEN TIME_TO_SEC(nx_shifts.end_time) <= TIME_TO_SEC(nx_shifts.start_time)
-                        THEN (TIME_TO_SEC(nx_shifts.end_time) + 86400 - TIME_TO_SEC(nx_shifts.start_time)) / 60
-                        ELSE (TIME_TO_SEC(nx_shifts.end_time) - TIME_TO_SEC(nx_shifts.start_time)) / 60
-                    END
-                FROM nx_shifts
-                WHERE nx_shifts.id = nx_attendances.shift_id
-            )
-            <= 720
-        ');
+                        THEN DATE_ADD(TIMESTAMP(DATE(clock_in), nx_shifts.end_time), INTERVAL 1 DAY)
+                        ELSE TIMESTAMP(DATE(clock_in), nx_shifts.end_time)
+                    END,
+                    clock_out
+                ) <= 720
+            ');
     }
 
     public static function canCreate(): bool

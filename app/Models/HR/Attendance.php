@@ -62,26 +62,21 @@ class Attendance extends Model
             return 0;
         }
 
-        // 1. Durasi kerja aktual, murni dari clock_in ke clock_out
-        $workedMinutes = $this->clock_in->diffInMinutes($this->clock_out, false);
-
-        if ($workedMinutes <= 0) {
-            return 0;
-        }
-
-        // 2. Durasi shift (bukan jam mulai/selesainya, cuma "berapa lama"-nya)
-        $shiftStart = Carbon::createFromFormat('H:i:s', $this->shift->start_time);
-        $shiftEnd   = Carbon::createFromFormat('H:i:s', $this->shift->end_time);
+        // Lembur hanya dihitung dari waktu pulang setelah jadwal shift berakhir.
+        $shiftStart = Carbon::parse($this->clock_in->toDateString() . ' ' . $this->shift->start_time);
+        $shiftEnd   = Carbon::parse($this->clock_in->toDateString() . ' ' . $this->shift->end_time);
 
         // Shift lintas tengah malam (mis. 22:00 - 06:00) → end lebih kecil dari start
         if ($shiftEnd->lessThanOrEqualTo($shiftStart)) {
             $shiftEnd->addDay();
         }
 
-        $shiftDurationMinutes = $shiftStart->diffInMinutes($shiftEnd);
+        $overtime = $shiftEnd->diffInMinutes($this->clock_out, false);
 
-        // 3. Overtime = kelebihan waktu kerja aktual dari durasi shift
-        $overtime = $workedMinutes - $shiftDurationMinutes;
+        // Pulang terlambat 30 menit atau kurang belum dianggap lembur.
+        if ($overtime <= 30) {
+            return 0;
+        }
 
         // Guard anti data anomali (misal data test yang clock_out-nya salah tanggal)
         if ($overtime > 720) { // lebih dari 12 jam dianggap tidak wajar
