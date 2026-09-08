@@ -66,7 +66,7 @@ class AttendanceOvertimeSummaryWidget extends BaseWidget
 
         $maxLabel = $maxMinutes > 0
             ? (intdiv($maxMinutes, 60) > 0
-                ? intdiv($maxMinutes, 60) . 'jam ' . ($maxMinutes % 60) . 'menit'
+                ? intdiv($maxMinutes, 60) . ' jam ' . ($maxMinutes % 60) . ' menit'
                 : ($maxMinutes % 60) . ' menit')
             : '—';
         $maxDateLabel = $maxDate
