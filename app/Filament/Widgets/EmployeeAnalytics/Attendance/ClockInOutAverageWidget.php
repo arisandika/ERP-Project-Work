@@ -24,7 +24,8 @@ class ClockInOutAverageWidget extends BaseWidget
         $start = $this->getStartDate();
         $end = $this->getEndDate();
 
-        $attendances = Attendance::where('employee_id', $employee->id)
+        $attendances = Attendance::forAttendanceReporting()
+            ->where('employee_id', $employee->id)
             ->whereBetween('date', [$start, $end])
             ->whereNotNull('clock_in')
             ->get(['clock_in', 'clock_out']);

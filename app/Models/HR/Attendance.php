@@ -4,6 +4,7 @@ namespace App\Models\HR;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Carbon;
 
 class Attendance extends Model
@@ -48,6 +49,19 @@ class Attendance extends Model
     public function shift(): BelongsTo
     {
         return $this->belongsTo(Shift::class, 'shift_id');
+    }
+
+    public function scopeForAttendanceReporting(Builder $query): Builder
+    {
+        return $query
+            ->whereDoesntHave(
+                'employee.roles',
+                fn (Builder $roleQuery) => $roleQuery->where('name', 'super_admin')
+            )
+            ->whereDoesntHave(
+                'employee.user.roles',
+                fn (Builder $roleQuery) => $roleQuery->where('name', 'super_admin')
+            );
     }
 
     // ── Overtime Accessors ──────────────────────────────────────────────────

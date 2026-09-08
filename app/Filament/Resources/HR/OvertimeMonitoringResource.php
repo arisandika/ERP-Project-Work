@@ -141,7 +141,9 @@ class OvertimeMonitoringResource extends Resource
                     }),
                 Tables\Filters\SelectFilter::make('employee_id')
                     ->label('Karyawan')
-                    ->options(fn() => Employee::where('status', 'active')->pluck('full_name', 'id'))
+                    ->options(fn() => Employee::forAttendanceReporting()
+                        ->where('status', 'active')
+                        ->pluck('full_name', 'id'))
                     ->searchable()
                     ->native(false),
                 Tables\Filters\SelectFilter::make('department')
@@ -260,6 +262,7 @@ class OvertimeMonitoringResource extends Resource
     {
         return parent::getEloquentQuery()
             ->withoutGlobalScopes([SoftDeletingScope::class])
+            ->forAttendanceReporting()
             ->whereNotNull('clock_in')
             ->whereNotNull('clock_out')
             ->whereNotNull('shift_id')

@@ -33,7 +33,8 @@ class WorkHoursChart extends ApexChartWidget
             $weekEnd = $date->copy()->endOfWeek();
             $categories[] = $date->format('d M');
 
-            $attendances = Attendance::where('employee_id', $employee->id)
+            $attendances = Attendance::forAttendanceReporting()
+                ->where('employee_id', $employee->id)
                 ->whereBetween('date', [$date, $weekEnd])
                 ->whereNotNull('clock_out')
                 ->get(['clock_in', 'clock_out']);

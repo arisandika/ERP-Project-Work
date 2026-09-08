@@ -53,7 +53,9 @@ class EmployeeAnalyticsDashboard extends Page
 
     public static function canAccess(): bool
     {
-        return static::shieldCanAccess() && static::moduleCanAccess();
+        return ! auth()->user()?->hasRole('super_admin')
+            && static::shieldCanAccess()
+            && static::moduleCanAccess();
     }
 
     public static function shouldRegisterNavigation(): bool

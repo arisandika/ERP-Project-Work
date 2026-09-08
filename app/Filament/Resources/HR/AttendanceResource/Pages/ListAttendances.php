@@ -34,6 +34,7 @@ class ListAttendances extends ListRecords
         $today = $now->toDateString();
 
         $counts = Attendance::query()
+            ->forAttendanceReporting()
             ->selectRaw("
             COUNT(*) as all_count,
             COALESCE(SUM(date >= ?),0) as last_3_month,
@@ -96,6 +97,7 @@ class ListAttendances extends ListRecords
     protected function getRecordCount($fromDate): int
     {
         return AttendanceResource::getModel()::query()
+            ->forAttendanceReporting()
             ->where('date', '>=', $fromDate)
             ->count();
     }
@@ -122,7 +124,8 @@ class ListAttendances extends ListRecords
             return;
         }
 
-        $query = Attendance::with(['employee', 'shift'])
+        $query = Attendance::forAttendanceReporting()
+            ->with(['employee', 'shift'])
             ->orderBy('date', 'desc');
 
         if ($startDate) {

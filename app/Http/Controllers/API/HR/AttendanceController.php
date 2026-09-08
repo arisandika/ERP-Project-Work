@@ -391,6 +391,7 @@ class AttendanceController extends Controller
         $officeId = $request->input('office_id');
 
         $query = Attendance::query()
+            ->forAttendanceReporting()
             ->with(['employee.user', 'employee.department', 'employee.office', 'employee.shift'])
             ->whereDate('date', $date);
 

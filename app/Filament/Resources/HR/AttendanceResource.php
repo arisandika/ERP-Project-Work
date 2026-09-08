@@ -295,6 +295,7 @@ class AttendanceResource extends Resource
             ->withoutGlobalScopes([
                 SoftDeletingScope::class,
             ])
+            ->forAttendanceReporting()
             ->with('shift');
     }
 }

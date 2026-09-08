@@ -24,7 +24,7 @@ trait HasEmployeeFilter
      */
     protected function getEmployee(): Employee
     {
-        return Employee::with([
+        return Employee::forAttendanceReporting()->with([
             'attendances',
             'leaveRequests.leave',
             'reimbursementRequests',

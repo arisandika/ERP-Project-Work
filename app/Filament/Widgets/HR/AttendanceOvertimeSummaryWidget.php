@@ -26,7 +26,8 @@ class AttendanceOvertimeSummaryWidget extends BaseWidget
         $startOfMonth = Carbon::now()->startOfMonth();
         $endOfMonth = Carbon::now()->endOfMonth();
 
-        $attendances = Attendance::where('employee_id', $employee->id)
+        $attendances = Attendance::forAttendanceReporting()
+            ->where('employee_id', $employee->id)
             ->whereBetween('date', [$startOfMonth->toDateString(), $endOfMonth->toDateString()])
             ->whereNotNull('clock_out')
             ->whereNotNull('shift_id')

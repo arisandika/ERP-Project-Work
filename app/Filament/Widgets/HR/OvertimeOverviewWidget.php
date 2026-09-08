@@ -23,7 +23,8 @@ class OvertimeOverviewWidget extends BaseWidget
         $endOfMonth = Carbon::now()->endOfMonth();
 
         // Ambil presensi hari ini dengan clock_out dan shift
-        $todayAttendances = Attendance::whereDate('date', $today)
+        $todayAttendances = Attendance::forAttendanceReporting()
+            ->whereDate('date', $today)
             ->whereNotNull('clock_out')
             ->whereNotNull('shift_id')
             ->with(['shift', 'employee'])
@@ -40,7 +41,8 @@ class OvertimeOverviewWidget extends BaseWidget
         }
 
         // Ambil presensi bulan ini
-        $monthAttendances = Attendance::whereBetween('date', [$startOfMonth->toDateString(), $endOfMonth->toDateString()])
+        $monthAttendances = Attendance::forAttendanceReporting()
+            ->whereBetween('date', [$startOfMonth->toDateString(), $endOfMonth->toDateString()])
             ->whereNotNull('clock_out')
             ->whereNotNull('shift_id')
             ->with(['shift', 'employee'])

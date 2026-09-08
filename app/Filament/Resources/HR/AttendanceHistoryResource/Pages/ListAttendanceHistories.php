@@ -48,6 +48,7 @@ class ListAttendanceHistories extends ListRecords
         $today = $now->toDateString();
 
         $counts = Attendance::query()
+            ->forAttendanceReporting()
             ->where('employee_id', $employee->id)
             ->selectRaw("
             COUNT(*) as all_count,

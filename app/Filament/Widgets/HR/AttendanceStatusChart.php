@@ -31,9 +31,11 @@ class AttendanceStatusChart extends ApexChartWidget
     {
         $today = Carbon::today();
 
-        $totalEmployees = Employee::count();
+        $totalEmployees = Employee::forAttendanceReporting()->count();
 
-        $attendances = Attendance::whereDate('date', $today)->get();
+        $attendances = Attendance::forAttendanceReporting()
+            ->whereDate('date', $today)
+            ->get();
 
         $present = $attendances->where('status', 'hadir')->count();
         $late = $attendances->where('status', 'terlambat')->count();
@@ -41,6 +43,10 @@ class AttendanceStatusChart extends ApexChartWidget
         $leaveToday = LeaveRequest::whereDate('start_date', '<=', $today)
             ->whereDate('end_date', '>=', $today)
             ->where('status', 'approved')
+            ->whereDoesntHave(
+                'employee.user.roles',
+                fn ($query) => $query->where('name', 'super_admin')
+            )
             ->count();
 
         $absent = max($totalEmployees - ($present + $late + $leaveToday), 0);

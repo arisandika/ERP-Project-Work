@@ -13,14 +13,23 @@ class HrOverviewWidget extends BaseWidget
 
     protected function getStats(): array
     {
-        $totalEmployees = Employee::where('status', 'active')->count();
+        $totalEmployees = Employee::forAttendanceReporting()
+            ->where('status', 'active')
+            ->count();
 
-        $todayAttendance = Attendance::whereDate('date', now())->get();
+        $todayAttendance = Attendance::forAttendanceReporting()
+            ->whereDate('date', now())
+            ->get();
         $hadirToday      = $todayAttendance->whereIn('status', ['hadir', 'terlambat'])->count();
         $terlambatToday  = $todayAttendance->where('status', 'terlambat')->count();
         $absenToday      = $totalEmployees - $todayAttendance->count();
 
-        $pendingLeaves = LeaveRequest::where('status', 'pending')->count();
+        $pendingLeaves = LeaveRequest::where('status', 'pending')
+            ->whereDoesntHave(
+                'employee.user.roles',
+                fn ($query) => $query->where('name', 'super_admin')
+            )
+            ->count();
 
         $attendanceRate = $totalEmployees > 0
             ? round(($hadirToday / $totalEmployees) * 100, 1)
@@ -55,7 +64,8 @@ class HrOverviewWidget extends BaseWidget
         $data = [];
         for ($i = 6; $i >= 0; $i--) {
             $date   = now()->subDays($i);
-            $data[] = Attendance::whereDate('date', $date)
+            $data[] = Attendance::forAttendanceReporting()
+                ->whereDate('date', $date)
                 ->whereIn('status', ['hadir', 'terlambat'])
                 ->count();
         }
