@@ -58,12 +58,12 @@ class EmployeeResource extends Resource
             ->schema([
                 Forms\Components\Section::make('Informasi Pribadi')
                     ->schema([
-                        Forms\Components\TextInput::make('identity_number')
-                            ->label('NIK (KTP)')
-                            ->numeric()
-                            ->maxLength(16)
-                            ->helperText('Max 16 karakter')
-                            ->prefixIcon('heroicon-o-identification'),
+                        // Forms\Components\TextInput::make('identity_number')
+                        //     ->label('NIK (KTP)')
+                        //     ->numeric()
+                        //     ->maxLength(16)
+                        //     ->helperText('Max 16 karakter')
+                        //     ->prefixIcon('heroicon-o-identification'),
                         Forms\Components\TextInput::make('full_name')
                             ->label('Nama Lengkap')
                             ->required()
