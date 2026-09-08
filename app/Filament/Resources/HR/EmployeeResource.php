@@ -60,7 +60,6 @@ class EmployeeResource extends Resource
                     ->schema([
                         Forms\Components\TextInput::make('identity_number')
                             ->label('NIK (KTP)')
-                            ->required()
                             ->numeric()
                             ->maxLength(16)
                             ->helperText('Max 16 karakter')
@@ -121,7 +120,6 @@ class EmployeeResource extends Resource
                             ->prefixIcon('heroicon-o-map-pin'),
                         Forms\Components\DatePicker::make('birth_date')
                             ->label('Tanggal Lahir')
-                            ->required()
                             ->displayFormat('d M Y')
                             ->native(false)
                             ->prefixIcon('heroicon-o-calendar-days'),
