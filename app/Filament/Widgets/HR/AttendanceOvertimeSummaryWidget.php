@@ -53,20 +53,20 @@ class AttendanceOvertimeSummaryWidget extends BaseWidget
         $totalHours = intdiv($totalMinutes, 60);
         $totalMins = $totalMinutes % 60;
         $totalLabel = $totalMinutes > 0
-            ? ($totalHours > 0 ? "{$totalHours} j {$totalMins} m" : "{$totalMins} m")
-            : '0 j';
+            ? ($totalHours > 0 ? "{$totalHours} jam {$totalMins} menit" : "{$totalMins} menit")
+            : '0 jam 0 menit';
 
         $avgMinutes = $overtimeSessions > 0 ? intdiv($totalMinutes, $overtimeSessions) : 0;
         $avgHours = intdiv($avgMinutes, 60);
         $avgMins = $avgMinutes % 60;
         $avgLabel = $avgMinutes > 0
-            ? ($avgHours > 0 ? "{$avgHours}j {$avgMins}m" : "{$avgMins}m")
+            ? ($avgHours > 0 ? "{$avgHours} jam {$avgMins} menit" : "{$avgMins} menit")
             : '—';
 
         $maxLabel = $maxMinutes > 0
             ? (intdiv($maxMinutes, 60) > 0
-                ? intdiv($maxMinutes, 60) . 'j ' . ($maxMinutes % 60) . 'm'
-                : ($maxMinutes % 60) . 'm')
+                ? intdiv($maxMinutes, 60) . 'jam ' . ($maxMinutes % 60) . 'menit'
+                : ($maxMinutes % 60) . ' menit')
             : '—';
         $maxDateLabel = $maxDate
             ? Carbon::parse($maxDate)->translatedFormat('d M Y')
