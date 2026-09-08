@@ -90,7 +90,7 @@ class RecordVisitPage extends Page
 
     public static function getRoutePath(): string
     {
-        return 'sales-activity/my-visit-tasks/{assignment}/record';
+        return 'sales/activity/my-visit-tasks/{assignment}/record';
     }
 
     public function getTitle(): string

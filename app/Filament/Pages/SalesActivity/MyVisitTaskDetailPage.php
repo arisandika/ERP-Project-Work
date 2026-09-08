@@ -28,7 +28,7 @@ class MyVisitTaskDetailPage extends Page
 
     public static function getRoutePath(): string
     {
-        return 'sales-activity/my-visit-tasks/{assignment}';
+        return 'sales/activity/my-visit-tasks/{assignment}';
     }
 
     public function mount(int $assignment): void

@@ -3,14 +3,13 @@ namespace App\Filament\Pages\Sales;
 
 use App\Filament\Concerns\BelongsToModule;
 use App\Filament\Widgets\Sales\InvoiceReportTable;
-use App\Filament\Widgets\Sales\RevenueChart;
 use App\Filament\Widgets\Sales\SalesSummaryStats;
 use BezhanSalleh\FilamentShield\Traits\HasPageShield;
 use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\Section;
 use Filament\Forms\Form;
-use Filament\Pages\Dashboard\Concerns\HasFiltersForm;
 use Filament\Pages\Dashboard as BaseDashboard;
+use Filament\Pages\Dashboard\Concerns\HasFiltersForm;
 
 class DashboardSales extends BaseDashboard
 {
@@ -43,6 +42,11 @@ class DashboardSales extends BaseDashboard
     protected static ?string $navigationLabel = 'Dashboard Sales';
 
     protected static ?string $title = 'Dashboard Sales';
+
+    // public function mount(): void
+    // {
+    //     abort_unless(static::canAccess(), 403);
+    // }
 
     /**
      * Override method canAccess()

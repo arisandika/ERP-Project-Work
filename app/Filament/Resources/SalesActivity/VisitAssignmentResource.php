@@ -39,7 +39,7 @@ class VisitAssignmentResource extends Resource
 
     protected static ?int $navigationSort = 1;
 
-    protected static ?string $slug = 'sales-activity/visit-assignments';
+    protected static ?string $slug = 'sales/activity/visit-assignments';
 
     public static function getNavigationBadge(): ?string
     {
