@@ -1,14 +1,28 @@
 <?php
-
 namespace App\Filament\Concerns;
 
 use App\Support\ModuleAccess;
+use Illuminate\Http\RedirectResponse;
 
 trait BelongsToModule
 {
+    public function mount(): void
+    {
+        if (! static::canAccess()) {
+            $moduleKey = static::$module ?? null;
+            $fallbackUrl = $moduleKey
+                ? ModuleAccess::fallbackUrlFor($moduleKey)
+                : null;
+
+            abort(new RedirectResponse(
+                $fallbackUrl ?? route('filament.admin.pages.modules')
+            ));
+        }
+    }
+
     public static function shouldRegisterNavigation(): bool
     {
-        if (!static::canAccessCurrentModule()) {
+        if (! static::canAccessCurrentModule()) {
             return false;
         }
 
@@ -27,13 +41,13 @@ trait BelongsToModule
 
     public static function canViewAny(): bool
     {
-        if (!static::canAccessCurrentModule()) {
+        if (! static::canAccessCurrentModule()) {
             return false;
         }
 
         $user = auth()->user();
 
-        if (!$user) {
+        if (! $user) {
             return false;
         }
 
@@ -49,11 +63,11 @@ trait BelongsToModule
     {
         $moduleKey = static::$module ?? null;
 
-        if (!$moduleKey) {
+        if (! $moduleKey) {
             return false;
         }
 
         return ModuleAccess::isActive($moduleKey)
-            && ModuleAccess::canAccessModule($moduleKey);
+        && ModuleAccess::canAccessModule($moduleKey);
     }
 }

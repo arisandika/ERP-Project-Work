@@ -67,6 +67,8 @@ class SerialNumberTracking extends Page implements HasForms
 
     public function mount(): void
     {
+        abort_unless(static::canAccess(), 403);
+
         $this->form->fill();
     }
 

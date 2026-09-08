@@ -4,6 +4,7 @@ namespace App\Support;
 
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Auth;
+use Filament\Facades\Filament;
 
 class ModuleAccess
 {
@@ -127,6 +128,84 @@ class ModuleAccess
         }
 
         return route('filament.admin.pages.modules');
+    }
+
+    public static function fallbackUrlFor(string $moduleKey): ?string
+    {
+        $panel = Filament::getCurrentPanel();
+
+        try {
+            foreach ($panel->getNavigation() as $group) {
+                foreach ($group->getItems() as $item) {
+                    $url = $item->getUrl();
+
+                    if ($url
+                        && self::urlBelongsToModule($url, $moduleKey)
+                        && $url !== request()->fullUrl()
+                    ) {
+                        return $url;
+                    }
+                }
+            }
+        } catch (\Throwable) {
+            // Fall back to the registered pages and resources below.
+        }
+
+        foreach ($panel->getPages() as $page) {
+            if (self::componentModule($page) !== $moduleKey) {
+                continue;
+            }
+
+            try {
+                if ($page::canAccess()) {
+                    return $page::getUrl();
+                }
+            } catch (\Throwable) {
+                continue;
+            }
+        }
+
+        foreach ($panel->getResources() as $resource) {
+            if (self::componentModule($resource) !== $moduleKey) {
+                continue;
+            }
+
+            try {
+                if ($resource::canViewAny()) {
+                    return $resource::getUrl('index');
+                }
+            } catch (\Throwable) {
+                continue;
+            }
+        }
+
+        return null;
+    }
+
+    protected static function urlBelongsToModule(string $url, string $moduleKey): bool
+    {
+        $module = self::all()->get($moduleKey);
+        $routeName = $module['route'] ?? null;
+
+        if (!$routeName || !route_exists($routeName)) {
+            return false;
+        }
+
+        $modulePath = trim((string) parse_url(route($routeName), PHP_URL_PATH), '/');
+        $modulePrefix = str($modulePath)->beforeLast('/')->trim('/')->toString();
+        $candidatePath = trim((string) parse_url($url, PHP_URL_PATH), '/');
+
+        return $modulePrefix !== ''
+            && ($candidatePath === $modulePrefix || str_starts_with($candidatePath, "{$modulePrefix}/"));
+    }
+
+    protected static function componentModule(string $component): ?string
+    {
+        if (!property_exists($component, 'module')) {
+            return null;
+        }
+
+        return (new \ReflectionClass($component))->getStaticPropertyValue('module');
     }
 }
 

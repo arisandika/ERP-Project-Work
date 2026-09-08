@@ -100,7 +100,7 @@ class ModuleSelector extends Page
         if (!$attendance?->clock_in) {
             return [
                 'message' => 'Kamu belum melakukan <a href="/attendance" class="font-bold underline transition-all hover:underline-offset-4">Presensi Masuk</a> hari ini. Jangan lupa absen ya!',
-                'type' => 'warning',
+                'type' => 'danger',
             ];
         }
 

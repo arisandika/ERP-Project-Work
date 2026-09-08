@@ -4,6 +4,7 @@ namespace App\Providers\Filament;
 
 use App\Filament\Pages\Auth\Login;
 
+use App\Http\Middleware\RecoverFromLivewireRedirectorBug;
 use App\Livewire\Breezy\PersonalInfo;
 use BezhanSalleh\FilamentShield\FilamentShieldPlugin;
 use Filament\Enums\ThemeMode;
@@ -60,6 +61,7 @@ class AdminPanelProvider extends PanelProvider
                 // Widgets\AccountWidget::class,
             ])
             ->middleware([
+                RecoverFromLivewireRedirectorBug::class,
                 EncryptCookies::class,
                 AddQueuedCookiesToResponse::class,
                 StartSession::class,

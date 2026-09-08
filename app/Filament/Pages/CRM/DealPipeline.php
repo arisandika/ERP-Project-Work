@@ -58,6 +58,8 @@ class DealPipeline extends Page
 
     public function mount(): void
     {
+        abort_unless(static::canAccess(), 403);
+
         // Inisialisasi
     }
 

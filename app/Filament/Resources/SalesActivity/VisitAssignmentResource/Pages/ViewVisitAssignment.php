@@ -26,6 +26,11 @@ class ViewVisitAssignment extends ViewRecord
 {
     protected static string $resource = VisitAssignmentResource::class;
 
+    public function getTitle(): string
+    {
+        return 'Detail Kunjungan';
+    }
+
     protected function getHeaderActions(): array
     {
         return [

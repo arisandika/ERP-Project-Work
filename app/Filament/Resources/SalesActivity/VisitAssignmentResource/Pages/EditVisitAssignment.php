@@ -9,6 +9,11 @@ class EditVisitAssignment extends EditRecord
 {
     protected static string $resource = VisitAssignmentResource::class;
 
+    public function getTitle(): string
+    {
+        return 'Edit Kunjungan';
+    }
+
     protected function getHeaderActions(): array
     {
         return [

@@ -4,12 +4,11 @@ namespace App\Http\Responses;
 
 use Filament\Http\Responses\Auth\Contracts\LoginResponse as LoginResponseContract;
 use Illuminate\Http\RedirectResponse;
-use Livewire\Features\SupportRedirects\Redirector;
 
 class LoginResponse implements LoginResponseContract
 {
-    public function toResponse($request): RedirectResponse|Redirector
+    public function toResponse($request): RedirectResponse
     {
-        return redirect()->route('filament.admin.pages.modules');
+        return response()->redirectTo(route('filament.admin.pages.modules'));
     }
 }

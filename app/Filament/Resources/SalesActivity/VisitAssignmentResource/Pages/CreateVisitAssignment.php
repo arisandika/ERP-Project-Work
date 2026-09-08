@@ -11,6 +11,11 @@ class CreateVisitAssignment extends CreateRecord
 {
     protected static string $resource = VisitAssignmentResource::class;
 
+    public function getTitle(): string
+    {
+        return 'Tambah Kunjungan Baru';
+    }
+
     protected function mutateFormDataBeforeCreate(array $data): array
     {
         // Pastikan assigned_by terisi meski field di-disable

@@ -28,7 +28,7 @@ class MyVisitTasksPage extends Page implements HasTable
 
     protected static ?string $title = 'Tugas Kunjungan Saya';
 
-    protected static ?string $slug = 'sales-activity/my-visit-tasks';
+    protected static ?string $slug = 'sales/activity/my-visit-tasks';
 
     protected static ?int $navigationSort = 10;
 

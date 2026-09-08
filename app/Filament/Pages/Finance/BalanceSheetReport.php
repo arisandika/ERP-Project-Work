@@ -50,6 +50,8 @@ class BalanceSheetReport extends Page implements HasForms
 
     public function mount(): void
     {
+        abort_unless(static::canAccess(), 403);
+
         $this->form->fill([
             'period_type' => 'this_month',
             'as_of_date' => Carbon::now()->endOfMonth()->format('Y-m-d'),

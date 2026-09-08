@@ -50,6 +50,8 @@ class CashFlowReport extends Page implements HasForms
 
     public function mount(): void
     {
+        abort_unless(static::canAccess(), 403);
+
         $now = Carbon::now();
         $this->form->fill([
             'period_type' => 'this_month',
