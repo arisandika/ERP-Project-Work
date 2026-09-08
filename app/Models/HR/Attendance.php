@@ -116,13 +116,13 @@ class Attendance extends Model
         $mins    = $minutes % 60;
 
         if ($hours > 0 && $mins > 0) {
-            return "{$hours}j {$mins}m";
+            return "{$hours} jam {$mins} menit";
         }
 
         if ($hours > 0) {
-            return "{$hours}j";
+            return "{$hours} jam";
         }
 
-        return "{$mins}m";
+        return "{$mins} menit";
     }
 }
