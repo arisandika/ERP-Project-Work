@@ -17,6 +17,22 @@ class PurchaseReturnFinancialService
      */
     public function execute(PurchaseReturn $purchaseReturn): void
     {
+        // Guard anti double-posting: hanya dokumen yang BELUM completed boleh diproses.
+        if ($purchaseReturn->status === 'completed') {
+            throw new Exception("Retur {$purchaseReturn->return_number} sudah diselesaikan.");
+        }
+
+        // Validasi quantity vs Goods Receipt (traceability opsional):
+        // item yang menunjuk ke GR item tidak boleh melebihi quantity yang diterima.
+        foreach ($purchaseReturn->items as $item) {
+            $grItem = $item->goodsReceiptItem;
+            if ($grItem && $item->quantity > (int) $grItem->quantity_received) {
+                throw new Exception(
+                    "Item id {$item->id} quantity retur ({$item->quantity}) melebihi quantity diterima ({$grItem->quantity_received})."
+                );
+            }
+        }
+
         // 1. Kalkulasi total nilai retur dari item
         $totalAmount = $purchaseReturn->items->sum(function ($item) {
             return $item->quantity * $item->unit_price;

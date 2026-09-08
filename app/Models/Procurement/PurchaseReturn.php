@@ -19,6 +19,12 @@ class PurchaseReturn extends Model
 
     protected $guarded = ['id'];
 
+    public const STATUS_DRAFT = 'draft';
+    public const STATUS_APPROVED = 'approved';
+    public const STATUS_SHIPPED = 'shipped';
+    public const STATUS_COMPLETED = 'completed';
+    public const STATUS_CANCELLED = 'cancelled';
+
     public function items(): HasMany
     {
         return $this->hasMany(PurchaseReturnItem::class, 'purchase_return_id');
@@ -32,6 +38,11 @@ class PurchaseReturn extends Model
     public function goodsReceipt(): BelongsTo
     {
         return $this->belongsTo(\App\Models\Procurement\GoodsReceipt::class, 'goods_receipt_id');
+    }
+
+    public function purchaseOrder(): BelongsTo
+    {
+        return $this->belongsTo(\App\Models\Procurement\PurchaseOrder::class, 'purchase_order_id');
     }
 
     public function creator(): BelongsTo

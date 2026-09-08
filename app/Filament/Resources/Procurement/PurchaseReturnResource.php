@@ -6,6 +6,7 @@ use App\Filament\Concerns\BelongsToModule;
 use App\Filament\Resources\Procurement\PurchaseReturnResource\Pages;
 use App\Models\Procurement\PurchaseReturn;
 use App\Services\Finance\PurchaseReturnFinancialService;
+use App\Services\Procurement\PurchaseReturnWorkflowService;
 use Filament\Forms\Form;
 use Filament\Notifications\Notification;
 use Filament\Resources\Resource;
@@ -51,7 +52,7 @@ class PurchaseReturnResource extends Resource
                         ->maxLength(255)
                         ->columnSpan(['default' => 'full', 'sm' => 2])
                         ->extraInputAttributes(['class' => 'text-xl font-bold border-t-0 border-l-0 border-r-0 border-b-2 border-gray-300 focus:ring-0 px-0 bg-transparent']),
-                    // Baris 2: Supplier, Tanggal, & Penyelesaian
+                    // Baris 2: Supplier, PO Asal, Tanggal, & Penyelesaian
                     Forms\Components\Select::make('supplier_id')
                         ->label('Supplier')
                         ->relationship('supplier', 'name')
@@ -60,6 +61,14 @@ class PurchaseReturnResource extends Resource
                         ->prefixIcon('heroicon-o-building-storefront')
                         ->required()
                         ->columnSpan(['default' => 'full', 'sm' => 1]),
+                    Forms\Components\Select::make('purchase_order_id')
+                        ->label('PO Asal (opsional)')
+                        ->relationship('purchaseOrder', 'po_number')
+                        ->searchable()
+                        ->preload()
+                        ->prefixIcon('heroicon-o-document-text')
+                        ->helperText('Untuk traceability barang retur ke PO pembelian.')
+                        ->columnSpan(['default' => 'full', 'sm' => 2]),
                     Forms\Components\DatePicker::make('return_date')
                         ->label('Tanggal Retur')
                         ->default(now())
@@ -99,28 +108,28 @@ class PurchaseReturnResource extends Resource
                                 ->preload()
                                 ->prefixIcon('heroicon-o-cube')
                                 ->required()
-                                ->columnSpan(['default' => 'full', 'sm' => 2]),
+                                ->columnSpan(3),
                             Forms\Components\TextInput::make('quantity')
                                 ->label('Qty')
                                 ->numeric()
                                 ->required()
                                 ->minValue(1)
                                 ->prefixIcon('heroicon-o-scale')
-                                ->columnSpan(['default' => 'full', 'sm' => 1]),
+                                ->columnSpan(1),
                             Forms\Components\TextInput::make('unit_price')
                                 ->label('Harga Satuan')
                                 ->numeric()
                                 ->required()
                                 ->prefix('Rp')
-                                ->columnSpan(['default' => 'full', 'sm' => 2]),
+                                ->columnSpan(1),
                             Forms\Components\TextInput::make('reason')
                                 ->label('Alasan Retur')
                                 ->required()
                                 ->maxLength(255)
                                 ->prefixIcon('heroicon-o-chat-bubble-bottom-center-text')
-                                ->columnSpan(['default' => 'full', 'sm' => 3]),
+                                ->columnSpan(1),
                         ])
-                        ->columns(['default' => 1, 'md' => 8])
+                        ->columns(3)
                         ->defaultItems(1)
                         ->mutateRelationshipDataBeforeCreateUsing(function (array $data): array {
                             return $data;
@@ -196,7 +205,23 @@ class PurchaseReturnResource extends Resource
                 Tables\Actions\ViewAction::make()
                     ->icon('heroicon-s-eye')
                     ->iconButton(),
-                // MENGGANTI TOMBOL APPROVE MENJADI KIRIM BARANG (SHIPPED)
+                // APPROVE: draft -> approved (persetujuan manajemen sebelum barang dikirim)
+                Tables\Actions\Action::make('approve_return')
+                    ->label('Approve')
+                    ->tooltip('Setujui retur ini sebelum barang dikirim ke supplier')
+                    ->icon('heroicon-s-check-circle')
+                    ->color('success')
+                    ->iconButton()
+                    ->requiresConfirmation()
+                    ->modalHeading('Approve Retur Pembelian')
+                    ->modalDescription('Setujui retur ini. Status akan berubah menjadi APPROVED. Barang boleh dikirim setelah ini.')
+                    ->visible(fn(PurchaseReturn $record): bool => $record->status === PurchaseReturn::STATUS_DRAFT)
+                    ->authorize(fn(PurchaseReturn $record): bool => auth()->user()?->can('approve_procurement::purchase::return'))
+                    ->action(function (PurchaseReturn $record) {
+                        app(PurchaseReturnWorkflowService::class)->approve($record);
+                        Notification::make()->title('Status Berubah: Disetujui')->success()->send();
+                    }),
+                // KIRIM BARANG (APPROVED -> SHIPPED) — hanya boleh sesudah disetujui
                 Tables\Actions\Action::make('ship_return')
                     ->label('Kirim')
                     ->tooltip('Kirim Barang ke Supplier')
@@ -206,9 +231,10 @@ class PurchaseReturnResource extends Resource
                     ->requiresConfirmation()
                     ->modalHeading('Kirim Retur ke Supplier')
                     ->modalDescription('Apakah barang fisik sudah diserahkan ke kurir / supplier? Status akan diubah menjadi SHIPPED.')
-                    ->visible(fn(PurchaseReturn $record): bool => in_array($record->status, ['draft', 'approved']))
+                    ->visible(fn(PurchaseReturn $record): bool => $record->status === PurchaseReturn::STATUS_APPROVED)
+                    ->authorize(fn(): bool => auth()->user()?->can('ship_procurement::purchase::return'))
                     ->action(function (PurchaseReturn $record) {
-                        $record->update(['status' => 'shipped']);
+                        app(PurchaseReturnWorkflowService::class)->ship($record);
                         Notification::make()->title('Status Berubah: Barang Dikirim')->success()->send();
                     }),
                 // TOMBOL SELESAIKAN (COMPLETE)
@@ -221,10 +247,11 @@ class PurchaseReturnResource extends Resource
                     ->requiresConfirmation()
                     ->modalHeading('Selesaikan Retur Pembelian')
                     ->modalDescription('Tindakan ini akan memicu pembaruan pada modul Akuntansi (Hutang terpotong / Kas bertambah). Lanjutkan?')
-                    ->visible(fn(PurchaseReturn $record): bool => in_array($record->status, ['approved', 'shipped']))
+                    ->visible(fn(PurchaseReturn $record): bool => $record->status === PurchaseReturn::STATUS_SHIPPED)
+                    ->authorize(fn(): bool => auth()->user()?->can('complete_procurement::purchase::return'))
                     ->action(function (PurchaseReturn $record): void {
                         try {
-                            app(PurchaseReturnFinancialService::class)->execute($record);
+                            app(PurchaseReturnWorkflowService::class)->complete($record);
 
                             Notification::make()
                                 ->title('Retur Berhasil Diselesaikan')

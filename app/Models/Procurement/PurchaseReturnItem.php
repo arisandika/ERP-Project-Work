@@ -27,4 +27,9 @@ class PurchaseReturnItem extends Model
     {
         return $this->belongsTo(\App\Models\Inventory\SerialNumber::class, 'serial_number_id');
     }
+
+    public function goodsReceiptItem(): BelongsTo
+    {
+        return $this->belongsTo(GoodsReceiptItem::class, 'goods_receipt_item_id');
+    }
 }
