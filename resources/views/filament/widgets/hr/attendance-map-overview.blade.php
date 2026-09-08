@@ -181,9 +181,9 @@
 
                 if (emp.office.lat && emp.office.lng && emp.office.radius) {
                     L.circle([emp.office.lat, emp.office.lng], {
-                        color: '#2563eb',
+                        color: '#2564eb89',
                         weight: 1,
-                        fillColor: '#3b82f6',
+                        fillColor: '#3b83f6a1',
                         fillOpacity: 0.2,
                         radius: emp.office.radius,
                     }).addTo(markersLayer);
