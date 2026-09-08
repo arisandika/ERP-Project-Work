@@ -265,7 +265,7 @@
                             <p class="mb-6 text-sm text-center text-gray-500 dark:text-gray-400">Kamu sudah
                                 menyelesaikan
                                 presensi hari ini. Terima kasih atas kerja kerasmu!</p>
-                            <x-filament::button tag="a" href="/hr/attendance-history" color="primary"
+                            <x-filament::button tag="a" href="/attendance-history" color="primary"
                                 icon="heroicon-o-clock">
                                 Lihat Riwayat Presensi
                             </x-filament::button>
