@@ -90,7 +90,7 @@
                 map = null;
             }
 
-            map = L.map("map").setView([-6.2, 106.816666], 15);
+            map = L.map("map").setView([-6.2, 106.816666], 17);
             L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
                 attribution: "&copy; OpenStreetMap contributors"
             }).addTo(map);
@@ -181,10 +181,8 @@
 
                 if (emp.office.lat && emp.office.lng && emp.office.radius) {
                     L.circle([emp.office.lat, emp.office.lng], {
-                        color: '#2564eb89',
-                        weight: 1,
-                        fillColor: '#3b83f6a1',
-                        fillOpacity: 0.2,
+                        color: '#2563eb', weight: 2,
+                        fillColor: '#3b83f615', fillOpacity: 0.15,
                         radius: emp.office.radius,
                     }).addTo(markersLayer);
                 }
