@@ -71,7 +71,7 @@ class SalesPerformanceTableWidget extends BaseWidget
                     ->sortable(),
             ])
             ->defaultSort('won_value', 'desc')
-            ->paginated([5, 10, 25])
-            ->defaultPaginationPageOption(10);
+            ->paginated([10, 25, 50, 100])
+            ->defaultPaginationPageOption(50);
     }
 }

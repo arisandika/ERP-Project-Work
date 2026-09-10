@@ -59,8 +59,8 @@ class AbsentTodayTableWidget extends BaseWidget
                     ->icon('heroicon-o-eye')
                     ->url(fn(Employee $record) => EmployeeResource::getUrl('view', ['record' => $record])),
             ])
-            ->paginated([5, 10, 25])
-            ->defaultPaginationPageOption(5)
+            ->paginated([10, 25, 50, 100])
+            ->defaultPaginationPageOption(50)
             ->emptyStateHeading('Semua karyawan sudah presensi hari ini')
             ->emptyStateIcon('heroicon-o-check-circle');
     }

@@ -62,7 +62,7 @@ class RecentReimbursementTable extends TableWidget
                     ->label('Dibuat')
                     ->since(),
             ])
-            ->defaultPaginationPageOption(5)
-            ->paginated([5, 10, 25]);
+            ->defaultPaginationPageOption(50)
+            ->paginated([10, 25, 50, 100]);
     }
 }

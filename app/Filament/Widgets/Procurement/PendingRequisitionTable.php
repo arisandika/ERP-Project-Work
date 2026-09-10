@@ -90,6 +90,6 @@ class PendingRequisitionTable extends BaseWidget
 
             ->emptyStateIcon('heroicon-o-check-badge')
 
-            ->paginated([5]);
+            ->paginated([10, 25, 50, 100]);
     }
 }

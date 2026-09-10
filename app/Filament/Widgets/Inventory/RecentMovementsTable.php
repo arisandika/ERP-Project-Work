@@ -151,7 +151,7 @@ class RecentMovementsTable extends BaseWidget
             ])
             ->bulkActions([])
             ->defaultSort('transaction_date', 'desc')
-            ->paginated([15, 30, 50])
+            ->paginated([10, 25, 50, 100])
             ->poll('30s');
     }
 }

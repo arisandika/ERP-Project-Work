@@ -56,8 +56,8 @@ class StaleLeadsTableWidget extends BaseWidget
                     ->color('warning')
                     ->url(fn(Lead $record) => LeadResource::getUrl('edit', ['record' => $record])),
             ])
-            ->paginated([5, 10, 25])
-            ->defaultPaginationPageOption(5)
+            ->paginated([10, 25, 50, 100])
+            ->defaultPaginationPageOption(50)
             ->emptyStateHeading('Semua lead baru sudah ditindaklanjuti');
     }
 }

@@ -103,7 +103,7 @@ class SystemAuditTable extends BaseWidget
             ])
             ->bulkActions([])
             ->defaultSort('detected_at', 'desc')
-            ->paginated([10, 25]);
+            ->paginated([10, 25, 50, 100]);
     }
 
     private function getAuditQuery(): Builder
