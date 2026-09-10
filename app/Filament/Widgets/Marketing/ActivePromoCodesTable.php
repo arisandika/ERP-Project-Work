@@ -24,7 +24,7 @@ class ActivePromoCodesTable extends BaseWidget
     {
         return $table
             ->query(PromoCode::available()->latest())
-            ->defaultPaginationPageOption(5)
+            ->defaultPaginationPageOption(50)
             ->columns([
                 Tables\Columns\TextColumn::make('code')
                     ->label('Kode')

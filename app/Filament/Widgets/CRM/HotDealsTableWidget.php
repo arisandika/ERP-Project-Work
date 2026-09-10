@@ -64,8 +64,8 @@ class HotDealsTableWidget extends BaseWidget
                     ->icon('heroicon-o-eye')
                     ->url(fn(Deal $record) => DealResource::getUrl('view', ['record' => $record])),
             ])
-            ->paginated([5, 10])
-            ->defaultPaginationPageOption(5)
+            ->paginated([10, 25, 50, 100])
+            ->defaultPaginationPageOption(50)
             ->emptyStateHeading('Tidak ada deal open saat ini');
     }
 }

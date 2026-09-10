@@ -59,6 +59,6 @@ class LeaveHistoryTable extends TableWidget
                     ->label('Requested At')
                     ->since(),
             ])
-            ->paginated([5, 10, 25]);
+            ->paginated([10, 25, 50, 100]);
     }
 }

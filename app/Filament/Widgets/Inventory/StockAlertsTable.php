@@ -142,6 +142,6 @@ class StockAlertsTable extends BaseWidget
             ])
             ->bulkActions([])
             ->defaultSort('created_at', 'desc')
-            ->paginated([10, 25, 50]);
+            ->paginated([10, 25, 50, 100]);
     }
 }

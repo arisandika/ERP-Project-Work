@@ -134,6 +134,6 @@ class PendingActionsTable extends BaseWidget
             ])
             ->bulkActions([])
             ->defaultSort('transaction_date', 'desc')
-            ->paginated([10, 25]);
+            ->paginated([10, 25, 50, 100]);
     }
 }

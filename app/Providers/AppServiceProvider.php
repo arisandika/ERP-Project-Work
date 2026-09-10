@@ -21,6 +21,7 @@ use App\Observers\StockTransactionObserver;
 use Filament\Http\Responses\Auth\Contracts\LoginResponse as LoginResponseContract;
 use Filament\Support\Colors\Color;
 use Filament\Support\Facades\FilamentColor;
+use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Relations\Relation;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\App;
@@ -49,6 +50,10 @@ class AppServiceProvider extends ServiceProvider
             'primary' => Color::hex('#1c9cf0'),
             'info'    => Color::hex('#1c9cf0'),
         ]);
+
+        Table::configureUsing(function (Table $table): void {
+            $table->defaultPaginationPageOption(50);
+        });
 
         // Register Observers
         ProductStock::observe(ProductStockObserver::class);

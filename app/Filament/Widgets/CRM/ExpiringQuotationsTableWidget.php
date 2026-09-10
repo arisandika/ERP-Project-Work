@@ -64,8 +64,8 @@ class ExpiringQuotationsTableWidget extends BaseWidget
                     ->color('warning')
                     ->url(fn(Quotation $record) => \App\Filament\Resources\Sales\QuotationResource::getUrl('edit', ['record' => $record])),
             ])
-            ->paginated([5, 10])
-            ->defaultPaginationPageOption(5)
+            ->paginated([10, 25, 50, 100])
+            ->defaultPaginationPageOption(50)
             ->emptyStateHeading('Tidak ada penawaran yang segera expired');
     }
 }

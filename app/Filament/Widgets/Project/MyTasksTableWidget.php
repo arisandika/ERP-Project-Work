@@ -58,8 +58,8 @@ class MyTasksTableWidget extends BaseWidget
                     ->icon('heroicon-o-arrow-right-circle')
                     ->url(fn(Ticket $record) => route('filament.admin.resources.project.tickets.view', $record)),
             ])
-            ->paginated([5, 10])
-            ->defaultPaginationPageOption(5)
+            ->paginated([10, 25, 50, 100])
+            ->defaultPaginationPageOption(50)
             ->emptyStateHeading('Tidak ada task aktif')
             ->emptyStateIcon('heroicon-o-check-circle');
     }
