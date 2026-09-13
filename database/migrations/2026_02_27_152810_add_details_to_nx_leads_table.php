@@ -13,8 +13,12 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('nx_leads', function (Blueprint $table) {
-            $table->string('pic_name')->nullable()->after('name');
-            $table->string('pic_phone')->nullable()->after('phone');
+            if (!Schema::hasColumn('nx_leads', 'pic_name')) {
+                $table->string('pic_name')->nullable()->after('name');
+            }
+            if (!Schema::hasColumn('nx_leads', 'pic_phone')) {
+                $table->string('pic_phone')->nullable()->after('phone');
+            }
         });
     }
 

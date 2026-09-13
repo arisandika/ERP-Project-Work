@@ -2,7 +2,6 @@
 
 namespace App\Filament\Resources\Sales\InvoiceResource\RelationManagers;
 
-use App\Models\Finance\FinancialRecord;
 use App\Models\Sales\Invoice;
 use Filament\Forms;
 use Filament\Forms\Form;
@@ -123,18 +122,9 @@ class PaymentsRelationManager extends RelationManager
                                 'created_by' => auth()->id() ?? 1,
                             ]);
 
-                            FinancialRecord::create([
-                                'transaction_date' => $data['payment_date'],
-                                'type' => 'pemasukan',
-                                'amount' => (float) $data['amount'],
-                                'category' => 'Accounts Receivable',
-                                'description' => 'Penerimaan pembayaran invoice ' . $invoice->invoice_number,
-                                'reference_number' => $invoice->invoice_number,
-                                'reference_type' => Invoice::class,
-                                'reference_id' => $invoice->id,
-                                'created_by' => auth()->user()?->employee?->id,
-                            ]);
-
+                            // Posting keuangan ditangani SEPENUHNYA oleh model Payment
+                            // (booted: created → syncFinancialRecord → FinancialRecord::updateOrCreate).
+                            // Dilarang membuat posting kedua di sini — itu source of duplicate posting.
                             $invoice->refresh()->recalculateStatus();
 
                             return $payment;

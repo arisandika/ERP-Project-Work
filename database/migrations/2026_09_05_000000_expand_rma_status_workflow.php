@@ -22,6 +22,11 @@ return new class extends Migration
             return;
         }
 
+        // SQLite tidak mendukung ALTER ... MODIFY; skema status sudah string.
+        if (Schema::getConnection()->getDriverName() === 'sqlite') {
+            return;
+        }
+
         DB::statement('ALTER TABLE nx_rma_requests MODIFY status VARCHAR(50) NOT NULL DEFAULT \'submitted\'');
     }
 
@@ -31,7 +36,9 @@ return new class extends Migration
             return;
         }
 
-        // Best-effort revert; will fail if rows contain new status values.
-        DB::statement("ALTER TABLE nx_rma_requests MODIFY status ENUM('received','sent_to_vendor','ready_from_vendor','returned_to_client','rejected') NOT NULL DEFAULT 'received'");
+        if (Schema::getConnection()->getDriverName() !== 'sqlite') {
+            // Best-effort revert; will fail if rows contain new status values.
+            DB::statement("ALTER TABLE nx_rma_requests MODIFY status ENUM('received','sent_to_vendor','ready_from_vendor','returned_to_client','rejected') NOT NULL DEFAULT 'received'");
+        }
     }
 };

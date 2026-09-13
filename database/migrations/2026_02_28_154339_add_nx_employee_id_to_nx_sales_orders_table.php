@@ -12,6 +12,12 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('nx_sales_orders', function (Blueprint $table) {
+            // nx_employee_id sudah dibuat create migration 2025_11_08 — guard
+            // mencegah "duplicate column" pada fresh migrate.
+            if (Schema::hasColumn('nx_sales_orders', 'nx_employee_id')) {
+                return;
+            }
+
             // Gunakan constrained() agar integritas data terjaga di level database
             $table->foreignId('nx_employee_id')
                 ->nullable() // atau constrained() jika wajib

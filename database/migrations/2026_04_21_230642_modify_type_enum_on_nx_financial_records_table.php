@@ -1,12 +1,20 @@
 <?php
 
 use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
     public function up(): void
     {
+        // SQLite tidak mendukung ALTER ... MODIFY COLUMN ENUM; kolom type dibuat
+        // sebagai string. Baris ini hanya relevan di MySQL/MariaDB.
+        if (Schema::getConnection()->getDriverName() === 'sqlite') {
+            return;
+        }
+
         DB::statement("
             ALTER TABLE nx_financial_records
             MODIFY COLUMN type ENUM('pemasukan', 'pengeluaran', 'piutang') NOT NULL
@@ -15,6 +23,10 @@ return new class extends Migration
 
     public function down(): void
     {
+        if (Schema::getConnection()->getDriverName() === 'sqlite') {
+            return;
+        }
+
         DB::statement("
             ALTER TABLE nx_financial_records
             MODIFY COLUMN type ENUM('pemasukan', 'pengeluaran') NOT NULL

@@ -173,15 +173,30 @@ class AccountsPayable extends Page
                     // REFAKTORISASI: Bungkus dalam DB::transaction untuk integritas finansial
                     try {
                         DB::transaction(function () use ($data, $amount, $debt) {
-                            FinancialRecord::create([
-                                'transaction_date' => $data['transaction_date'],
-                                'type' => 'pengeluaran',
-                                'amount' => $amount,
-                                'category' => 'Accounts Payable',
-                                'description' => $data['description'] ?: 'Pembayaran hutang supplier',
-                                'reference_number' => $debt['reference_number'],
-                                'created_by' => auth()->id(),
-                            ]);
+                            // IDEMPOTENT: double-execution identik (retry/double-click) tidak menambah
+                            // jurnal ganda. Guard = reference hutang + nominal + tanggal.
+                            // Partial payment berbeda nominal TETAP menumpuk (create baru), tidak overwrite.
+                            $alreadyRecorded = FinancialRecord::query()
+                                ->where('reference_type', FinancialRecord::class)
+                                ->where('reference_id', $debt['id'])
+                                ->where('amount', $amount)
+                                ->whereDate('transaction_date', $data['transaction_date'])
+                                ->where('type', 'pengeluaran')
+                                ->exists();
+
+                            if (! $alreadyRecorded) {
+                                FinancialRecord::create([
+                                    'transaction_date' => $data['transaction_date'],
+                                    'type' => 'pengeluaran',
+                                    'amount' => $amount,
+                                    'category' => 'Accounts Payable',
+                                    'description' => $data['description'] ?: 'Pembayaran hutang supplier',
+                                    'reference_number' => $debt['reference_number'],
+                                    'reference_type' => FinancialRecord::class,
+                                    'reference_id'   => $debt['id'],
+                                    'created_by' => auth()->user()?->employee?->id,
+                                ]);
+                            }
                         });
 
                         Notification::make()
