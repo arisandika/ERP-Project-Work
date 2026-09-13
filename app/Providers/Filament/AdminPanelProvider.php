@@ -140,6 +140,7 @@ class AdminPanelProvider extends PanelProvider
                 $sw = asset('sw.js');
 
                 $html = <<<'HTML'
+                <style>#pwa-banner[hidden]{display:none !important}</style>
                 <div id="pwa-banner" hidden class="fixed top-0 inset-x-0 z-50 flex items-center gap-3 px-4 py-3 text-sm bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 shadow-md">
                     <img src="%ICON%" alt="" class="w-9 h-9 rounded-lg">
                     <div class="flex-1 min-w-0">
