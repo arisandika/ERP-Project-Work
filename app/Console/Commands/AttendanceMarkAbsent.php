@@ -22,11 +22,9 @@ class AttendanceMarkAbsent extends Command
             ->first();
 
         // Base query — selalu exclude employee milik super_admin
-        $baseQuery = Attendance::whereDate('date', $today)
-            ->whereHas('employee.user', function ($query) {
-                $query->whereDoesntHave('roles', function ($q) {
-                    $q->where('name', 'super_admin');
-                });
+        $baseQuery = Attendance::whereDate('date', '=', $today)
+            ->whereHas('employee', function ($query) {
+                $query->forAttendanceReporting();
             });
 
         if ($isWeekend || $holiday) {
