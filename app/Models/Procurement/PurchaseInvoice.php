@@ -13,6 +13,11 @@ class PurchaseInvoice extends Model
 {
     use SoftDeletes, GeneratesDocumentNumber;
 
+    public const STATUS_UNPAID = 'unpaid';
+    public const STATUS_PARTIAL = 'partial';
+    public const STATUS_PAID = 'paid';
+    public const STATUS_CANCELLED = 'cancelled';
+
     protected $table = 'nx_purchase_invoices';
 
     protected $guarded = ['id'];

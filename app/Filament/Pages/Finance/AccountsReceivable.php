@@ -181,15 +181,30 @@ class AccountsReceivable extends Page
                     // REFAKTORISASI: Implementasi DB Transaction untuk integritas pencatatan kas
                     try {
                         DB::transaction(function () use ($data, $amount, $receivable) {
-                            FinancialRecord::create([
-                                'transaction_date' => $data['transaction_date'],
-                                'type' => 'pemasukan', // Pembayaran piutang adalah uang masuk
-                                'amount' => $amount,
-                                'category' => 'Accounts Receivable',
-                                'description' => $data['description'] ?: 'Penerimaan pembayaran customer',
-                                'reference_number' => $receivable['reference_number'],
-                                'created_by' => auth()->id(),
-                            ]);
+                            // IDEMPOTENT: double-execution pada data identical (retry/double-click)
+                            // tidak menambah jurnal ganda. Guard = reference piutang + nominal + tanggal.
+                            // Partial payment dengan nominal berbeda TETAP menumpuk (create baru), tidak overwrite.
+                            $alreadyRecorded = FinancialRecord::query()
+                                ->where('reference_type', FinancialRecord::class)
+                                ->where('reference_id', $receivable['id'])
+                                ->where('amount', $amount)
+                                ->whereDate('transaction_date', $data['transaction_date'])
+                                ->where('type', 'pemasukan')
+                                ->exists();
+
+                            if (! $alreadyRecorded) {
+                                FinancialRecord::create([
+                                    'transaction_date' => $data['transaction_date'],
+                                    'type' => 'pemasukan', // Pembayaran piutang adalah uang masuk
+                                    'amount' => $amount,
+                                    'category' => 'Accounts Receivable',
+                                    'description' => $data['description'] ?: 'Penerimaan pembayaran customer',
+                                    'reference_number' => $receivable['reference_number'],
+                                    'reference_type' => FinancialRecord::class,
+                                    'reference_id'   => $receivable['id'],
+                                    'created_by' => auth()->user()?->employee?->id,
+                                ]);
+                            }
                         });
 
                         Notification::make()

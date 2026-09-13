@@ -7,38 +7,33 @@ use Illuminate\Support\Facades\Schema;
 return new class extends Migration {
     /**
      * Run the migrations.
+     *
+     * Benahi schema drift: hampir semua kolom sudah dibuat oleh
+     * 2026_02_23_023753_create_leads_table. Ulang-add tanpa guard →
+     * "duplicate column name" pada fresh migrate (SQLite). Hanya
+     * converted_customer_id yang benar-benar baru.
      */
     public function up(): void
     {
-        Schema::table('nx_leads', function (Blueprint $table) {
-            $table->string('name', 150);
-            $table->string('email', 150)->nullable();
-            $table->string('phone', 30)->nullable();
+        $add = function (string $col, callable $build) {
+            if (! Schema::hasColumn('nx_leads', $col)) {
+                Schema::table('nx_leads', fn (Blueprint $table) => $build($table));
+            }
+        };
 
-            $table->text('address')->nullable();
+        $add('name', fn ($t) => $t->string('name', 150));
+        $add('email', fn ($t) => $t->string('email', 150)->nullable());
+        $add('phone', fn ($t) => $t->string('phone', 30)->nullable());
+        $add('address', fn ($t) => $t->text('address')->nullable());
+        $add('customer_type', fn ($t) => $t->enum('customer_type', ['individual', 'company']));
+        $add('source', fn ($t) => $t->string('source', 100)->nullable());
+        $add('status', fn ($t) => $t->enum('status', ['new', 'contacted', 'qualified', 'converted', 'lost'])->default('new'));
+        $add('notes', fn ($t) => $t->text('notes')->nullable());
+        $add('converted_customer_id', fn ($t) => $t->unsignedBigInteger('converted_customer_id')->nullable());
 
-            $table->enum('customer_type', [
-                'individual',
-                'company'
-            ]);
-
-            $table->string('source', 100)->nullable();
-
-            $table->enum('status', [
-                'new',
-                'contacted',
-                'qualified',
-                'converted',
-                'lost'
-            ])->default('new');
-
-            $table->text('notes')->nullable();
-
-            $table->unsignedBigInteger('converted_customer_id')
-                ->nullable();
-
-            $table->timestamps();
-        });
+        if (! Schema::hasColumn('nx_leads', 'created_at')) {
+            Schema::table('nx_leads', fn (Blueprint $table) => $table->timestamps());
+        }
     }
 
     /**

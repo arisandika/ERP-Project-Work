@@ -312,6 +312,15 @@ test('TC-019: guessAccountingFields auto-classify liability dari type hutang', f
 });
 
 test('TC-020: Created by employee ID tersimpan', function () {
+    $user = \App\Models\User::factory()->create();
+    $employee = \App\Models\HR\Employee::create([
+        'user_id' => $user->id,
+        'full_name' => 'Test Employee',
+        'email' => 'emp-' . uniqid() . '@test.local',
+        'phone_number' => '0812' . random_int(10000000, 99999999),
+        'position' => 'Staff Finance',
+    ]);
+
     $record = FinancialRecord::create([
         'transaction_date' => now(),
         'type' => 'piutang',
@@ -320,8 +329,8 @@ test('TC-020: Created by employee ID tersimpan', function () {
         'description' => 'Test created_by',
         'reference_type' => 'App\Models\Sales\Invoice',
         'reference_id' => 1,
-        'created_by' => 99,
+        'created_by' => $employee->id,
     ]);
 
-    expect($record->created_by)->toBe(99);
+    expect($record->created_by)->toBe($employee->id);
 });

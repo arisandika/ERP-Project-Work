@@ -10,7 +10,14 @@ return new class extends Migration {
      */
     public function up(): void
     {
+        // Benahi schema drift: create 2026_02_20_222735 sudah punya kolom
+        // status (& timestamps). Ulang-add tanpa guard → duplicate column pada
+        // fresh migrate (SQLite). Kolom lain di bawah asli dari refactor ini.
         Schema::table('nx_deals', function (Blueprint $table) {
+            if (Schema::hasColumn('nx_deals', 'nx_customer_id')) {
+                return;
+            }
+
             $table->unsignedBigInteger('nx_customer_id');
 
             $table->unsignedBigInteger('nx_lead_id')
@@ -26,16 +33,19 @@ return new class extends Migration {
             $table->decimal('estimated_value', 15, 2)
                 ->default(0);
 
-            $table->enum('status', [
-                'open',
-                'won',
-                'lost'
-            ])->default('open');
+            // status sudah dibuat create migration (varchar default 'proposal');
+            // DI SINI DI-SKIP agar tidak duplikat. Kolom varchar tidak punya
+            // check constraint sehingga nilainya fleksibel di semua DB engine.
+            if (! Schema::hasColumn('nx_deals', 'status')) {
+                $table->enum('status', ['open', 'won', 'lost'])->default('open');
+            }
 
             $table->dateTime('close_date')
                 ->nullable();
 
-            $table->timestamps();
+            if (! Schema::hasColumn('nx_deals', 'created_at')) {
+                $table->timestamps();
+            }
 
             // Foreign Keys
             $table->foreign('nx_customer_id')

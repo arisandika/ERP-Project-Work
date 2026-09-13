@@ -18,6 +18,11 @@ return new class extends Migration
             return;
         }
 
+        // SQLite tidak mendukung ALTER ... MODIFY; skema type sudah string.
+        if (Schema::getConnection()->getDriverName() === 'sqlite') {
+            return;
+        }
+
         // Change to a plain string so new values (refund) can be stored without
         // re-altering enum every time the workflow grows.
         DB::statement("ALTER TABLE nx_rma_requests MODIFY resolution_type VARCHAR(50) NULL");
@@ -25,7 +30,8 @@ return new class extends Migration
 
     public function down(): void
     {
-        if (Schema::hasColumn('nx_rma_requests', 'resolution_type')) {
+        if (Schema::hasColumn('nx_rma_requests', 'resolution_type')
+            && Schema::getConnection()->getDriverName() !== 'sqlite') {
             // Revert to enum (best-effort; if data contains new values, this will fail)
             DB::statement("ALTER TABLE nx_rma_requests MODIFY resolution_type ENUM('repaired','replaced','rejected') NULL");
         }

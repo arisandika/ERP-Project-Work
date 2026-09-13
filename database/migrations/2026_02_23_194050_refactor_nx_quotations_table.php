@@ -9,7 +9,9 @@ return new class extends Migration {
 
     public function up(): void
     {
-        Schema::table('nx_quotations', function (Blueprint $table) {
+        $isSqlite = Schema::getConnection()->getDriverName() === 'sqlite';
+
+        Schema::table('nx_quotations', function (Blueprint $table) use ($isSqlite) {
 
             if (!Schema::hasColumn('nx_quotations', 'nx_deal_id'))
                 $table->unsignedBigInteger('nx_deal_id')->nullable()->after('id');
@@ -29,13 +31,26 @@ return new class extends Migration {
             if (!Schema::hasColumn('nx_quotations', 'deleted_at'))
                 $table->softDeletes();
 
-            if (Schema::hasColumn('nx_quotations', 'created_by_employee_id'))
-                $table->dropColumn('created_by_employee_id');
+            // Drop kolom legacy. SQLite membangun ulang tabel saat drop column dan
+            // menolak kalau kolom punya FK tersisa (created_by_employee_id dibuat
+            // 2025_11_05 dengan constrained). Pada SQLite, kolom legacy ini adalah
+            // artefak dan tidak diperlukan — skip. MySQL/MariaDB sudah drop di prod.
+            if (! $isSqlite) {
+                if (Schema::hasColumn('nx_quotations', 'created_by_employee_id'))
+                    $table->dropColumn('created_by_employee_id');
 
-            if (Schema::hasColumn('nx_quotations', 'approved_by_employee_id'))
-                $table->dropColumn('approved_by_employee_id');
+                if (Schema::hasColumn('nx_quotations', 'approved_by_employee_id'))
+                    $table->dropColumn('approved_by_employee_id');
+            }
 
         });
+
+        // SQLite tidak mengenal SET FOREIGN_KEY_CHECKS / ALTER ... MODIFY.
+        // Penataan ulang kolom (reorder) hanya berlaku di MySQL; pada SQLite
+        // urutan kolom tidak relevan, blok MySQL-only cukup di-skip.
+        if ($isSqlite) {
+            return;
+        }
 
         DB::statement('SET FOREIGN_KEY_CHECKS=0');
 
