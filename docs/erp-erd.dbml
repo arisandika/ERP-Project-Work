@@ -1,0 +1,978 @@
+// ERP Project Work - focused ERD
+// Business columns and relationship columns are included. Repeated audit columns
+// (created_at, updated_at, deleted_at) are intentionally omitted for readability.
+
+Table users {
+  id bigint [pk]
+  name varchar
+  email varchar
+  password varchar
+  email_verified_at timestamp
+}
+Table nx_departments {
+  id bigint [pk]
+  name varchar
+  description text
+}
+Table nx_offices {
+  id bigint [pk]
+  name varchar
+  address text
+}
+Table nx_shifts {
+  id bigint [pk]
+  name varchar
+  start_time time
+  end_time time
+  tolerance_minutes int
+  is_overnight boolean
+}
+Table nx_employees {
+  id bigint [pk]
+  user_id bigint
+  department_id bigint
+  office_id bigint
+  shift_id bigint
+  supervisor_id bigint
+  identity_number varchar
+  full_name varchar
+  birth_place varchar
+  birth_date date
+  gender varchar
+  marital_status varchar
+  education_level varchar
+  join_date date
+  email varchar
+  phone_number varchar
+  address text
+  photo varchar
+  position varchar
+  contract_type varchar
+  status varchar
+  can_wfa boolean
+  can_unlock_shift boolean
+}
+Table nx_attendances {
+  id bigint [pk]
+  employee_id bigint
+  shift_id bigint
+  attendance_date date
+  check_in timestamp
+  check_out timestamp
+  status varchar
+  notes text
+}
+Table nx_leaves {
+  id bigint [pk]
+  employee_id bigint
+  name varchar
+  quota int
+  is_female_only boolean
+}
+Table nx_leave_requests {
+  id bigint [pk]
+  employee_id bigint
+  leave_id bigint
+  approved_by bigint
+  start_date date
+  end_date date
+  reason text
+  status varchar
+  approved_at timestamp
+}
+Table nx_sick_requests {
+  id bigint [pk]
+  employee_id bigint
+  approved_by bigint
+  start_date date
+  end_date date
+  reason text
+  status varchar
+}
+Table nx_holidays {
+  id bigint [pk]
+  name varchar
+  date date
+  description text
+}
+Table nx_performance_evaluations {
+  id bigint [pk]
+  employee_id bigint
+  evaluator_id bigint
+  evaluation_period varchar
+  evaluation_date date
+  overall_score decimal
+  comments text
+  criterion_ratings json
+}
+
+Table nx_categories {
+  id bigint [pk]
+  name varchar
+  description text
+}
+Table nx_units {
+  id bigint [pk]
+  name varchar
+  symbol varchar
+}
+Table nx_products {
+  id bigint [pk]
+  category_id bigint
+  unit_id bigint
+  name varchar
+  sku varchar
+  description text
+  price decimal
+  cost_price decimal
+  max_stock int
+  is_serialized boolean
+  image_path varchar
+  status varchar
+}
+Table nx_services {
+  id bigint [pk]
+  category_id bigint
+  name varchar
+  service_code varchar
+  description text
+  price decimal
+}
+Table nx_warehouses {
+  id bigint [pk]
+  warehouse_name varchar
+  location varchar
+  address text
+  phone varchar
+  maps_url varchar
+  is_active boolean
+}
+Table nx_product_stock {
+  id bigint [pk]
+  product_id bigint
+  warehouse_id bigint
+  qty int
+  min_stock int
+  max_stock int
+  sold_stock int
+  qty_on_delivery int
+  status varchar
+}
+Table nx_stock_transactions {
+  id bigint [pk]
+  product_id bigint
+  warehouse_id bigint
+  serial_number_id bigint
+  created_by bigint
+  type varchar
+  quantity int
+  reference_type varchar
+  reference_id bigint
+  transaction_code varchar
+  notes text
+  unit_cost decimal
+  total_cost decimal
+}
+Table nx_serial_number {
+  id bigint [pk]
+  product_id bigint
+  warehouse_id bigint
+  supplier_id bigint
+  customer_id bigint
+  purchase_order_id bigint
+  serial_number varchar
+  status varchar
+  inbound_date date
+  outbound_date date
+  warranty_expired_at date
+}
+Table nx_packages {
+  id bigint [pk]
+  package_code varchar
+  name varchar
+  description text
+  price decimal
+  status varchar
+}
+Table nx_package_items {
+  id bigint [pk]
+  package_id bigint
+  item_id bigint
+  item_type varchar
+  quantity int
+  price decimal
+}
+
+Table nx_customers {
+  id bigint [pk]
+  customer_code varchar
+  name varchar
+  email varchar
+  phone varchar
+  address text
+  customer_type varchar
+  nik varchar
+  npwp varchar
+  pic_name varchar
+  pic_position varchar
+  pic_phone varchar
+  source varchar
+  status varchar
+}
+Table nx_leads {
+  id bigint [pk]
+  created_by bigint
+  converted_by bigint
+  converted_customer_id bigint
+  name varchar
+  email varchar
+  phone varchar
+  address text
+  customer_type varchar
+  source varchar
+  pic_name varchar
+  pic_phone varchar
+  pic_email varchar
+  pic_position varchar
+  status varchar
+  notes text
+  converted_at timestamp
+}
+Table nx_deal_stages {
+  id bigint [pk]
+  name varchar
+  color varchar
+  sort_order int
+  is_closed boolean
+}
+Table nx_deals {
+  id bigint [pk]
+  nx_lead_id bigint
+  nx_customer_id bigint
+  nx_deal_stage_id bigint
+  created_by bigint
+  title varchar
+  deal_number varchar
+  deal_date date
+  estimated_value decimal
+  status varchar
+  close_date date
+  closed_at timestamp
+}
+Table nx_deal_stage_logs {
+  id bigint [pk]
+  nx_deal_id bigint
+  from_stage_id bigint
+  to_stage_id bigint
+  changed_by bigint
+  changed_at timestamp
+}
+Table nx_sales_people {
+  id bigint [pk]
+  employee_id bigint
+  user_id bigint
+  name varchar
+  phone varchar
+  email varchar
+  status varchar
+}
+Table nx_quotations {
+  id bigint [pk]
+  approved_by bigint
+  nx_customer_id bigint
+  nx_sales_people_id bigint
+  nx_deal_id bigint
+  nx_lead_id bigint
+  internal_pic_id bigint
+  created_by bigint
+  quotation_number varchar
+  quotation_date date
+  valid_until date
+  status varchar
+  is_primary boolean
+  rejected_reason text
+  subtotal decimal
+  tax decimal
+  discount_amount decimal
+  grand_total decimal
+  promo_code_id bigint
+  notes text
+  field_staff_pic_id bigint
+  approved_at timestamp
+}
+Table nx_quotation_items {
+  id bigint [pk]
+  nx_quotation_id bigint
+  item_id bigint
+  item_type varchar
+  name varchar
+  code varchar
+  description text
+  quantity decimal
+  unit varchar
+  unit_price decimal
+  discount decimal
+  tax decimal
+  total decimal
+  cost_price decimal
+}
+Table nx_sales_orders {
+  id bigint [pk]
+  sales_quotation_id bigint
+  quotation_id bigint
+  nx_customer_id bigint
+  nx_employee_id bigint
+  nx_deal_id bigint
+  promo_code_id bigint
+  order_number varchar
+  order_date date
+  customer_po_number varchar
+  status varchar
+  notes text
+  subtotal decimal
+  discount_amount decimal
+  tax decimal
+  grand_total decimal
+}
+Table nx_sales_order_items {
+  id bigint [pk]
+  nx_sales_order_id bigint
+  product_id bigint
+  description text
+  quantity decimal
+  unit_price decimal
+  discount decimal
+  tax decimal
+  total decimal
+}
+Table nx_delivery_orders {
+  id bigint [pk]
+  nx_sales_order_id bigint
+  nx_customer_id bigint
+  nx_employee_id bigint
+  delivery_number varchar
+  delivery_date date
+  status varchar
+  recipient_name varchar
+  recipient_phone varchar
+  delivery_address text
+  proof_of_delivery varchar
+  notes text
+}
+Table nx_delivery_order_items {
+  id bigint [pk]
+  nx_delivery_order_id bigint
+  item_id bigint
+  item_type varchar
+  quantity decimal
+  delivered_quantity decimal
+  notes text
+}
+Table nx_invoices {
+  id bigint [pk]
+  nx_sales_order_id bigint
+  nx_customer_id bigint
+  invoice_number varchar
+  invoice_date date
+  due_date date
+  customer_po_number varchar
+  status varchar
+  subtotal decimal
+  tax_amount decimal
+  discount_amount decimal
+  grand_total decimal
+  total_paid decimal
+  notes text
+}
+Table nx_invoice_items {
+  id bigint [pk]
+  nx_invoice_id bigint
+  item_id bigint
+  item_type varchar
+  description text
+  quantity decimal
+  unit_price decimal
+  discount decimal
+  tax decimal
+  total decimal
+}
+Table nx_payments {
+  id bigint [pk]
+  nx_invoice_id bigint
+  created_by bigint
+  payment_number varchar
+  payment_date date
+  amount decimal
+  payment_method varchar
+  status varchar
+  gateway_provider varchar
+  gateway_transaction_id varchar
+  gateway_reference varchar
+  notes text
+}
+Table nx_promo_codes {
+  id bigint [pk]
+  code varchar
+  description text
+  discount_type varchar
+  discount_value decimal
+  starts_at timestamp
+  expires_at timestamp
+  usage_limit int
+  usage_count int
+  is_active boolean
+}
+
+Table nx_suppliers {
+  id bigint [pk]
+  code varchar
+  name varchar
+  is_company boolean
+  email varchar
+  phone varchar
+  address text
+  tax_id varchar
+  status varchar
+}
+Table nx_supplier_contacts {
+  id bigint [pk]
+  supplier_id bigint
+  name varchar
+  type varchar
+  value varchar
+}
+Table nx_purchase_requisitions {
+  id bigint [pk]
+  requested_by bigint
+  submitted_by bigint
+  approved_by bigint
+  pr_number varchar
+  title varchar
+  description text
+  department_id bigint
+  status varchar
+  submitted_at timestamp
+  approved_at timestamp
+  rejection_note text
+}
+Table nx_purchase_requisition_items {
+  id bigint [pk]
+  purchase_requisition_id bigint
+  product_id bigint
+  quantity decimal
+  estimated_price decimal
+  notes text
+}
+Table nx_purchase_orders {
+  id bigint [pk]
+  supplier_id bigint
+  purchase_requisition_id bigint
+  created_by bigint
+  po_number varchar
+  title varchar
+  order_date date
+  expected_delivery_date date
+  status varchar
+  subtotal decimal
+  tax_amount decimal
+  discount_amount decimal
+  grand_total decimal
+  notes text
+}
+Table nx_purchase_order_items {
+  id bigint [pk]
+  purchase_order_id bigint
+  product_id bigint
+  quantity decimal
+  unit_price decimal
+  total_price decimal
+  notes text
+}
+Table nx_goods_receipts {
+  id bigint [pk]
+  purchase_order_id bigint
+  supplier_id bigint
+  warehouse_id bigint
+  received_by bigint
+  receipt_number varchar
+  receipt_date date
+  status varchar
+  notes text
+}
+Table nx_goods_receipt_items {
+  id bigint [pk]
+  goods_receipt_id bigint
+  purchase_order_item_id bigint
+  product_id bigint
+  quantity_ordered decimal
+  quantity_received decimal
+  condition varchar
+  notes text
+}
+Table nx_purchase_invoices {
+  id bigint [pk]
+  purchase_order_id bigint
+  supplier_id bigint
+  created_by bigint
+  invoice_number varchar
+  vendor_invoice_number varchar
+  invoice_date date
+  due_date date
+  subtotal decimal
+  tax_amount decimal
+  discount_amount decimal
+  grand_total decimal
+  total_paid decimal
+  remaining_balance decimal
+  status varchar
+  notes text
+}
+Table nx_purchase_invoice_items {
+  id bigint [pk]
+  purchase_invoice_id bigint
+  purchase_order_item_id bigint
+  product_id bigint
+  quantity_billed decimal
+  unit_price decimal
+  total_price decimal
+}
+Table nx_purchase_order_payments {
+  id bigint [pk]
+  purchase_order_id bigint
+  purchase_invoice_id bigint
+  created_by bigint
+  payment_number varchar
+  payment_date date
+  amount decimal
+  payment_method varchar
+  status varchar
+  notes text
+}
+Table nx_purchase_returns {
+  id bigint [pk]
+  supplier_id bigint
+  goods_receipt_id bigint
+  purchase_order_id bigint
+  created_by bigint
+  return_number varchar
+  return_date date
+  reason text
+  status varchar
+  notes text
+}
+Table nx_purchase_return_items {
+  id bigint [pk]
+  purchase_return_id bigint
+  product_id bigint
+  serial_number_id bigint
+  goods_receipt_item_id bigint
+  quantity decimal
+  reason text
+  resolution varchar
+}
+Table nx_financial_records {
+  id bigint [pk]
+  reimburse_id bigint
+  created_by bigint
+  reference_id bigint
+  reference_type varchar
+  transaction_date date
+  description text
+  type varchar
+  amount decimal
+  category varchar
+}
+Table nx_reimbursements {
+  id bigint [pk]
+  employee_id bigint
+  approved_by bigint
+  reimbursement_number varchar
+  amount decimal
+  expense_date date
+  description text
+  status varchar
+  rejection_reason text
+}
+
+Table nx_projects {
+  id bigint [pk]
+  nx_sales_order_id bigint
+  project_manager_id bigint
+  name varchar
+  description text
+  ticket_prefix varchar
+  color varchar
+  start_date date
+  end_date date
+  pinned_date timestamp
+  estimated_cost decimal
+  actual_cost decimal
+}
+Table nx_project_members {
+  project_id bigint
+  employee_id bigint
+  role varchar
+}
+Table nx_project_documents {
+  id bigint [pk]
+  nx_project_id bigint
+  uploaded_by bigint
+  name varchar
+  file_path varchar
+  file_type varchar
+  file_size bigint
+}
+Table nx_project_notes {
+  id bigint [pk]
+  project_id bigint
+  created_by bigint
+  title varchar
+  content text
+}
+Table nx_external_access {
+  id bigint [pk]
+  project_id bigint
+  access_token varchar
+  password varchar
+  is_active boolean
+  last_accessed_at timestamp
+}
+Table nx_epics {
+  id bigint [pk]
+  project_id bigint
+  created_by bigint
+  name varchar
+  description text
+  start_date date
+  end_date date
+  sort_order int
+}
+Table nx_ticket_statuses {
+  id bigint [pk]
+  project_id bigint
+  name varchar
+  sort_order int
+  color varchar
+  is_completed boolean
+}
+Table nx_ticket_priorities {
+  id bigint [pk]
+  name varchar
+  color varchar
+  sort_order int
+}
+Table nx_tickets {
+  id bigint [pk]
+  project_id bigint
+  ticket_status_id bigint
+  priority_id bigint
+  epic_id bigint
+  created_by bigint
+  name varchar
+  description text
+  start_date date
+  due_date date
+  uuid varchar
+}
+Table nx_ticket_users {
+  ticket_id bigint
+  employee_id bigint
+}
+Table nx_ticket_histories {
+  id bigint [pk]
+  ticket_id bigint
+  employee_id bigint
+  ticket_status_id bigint
+  note text
+}
+Table nx_ticket_comments {
+  id bigint [pk]
+  ticket_id bigint
+  employee_id bigint
+  comment text
+}
+Table nx_notifications {
+  id bigint [pk]
+  employee_id bigint
+  title varchar
+  message text
+  type varchar
+  read_at timestamp
+}
+
+Table nx_visit_assignments {
+  id bigint [pk]
+  nx_deal_id bigint
+  assigned_to_id bigint
+  assigned_to_type varchar
+  assigned_by bigint
+  visit_date date
+  visit_time time
+  deadline_date date
+  purpose varchar
+  notes text
+  status varchar
+}
+Table nx_visit_records {
+  id bigint [pk]
+  nx_visit_assignment_id bigint
+  nx_project_id bigint
+  visited_at timestamp
+  check_in_at timestamp
+  check_out_at timestamp
+  duration_minutes int
+  latitude decimal
+  longitude decimal
+  location_address varchar
+  visit_purpose varchar
+  description text
+  visit_result varchar
+  next_followup_date date
+  followup_notes text
+  visit_order int
+}
+Table nx_visit_photos {
+  id bigint [pk]
+  nx_visit_record_id bigint
+  file_path varchar
+  photo_type varchar
+  latitude decimal
+  longitude decimal
+  taken_at timestamp
+  caption varchar
+}
+
+Table nx_rma_requests {
+  id bigint [pk]
+  serial_number_id bigint
+  customer_id bigint
+  invoice_id bigint
+  invoice_item_id bigint
+  product_id bigint
+  new_serial_number_id bigint
+  purchase_return_id bigint
+  procurement_claim_id bigint
+  rma_number varchar
+  qty decimal
+  warranty_type varchar
+  issue_type varchar
+  status varchar
+  issue_description text
+  evidence_files json
+  vendor_notes text
+  internal_notes text
+  inspection_result text
+  warranty_decision varchar
+  resolution_type varchar
+  received_date date
+  sent_to_vendor_date date
+  back_from_vendor_date date
+  returned_to_client_date date
+  refund_status varchar
+  created_by bigint
+  source varchar
+}
+Table nx_internal_repairs {
+  id bigint [pk]
+  rma_id bigint
+  technician_user_id bigint
+  created_by bigint
+  repair_number varchar
+  diagnosis text
+  repair_action text
+  status varchar
+  started_at timestamp
+  completed_at timestamp
+  notes text
+}
+Table nx_vendor_claims {
+  id bigint [pk]
+  rma_id bigint
+  supplier_id bigint
+  purchase_order_id bigint
+  created_by bigint
+  claim_number varchar
+  claim_date date
+  issue_description text
+  status varchar
+  resolution text
+  notes text
+}
+Table nx_customer_portal_tokens {
+  id bigint [pk]
+  customer_id bigint
+  token varchar
+  expires_at timestamp
+  last_used_at timestamp
+}
+
+// HR
+Ref: nx_employees.user_id - users.id
+Ref: nx_employees.department_id > nx_departments.id
+Ref: nx_employees.office_id > nx_offices.id
+Ref: nx_employees.shift_id > nx_shifts.id
+Ref: nx_employees.supervisor_id > nx_employees.id
+Ref: nx_attendances.employee_id > nx_employees.id
+Ref: nx_attendances.shift_id > nx_shifts.id
+Ref: nx_leaves.employee_id > nx_employees.id
+Ref: nx_leave_requests.employee_id > nx_employees.id
+Ref: nx_leave_requests.leave_id > nx_leaves.id
+Ref: nx_leave_requests.approved_by > nx_employees.id
+Ref: nx_sick_requests.employee_id > nx_employees.id
+Ref: nx_sick_requests.approved_by > nx_employees.id
+Ref: nx_performance_evaluations.employee_id > nx_employees.id
+Ref: nx_performance_evaluations.evaluator_id > nx_employees.id
+
+// Inventory
+Ref: nx_products.category_id > nx_categories.id
+Ref: nx_products.unit_id > nx_units.id
+Ref: nx_services.category_id > nx_categories.id
+Ref: nx_product_stock.product_id > nx_products.id
+Ref: nx_product_stock.warehouse_id > nx_warehouses.id
+Ref: nx_stock_transactions.product_id > nx_products.id
+Ref: nx_stock_transactions.warehouse_id > nx_warehouses.id
+Ref: nx_stock_transactions.serial_number_id > nx_serial_number.id
+Ref: nx_stock_transactions.created_by > users.id
+Ref: nx_serial_number.product_id > nx_products.id
+Ref: nx_serial_number.warehouse_id > nx_warehouses.id
+Ref: nx_serial_number.supplier_id > nx_suppliers.id
+Ref: nx_serial_number.customer_id > nx_customers.id
+Ref: nx_serial_number.purchase_order_id > nx_purchase_orders.id
+Ref: nx_package_items.package_id > nx_packages.id
+
+// CRM and Sales
+Ref: nx_leads.created_by > nx_employees.id
+Ref: nx_leads.converted_by > nx_employees.id
+Ref: nx_leads.converted_customer_id > nx_customers.id
+Ref: nx_deals.nx_lead_id > nx_leads.id
+Ref: nx_deals.nx_customer_id > nx_customers.id
+Ref: nx_deals.nx_deal_stage_id > nx_deal_stages.id
+Ref: nx_deals.created_by > nx_employees.id
+Ref: nx_deal_stage_logs.nx_deal_id > nx_deals.id
+Ref: nx_deal_stage_logs.from_stage_id > nx_deal_stages.id
+Ref: nx_deal_stage_logs.to_stage_id > nx_deal_stages.id
+Ref: nx_deal_stage_logs.changed_by > nx_employees.id
+Ref: nx_sales_people.employee_id > nx_employees.id
+Ref: nx_sales_people.user_id > users.id
+Ref: nx_quotations.approved_by > users.id
+Ref: nx_quotations.nx_customer_id > nx_customers.id
+Ref: nx_quotations.nx_sales_people_id > nx_sales_people.id
+Ref: nx_quotations.nx_deal_id > nx_deals.id
+Ref: nx_quotations.nx_lead_id > nx_leads.id
+Ref: nx_quotations.internal_pic_id > nx_employees.id
+Ref: nx_quotations.created_by > nx_employees.id
+Ref: nx_quotation_items.nx_quotation_id > nx_quotations.id
+Ref: nx_sales_orders.sales_quotation_id > nx_quotations.id
+Ref: nx_sales_orders.quotation_id > nx_quotations.id
+Ref: nx_sales_orders.nx_customer_id > nx_customers.id
+Ref: nx_sales_orders.nx_employee_id > nx_employees.id
+Ref: nx_sales_orders.nx_deal_id > nx_deals.id
+Ref: nx_sales_orders.promo_code_id > nx_promo_codes.id
+Ref: nx_sales_order_items.nx_sales_order_id > nx_sales_orders.id
+Ref: nx_sales_order_items.product_id > nx_products.id
+Ref: nx_delivery_orders.nx_sales_order_id > nx_sales_orders.id
+Ref: nx_delivery_orders.nx_customer_id > nx_customers.id
+Ref: nx_delivery_orders.nx_employee_id > nx_employees.id
+Ref: nx_delivery_order_items.nx_delivery_order_id > nx_delivery_orders.id
+Ref: nx_invoices.nx_sales_order_id > nx_sales_orders.id
+Ref: nx_invoice_items.nx_invoice_id > nx_invoices.id
+Ref: nx_payments.nx_invoice_id > nx_invoices.id
+Ref: nx_payments.created_by > users.id
+
+// Procurement and Finance
+Ref: nx_supplier_contacts.supplier_id > nx_suppliers.id
+Ref: nx_purchase_requisitions.requested_by > users.id
+Ref: nx_purchase_requisitions.submitted_by > users.id
+Ref: nx_purchase_requisitions.approved_by > users.id
+Ref: nx_purchase_requisition_items.purchase_requisition_id > nx_purchase_requisitions.id
+Ref: nx_purchase_requisition_items.product_id > nx_products.id
+Ref: nx_purchase_orders.supplier_id > nx_suppliers.id
+Ref: nx_purchase_orders.purchase_requisition_id > nx_purchase_requisitions.id
+Ref: nx_purchase_orders.created_by > users.id
+Ref: nx_purchase_order_items.purchase_order_id > nx_purchase_orders.id
+Ref: nx_purchase_order_items.product_id > nx_products.id
+Ref: nx_goods_receipts.purchase_order_id > nx_purchase_orders.id
+Ref: nx_goods_receipts.supplier_id > nx_suppliers.id
+Ref: nx_goods_receipts.warehouse_id > nx_warehouses.id
+Ref: nx_goods_receipts.received_by > users.id
+Ref: nx_goods_receipt_items.goods_receipt_id > nx_goods_receipts.id
+Ref: nx_goods_receipt_items.purchase_order_item_id > nx_purchase_order_items.id
+Ref: nx_goods_receipt_items.product_id > nx_products.id
+Ref: nx_purchase_invoices.purchase_order_id > nx_purchase_orders.id
+Ref: nx_purchase_invoices.supplier_id > nx_suppliers.id
+Ref: nx_purchase_invoices.created_by > users.id
+Ref: nx_purchase_invoice_items.purchase_invoice_id > nx_purchase_invoices.id
+Ref: nx_purchase_invoice_items.purchase_order_item_id > nx_purchase_order_items.id
+Ref: nx_purchase_invoice_items.product_id > nx_products.id
+Ref: nx_purchase_order_payments.purchase_order_id > nx_purchase_orders.id
+Ref: nx_purchase_order_payments.purchase_invoice_id > nx_purchase_invoices.id
+Ref: nx_purchase_order_payments.created_by > users.id
+Ref: nx_purchase_returns.supplier_id > nx_suppliers.id
+Ref: nx_purchase_returns.goods_receipt_id > nx_goods_receipts.id
+Ref: nx_purchase_returns.purchase_order_id > nx_purchase_orders.id
+Ref: nx_purchase_returns.created_by > users.id
+Ref: nx_purchase_return_items.purchase_return_id > nx_purchase_returns.id
+Ref: nx_purchase_return_items.product_id > nx_products.id
+Ref: nx_purchase_return_items.serial_number_id > nx_serial_number.id
+Ref: nx_purchase_return_items.goods_receipt_item_id > nx_goods_receipt_items.id
+Ref: nx_reimbursements.employee_id > nx_employees.id
+Ref: nx_reimbursements.approved_by > users.id
+Ref: nx_financial_records.reimburse_id > nx_reimbursements.id
+Ref: nx_financial_records.created_by > nx_employees.id
+
+// Projects and Support
+Ref: nx_projects.nx_sales_order_id > nx_sales_orders.id
+Ref: nx_projects.project_manager_id > nx_employees.id
+Ref: nx_project_members.project_id > nx_projects.id
+Ref: nx_project_members.employee_id > nx_employees.id
+Ref: nx_project_documents.nx_project_id > nx_projects.id
+Ref: nx_project_documents.uploaded_by > nx_employees.id
+Ref: nx_project_notes.project_id > nx_projects.id
+Ref: nx_project_notes.created_by > nx_employees.id
+Ref: nx_external_access.project_id > nx_projects.id
+Ref: nx_epics.project_id > nx_projects.id
+Ref: nx_epics.created_by > nx_employees.id
+Ref: nx_ticket_statuses.project_id > nx_projects.id
+Ref: nx_tickets.project_id > nx_projects.id
+Ref: nx_tickets.ticket_status_id > nx_ticket_statuses.id
+Ref: nx_tickets.priority_id > nx_ticket_priorities.id
+Ref: nx_tickets.epic_id > nx_epics.id
+Ref: nx_tickets.created_by > nx_employees.id
+Ref: nx_ticket_users.ticket_id > nx_tickets.id
+Ref: nx_ticket_users.employee_id > nx_employees.id
+Ref: nx_ticket_histories.ticket_id > nx_tickets.id
+Ref: nx_ticket_histories.employee_id > nx_employees.id
+Ref: nx_ticket_histories.ticket_status_id > nx_ticket_statuses.id
+Ref: nx_ticket_comments.ticket_id > nx_tickets.id
+Ref: nx_ticket_comments.employee_id > nx_employees.id
+Ref: nx_notifications.employee_id > nx_employees.id
+
+// Sales activity and After Sales
+Ref: nx_visit_assignments.nx_deal_id > nx_deals.id
+Ref: nx_visit_assignments.assigned_by > nx_employees.id
+Ref: nx_visit_records.nx_visit_assignment_id > nx_visit_assignments.id
+Ref: nx_visit_records.nx_project_id > nx_projects.id
+Ref: nx_visit_photos.nx_visit_record_id > nx_visit_records.id
+Ref: nx_rma_requests.serial_number_id > nx_serial_number.id
+Ref: nx_rma_requests.customer_id > nx_customers.id
+Ref: nx_rma_requests.invoice_id > nx_invoices.id
+Ref: nx_rma_requests.invoice_item_id > nx_invoice_items.id
+Ref: nx_rma_requests.product_id > nx_products.id
+Ref: nx_rma_requests.new_serial_number_id > nx_serial_number.id
+Ref: nx_rma_requests.purchase_return_id > nx_purchase_returns.id
+Ref: nx_rma_requests.procurement_claim_id > nx_purchase_orders.id
+Ref: nx_internal_repairs.rma_id > nx_rma_requests.id
+Ref: nx_internal_repairs.technician_user_id > users.id
+Ref: nx_internal_repairs.created_by > users.id
+Ref: nx_vendor_claims.rma_id > nx_rma_requests.id
+Ref: nx_vendor_claims.supplier_id > nx_suppliers.id
+Ref: nx_vendor_claims.purchase_order_id > nx_purchase_orders.id
+Ref: nx_vendor_claims.created_by > users.id
+Ref: nx_customer_portal_tokens.customer_id > nx_customers.id
+
+// Intentionally not modeled as ordinary FK:
+// - assigned_to_id/type is polymorphic (Employee or SalesPerson).
+// - item_id/type on package and document item tables is dynamic/polymorphic.
+// - reference_id/type on financial records is polymorphic.
+// - project_members and ticket_users are many-to-many pivot tables.
+// - framework morph tables and ticket data stored in JSON are omitted.
