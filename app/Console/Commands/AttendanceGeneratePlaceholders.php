@@ -23,21 +23,18 @@ class AttendanceGeneratePlaceholders extends Command
             ->whereDate('end_date', '>=', $today)
             ->first();
 
-        // Tentukan default status dan catatan
-        $defaultStatus = 'belum_presensi';
-        $defaultNote   = 'Menunggu presensi...';
+        if ($isWeekend || $holiday) {
+            $description = $isWeekend
+                ? 'akhir pekan (Sabtu/Minggu)'
+                : 'hari libur nasional (' . $holiday->name . ')';
 
-        if ($isWeekend) {
-            $defaultStatus = 'libur';
-            $defaultNote   = 'Libur Akhir Pekan (Sabtu/Minggu)';
-            $this->info("Hari ini akhir pekan. Menggenerate data dengan status 'libur'.");
-        } elseif ($holiday) {
-            $defaultStatus = 'libur';
-            $defaultNote   = 'Libur Nasional: ' . $holiday->name;
-            $this->info("Hari ini Libur Nasional ({$holiday->name}). Menggenerate data dengan status 'libur'.");
+            $this->info("Hari ini {$description}. Tidak ada placeholder yang dibuat.");
+            return 0;
         }
 
-        $employees      = Employee::where('status', 'active')->get();
+        $employees = Employee::where('status', 'active')
+            ->forAttendanceReporting()
+            ->get();
         $generatedCount = 0;
 
         foreach ($employees as $employee) {
@@ -48,8 +45,8 @@ class AttendanceGeneratePlaceholders extends Command
                 ],
                 [
                     'shift_id' => $employee->shift_id,
-                    'status'   => $defaultStatus,
-                    'note'     => $defaultNote,
+                    'status'   => 'belum_presensi',
+                    'note'     => 'Menunggu presensi...',
                 ]
             );
             $generatedCount++;
