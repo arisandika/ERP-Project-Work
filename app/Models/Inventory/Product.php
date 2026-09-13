@@ -58,7 +58,7 @@ class Product extends Model
     {
         return $this->hasMany(SerialNumber::class, 'product_id', 'id');
     }
-    
+
     public function category(): BelongsTo
     {
         return $this->belongsTo(Category::class, 'category_id');
@@ -120,7 +120,11 @@ class Product extends Model
     public function getImageUrlAttribute(): string
     {
         if ($this->image_path && Storage::disk('public')->exists($this->image_path)) {
-            return Storage::disk('public')->url($this->image_path);
+            $path = collect(explode('/', $this->image_path))
+                ->map(fn($segment) => rawurlencode($segment))
+                ->implode('/');
+
+            return Storage::disk('public')->url($path);
         }
         return 'https://thumbs2.imgbox.com/98/e9/y65t3ovR_t.png';
     }
