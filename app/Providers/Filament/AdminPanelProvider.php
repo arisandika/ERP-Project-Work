@@ -152,21 +152,35 @@ class AdminPanelProvider extends PanelProvider
                 </div>
                 <script>
                     const pwaBanner = document.getElementById('pwa-banner');
-                    const showPwaBanner = () => { if (pwaBanner) pwaBanner.hidden = false; };
-                    const hidePwaBanner = () => { if (pwaBanner) pwaBanner.hidden = true; };
                     const pwaInstall = document.getElementById('pwa-install');
                     const pwaDismiss = document.getElementById('pwa-dismiss');
-
-                    // Android / Chrome desktop: instal melalui tombol
-                    window.addEventListener('beforeinstallprompt', (e) => {
-                        e.preventDefault();
-                        window.deferredPrompt = e;
-                        showPwaBanner();
-                    });
-
-                    // iOS: tidak ada beforeinstallprompt → arahkan ke "Tambah ke Layar Utama"
+                    // Persetujuan dismiss: simpan timestamp → cooldown 7 hari sebelum tawaran muncul lagi
+                    const DK = 'nexicon_pwa_dismiss';
+                    const OK = 'nexicon_pwa_installed';
+                    const COOLDOWN = 7 * 24 * 60 * 60 * 1000;
+                    const allowOffer = () => {
+                        try {
+                            if (localStorage.getItem(OK)) return false;
+                            const t = parseInt(localStorage.getItem(DK) || '0', 10) || 0;
+                            return Date.now() - t > COOLDOWN;
+                        } catch (e) { return true; }
+                    };
+                    const showPwaBanner = () => { if (pwaBanner) pwaBanner.hidden = false; };
+                    const hidePwaBanner = () => { if (pwaBanner) pwaBanner.hidden = true; };
+                    const rememberDismiss = () => { try { localStorage.setItem(DK, String(Date.now())); } catch (e) {} };
                     const isIos = /iphone|ipad|ipod/i.test(navigator.userAgent) && !window.MSStream;
-                    if (isIos && !window.navigator.standalone) showPwaBanner();
+
+                    // Hanya tawarkan saat memang boleh (belum dismiss dalam cooldown, belum terpasang)
+                    if (allowOffer()) {
+                        // Android / Chrome desktop: instal melalui tombol
+                        window.addEventListener('beforeinstallprompt', (e) => {
+                            e.preventDefault();
+                            window.deferredPrompt = e;
+                            showPwaBanner();
+                        });
+                        // iOS: tidak ada beforeinstallprompt → arahkan ke "Tambah ke Layar Utama"
+                        if (isIos && !window.navigator.standalone) showPwaBanner();
+                    }
 
                     pwaInstall?.addEventListener('click', async () => {
                         if (isIos) {
@@ -185,10 +199,14 @@ class AdminPanelProvider extends PanelProvider
                             return;
                         }
                         const prompt = window.deferredPrompt;
-                        if (prompt) { await prompt.prompt(); window.deferredPrompt = null; }
-                        hidePwaBanner();
+                        if (prompt) {
+                            await prompt.prompt();
+                            window.deferredPrompt = null;
+                            try { localStorage.setItem(OK, '1'); } catch (e) {}
+                            hidePwaBanner();
+                        }
                     });
-                    pwaDismiss?.addEventListener('click', hidePwaBanner);
+                    pwaDismiss?.addEventListener('click', () => { rememberDismiss(); hidePwaBanner(); });
 
                     if ('serviceWorker' in navigator) {
                         window.addEventListener('load', () => navigator.serviceWorker.register('%SW%', { scope: '/' }));
