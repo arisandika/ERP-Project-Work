@@ -59,67 +59,31 @@ class EditInvoice extends EditRecord
         ];
     }
 
-    protected function handleRecordUpdate(Model $record, array $data): Model
+// trait/helper yang dipakai CreateInvoice & EditInvoice
+    protected function recalculateInvoiceTotals(Invoice $invoice): void
     {
-        return DB::transaction(function () use ($record, $data) {
-            $items = $data['items'] ?? [];
-            unset($data['items']);
+        $subtotal = (float) $invoice->items()
+            ->selectRaw('COALESCE(SUM(qty * unit_price), 0) as total')
+            ->value('total');
 
-            $subtotal = collect($items)->sum(function ($item) {
-                $qty = (float) ($item['qty'] ?? 0);
-                $price = (float) ($item['unit_price'] ?? 0);
+        $discount = min((float) ($invoice->discount ?? 0), $subtotal);
+        $tax      = max(0, min((float) ($invoice->tax ?? 0), 100));
 
-                return $qty * $price;
-            });
+        $afterDiscount = $subtotal - $discount;
 
-            $discount = min((float) ($data['discount'] ?? 0), $subtotal);
-            $tax = max(0, min((float) ($data['tax'] ?? 0), 100));
-            $afterDiscount = $subtotal - $discount;
-            $grandTotal = $afterDiscount + ($afterDiscount * ($tax / 100));
+        $invoice->forceFill([
+            'subtotal'    => round($subtotal, 2),
+            'discount'    => round($discount, 2),
+            'tax'         => round($tax, 2),
+            'grand_total' => round($afterDiscount + ($afterDiscount * $tax / 100), 2),
+        ])->saveQuietly();
+    }
 
-            $data['subtotal'] = round($subtotal, 2);
-            $data['discount'] = round($discount, 2);
-            $data['tax'] = round($tax, 2);
-            $data['grand_total'] = round($grandTotal, 2);
-
-            $record->update($data);
-
-            $existingItemIds = [];
-
-            foreach ($items as $item) {
-                $qty = (float) ($item['qty'] ?? 0);
-                $price = (float) ($item['unit_price'] ?? 0);
-
-                $payload = [
-                    'item_type' => $item['item_type'] ?? null,
-                    'item_id' => $item['item_id'] ?? null,
-                    'item_code' => $item['item_code'] ?? null,
-                    'item_name' => $item['item_name'] ?? null,
-                    'qty' => (int) $qty,
-                    'unit_price' => round($price, 2),
-                    'line_total' => round($qty * $price, 2),
-                ];
-
-                if (! empty($item['id'])) {
-                    $record->items()->where('id', $item['id'])->update($payload);
-                    $existingItemIds[] = $item['id'];
-                } else {
-                    $newItem = $record->items()->create($payload);
-                    $existingItemIds[] = $newItem->id;
-                }
-            }
-
-            $record->items()
-                ->when(
-                    ! empty($existingItemIds),
-                    fn ($query) => $query->whereNotIn('id', $existingItemIds),
-                    fn ($query) => $query
-                )
-                ->delete();
-
-            $record->refresh()->recalculateStatus();
-
-            return $record;
-        });
+    protected function afterSave(): void
+    {
+        $record = $this->getRecord();
+        $this->recalculateInvoiceTotals($record);
+        $record->refresh()->recalculateStatus();
     }
 }
+

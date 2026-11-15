@@ -1,0 +1,766 @@
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>ERD Modul Nexicon</title>
+<meta name="description" content="Diagram ERD per modul (crow's foot) untuk sistem ERP Nexicon — HR, Inventory, Sales, CRM, Procurement, Project dan lainnya.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@500;600;700&family=Public+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  /* ======== tokens : light dulu ======== */
+  :root{
+    --bg:#f2f4f8; --bg-dot:#6366f1;
+    --surface:#ffffff; --ink:#171b25; --muted:#5a6474;
+    --line:#d9dfe8; --chip:#eef1f6; --navbg:rgba(242,244,248,.86);
+    --f-soft:"Sora","Public Sans",system-ui,sans-serif;
+    --f-body:"Public Sans",system-ui,sans-serif;
+    --f-mono:"IBM Plex Mono",ui-monospace,monospace;
+  }
+  @media (prefers-color-scheme: dark){
+    :root:not([data-theme="light"]){
+      --bg:#0d1117; --surface:#151b25; --ink:#e7ecf4; --muted:#97a3b3;
+      --line:#293440; --chip:#1b2330; --navbg:rgba(13,17,23,.82);
+    }
+  }
+  :root[data-theme="dark"]{
+    --bg:#0d1117; --surface:#151b25; --ink:#e7ecf4; --muted:#97a3b3;
+    --line:#293440; --chip:#1b2330; --navbg:rgba(13,17,23,.82);
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0}
+  body{
+    background:var(--bg); color:var(--ink);
+    font-family:var(--f-body); font-size:15.5px; line-height:1.55;
+    -webkit-font-smoothing:antialiased;
+  }
+  h1,h2,h3{font-family:var(--f-soft); margin:0; text-wrap:balance}
+  p{margin:0}
+  :focus-visible{outline:2px solid #6366f1; outline-offset:3px; border-radius:6px}
+
+  .wrap{max-width:1180px; margin:0 auto; padding:0 clamp(16px,3vw,32px); padding-block:44px 120px}
+
+  /* ---- header ---- */
+  .eyebrow{
+    font-family:var(--f-mono); font-size:11.5px; font-weight:600;
+    letter-spacing:.16em; text-transform:uppercase; color:var(--muted);
+    display:flex; align-items:center; gap:10px;
+  }
+  .eyebrow::before{content:""; width:22px; height:2px; background:#6366f1; border-radius:2px; flex:none}
+  .eyebrow code{font-family:var(--f-mono); letter-spacing:.02em; font-weight:500; font-size:11px}
+  header h1{margin-top:14px; font-size:clamp(28px,4.4vw,46px); line-height:1.06; letter-spacing:-.02em}
+  header .sub{margin-top:14px; max-width:62ch; color:var(--muted)}
+  header .sub code{font-family:var(--f-mono); font-size:.86em; background:var(--chip); border:1px solid var(--line); border-radius:5px; padding:1px 5px}
+  .stats{display:flex; flex-wrap:wrap; gap:10px; margin-top:22px}
+  .stat{
+    display:flex; align-items:baseline; gap:8px; padding:9px 15px;
+    background:var(--surface); border:1px solid var(--line); border-radius:12px;
+  }
+  .stat b{font-family:var(--f-soft); font-size:19px; font-variant-numeric:tabular-nums; letter-spacing:-.01em}
+  .stat span{font-size:12.5px; color:var(--muted)}
+  .legend{display:flex; flex-wrap:wrap; gap:8px 20px; margin-top:20px; padding-top:16px; border-top:1px solid var(--line); align-items:center}
+  .legend .lg{font-size:12.5px; color:var(--muted); display:inline-flex; align-items:center; gap:7px}
+  .legend .lg svg{display:block; flex:none; color:currentColor}
+
+  /* ---- nav ---- */
+  nav{
+    position:sticky; top:0; z-index:20; background:var(--navbg);
+    backdrop-filter:saturate(1.4) blur(10px); -webkit-backdrop-filter:saturate(1.4) blur(10px);
+    border-bottom:1px solid var(--line);
+  }
+  nav .wrap{padding-block:10px; display:flex}
+  .chips{display:flex; gap:8px; overflow-x:auto; scrollbar-width:thin; padding:2px}
+  .chip{
+    white-space:nowrap; cursor:pointer; font-family:var(--f-soft); font-size:13px; font-weight:600;
+    color:var(--muted); background:var(--chip); border:1px solid transparent; border-radius:999px;
+    padding:6px 13px; transition:color .15s, border-color .15s, background .15s; text-decoration:none;
+  }
+  .chip sup{font-family:var(--f-mono); font-size:9.5px; margin-left:4px; opacity:.7}
+  .chip:hover{color:var(--ink)}
+  .chip.active{color:var(--ink); border-color:var(--line); background:var(--surface)}
+
+  /* ---- modul ---- */
+  .mod{margin-top:64px; --ac:#6366f1}
+  .mod-head{display:flex; align-items:center; gap:12px; margin-bottom:6px; flex-wrap:wrap}
+  .mod-dot{width:11px; height:11px; border-radius:99px; background:var(--ac); flex:none; box-shadow:0 0 0 4px color-mix(in srgb, var(--ac) 18%, transparent)}
+  .mod h2{font-size:clamp(20px,3vw,25px); letter-spacing:-.01em}
+  .mod .pre{
+    font-family:var(--f-mono); font-size:10.5px; color:var(--muted);
+    border:1px solid var(--line); background:var(--surface); border-radius:6px; padding:2px 7px; letter-spacing:.04em;
+  }
+  .mod .tag{margin:4px 0 18px; color:var(--muted); font-size:14px}
+
+  figure{margin:0}
+  .dia{overflow-x:auto; background:var(--surface); border:1px solid var(--line); border-radius:16px; padding:18px 10px}
+  .dia svg{display:block; margin:0 auto; max-width:100%; height:auto}
+  figcaption{
+    margin:0 clamp(0px,2vw,12px); padding:12px 14px 2px; font-size:12.5px; color:var(--muted);
+  }
+  .hint{font-size:12.5px; color:var(--muted); margin-top:10px; max-width:70ch}
+
+  /* ======== SVG ======== */
+  .edge{fill:none; stroke:var(--muted); stroke-width:1.4; transition:opacity .18s, stroke .18s, stroke-width .18s}
+  .edge.dashed{stroke-dasharray:6 5; stroke-opacity:.8}
+  .egrp.hl .edge{stroke:var(--ac); stroke-width:2.3}
+  .egrp.dim .edge, .egrp.dim .edge-label{opacity:0}
+  .tick{fill:none; stroke:var(--muted); stroke-width:1.5; transition:opacity .18s, stroke .18s, stroke-width .18s}
+  .egrp.hl .tick{stroke:var(--ac); stroke-width:1.9}
+  .edge-label{
+    font-family:var(--f-body); font-size:10.5px; font-weight:600; fill:var(--muted);
+    paint-order:stroke; stroke:var(--bg); stroke-width:3.6; transition:opacity .18s; pointer-events:none;
+  }
+  .ent{cursor:pointer; transition:opacity .18s}
+  .ent .cv{fill:color-mix(in srgb, var(--ac) 10%, var(--surface)); stroke:var(--ac); stroke-width:1.6; transition:stroke-width .15s}
+  .ent.ext .cv{fill:var(--surface); stroke-dasharray:5 4; stroke-opacity:.75; stroke-width:1.4}
+  .ent.pivot .cv{fill:var(--surface); stroke-dasharray:4 4; stroke-opacity:.8; stroke-width:1.4}
+  .ent:hover .cv{stroke-width:2.6}
+  .ent text.lbl{font-family:var(--f-soft); font-weight:600; fill:var(--ink); text-anchor:middle; dominant-baseline:central}
+  .ent.ext text.lbl{fill:var(--muted)}
+  .ent.pivot text.lbl{fill:var(--muted); font-weight:500}
+  .ent.dim{opacity:.16}
+
+  /* ---- inspector ---- */
+  .insp{
+    position:fixed; z-index:40; max-width:300px; width:88vw;
+    top:76px; right:16px;
+    background:var(--surface); border:1px solid var(--line); border-radius:14px;
+    box-shadow:0 10px 34px rgba(15,20,28,.18);
+    padding:14px 16px 16px; display:none;
+  }
+  .insp.on{display:block}
+  .insp .i-head{display:flex; align-items:flex-start; justify-content:space-between; gap:8px}
+  .insp .i-name{font-family:var(--f-soft); font-size:15px; font-weight:600; padding-right:6px}
+  .insp .i-ac{width:10px; height:10px; border-radius:99px; background:var(--ac); position:absolute; top:16px; right:44px}
+  .insp button{
+    border:0; background:var(--chip); color:var(--muted); font-family:var(--f-mono); font-size:13px;
+    width:26px; height:26px; border-radius:8px; cursor:pointer; flex:none; line-height:1;
+  }
+  .insp button:hover{color:var(--ink); background:var(--line)}
+  .insp .i-table{font-family:var(--f-mono); font-size:11.5px; color:var(--muted); margin-top:2px}
+  .insp .i-badges{display:flex; gap:6px; margin-top:10px; flex-wrap:wrap}
+  .insp .b{
+    font-size:10px; font-weight:600; font-family:var(--f-mono); letter-spacing:.02em;
+    padding:2px 7px; border-radius:6px; border:1px solid var(--line); background:var(--chip); color:var(--muted);
+  }
+  .insp .b.ac{color:#fff; border-color:transparent; background:var(--ac)}
+  .insp h4{font-family:var(--f-mono); font-size:10px; letter-spacing:.1em; text-transform:uppercase; color:var(--muted); margin:14px 0 6px}
+  .insp .fks{display:flex; flex-wrap:wrap; gap:5px; min-height:20px}
+  .insp .fk{font-family:var(--f-mono); font-size:10px; background:var(--chip); border:1px solid var(--line); border-radius:5px; padding:2px 6px; color:var(--muted)}
+  .insp .none{font-size:11.5px; color:var(--muted); font-style:italic}
+  .insp .i-rel{font-size:12px; color:var(--muted); margin-top:12px; padding-top:10px; border-top:1px solid var(--line)}
+  .insp .i-rel b{color:var(--ink); font-variant-numeric:tabular-nums}
+
+  footer{margin-top:76px; padding-top:20px; border-top:1px solid var(--line); color:var(--muted); font-size:12.5px; max-width:72ch}
+  footer code{font-family:var(--f-mono); font-size:.9em}
+
+  @media (max-width:640px){
+    .insp{top:auto; bottom:14px; right:12px; max-width:92vw}
+    .mod{margin-top:48px}
+  }
+  @media (prefers-reduced-motion: reduce){
+    *{transition:none!important; animation:none!important}
+  }
+</style>
+</head>
+<body>
+  <header class="wrap">
+    <div class="eyebrow"><span>Nexicon ERP</span><code>Laravel · Filament</code></div>
+    <h1>ERD Modul Nexicon</h1>
+    <p class="sub">Diagram relasi basis data ERP pertabel modul, dibaca dari definisi model Eloquent di <code>app/Models</code>. Setiap entitas digambar sebagai lingkaran; garis menghubungkan relasi antar entitas — <b>sisi satu</b> ditandai garis tegak, <b>sisi banyak</b> ditandai cakar (crow's foot).</p>
+    <div class="stats" id="stats"></div>
+    <div class="legend">
+      <span class="lg"><svg width="52" height="18" viewBox="0 0 52 18"><path d="M4 9 L24 9 L29 6 L29 12 Z" fill="none" stroke="currentColor" stroke-width="1.6"></path><path d="M36 6 h7 m-3.5 0 v7 M36 13 L40.5 9" stroke="currentColor" fill="none" stroke-width="1.6"></path></svg>cakar = sisi banyak (N)</span>
+      <span class="lg"><svg width="46" height="18" viewBox="0 0 46 18"><path d="M4 9 L22 9" stroke="currentColor" stroke-width="1.6"></path><path d="M30 6.5 h7 M33.5 6.5 v5" stroke="currentColor" stroke-width="1.6"></path></svg>garis tegak = sisi satu (1)</span>
+      <span class="lg"><svg width="42" height="18" viewBox="0 0 42 18"><path d="M3 9 H39" stroke="currentColor" stroke-width="1.6"></path></svg>relasi dalam modul</span>
+      <span class="lg"><svg width="42" height="18" viewBox="0 0 42 18"><path d="M3 9 H39" stroke="currentColor" stroke-width="1.6" stroke-dasharray="5 4"></path></svg>lintas modul / polymorphic / pivot</span>
+      <span class="lg"><svg width="20" height="18" viewBox="0 0 20 18"><circle cx="10" cy="9" r="6.5" fill="none" stroke="currentColor" stroke-width="1.6" stroke-dasharray="4 3"></circle></svg>entitas modul lain</span>
+    </div>
+  </header>
+
+  <nav>
+    <div class="wrap"><div class="chips" id="chips"></div></div>
+  </nav>
+
+  <main class="wrap" id="main"></main>
+
+  <div class="insp" id="insp" role="dialog" aria-live="polite">
+    <span class="i-ac" id="insp-ac"></span>
+    <div class="i-head">
+      <div>
+        <div class="i-name" id="insp-name"></div>
+        <div class="i-table" id="insp-table"></div>
+      </div>
+      <button id="insp-close" aria-label="Tutup">×</button>
+    </div>
+    <div class="i-badges" id="insp-badges"></div>
+    <h4>Foreign keys</h4>
+    <div class="fks" id="insp-fks"></div>
+    <div class="i-rel" id="insp-rel"></div>
+  </div>
+
+  <footer class="wrap">
+    Relasi diambil dari relasi model Eloquent (<code>app/Models/**</code>). Lingkaran putus-putus menunjuk entitas milik modul lain (lintas modul) atau tabel pivot &amp; relasi polymorphic. Klik lingkaran untuk fokus — hanya entitas &amp; relasi yang terhubung disorot.
+  </footer>
+
+<script>
+(function(){
+"use strict";
+
+var MODULES=[
+{id:"hr", til:"HR & Payroll", pre:"nx_hr", tag:"Karyawan, absensi, cuti & penilaian kinerja.", ac:"#0d9488",
+ nodes:[
+  {id:"employees",label:"Karyawan",table:"nx_employees",type:"core",fk:["user_id","department_id","office_id","shift_id","supervisor_id"]},
+  {id:"departments",label:"Departemen",table:"nx_departments",type:"core",fk:[]},
+  {id:"offices",label:"Kantor",table:"nx_offices",type:"core",fk:[]},
+  {id:"shifts",label:"Shift",table:"nx_shifts",type:"core",fk:[]},
+  {id:"users_ext",label:"Users",table:"users",type:"ext",fk:[]},
+  {id:"attendances",label:"Absensi",table:"nx_attendances",type:"core",fk:["employee_id","shift_id"]},
+  {id:"leaves",label:"Jenis Cuti",table:"nx_leaves",type:"core",fk:["employee_id"]},
+  {id:"leave_requests",label:"Permintaan Cuti",table:"nx_leave_requests",type:"core",fk:["employee_id","leave_id","approved_by"]},
+  {id:"sick_requests",label:"Permintaan Sakit",table:"nx_sick_requests",type:"core",fk:["employee_id","approved_by"]},
+  {id:"holidays",label:"Hari Libur",table:"nx_holidays",type:"core",fk:[]},
+  {id:"evals",label:"Penilaian Kinerja",table:"nx_performance_evaluations",type:"core",fk:["employee_id","evaluator_id"]},
+ ],
+ edges:[
+  {a:"users_ext",b:"employees"},
+  {a:"departments",b:"employees"},
+  {a:"offices",b:"employees"},
+  {a:"shifts",b:"employees"},
+  {a:"employees",b:"employees",lbl:"supervisi"},
+  {a:"employees",b:"attendances"},{a:"shifts",b:"attendances"},
+  {a:"employees",b:"leaves"},
+  {a:"employees",b:"leave_requests"},{a:"leaves",b:"leave_requests"},
+  {a:"employees",b:"sick_requests"},
+  {a:"employees",b:"evals"},
+ ]},
+
+{id:"inv", til:"Inventory", pre:"nx_inventory", tag:"Produk, jasa, stok multi-gudang, nomor seri & paket.", ac:"#6366f1",
+ nodes:[
+  {id:"products",label:"Produk",table:"nx_products",type:"core",fk:["category_id","unit_id"]},
+  {id:"categories",label:"Kategori",table:"nx_categories",type:"core",fk:[]},
+  {id:"units",label:"Satuan",table:"nx_units",type:"core",fk:[]},
+  {id:"warehouses",label:"Gudang",table:"nx_warehouses",type:"core",fk:[]},
+  {id:"stocks",label:"Stok Produk",table:"nx_product_stock",type:"core",fk:["product_id","warehouse_id"]},
+  {id:"stock_tx",label:"Transaksi Stok",table:"nx_stock_transactions",type:"core",fk:["product_id","warehouse_id","serial_number_id","created_by"]},
+  {id:"serials",label:"Nomor Seri",table:"nx_serial_number",type:"core",fk:["product_id","warehouse_id","supplier_id","purchase_order_id","customer_id"]},
+  {id:"services",label:"Jasa",table:"nx_services",type:"core",fk:["category_id"]},
+  {id:"packages",label:"Paket",table:"nx_packages",type:"core",fk:[]},
+  {id:"pkg_items",label:"Item Paket",table:"nx_package_items",type:"core",fk:["package_id","item_id (polymorph)"]},
+  {id:"suppliers_ext",label:"Suppliers",table:"nx_suppliers",type:"ext",fk:[]},
+  {id:"pos_ext",label:"Purchase Orders",table:"nx_purchase_orders",type:"ext",fk:[]},
+ ],
+ edges:[
+  {a:"categories",b:"products"},{a:"units",b:"products"},
+  {a:"categories",b:"services"},
+  {a:"products",b:"stocks"},{a:"warehouses",b:"stocks"},
+  {a:"products",b:"stock_tx"},{a:"warehouses",b:"stock_tx"},{a:"serials",b:"stock_tx"},
+  {a:"products",b:"serials"},{a:"warehouses",b:"serials"},
+  {a:"suppliers_ext",b:"serials"},{a:"pos_ext",b:"serials"},
+  {a:"packages",b:"pkg_items"},
+  {a:"products",b:"pkg_items",lbl:"polymorph"},{a:"services",b:"pkg_items",lbl:"polymorph"},
+ ]},
+
+{id:"sales", til:"Sales", pre:"nx_sales", tag:"Tahap penjualan: Penawaran → Sales Order → DO → Invoice → Pembayaran.", ac:"#8b5cf6",
+ nodes:[
+  {id:"quotations",label:"Penawaran",table:"nx_quotations",type:"core",fk:["nx_deal_id","promo_code_id","internal_pic_id","field_staff_pic_id","created_by","approved_by"]},
+  {id:"qt_items",label:"Item Penawaran",table:"nx_quotation_items",type:"core",fk:["nx_quotation_id","unit_id","item_id (polymorph)"]},
+  {id:"sales_orders",label:"Sales Order",table:"nx_sales_orders",type:"core",fk:["nx_deal_id","nx_quotation_id","nx_customer_id","nx_employee_id","promo_code_id"]},
+  {id:"so_items",label:"Item SO",table:"nx_sales_order_items",type:"core",fk:["nx_sales_order_id","item_id (polymorph)"]},
+  {id:"delivery_orders",label:"Delivery Order",table:"nx_delivery_orders",type:"core",fk:["nx_sales_order_id","nx_customer_id","nx_employee_id"]},
+  {id:"do_items",label:"Item DO",table:"nx_delivery_order_items",type:"core",fk:["nx_delivery_order_id","item_id (polymorph)"]},
+  {id:"invoices",label:"Invoice",table:"nx_invoices",type:"core",fk:["nx_sales_order_id","nx_customer_id","nx_employee_id"]},
+  {id:"inv_items",label:"Item Invoice",table:"nx_invoice_items",type:"core",fk:["nx_invoice_id","item_id (polymorph)"]},
+  {id:"payments",label:"Pembayaran",table:"nx_payments",type:"core",fk:["nx_invoice_id","created_by"]},
+  {id:"sales_people",label:"Sales Person",table:"nx_sales_people",type:"core",fk:["user_id"]},
+  {id:"deal_ext",label:"Deals",table:"nx_deals",type:"ext",fk:[]},
+  {id:"customer_ext",label:"Customers",table:"nx_customers",type:"ext",fk:[]},
+  {id:"promo_ext",label:"Promo Codes",table:"nx_promo_codes",type:"ext",fk:[]},
+  {id:"emp_ext",label:"Employees",table:"nx_employees",type:"ext",fk:[]},
+  {id:"unit_ext",label:"Satuan",table:"nx_units",type:"ext",fk:[]},
+  {id:"project_ext",label:"Projects",table:"nx_projects",type:"ext",fk:[]},
+ ],
+ edges:[
+  {a:"quotations",b:"qt_items"},
+  {a:"unit_ext",b:"qt_items"},
+  {a:"quotations",b:"sales_orders",mode:"11"},
+  {a:"sales_orders",b:"so_items"},
+  {a:"sales_orders",b:"delivery_orders"},
+  {a:"delivery_orders",b:"do_items"},
+  {a:"sales_orders",b:"invoices"},
+  {a:"invoices",b:"inv_items"},
+  {a:"invoices",b:"payments"},
+  {a:"deal_ext",b:"quotations"},
+  {a:"deal_ext",b:"sales_orders"},
+  {a:"promo_ext",b:"quotations"},
+  {a:"promo_ext",b:"sales_orders"},
+  {a:"customer_ext",b:"sales_orders"},
+  {a:"emp_ext",b:"quotations",lbl:"PIC internal"},
+  {a:"sales_people",b:"quotations",lbl:"PIC lapangan"},
+  {a:"invoices",b:"project_ext",mode:"11"},
+ ]},
+
+{id:"crm", til:"CRM", pre:"nx_crm", tag:"Pipa penjualan: Lead → Deal → Customer, lengkap dengan stage & riwayat perpindahannya.", ac:"#0ea5e9",
+ nodes:[
+  {id:"customers",label:"Customers",table:"nx_customers",type:"core",fk:[]},
+  {id:"leads",label:"Leads",table:"nx_leads",type:"core",fk:["converted_customer_id","created_by","converted_by"]},
+  {id:"deals",label:"Deals",table:"nx_deals",type:"core",fk:["nx_lead_id","nx_customer_id","nx_deal_stage_id","created_by"]},
+  {id:"stages",label:"Deal Stages",table:"nx_deal_stages",type:"core",fk:[]},
+  {id:"stage_logs",label:"Stage Log",table:"nx_deal_stage_logs",type:"core",fk:["nx_deal_id","from_stage_id","to_stage_id","changed_by"]},
+  {id:"employees_ext",label:"Employees",table:"nx_employees",type:"ext",fk:[]},
+  {id:"quotations_ext",label:"Penawaran",table:"nx_quotations",type:"ext",fk:[]},
+  {id:"so_ext",label:"Sales Orders",table:"nx_sales_orders",type:"ext",fk:[]},
+ ],
+ edges:[
+  {a:"leads",b:"deals"},
+  {a:"customers",b:"deals"},
+  {a:"stages",b:"deals"},
+  {a:"employees_ext",b:"leads",lbl:"dibuat"},
+  {a:"leads",b:"customers",mode:"11",lbl:"konversi"},
+  {a:"deals",b:"stage_logs"},
+  {a:"stages",b:"stage_logs",lbl:"ke"},
+  {a:"deals",b:"quotations_ext"},
+  {a:"deals",b:"so_ext"},
+ ]},
+
+{id:"sact", til:"Sales Activity", pre:"nx_sales_activity", tag:"Penugasan kunjungan lapangan, rekam hasil kunjungan & foto bukti.", ac:"#d97706",
+ nodes:[
+  {id:"assignments",label:"Penugasan Kunjungan",table:"nx_visit_assignments",type:"core",fk:["nx_deal_id","assigned_to (polymorph)","assigned_by"]},
+  {id:"records",label:"Rekam Kunjungan",table:"nx_visit_records",type:"core",fk:["nx_visit_assignment_id","nx_project_id"]},
+  {id:"photos",label:"Foto",table:"nx_visit_photos",type:"core",fk:["nx_visit_record_id"]},
+  {id:"deal_ext",label:"Deals",table:"nx_deals",type:"ext",fk:[]},
+  {id:"emp_ext",label:"Employees",table:"nx_employees",type:"ext",fk:[]},
+  {id:"sp_ext",label:"Sales People",table:"nx_sales_people",type:"ext",fk:[]},
+  {id:"proj_ext",label:"Projects",table:"nx_projects",type:"ext",fk:[]},
+ ],
+ edges:[
+  {a:"deal_ext",b:"assignments"},
+  {a:"assignments",b:"records"},
+  {a:"records",b:"photos"},
+  {a:"emp_ext",b:"assignments",lbl:"ditugaskan oleh"},
+  {a:"sp_ext",b:"assignments",lbl:"petugas"},
+  {a:"proj_ext",b:"records"},
+ ]},
+
+{id:"proc", til:"Procurement", pre:"nx_procurement", tag:"Alur pengadaan: PR → PO → GR → PI → Pembayaran & Retur beli.", ac:"#e11d48",
+ nodes:[
+  {id:"suppliers",label:"Suppliers",table:"nx_suppliers",type:"core",fk:[]},
+  {id:"contacts",label:"Kontak Supplier",table:"nx_supplier_contacts",type:"core",fk:["supplier_id"]},
+  {id:"reqs",label:"PR (Requisition)",table:"nx_purchase_requisitions",type:"core",fk:["requested_by","submitted_by","approved_by"]},
+  {id:"req_items",label:"Item PR",table:"nx_purchase_requisition_items",type:"core",fk:["purchase_requisition_id","product_id"]},
+  {id:"pos",label:"PO (Order)",table:"nx_purchase_orders",type:"core",fk:["supplier_id","purchase_requisition_id","created_by"]},
+  {id:"po_items",label:"Item PO",table:"nx_purchase_order_items",type:"core",fk:["purchase_order_id","product_id"]},
+  {id:"grs",label:"GR (Terima)",table:"nx_goods_receipts",type:"core",fk:["purchase_order_id","supplier_id","warehouse_id","received_by"]},
+  {id:"gr_items",label:"Item GR",table:"nx_goods_receipt_items",type:"core",fk:["goods_receipt_id","purchase_order_item_id","product_id"]},
+  {id:"pis",label:"PI (Tagihan)",table:"nx_purchase_invoices",type:"core",fk:["purchase_order_id","supplier_id","created_by"]},
+  {id:"pi_items",label:"Item PI",table:"nx_purchase_invoice_items",type:"core",fk:["purchase_invoice_id","purchase_order_item_id","product_id"]},
+  {id:"popay",label:"Pembayaran PO",table:"nx_purchase_order_payments",type:"core",fk:["purchase_invoice_id","purchase_order_id","created_by"]},
+  {id:"returns",label:"Retur Beli",table:"nx_purchase_returns",type:"core",fk:["supplier_id","goods_receipt_id","purchase_order_id","created_by"]},
+  {id:"ret_items",label:"Item Retur",table:"nx_purchase_return_items",type:"core",fk:["purchase_return_id","product_id","serial_number_id","goods_receipt_item_id"]},
+  {id:"users_ext",label:"Users",table:"users",type:"ext",fk:[]},
+  {id:"products_ext",label:"Produk",table:"nx_products",type:"ext",fk:[]},
+  {id:"serials_ext",label:"Nomor Seri",table:"nx_serial_number",type:"ext",fk:[]},
+  {id:"wh_ext",label:"Gudang",table:"nx_warehouses",type:"ext",fk:[]},
+ ],
+ edges:[
+  {a:"suppliers",b:"contacts"},
+  {a:"users_ext",b:"reqs",lbl:"pengaju"},
+  {a:"reqs",b:"req_items"},{a:"products_ext",b:"req_items"},
+  {a:"reqs",b:"pos"},
+  {a:"suppliers",b:"pos"},
+  {a:"pos",b:"po_items"},{a:"products_ext",b:"po_items"},
+  {a:"pos",b:"grs"},{a:"suppliers",b:"grs"},{a:"wh_ext",b:"grs"},
+  {a:"grs",b:"gr_items"},{a:"po_items",b:"gr_items"},{a:"products_ext",b:"gr_items"},
+  {a:"pos",b:"pis"},{a:"suppliers",b:"pis"},
+  {a:"pis",b:"pi_items"},{a:"po_items",b:"pi_items"},{a:"products_ext",b:"pi_items"},
+  {a:"pis",b:"popay"},{a:"pos",b:"popay"},
+  {a:"suppliers",b:"returns"},{a:"grs",b:"returns"},{a:"pos",b:"returns"},
+  {a:"returns",b:"ret_items"},{a:"products_ext",b:"ret_items"},{a:"serials_ext",b:"ret_items"},{a:"gr_items",b:"ret_items"},
+ ]},
+
+{id:"proj", til:"Project", pre:"nx_project", tag:"Epics, ticket (kanban), anggota proyek, catatan, dokumen & akses eksternal.", ac:"#059669",
+ nodes:[
+  {id:"projects",label:"Projects",table:"nx_projects",type:"core",fk:["nx_sales_order_id","project_manager_id"]},
+  {id:"statuses",label:"Status Ticket",table:"nx_ticket_statuses",type:"core",fk:["project_id"]},
+  {id:"priorities",label:"Prioritas",table:"nx_ticket_priorities",type:"core",fk:[]},
+  {id:"epics",label:"Epics",table:"nx_epics",type:"core",fk:["project_id","created_by"]},
+  {id:"tickets",label:"Tickets",table:"nx_tickets",type:"core",fk:["project_id","ticket_status_id","priority_id","epic_id","created_by"]},
+  {id:"comments",label:"Komentar",table:"nx_ticket_comments",type:"core",fk:["ticket_id","employee_id"]},
+  {id:"histories",label:"Riwayat Ticket",table:"nx_ticket_histories",type:"core",fk:["ticket_id","employee_id","ticket_status_id"]},
+  {id:"notes",label:"Catatan Proyek",table:"nx_project_notes",type:"core",fk:["project_id","created_by"]},
+  {id:"documents",label:"Dokumen",table:"nx_project_documents",type:"core",fk:["nx_project_id"]},
+  {id:"access",label:"Akses Eksternal",table:"nx_external_access",type:"core",fk:["project_id"]},
+  {id:"notifications",label:"Notifikasi",table:"nx_notifications",type:"core",fk:["employee_id"]},
+  {id:"pm",label:"project_members",table:"nx_project_members (pivot)",type:"pivot",fk:["project_id","employee_id","role"]},
+  {id:"tu",label:"ticket_users",table:"nx_ticket_users (pivot)",type:"pivot",fk:["ticket_id","employee_id"]},
+  {id:"employees_ext",label:"Employees",table:"nx_employees",type:"ext",fk:[]},
+  {id:"so_ext",label:"Sales Orders",table:"nx_sales_orders",type:"ext",fk:[]},
+ ],
+ edges:[
+  {a:"projects",b:"statuses"},{a:"projects",b:"epics"},{a:"projects",b:"tickets"},
+  {a:"epics",b:"tickets"},
+  {a:"statuses",b:"tickets"},{a:"priorities",b:"tickets"},
+  {a:"employees_ext",b:"tickets",lbl:"dibuat"},
+  {a:"tickets",b:"comments"},{a:"tickets",b:"histories"},
+  {a:"employees_ext",b:"comments"},{a:"employees_ext",b:"histories"},
+  {a:"projects",b:"notes"},{a:"projects",b:"documents"},
+  {a:"projects",b:"access",mode:"11"},
+  {a:"employees_ext",b:"notifications"},
+  {a:"so_ext",b:"projects"},
+  {a:"projects",b:"pm",mode:"NN",lbl:"anggota"},
+  {a:"pm",b:"employees_ext",mode:"NN"},
+  {a:"tickets",b:"tu",mode:"NN",lbl:"ditugaskan"},
+  {a:"tu",b:"employees_ext",mode:"NN"},
+ ]},
+
+{id:"fin", til:"Finance", pre:"nx_finance", tag:"Jurnal keuangan (pemasukan, pengeluaran, hutang, piutang) & penggantian biaya.", ac:"#06b6d4",
+ nodes:[
+  {id:"financials",label:"Catatan Keuangan",table:"nx_financial_records",type:"core",fk:["created_by","reimburse_id","reference (polymorph)"]},
+  {id:"reimbursements",label:"Reimburse",table:"nx_reimbursements",type:"core",fk:["employee_id","approved_by"]},
+  {id:"employees_ext",label:"Employees",table:"nx_employees",type:"ext",fk:[]},
+  {id:"payments_ext",label:"Pembayaran (Sales)",table:"nx_payments",type:"ext",fk:[]},
+  {id:"popay_ext",label:"Pembayaran PO",table:"nx_purchase_order_payments",type:"ext",fk:[]},
+ ],
+ edges:[
+  {a:"reimbursements",b:"financials",mode:"11"},
+  {a:"employees_ext",b:"financials",lbl:"dibuat"},
+  {a:"employees_ext",b:"reimbursements",lbl:"pengaju"},
+  {a:"payments_ext",b:"financials",lbl:"polymorph"},
+  {a:"popay_ext",b:"financials",lbl:"polymorph"},
+ ]},
+
+{id:"aft", til:"After Sales", pre:"nx_aftersales", tag:"RMA (retur klien), perbaikan internal & klaim garansi ke vendor.", ac:"#ea580c",
+ nodes:[
+  {id:"rmas",label:"RMA",table:"nx_rma_requests",type:"core",fk:["customer_id","invoice_id","invoice_item_id","serial_number_id","product_id","new_serial_number_id","purchase_return_id","procurement_claim_id","created_by"]},
+  {id:"repairs",label:"Perbaikan Internal",table:"nx_internal_repairs",type:"core",fk:["rma_id","technician_user_id","created_by"]},
+  {id:"claims",label:"Klaim Vendor",table:"nx_vendor_claims",type:"core",fk:["rma_id","supplier_id","purchase_order_id","created_by"]},
+  {id:"customer_ext",label:"Customers",table:"nx_customers",type:"ext",fk:[]},
+  {id:"invoices_ext",label:"Invoice",table:"nx_invoices",type:"ext",fk:[]},
+  {id:"inv_items_ext",label:"Item Invoice",table:"nx_invoice_items",type:"ext",fk:[]},
+  {id:"serials_ext",label:"Nomor Seri",table:"nx_serial_number",type:"ext",fk:[]},
+  {id:"products_ext",label:"Produk",table:"nx_products",type:"ext",fk:[]},
+  {id:"returns_ext",label:"Retur Beli",table:"nx_purchase_returns",type:"ext",fk:[]},
+  {id:"pos_ext",label:"PO",table:"nx_purchase_orders",type:"ext",fk:[]},
+  {id:"suppliers_ext",label:"Suppliers",table:"nx_suppliers",type:"ext",fk:[]},
+  {id:"users_ext",label:"Users",table:"users",type:"ext",fk:[]},
+ ],
+ edges:[
+  {a:"customer_ext",b:"rmas"},{a:"invoices_ext",b:"rmas"},{a:"inv_items_ext",b:"rmas"},
+  {a:"serials_ext",b:"rmas"},{a:"products_ext",b:"rmas"},{a:"returns_ext",b:"rmas"},
+  {a:"pos_ext",b:"rmas",lbl:"klaim"},
+  {a:"rmas",b:"repairs",mode:"11"},
+  {a:"rmas",b:"claims",mode:"11"},
+  {a:"suppliers_ext",b:"claims"},{a:"pos_ext",b:"claims"},
+  {a:"users_ext",b:"repairs",lbl:"teknisi"},
+ ]},
+
+{id:"mkt", til:"Marketing", pre:"nx_marketing", tag:"Promo, slider halaman web & banner popup.", ac:"#d946ef",
+ nodes:[
+  {id:"promos",label:"Kode Promo",table:"nx_promo_codes",type:"core",fk:[]},
+  {id:"sliders",label:"Slider",table:"nx_sliders",type:"core",fk:[]},
+  {id:"banners",label:"Konten Web",table:"nx_web_contents",type:"core",fk:[]},
+  {id:"quotations_ext",label:"Penawaran",table:"nx_quotations",type:"ext",fk:[]},
+  {id:"so_ext",label:"Sales Orders",table:"nx_sales_orders",type:"ext",fk:[]},
+ ],
+ edges:[
+  {a:"promos",b:"quotations_ext"},
+  {a:"promos",b:"so_ext"},
+ ]},
+
+{id:"cport", til:"Customer Portal", pre:"nx_customer_portal", tag:"Token akses berbatas waktu untuk halaman portal customer.", ac:"#3b82f6",
+ nodes:[
+  {id:"tokens",label:"Token Portal",table:"nx_customer_portal_tokens",type:"core",fk:["invoice_id","customer_id"]},
+  {id:"invoices_ext",label:"Invoice",table:"nx_invoices",type:"ext",fk:[]},
+  {id:"customers_ext",label:"Customers",table:"nx_customers",type:"ext",fk:[]},
+ ],
+ edges:[
+  {a:"invoices_ext",b:"tokens"},
+  {a:"customers_ext",b:"tokens"},
+ ]},
+];
+
+/* ============ helpers ============ */
+var NS="http://www.w3.org/2000/svg";
+function el(n,a,p){var e=document.createElementNS(NS,n);if(a)for(var k in a)e.setAttribute(k,a[k]);if(p)p.appendChild(e);return e;}
+function hEl(tag,cls,parent){var e=document.createElement(tag);if(cls)e.className=cls;if(parent)parent.appendChild(e);return e;}
+function wrap(s,m){var w=s.split(" "),o=[],c="";for(var i=0;i<w.length;i++){if(c&&(c+" "+w[i]).length>m){o.push(c);c=w[i];}else c=c?c+" "+w[i]:w[i];}if(c)o.push(c);return o.slice(0,3);}
+function clamp(v,lo,hi){return Math.max(lo,Math.min(hi,v));}
+function byId(mod){var m={};mod.nodes.forEach(function(n){m[n.id]=n;});return m;}
+
+/* ============ ordering around circle ============ */
+function orderNodes(mod){
+  var adj={};mod.nodes.forEach(function(n){adj[n.id]=new Set();});
+  mod.edges.forEach(function(e){if(e.a===e.b)adj[e.a].add(e.a);else{adj[e.a].add(e.b);adj[e.b].add(e.a);}});
+  var deg={};mod.nodes.forEach(function(n){deg[n.id]=adj[n.id].size;});
+  var start=mod.nodes.slice().sort(function(a,b){return deg[b.id]-deg[a.id];})[0];
+  var placed=[start.id],seen=new Set([start.id]);
+  while(placed.length<mod.nodes.length){
+    var best=null,bS=-1,bD=-1;
+    mod.nodes.forEach(function(n){
+      if(seen.has(n.id))return;
+      var s=0;adj[n.id].forEach(function(x){if(seen.has(x))s++;});
+      if(s>bS||(s===bS&&deg[n.id]>bD)){best=n.id;bS=s;bD=deg[n.id];}
+    });
+    placed.push(best);seen.add(best);
+  }
+  var map={};mod.nodes.forEach(function(n){map[n.id]=n;});
+  return placed.map(function(id){return map[id];});
+}
+
+/* ============ geometry / crow's foot ============ */
+function crowFoot(g,pos,dir){
+  // prongs point INTO the entity (dir points toward it from the line end)
+  var px=-dir[1],py=dir[0];
+  var base=[pos[0]+dir[0]*11,pos[1]+dir[1]*11];
+  var b1=[base[0]+px*8,base[1]+py*8],b2=[base[0]-px*8,base[1]-py*8];
+  el("path",{d:"M"+b1[0].toFixed(1)+" "+b1[1].toFixed(1)+" L"+pos[0].toFixed(1)+" "+pos[1].toFixed(1)+" L"+b2[0].toFixed(1)+" "+b2[1].toFixed(1)},g);
+}
+function singleTick(g,pos,dir){
+  var px=-dir[1],py=dir[0];
+  var c0=[pos[0]+dir[0]*7,pos[1]+dir[1]*7];
+  el("path",{d:"M"+(c0[0]+px*7).toFixed(1)+" "+(c0[1]+py*7).toFixed(1)+" L"+(c0[0]-px*7).toFixed(1)+" "+(c0[1]-py*7).toFixed(1)},g);
+}
+function markEnd(g,pos,dir,card){
+  if(card==="N")crowFoot(g,pos,dir);else singleTick(g,pos,dir);
+}
+function edgeGeom(A,B,curv,rA,rB){
+  var dx=B[0]-A[0],dy=B[1]-A[1],L=Math.hypot(dx,dy)||1;
+  var ux=dx/L,uy=dy/L,px=-uy,py=ux;
+  var pA=[A[0]+ux*rA,A[1]+uy*rA],pB=[B[0]-ux*rB,B[1]-uy*rB];
+  var d="",mid=[(A[0]+B[0])/2,(A[1]+B[1])/2],dirA=[ux,uy],dirB=[-ux,-uy],upA=[uy,-ux];
+  if(curv){
+    var c=[mid[0]+px*curv,mid[1]+py*curv];
+    d="M"+pA[0].toFixed(1)+" "+pA[1].toFixed(1)+" Q"+c[0].toFixed(1)+" "+c[1].toFixed(1)+" "+pB[0].toFixed(1)+" "+pB[1].toFixed(1);
+    var ca=c[0]-pA[0],cb=c[1]-pA[1],cl=Math.hypot(ca,cb)||1;
+    var ea=pB[0]-c[0],eb=pB[1]-c[1],el2=Math.hypot(ea,eb)||1;
+    dirA=[ca/cl,cb/cl];dirB=[-ea/el2,-eb/el2];
+    var t=0.45,mt=1-t;
+    mid=[mt*mt*pA[0]+2*mt*t*c[0]+t*t*pB[0],mt*mt*pA[1]+2*mt*t*c[1]+t*t*pB[1]];
+    upA=[-dirA[1],dirA[0]];
+  } else {
+    d="M"+pA[0].toFixed(1)+" "+pA[1].toFixed(1)+" L"+pB[0].toFixed(1)+" "+pB[1].toFixed(1);
+  }
+  return {d:d,pA:pA,pB:pB,mid:mid,dirA:dirA,dirB:dirB,upA:upA};
+}
+function isDashedEdge(e,byId){
+  if(e.mode==="NN")return true;
+  var A=byId[e.a],B=byId[e.b];
+  return (A&&(A.type==="ext"||A.type==="pivot"))||(B&&(B.type==="ext"||B.type==="pivot"));
+}
+function cardOf(e,side){
+  var m=e.mode;
+  if(m==="NN")return "N";
+  if(m==="11")return "1";
+  if(side==="a")return "1";
+  return "N";
+}
+
+/* ============ build one module svg ============ */
+function buildSvg(mod){
+  var nodes=orderNodes(mod),n=nodes.length,byI={};
+  nodes.forEach(function(x){byI[x.id]=x;});
+  var rBase=(n<=6)?64:56;
+  var R=clamp(n*(rBase*2+34)/(2*Math.PI),n<=4?140:n<=7?178:196,392);
+  var rMax=Math.max.apply(null,nodes.map(function(x){return x.type==="pivot"?Math.round(rBase*.8):rBase;}));
+  var S=2*(R+rMax+96),C=S/2;
+  nodes.forEach(function(x,i){
+    var ang=(-Math.PI/2)+i*(2*Math.PI/n);
+    x.px=C+R*Math.cos(ang);x.py=C+R*Math.sin(ang);
+    x.r=x.type==="pivot"?Math.round(rBase*.8):rBase;
+  });
+
+  // curv on repeated (a,b) pairs so they separate
+  var cnt={};
+  mod.edges.forEach(function(e){
+    var k=[e.a,e.b].sort().join("|");
+    cnt[k]=(cnt[k]||0)+1;
+    e.k=(cnt[k]>1)?((cnt[k]%2?1:-1)*(16+8*Math.floor(cnt[k]/2))):0;
+  });
+
+  var svg=el("svg",{viewBox:"0 0 "+S+" "+S,role:"img","aria-label":"Diagram ERD modul "+mod.til+" — "+n+" entitas, "+mod.edges.length+" relasi"});
+  var g=el("g",{class:"edges"},svg);
+  var edgeEls=[],entEls=[];
+
+  mod.edges.forEach(function(e){
+    var A=byI[e.a],B=byI[e.b];
+    if(!A||!B){console.warn("edge ref missing",mod.id,e.a,e.b);return;}
+    var eg=el("g",{class:"egrp","data-a":e.a,"data-b":e.b},g);
+    var pathCls="edge"+(isDashedEdge(e,byI)?" dashed":"");
+    if(e.a===e.b){
+      var a1=-130*Math.PI/180,a2=-50*Math.PI/180;
+      var p1=[A.px+A.r*Math.cos(a1),A.py+A.r*Math.sin(a1)];
+      var p2=[A.px+A.r*Math.cos(a2),A.py+A.r*Math.sin(a2)];
+      var ctrl=[A.px,A.py-(A.r+46)];
+      el("path",{class:pathCls,d:"M"+p1[0].toFixed(1)+" "+p1[1].toFixed(1)+" Q"+ctrl[0].toFixed(1)+" "+ctrl[1].toFixed(1)+" "+p2[0].toFixed(1)+" "+p2[1].toFixed(1)},eg);
+      var mk=el("g",{class:"tick"},eg);
+      var u=[A.px-p1[0],A.py-p1[1]],ul=Math.hypot(u[0],u[1])||1;
+      markEnd(mk,[p1[0]+u[0]/ul*6,p1[1]+u[1]/ul*6],[u[0]/ul,u[1]/ul],"1");
+      var u2=[A.px-p2[0],A.py-p2[1]],u2l=Math.hypot(u2[0],u2[1])||1;
+      markEnd(mk,[p2[0]+u2[0]/u2l*10,p2[1]+u2[1]/u2l*10],[u2[0]/u2l,u2[1]/u2l],"N");
+      if(e.lbl){
+        var t=el("text",{class:"edge-label",y:(p1[1]+p2[1])/2-6,x:A.px,"text-anchor":"middle"},eg);
+        t.textContent=e.lbl;
+      }
+    }else{
+      var geo=edgeGeom([A.px,A.py],[B.px,B.py],e.k,A.r,B.r);
+      el("path",{class:pathCls,d:geo.d},eg);
+      var mk2=el("g",{class:"tick"},eg);
+      // A side: tangent at A pointing toward B
+      var tngA=[B.px-A.px,B.py-A.py],ta=Math.hypot(tngA[0],tngA[1])||1;
+      markEnd(mk2,geo.pA,[tngA[0]/ta,tngA[1]/ta],cardOf(e,"a"));
+      markEnd(mk2,geo.pB,geo.dirB,cardOf(e,"b"));
+      if(e.lbl){
+        var lt=el("text",{class:"edge-label",y:geo.mid[1]+geo.upA[0]*0+geo.upA[1]*7,x:geo.mid[0]+geo.upA[0]*7,"text-anchor":"middle"},eg);
+        lt.textContent=e.lbl;
+      }
+    }
+    edgeEls.push(eg);
+  });
+
+  g=el("g",{class:"ents"},svg);
+  nodes.forEach(function(x){
+    var c=el("g",{class:"ent "+(x.type==="pivot"?"pivot":x.type==="ext"?"ext":"core"),"data-id":x.id,"data-mod":mod.id,tabindex:0,role:"button","aria-label":x.label},g);
+    el("circle",{class:"cv",cx:x.px,cy:x.py,r:x.r},c);
+    var lines=wrap(x.label,x.type==="pivot"?8:12);
+    var maxLen=Math.max.apply(null,lines.map(function(l){return l.length;}));
+    var fs=clamp((x.r*1.42)/Math.max(maxLen,1),8.6,11.2);
+    var lh=fs*1.24;
+    var y0=x.py-((lines.length-1)*lh/2)+fs*0.04;
+    lines.forEach(function(l){
+      var t=el("text",{class:"lbl",x:x.px,y:y0,"font-size":fs.toFixed(2)});
+      t.textContent=l;c.appendChild(t);y0+=lh;
+    });
+    entEls.push(c);
+  });
+
+  return {svg:svg,edgeEls:edgeEls,entEls:entEls,mod:mod,nodes:nodes};
+}
+
+/* ============ neighbor map per module ============ */
+var NBS={};
+MODULES.forEach(function(mod){
+  var nb={};mod.nodes.forEach(function(n){nb[n.id]=new Set();});
+  mod.edges.forEach(function(e){if(e.a!==e.b){nb[e.a].add(e.b);nb[e.b].add(e.a);}});
+  NBS[mod.id]=nb;
+});
+
+/* ============ stats ============ */
+var totE=0,edin=0;
+MODULES.forEach(function(m){totE+=m.nodes.length;edin+=m.edges.length;});
+var stats=hEl("div","stats",document.getElementById("stats"));
+[["11","modul"],[""+totE,"entitas unik"],[""+edin,"relasi"]].forEach(function(s){
+  var st=hEl("div","stat",stats),b=document.createElement("b"),sp=document.createElement("span");
+  b.textContent=s[0];sp.textContent=s[1];st.appendChild(b);st.appendChild(sp);
+});
+
+/* ============ nav chips ============ */
+var chipsWrap=document.getElementById("chips");
+var chipEls=[];
+MODULES.forEach(function(m){
+  var a=document.createElement("a");
+  a.href="#m-"+m.id;a.className="chip";a.textContent=m.til;
+  var sup=document.createElement("sup");sup.textContent=m.nodes.length;
+  a.appendChild(sup);chipsWrap.appendChild(a);chipEls.push(a);
+});
+
+document.getElementById("main").id="main";
+var main=document.getElementById("main");
+var handles=[];
+
+/* ============ render modules ============ */
+MODULES.forEach(function(mod){
+  var sec=hEl("section","mod",main);
+  sec.id="m-"+mod.id;sec.style.setProperty("--ac",mod.ac);
+  var hd=hEl("div","mod-head",sec);
+  hEl("span","mod-dot",hd);
+  var h2=document.createElement("h2");h2.textContent=mod.til;hd.appendChild(h2);
+  if(mod.pre){var pr=hEl("span","pre",hd);pr.textContent=mod.pre;}
+  hEl("p","tag",sec).textContent=mod.tag;
+  var fig=document.createElement("figure");sec.appendChild(fig);
+  var dia=hEl("div","dia",fig);
+  var built=buildSvg(mod);
+  dia.appendChild(built.svg);
+  var cap=hEl("figcaption","",fig);
+  cap.textContent=mod.til+": "+built.nodes.length+" entitas, "+mod.edges.length+" relasi. Klik lingkaran untuk fokus.";
+  handles.push(built);
+});
+
+/* ============ focus + inspector ============ */
+var insp=document.getElementById("insp");
+var active={id:null,mod:null};
+function clearFocus(){
+  active.id=null;active.mod=null;
+  document.querySelectorAll(".ent.dim").forEach(function(x){x.classList.remove("dim");});
+  document.querySelectorAll(".egrp.hl, .egrp.dim").forEach(function(x){x.classList.remove("hl","dim");});
+  insp.classList.remove("on");
+}
+function focusEnt(id,modId){
+  active.id=id;active.mod=modId;
+  var nb=NBS[modId];
+  var live=new Set([id]);nb[id].forEach(function(x){live.add(x);});
+  handles.forEach(function(h){
+    if(h.mod.id!==modId)return;
+    h.entEls.forEach(function(en){en.classList.toggle("dim",!live.has(en.getAttribute("data-id")));});
+    h.edgeEls.forEach(function(eg){
+      var a=eg.getAttribute("data-a"),b=eg.getAttribute("data-b");
+      var on=live.has(a)&&live.has(b);
+      eg.classList.toggle("hl",on&&(a===id||b===id));
+      eg.classList.toggle("dim",!on);
+    });
+  });
+  showInspector(id,modId);
+  return true;
+}
+function findNode(modId,id){
+  var m=MODULES.filter(function(x){return x.id===modId;})[0];
+  return m.nodes.filter(function(x){return x.id===id;})[0];
+}
+function showInspector(id,modId){
+  var node=findNode(modId,id);
+  if(!node)return;
+  var mod=MODULES.filter(function(x){return x.id===modId;})[0];
+  document.getElementById("insp-name").textContent=node.label;
+  document.getElementById("insp-table").textContent=node.table;
+  document.getElementById("insp-ac").style.background=mod.ac;
+  var badges=document.getElementById("insp-badges");badges.innerHTML="";
+  var b1=document.createElement("span");b1.className="b";b1.textContent=mod.til;badges.appendChild(b1);
+  var bt=node.type;var b2=document.createElement("span");b2.className="b "+(bt==="core"?"ac":"");b2.textContent=bt;b2.style.background=bt==="core"?mod.ac:"";badges.appendChild(b2);
+  var fks=document.getElementById("insp-fks");fks.innerHTML="";
+  if(node.fk&&node.fk.length){
+    node.fk.forEach(function(f){var s=document.createElement("span");s.className="fk";s.textContent=f;fks.appendChild(s);});
+  }else{
+    var n=hEl("span","none",fks);n.textContent="− (tabel master)";
+  }
+  var deg=NBS[modId][id].size;
+  document.getElementById("insp-rel").innerHTML="<b>"+deg+"</b> relasi dalam konteks modul ini.";
+  insp.classList.add("on");
+}
+
+// click delegation on ents
+document.addEventListener("click",function(ev){
+  var t=ev.target.closest(".ent");
+  if(t){
+    var id=t.getAttribute("data-id"),m=+t.getAttribute("data-mod")||t.getAttribute("data-mod");
+    focusEnt(id,m);
+  }
+});
+document.addEventListener("keydown",function(ev){
+  if(ev.key==="Escape")clearFocus();
+});
+document.getElementById("insp-close").addEventListener("click",clearFocus);
+
+/* ============ scroll spy ============ */
+var spy=[];
+document.querySelectorAll("#chips a").forEach(function(ch){var id=ch.getAttribute("href").slice(1);spy.push({a:ch,id:id,sec:document.getElementById(id)});});
+function onScroll(){
+  var y=window.scrollY+140;
+  var cur=null;
+  spy.forEach(function(s){if(s.sec.offsetTop<=y)cur=s;});
+  spy.forEach(function(s){s.a.classList.toggle("active",s===cur);});
+}
+window.addEventListener("scroll",onScroll,{passive:true});
+onScroll();
+})();
+</script>
+</body>
+</html>

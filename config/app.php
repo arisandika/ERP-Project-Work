@@ -30,6 +30,19 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Product Code Prefix
+    |--------------------------------------------------------------------------
+    |
+    | Prefix & jumlah digit angka untuk auto-generate product_code.
+    | Contoh: prefix "BRG" + 3 digit -> BRG-001. Ubah lewat .env bila perlu.
+    |
+    */
+
+    'product_code_prefix' => env('PRODUCT_CODE_PREFIX', 'BRG'),
+    'product_code_digits' => (int) env('PRODUCT_CODE_DIGITS', 3),
+
+    /*
+    |--------------------------------------------------------------------------
     | Application Debug Mode
     |--------------------------------------------------------------------------
     |

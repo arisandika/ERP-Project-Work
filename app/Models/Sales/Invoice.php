@@ -112,6 +112,11 @@ class Invoice extends Model
             $totalPaid = $grandTotal;
         } elseif ($totalPaid > 0) {
             $status = 'partial';
+        } elseif (in_array($this->status, ['paid', 'lunas'], true)) {
+            $status = 'paid';
+            $totalPaid = $grandTotal;
+        } elseif ($this->status === 'cancelled') {
+            $status = 'cancelled';
         } else {
             $status = $this->status === 'draft' ? 'draft' : 'sent';
         }
