@@ -91,11 +91,14 @@ class InvoiceResource extends Resource
                                         return;
                                     }
 
+                                    $soDiscount = (float) ($so->discount ?? $so->discount_amount ?? 0);
+                                    $soTax = (float) ($so->tax ?? 0);
+
                                     $set('customer_po_number', $so->customer_po_number);
                                     $set('nx_customer_id', $so->nx_customer_id);
                                     $set('subtotal', (float) ($so->subtotal ?? 0));
-                                    $set('discount', (float) ($so->discount_amount ?? 0));
-                                    $set('tax', (float) ($so->tax ?? 0));
+                                    $set('discount', $soDiscount);
+                                    $set('tax', $soTax);
 
                                     $items = $so->items->map(function ($item) {
                                         $qty = (float) ($item->qty ?? 0);
@@ -113,9 +116,10 @@ class InvoiceResource extends Resource
                                     })->toArray();
 
                                     $set('items', $items);
-                                    self::updateTotals($get, $set);
+                                    self::updateTotals($get, $set, $soDiscount, $soTax);
                                 })
                                 ->disabled(fn (?Invoice $record) => filled($record))
+                                ->dehydrated()
                                 ->required(),
 
                             DatePicker::make('invoice_date')
@@ -178,9 +182,10 @@ class InvoiceResource extends Resource
                     Section::make('Daftar Item Invoice')->schema([
                             Repeater::make('items')
                                 ->relationship()
-                                ->disabled()
+                                ->reactive()
+                                ->afterStateUpdated(fn (callable $get, callable $set) => self::updateTotals($get, $set))
                                 ->schema([
-                                    Forms\Components\Hidden::make('id'),
+                                    // Forms\Components\Hidden::make('id'),
                                     Forms\Components\Hidden::make('item_type'),
                                     Forms\Components\Hidden::make('item_id'),
 
@@ -200,6 +205,7 @@ class InvoiceResource extends Resource
                                             ->numeric()
                                             ->required()
                                             ->reactive()
+                                            ->dehydrated()
                                             ->afterStateUpdated(fn ($state, callable $set, callable $get) => self::updateItemTotal($get, $set)),
 
                                         TextInput::make('unit_price')
@@ -209,6 +215,7 @@ class InvoiceResource extends Resource
                                             ->required()
                                             ->minValue(0)
                                             ->reactive()
+                                            ->dehydrated()
                                             ->afterStateUpdated(fn ($state, callable $set, callable $get) => self::updateItemTotal($get, $set)),
 
                                         TextInput::make('line_total')
@@ -217,8 +224,8 @@ class InvoiceResource extends Resource
                                             ->prefix('IDR')
                                             ->required()
                                             ->minValue(0)
+                                            ->readOnly()
                                             ->dehydrated()
-                                            ->disabled()
                                             ->extraInputAttributes(['style' => 'font-weight: bold;']),
                                     ]),
                                 ])
@@ -238,7 +245,7 @@ class InvoiceResource extends Resource
                             ->prefix('IDR')
                             ->required()
                             ->minValue(0)
-                            ->disabled()
+                            ->readOnly()
                             ->dehydrated(),
 
                         TextInput::make('discount')
@@ -268,7 +275,7 @@ class InvoiceResource extends Resource
                             ->prefix('IDR')
                             ->required()
                             ->minValue(0)
-                            ->disabled()
+                            ->readOnly()
                             ->dehydrated()
                             ->extraInputAttributes([
                                 'style' => 'font-weight: bold; font-size: 1.1em; color: #10b981;',
@@ -531,13 +538,26 @@ class InvoiceResource extends Resource
 
         $set('line_total', round($qty * $price, 2));
 
-        $items = $get('../../items') ?? $get('items') ?? null;
-        if ($items !== null) {
-            self::updateTotals($get, $set);
-        }
+        $items = $get('../../items') ?? [];
+
+        $subtotal = collect($items)->sum(function ($item) {
+            $q = (float) ($item['qty'] ?? 0);
+            $p = (float) ($item['unit_price'] ?? 0);
+            return $q * $p;
+        });
+
+        $set('../../subtotal', round($subtotal, 2));
+
+        $discount = (float) ($get('../../discount') ?? 0);
+        $tax = (float) ($get('../../tax') ?? 0);
+
+        $afterDiscount = $subtotal - $discount;
+        $grandTotal = $afterDiscount + ($afterDiscount * ($tax / 100));
+
+        $set('../../grand_total', round($grandTotal, 2));
     }
 
-    public static function updateTotals(callable $get, callable $set): void
+    public static function updateTotals(callable $get, callable $set, ?float $overrideDiscount = null, ?float $overrideTax = null): void
     {
         $items = $get('items') ?? [];
 
@@ -548,10 +568,10 @@ class InvoiceResource extends Resource
             return $qty * $price;
         });
 
-        $discount = (float) ($get('discount') ?? 0);
+        $discount = $overrideDiscount ?? (float) ($get('discount') ?? 0);
         $discount = min($discount, $subtotal);
 
-        $tax = (float) ($get('tax') ?? 0);
+        $tax = $overrideTax ?? (float) ($get('tax') ?? 0);
         $tax = max(0, min($tax, 100));
 
         $afterDiscount = $subtotal - $discount;

@@ -43,10 +43,11 @@ class Product extends Model
             }
         });
 
-        // Update kode jadi format BRG-XXXXXX setelah ID tersedia
+        // Update kode jadi format {PREFIX}-{DIGITS} setelah ID tersedia
         static::created(function (Product $product) {
             if (str_starts_with($product->product_code, 'TEMP-')) {
-                $product->product_code = 'BRG-' . str_pad($product->id, 6, '0', STR_PAD_LEFT);
+                $product->product_code = config('app.product_code_prefix') . '-'
+                    . str_pad($product->id, config('app.product_code_digits'), '0', STR_PAD_LEFT);
                 $product->saveQuietly();
             }
         });
@@ -99,7 +100,7 @@ class Product extends Model
     public function getKodeBarangAttribute(): string
     {
         // Sekarang ambil dari kolom DB, kalau kosong baru generate
-        return $this->product_code ?? 'BRG-' . str_pad($this->id, 6, '0', STR_PAD_LEFT);
+        return $this->product_code ?? config('app.product_code_prefix') . '-' . str_pad($this->id, config('app.product_code_digits'), '0', STR_PAD_LEFT);
     }
 
     public function getIsLowStockAttribute(): bool

@@ -37,62 +37,29 @@ class CreateInvoice extends CreateRecord
         ]);
     }
 
-    protected function mutateFormDataBeforeCreate(array $data): array
+    protected function recalculateInvoiceTotals(Invoice $invoice): void
     {
-        $data['invoice_number'] = Invoice::generateInvoiceNumber();
+        $subtotal = (float) $invoice->items()
+            ->selectRaw('COALESCE(SUM(qty * unit_price), 0) as total')
+            ->value('total');
 
-        $items = $data['items'] ?? [];
+        $discount = min((float) ($invoice->discount ?? 0), $subtotal);
+        $tax      = max(0, min((float) ($invoice->tax ?? 0), 100));
 
-        $subtotal = collect($items)->sum(function ($item) {
-            $qty = (float) ($item['qty'] ?? 0);
-            $price = (float) ($item['unit_price'] ?? 0);
-
-            return $qty * $price;
-        });
-
-        $discount = min((float) ($data['discount'] ?? 0), $subtotal);
-        $tax = max(0, min((float) ($data['tax'] ?? 0), 100));
         $afterDiscount = $subtotal - $discount;
-        $grandTotal = $afterDiscount + ($afterDiscount * ($tax / 100));
 
-        $data['subtotal'] = round($subtotal, 2);
-        $data['discount'] = round($discount, 2);
-        $data['tax'] = round($tax, 2);
-        $data['grand_total'] = round($grandTotal, 2);
-        $data['total_paid'] = 0;
-
-        return $data;
+        $invoice->forceFill([
+            'subtotal'    => round($subtotal, 2),
+            'discount'    => round($discount, 2),
+            'tax'         => round($tax, 2),
+            'grand_total' => round($afterDiscount + ($afterDiscount * $tax / 100), 2),
+        ])->saveQuietly();
     }
 
-    protected function handleRecordCreation(array $data): Model
+    protected function afterCreate(): void
     {
-        return DB::transaction(function () use ($data) {
-            $data['invoice_number'] = Invoice::generateInvoiceNumber();
-
-            $items = $data['items'] ?? [];
-            unset($data['items']);
-
-            /** @var Invoice $invoice */
-            $invoice = static::getModel()::create($data);
-
-            foreach ($items as $item) {
-                $qty = (float) ($item['qty'] ?? 0);
-                $price = (float) ($item['unit_price'] ?? 0);
-
-                $invoice->items()->create([
-                    'item_type' => $item['item_type'] ?? null,
-                    'item_id' => $item['item_id'] ?? null,
-                    'item_code' => $item['item_code'] ?? null,
-                    'item_name' => $item['item_name'] ?? null,
-                    'qty' => (int) $qty,
-                    'unit_price' => round($price, 2),
-                    'line_total' => round($qty * $price, 2),
-                ]);
-            }
-
-            app(InvoiceStockService::class)->process($invoice->load('items'));
-
-            return $invoice;
-        });
+        $invoice = $this->getRecord();
+        $this->recalculateInvoiceTotals($invoice);
+        app(InvoiceStockService::class)->process($invoice->load('items'));
     }
 }

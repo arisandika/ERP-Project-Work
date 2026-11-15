@@ -28,6 +28,7 @@ class SalesOrder extends Model
         'status',
         'notes',
         'subtotal',
+        'discount',
         'discount_amount',
         'tax',
         'grand_total',

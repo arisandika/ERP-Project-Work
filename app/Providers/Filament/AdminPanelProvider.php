@@ -168,11 +168,16 @@ class AdminPanelProvider extends PanelProvider
                     const showPwaBanner = () => { if (pwaBanner) pwaBanner.hidden = false; };
                     const hidePwaBanner = () => { if (pwaBanner) pwaBanner.hidden = true; };
                     const rememberDismiss = () => { try { localStorage.setItem(DK, String(Date.now())); } catch (e) {} };
-                    const isIos = /iphone|ipad|ipod/i.test(navigator.userAgent) && !window.MSStream;
+                    const markInstalled = () => { try { localStorage.setItem(OK, '1'); localStorage.removeItem(DK); } catch (e) {} };
+                    // iOS/iPadOS: tidak mengandalkan beforeinstallprompt (Safari iOS tidak punya event itu).
+                    // iPadOS 13+ kadang melapor sebagai MacIntel → cek maxTouchPoints agar terdeteksi.
+                    const isIos = /iphone|ipad|ipod/i.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+                    // Berjalan sebagai PWA standalone → sudah terinstall, jangan tawarkan lagi
+                    const isInstalledPwa = () => window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
 
-                    // Hanya tawarkan saat memang boleh (belum dismiss dalam cooldown, belum terpasang)
-                    if (allowOffer()) {
-                        // Android / Chrome desktop: instal melalui tombol
+                    // Sudah terinstall (PWA standalone) atau belum melewati cooldown → jangan tawarkan
+                    if (isInstalledPwa()) { markInstalled(); } else if (allowOffer()) {
+                        // Android / Chrome desktop: tunggu browser sendiri yang menyediakan beforeinstallprompt
                         window.addEventListener('beforeinstallprompt', (e) => {
                             e.preventDefault();
                             window.deferredPrompt = e;
@@ -180,6 +185,8 @@ class AdminPanelProvider extends PanelProvider
                         });
                         // iOS: tidak ada beforeinstallprompt → arahkan ke "Tambah ke Layar Utama"
                         if (isIos && !window.navigator.standalone) showPwaBanner();
+                        // Bersihkan state jika user install dari tombol Chrome sendiri (titik tiga)
+                        window.addEventListener('appinstalled', () => { markInstalled(); hidePwaBanner(); });
                     }
 
                     pwaInstall?.addEventListener('click', async () => {
@@ -195,14 +202,14 @@ class AdminPanelProvider extends PanelProvider
                                 '<li>Tekan <b>Tambah</b></li></ol>' +
                                 '<button type="button" class="w-full px-3 py-2 rounded-lg text-white bg-blue-600">OK, Mengerti</button></div>';
                             document.body.appendChild(div);
-                            div.querySelector('button').addEventListener('click', () => div.remove());
+                            div.querySelector('button').addEventListener('click', () => { div.remove(); rememberDismiss(); hidePwaBanner(); });
                             return;
                         }
                         const prompt = window.deferredPrompt;
                         if (prompt) {
                             await prompt.prompt();
                             window.deferredPrompt = null;
-                            try { localStorage.setItem(OK, '1'); } catch (e) {}
+                            markInstalled();
                             hidePwaBanner();
                         }
                     });
